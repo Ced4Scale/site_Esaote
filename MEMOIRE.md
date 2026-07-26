@@ -20,7 +20,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 ## Informations actuellement visibles dans le site
 
 - Contact : Cédric Goillot
-- Rôle : Consultant IRM — Esaote Medical France
+- Rôle : Consultant — Esaote Medical France
 - E-mail : `cedric.goillot@ced4scale.fr`
 - Téléphone : `06 80 73 52 33`
 - Localisation : Bordeaux (33) — Esaote Medical France
