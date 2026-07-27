@@ -44,6 +44,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
+- Ajout de la mention et du logo UniHA sur les fiches O-scan et G-scan : appareils indiqués comme référencés UniHA pour les projets d'achat hospitalier. Logo récupéré depuis le site officiel uniha.org.
+
 - Nettoyage des carrousels de présentation des 5 IRM : retrait des images d'examens et d'antennes, conservées uniquement dans les onglets dédiés.
 
 - Amélioration du visualiseur d'images : navigation précédente/suivante dans la même galerie, flèches visibles, clavier gauche/droite et glissement horizontal pour parcourir les antennes agrandies.
