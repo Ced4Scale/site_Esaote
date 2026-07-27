@@ -29,6 +29,11 @@
   var scroll = document.getElementById("modalScroll");
   var closeBtn = document.getElementById("modalClose");
   var modal = overlay ? overlay.querySelector(".modal") : null;
+  var imageLightbox = document.getElementById("imageLightbox");
+  var imageLightboxImg = document.getElementById("imageLightboxImg");
+  var imageLightboxCaption = document.getElementById("imageLightboxCaption");
+  var imageLightboxClose = document.getElementById("imageLightboxClose");
+  var lastImageTrigger = null;
   var lastTrigger = null;
   var closeTimer = null;
 
@@ -73,6 +78,60 @@
     });
   }
 
+  function openImageLightbox(img, trigger) {
+    if (!imageLightbox || !imageLightboxImg || !imageLightboxCaption || !img) return;
+    var figure = img.closest(".modal__exam");
+    var caption = figure ? figure.querySelector("figcaption") : null;
+    lastImageTrigger = trigger || img;
+    imageLightboxImg.src = img.currentSrc || img.src;
+    imageLightboxImg.alt = img.alt || "";
+    imageLightboxCaption.textContent = caption ? caption.textContent.trim() : "";
+    imageLightbox.hidden = false;
+    imageLightbox.style.display = "flex";
+    void imageLightbox.offsetWidth;
+    imageLightbox.classList.add("is-open");
+    if (imageLightboxClose) imageLightboxClose.focus();
+  }
+
+  function closeImageLightbox() {
+    if (!imageLightbox || !imageLightbox.classList.contains("is-open")) return;
+    imageLightbox.classList.remove("is-open");
+    var finish = function (e) {
+      if (e && e.target !== imageLightbox) return;
+      imageLightbox.style.display = "none";
+      imageLightbox.hidden = true;
+      if (imageLightboxImg) {
+        imageLightboxImg.src = "";
+        imageLightboxImg.alt = "";
+      }
+      if (imageLightboxCaption) imageLightboxCaption.textContent = "";
+      imageLightbox.removeEventListener("transitionend", finish);
+      if (lastImageTrigger && typeof lastImageTrigger.focus === "function") lastImageTrigger.focus();
+      lastImageTrigger = null;
+    };
+    imageLightbox.addEventListener("transitionend", finish);
+    setTimeout(finish, 240);
+  }
+
+  function initExamImageZoom(root) {
+    root.querySelectorAll(".modal__exam").forEach(function (figure) {
+      var img = figure.querySelector("img");
+      if (!img) return;
+      figure.setAttribute("role", "button");
+      figure.setAttribute("tabindex", "0");
+      figure.setAttribute("aria-label", "Agrandir l'image : " + (img.alt || "examen"));
+      figure.addEventListener("click", function () {
+        openImageLightbox(img, figure);
+      });
+      figure.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          openImageLightbox(img, figure);
+        }
+      });
+    });
+  }
+
   function openModal(key, trigger) {
     var tpl = document.getElementById("tpl-" + key);
     if (!tpl || !overlay) return;
@@ -85,6 +144,7 @@
     scroll.innerHTML = "";
     scroll.appendChild(tpl.content.cloneNode(true));
     initImageCarousels(scroll);
+    initExamImageZoom(scroll);
 
     // étiquette la modale pour l'accessibilité
     var titleEl = scroll.querySelector(".modal__title");
@@ -144,6 +204,10 @@
   openFromHash();
 
   if (closeBtn) closeBtn.addEventListener("click", closeModal);
+  if (imageLightboxClose) imageLightboxClose.addEventListener("click", closeImageLightbox);
+  if (imageLightbox) imageLightbox.addEventListener("click", closeImageLightbox);
+  if (imageLightboxImg) imageLightboxImg.addEventListener("click", function (e) { e.stopPropagation(); });
+  if (imageLightboxCaption) imageLightboxCaption.addEventListener("click", function (e) { e.stopPropagation(); });
 
   // clic sur l'overlay = fermeture ; clic dans la modale = ne ferme pas
   if (overlay) overlay.addEventListener("click", closeModal);
@@ -151,7 +215,9 @@
 
   // touche Échap
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") closeModal();
+    if (e.key !== "Escape") return;
+    if (imageLightbox && imageLightbox.classList.contains("is-open")) closeImageLightbox();
+    else closeModal();
   });
 
   // piège de focus minimal (maintient le Tab dans la modale)

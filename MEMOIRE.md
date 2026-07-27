@@ -64,6 +64,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout d'un onglet "Voir les examens" sous les vidéos pour les 5 IRM ; O-scan, S-scan, G-scan et Magnifico utilisent des images cliniques officielles Esaote, tandis qu'I-Genius présente des visuels de workflow clinique faute de galerie publique d'images d'examens dédiée.
 
+- Ajout d'un agrandissement au clic sur les images d'examens : visualiseur plein écran, fermeture par croix, clic sur le fond ou touche Échap.
+
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
 
 - Ajout de photos officielles Esaote supplémentaires pour les 4 IRM et mise en place d'un carrousel automatique toutes les 3 secondes sur les cartes produits et les modales.
