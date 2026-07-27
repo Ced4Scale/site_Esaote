@@ -32,16 +32,59 @@
   var lastTrigger = null;
   var closeTimer = null;
 
+  function getCarouselImages(img) {
+    var value = img.getAttribute("data-carousel-images") || "";
+    return value.split("|").map(function (src) {
+      return src.trim();
+    }).filter(function (src, index, list) {
+      return src && list.indexOf(src) === index;
+    });
+  }
+
+  function stopImageCarousels(root) {
+    root.querySelectorAll("img[data-carousel-images]").forEach(function (img) {
+      if (img._carouselTimer) {
+        clearInterval(img._carouselTimer);
+        img._carouselTimer = null;
+      }
+    });
+  }
+
+  function initImageCarousels(root) {
+    root.querySelectorAll("img[data-carousel-images]").forEach(function (img) {
+      stopImageCarousels(img.parentElement || root);
+      var images = getCarouselImages(img);
+      if (images.length < 2) return;
+
+      images.forEach(function (src) {
+        var preload = new Image();
+        preload.src = src;
+      });
+
+      var current = Math.max(0, images.indexOf(img.getAttribute("src")));
+      img._carouselTimer = setInterval(function () {
+        current = (current + 1) % images.length;
+        img.classList.add("is-fading");
+        setTimeout(function () {
+          img.setAttribute("src", images[current]);
+          img.classList.remove("is-fading");
+        }, 220);
+      }, 3000);
+    });
+  }
+
   function openModal(key, trigger) {
     var tpl = document.getElementById("tpl-" + key);
     if (!tpl || !overlay) return;
 
     clearTimeout(closeTimer);
+    if (scroll) stopImageCarousels(scroll);
     lastTrigger = trigger || null;
 
     // injecte le contenu du template
     scroll.innerHTML = "";
     scroll.appendChild(tpl.content.cloneNode(true));
+    initImageCarousels(scroll);
 
     // étiquette la modale pour l'accessibilité
     var titleEl = scroll.querySelector(".modal__title");
@@ -69,6 +112,7 @@
       if (e && e.target !== overlay) return; // ignore les transitions des enfants
       overlay.style.display = "none";
       overlay.hidden = true;
+      if (scroll) stopImageCarousels(scroll);
       scroll.innerHTML = "";
       overlay.removeEventListener("transitionend", finish);
       clearTimeout(closeTimer);
@@ -85,6 +129,8 @@
       openModal(card.getAttribute("data-product"), card);
     });
   });
+
+  initImageCarousels(document);
 
   // deep-link : #produit-<clé> ouvre directement la fiche (comme le ?entreprise= de StudApp)
   function openFromHash() {

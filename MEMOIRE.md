@@ -44,6 +44,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
+- Ajout de photos officielles Esaote supplémentaires pour les 4 IRM et mise en place d'un carrousel automatique toutes les 3 secondes sur les cartes produits et les modales.
+
 - Reformulation de l'argument Magnifico : remplacement de « consommation dérisoire » par une mention explicite des coûts d'électricité et d'eau glacée très réduits.
 
 - Ajout argument moyen champ + IA/prothèses : 1 bullet par fiche IRM et renforcement de la section Complémentarité, avec formulation prudente sur la réduction des artéfacts métalliques.
