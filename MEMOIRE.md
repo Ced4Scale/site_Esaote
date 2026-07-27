@@ -68,6 +68,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout d'un onglet "Voir les antennes" sous les vidéos et les examens pour les 5 IRM, avec icône dédiée, visuels d'antennes disponibles et agrandissement au clic.
 
+- Correction O-scan : ajout de l'antenne genou DPA manquante, conformément à la page officielle Esaote qui liste genou, main/poignet et cheville/pied.
+
 - Pour S-scan, découpe de l'image "jeu d'antennes MSK" en vignettes individuelles : genou, main/poignet, cheville/pied, épaule, rachis cervical, rachis lombaire, tête, hanche flexible et ATM.
 
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
