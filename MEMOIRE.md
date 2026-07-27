@@ -58,6 +58,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Déplacement des vidéos sous le CTA des fiches produits, dans un bouton repliable "Voir les vidéos" pour les 5 IRM.
 
+- Renforcement des autorisations plein écran sur toutes les vidéos intégrées : `fullscreen`, `allowfullscreen`, compatibilité WebKit/Mozilla.
+
 - Enrichissement des carrousels produits : chaque IRM dispose désormais de 5 images issues des pages officielles Esaote ou de leurs visuels produits associés.
 
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
