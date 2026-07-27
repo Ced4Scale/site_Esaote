@@ -50,6 +50,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout de l'ensemble des visuels significatifs de la brochure officielle O-scan dans le carrousel O-scan : photos produit, photos patient, exemples IRM et détails machine.
 
+- Ajout de l'argument IRM dynamique : O-scan, S-scan, G-scan et Magnifico avec formulation adaptée ; I-Genius formulé en contrôles IRM per-opératoires répétés.
+
 - Enrichissement des carrousels produits : chaque IRM dispose désormais de 5 images issues des pages officielles Esaote ou de leurs visuels produits associés.
 
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
