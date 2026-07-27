@@ -44,6 +44,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
+- Remplacement/enrichissement des galeries d'antennes S-scan, G-scan et Magnifico avec des visuels individuels officiels Esaote mieux cadrés ; I-Genius conserve les visuels disponibles faute de galerie antennes officielle équivalente.
+
 - Refonte du premier écran : le hero synthétise désormais les 5 IRM et propose des mini-fiches cliquables vers chaque modale produit.
 
 - Ajout de deux photos O-scan issues de la brochure officielle Esaote : patient installé pour genou/jambe et patient positionné main/poignet.
