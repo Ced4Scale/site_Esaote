@@ -44,7 +44,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
-- Ajout demandé sur la fiche O-scan : formation du manipulateur radio en 1 journée, ou 4 manipulateurs formés en 2 jours.
+- Ajout demandé sur la fiche O-scan : formation du manipulateur en électroradiologie médicale (MERM) en 1 journée, ou 4 manipulateurs en électroradiologie médicale (MERM) formés en 2 jours.
 
 ### 2026-07-26
 
