@@ -44,6 +44,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
+- Nettoyage des carrousels de présentation des 5 IRM : retrait des images d'examens et d'antennes, conservées uniquement dans les onglets dédiés.
+
 - Amélioration du visualiseur d'images : navigation précédente/suivante dans la même galerie, flèches visibles, clavier gauche/droite et glissement horizontal pour parcourir les antennes agrandies.
 
 - Remplacement/enrichissement des galeries d'antennes S-scan, G-scan et Magnifico avec des visuels individuels officiels Esaote mieux cadrés ; I-Genius conserve les visuels disponibles faute de galerie antennes officielle équivalente.
