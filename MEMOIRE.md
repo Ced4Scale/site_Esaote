@@ -29,7 +29,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Titre principal de la page d'accueil : "Révolutionnez l'IRM"
 - Accroche hero : IRM ouvertes, dédiées et sans hélium, complémentaires des IRM 1,5 T / 3 T
-- Section produits : O-scan, S-scan, G-scan, Magnifico
+- Section produits : O-scan, S-scan, G-scan, Magnifico, I-Genius
 - Section "Pourquoi Esaote" : 4 arguments affichés dans la page
 - Section RSE : sobriété, zéro hélium, consommation minimale, installation simple, certifications ISO
 - Page contact : textes d'introduction, coordonnées, options du formulaire, e-mail destinataire dans le script
@@ -43,6 +43,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 ## Journal
 
 ### 2026-07-27
+
+- Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
 
 - Ajout de photos officielles Esaote supplémentaires pour les 4 IRM et mise en place d'un carrousel automatique toutes les 3 secondes sur les cartes produits et les modales.
 
