@@ -54,6 +54,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout de visuels issus des brochures officielles S-scan Open, G-scan Brio et Magnifico Open ; ajout de visuels publics officiels Esaote pour I-Genius faute de brochure PDF publique trouvée.
 
+- Ajout de la vidéo officielle Vimeo Esaote "S-Scan Open: Open to the Future" dans la modale S-scan.
+
 - Enrichissement des carrousels produits : chaque IRM dispose désormais de 5 images issues des pages officielles Esaote ou de leurs visuels produits associés.
 
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
