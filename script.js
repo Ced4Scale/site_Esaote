@@ -124,7 +124,7 @@
   }
 
   // ouverture depuis les cartes produit
-  document.querySelectorAll(".product-card[data-product]").forEach(function (card) {
+  document.querySelectorAll(".product-card[data-product], .range-card[data-product]").forEach(function (card) {
     card.addEventListener("click", function () {
       openModal(card.getAttribute("data-product"), card);
     });
