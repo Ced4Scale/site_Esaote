@@ -42,6 +42,10 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Journal
 
+### 2026-07-27
+
+- Ajout demandé sur la fiche O-scan : formation du manipulateur radio en 1 journée, ou 4 manipulateurs formés en 2 jours.
+
 ### 2026-07-26
 
 - Repo local identifié : `/Users/Cedric/Documents/site_Esaote`
