@@ -46,6 +46,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Refonte du premier écran : le hero synthétise désormais les 5 IRM et propose des mini-fiches cliquables vers chaque modale produit.
 
+- Ajout de deux photos O-scan issues de la brochure officielle Esaote : patient installé pour genou/jambe et patient positionné main/poignet.
+
 - Enrichissement des carrousels produits : chaque IRM dispose désormais de 5 images issues des pages officielles Esaote ou de leurs visuels produits associés.
 
 - Ajout de l'IRM intra-opératoire I-Genius comme 5e fiche produit, positionnée bloc opératoire neurochirurgie.
