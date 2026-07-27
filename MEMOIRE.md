@@ -44,6 +44,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ### 2026-07-27
 
+- Reformulation de l'argument Magnifico : remplacement de « consommation dérisoire » par une mention explicite des coûts d'électricité et d'eau glacée très réduits.
+
 - Ajout argument moyen champ + IA/prothèses : 1 bullet par fiche IRM et renforcement de la section Complémentarité, avec formulation prudente sur la réduction des artéfacts métalliques.
 
 - Désignation demandée pour l'O-scan : IRM ouverte Fauteuil.
