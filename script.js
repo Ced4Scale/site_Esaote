@@ -64,8 +64,6 @@
     "SPED": "Séquence Esaote de type densité de protons rapide, souvent utilisée en MSK pour les structures articulaires.",
     "DPA": "Antenne dédiée Esaote à réseau phasé, conçue pour améliorer le signal sur une anatomie ciblée.",
     "Open-Fauteuil": "Configuration ouverte où le patient est installé assis ou semi-assis, particulièrement adaptée aux extrémités sur O-scan.",
-    "iMRI": "IRM intra-opératoire : imagerie réalisée pendant l'intervention, sans transfert du patient hors du bloc.",
-    "I-Genius": "Solution Esaote d'IRM intra-opératoire pensée pour le bloc neurochirurgical.",
     "Permanent magnet technology": "Technologie d'aimant permanent Esaote : champ magnétique maintenu sans hélium liquide ni cryogénie.",
     "Green MRI": "Positionnement Esaote des IRM sobres : aimant permanent, absence d'hélium, consommation électrique réduite et installation simplifiée.",
     "UniHA": "Union des hôpitaux pour les achats : centrale d'achat hospitalière française, utile pour faciliter certains projets publics."
