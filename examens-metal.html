@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-speed" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-window-values" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -60,10 +60,12 @@
         <div class="case-viewer__windowing">
           <span>Window level</span>
           <input id="caseWindowLevel" type="range" min="50" max="150" value="100" />
-          <button type="button" id="caseWindowLevelReset" aria-label="Réinitialiser le window level">100%</button>
+          <output id="caseWindowLevelValue" for="caseWindowLevel">100%</output>
+          <button type="button" id="caseWindowLevelReset" aria-label="Réinitialiser le window level">Orig.</button>
           <span>Window width</span>
           <input id="caseWindowWidth" type="range" min="50" max="180" value="100" />
-          <button type="button" id="caseWindowWidthReset" aria-label="Réinitialiser le window width">100%</button>
+          <output id="caseWindowWidthValue" for="caseWindowWidth">100%</output>
+          <button type="button" id="caseWindowWidthReset" aria-label="Réinitialiser le window width">Orig.</button>
         </div>
       </section>
     </div>
@@ -88,10 +90,12 @@
       <label class="image-lightbox__windowing">
         <span>Window level</span>
         <input id="caseLightboxWindowLevel" type="range" min="50" max="150" value="100" />
+        <output id="caseLightboxWindowLevelValue" for="caseLightboxWindowLevel">100%</output>
       </label>
       <label class="image-lightbox__windowing">
         <span>Window width</span>
         <input id="caseLightboxWindowWidth" type="range" min="50" max="180" value="100" />
+        <output id="caseLightboxWindowWidthValue" for="caseLightboxWindowWidth">100%</output>
       </label>
       <label class="image-lightbox__axis" id="caseLightboxAxisControl" hidden>
         <span>Axe de lecture</span>
@@ -117,8 +121,10 @@
       var slider = document.getElementById("caseSlider");
       var speedSelect = document.getElementById("caseSpeed");
       var windowLevelSlider = document.getElementById("caseWindowLevel");
+      var windowLevelValue = document.getElementById("caseWindowLevelValue");
       var windowLevelReset = document.getElementById("caseWindowLevelReset");
       var windowWidthSlider = document.getElementById("caseWindowWidth");
+      var windowWidthValue = document.getElementById("caseWindowWidthValue");
       var windowWidthReset = document.getElementById("caseWindowWidthReset");
       var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
@@ -128,7 +134,9 @@
       var lightboxSlider = document.getElementById("caseLightboxSlider");
       var lightboxSpeedSelect = document.getElementById("caseLightboxSpeed");
       var lightboxWindowLevelSlider = document.getElementById("caseLightboxWindowLevel");
+      var lightboxWindowLevelValue = document.getElementById("caseLightboxWindowLevelValue");
       var lightboxWindowWidthSlider = document.getElementById("caseLightboxWindowWidth");
+      var lightboxWindowWidthValue = document.getElementById("caseLightboxWindowWidthValue");
       var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
       var lightboxAxisSelect = document.getElementById("caseLightboxAxis");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
@@ -385,7 +393,8 @@
         document.documentElement.style.setProperty("--case-window-level", windowLevel + "%");
         windowLevelSlider.value = windowLevel;
         lightboxWindowLevelSlider.value = windowLevel;
-        windowLevelReset.textContent = windowLevel + "%";
+        windowLevelValue.textContent = windowLevel + "%";
+        lightboxWindowLevelValue.textContent = windowLevel + "%";
       }
 
       function setWindowWidth(value) {
@@ -393,7 +402,8 @@
         document.documentElement.style.setProperty("--case-window-width", windowWidth + "%");
         windowWidthSlider.value = windowWidth;
         lightboxWindowWidthSlider.value = windowWidth;
-        windowWidthReset.textContent = windowWidth + "%";
+        windowWidthValue.textContent = windowWidth + "%";
+        lightboxWindowWidthValue.textContent = windowWidth + "%";
       }
 
       function step(delta) {
