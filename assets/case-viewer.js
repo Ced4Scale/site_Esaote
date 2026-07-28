@@ -736,7 +736,7 @@
       function lightboxCaptionMode(displayedAcquisitions, displayedViews) {
         if (displayedViews.some(function (view) { return view.showMprAxes; })) {
           if (lightboxFocusedIndex !== null) {
-            return "1 plan MPR isolé · double-clic pour revenir aux 3 plans";
+            return "1 plan MPR isolé · double-clic pour revenir aux plans synchronisés";
           }
           return "MPR · " + displayedViews.length + " plans synchronisés";
         }
