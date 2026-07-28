@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- QCM aide au choix : ajout d'une question "Prescripteurs moteurs" avec pondération dédiée et rappel dans le résultat, car les prescripteurs participent au choix de l'IRM adaptée au projet.
+
 - Fiche O-scan : remplacement du bloc "Pour" par une distinction claire entre utilisateur radiologue/service d'imagerie et prescripteurs à développer.
 
 - Présentation iPhone : ajout d'un bloc mobile d'accès rapide aux 5 IRM, aux examens métal, au rachis en charge et au QCM achat ; cartes IRM compactes en liste sur mobile ; raccourcis dans les modales vers vidéos, examens, antennes, documents et références.
