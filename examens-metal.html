@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-windowing" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-axis-tools" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -81,6 +81,10 @@
         <span>Window width</span>
         <input id="caseLightboxWindowWidth" type="range" min="50" max="180" value="100" />
       </label>
+      <label class="image-lightbox__axis" id="caseLightboxAxisControl" hidden>
+        <span>Axe de lecture</span>
+        <select id="caseLightboxAxis"></select>
+      </label>
     </div>
     <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
   </div>
@@ -111,12 +115,15 @@
       var lightboxSlider = document.getElementById("caseLightboxSlider");
       var lightboxWindowLevelSlider = document.getElementById("caseLightboxWindowLevel");
       var lightboxWindowWidthSlider = document.getElementById("caseLightboxWindowWidth");
+      var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
+      var lightboxAxisSelect = document.getElementById("caseLightboxAxis");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
       var playTimer = null;
       var paneClickTimer = null;
       var lightboxAcquisition = null;
       var lightboxAcquisitions = null;
       var lightboxRenderKey = "";
+      var lightboxAxisSelections = {};
       var checkedAcquisitions = {};
       var openingWindowLevel = 100;
       var openingWindowWidth = 100;
@@ -139,6 +146,12 @@
 
       function maxImages(item) {
         return acquisitionsFor(item).reduce(function (max, acquisition) {
+          return Math.max(max, acquisition.images.length);
+        }, 0);
+      }
+
+      function maxImagesFor(acquisitions) {
+        return acquisitions.reduce(function (max, acquisition) {
           return Math.max(max, acquisition.images.length);
         }, 0);
       }
@@ -334,6 +347,10 @@
         return checkedAcquisitions[caseKey()] || [];
       }
 
+      function acquisitionKey(acquisition) {
+        return caseKey() + "|" + acquisition.label;
+      }
+
       function visibleCheckedIndexes() {
         return Array.from(compare.querySelectorAll(".case-viewer__check input:checked")).map(function (checkbox) {
           return Number(checkbox.dataset.acquisition);
@@ -371,7 +388,7 @@
 
       function loopStep() {
         var item = current();
-        var maxCount = item ? maxImages(item) : 0;
+        var maxCount = !lightbox.hidden ? lightboxMaxImages() : (item ? maxImages(item) : 0);
         if (!maxCount) return;
         selectedImage = (selectedImage + 1) % maxCount;
         update();
@@ -396,10 +413,15 @@
       function updateLightbox() {
         var item = current();
         var acquisitions = acquisitionsFor(item);
-        var maxCount = maxImages(item);
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        setLightboxAxisOptions(displayedAcquisitions);
+        var displayedViews = displayedAcquisitions.map(function (acquisition) {
+          return selectedAxisView(acquisition);
+        });
+        var maxCount = maxImagesFor(displayedViews);
+        selectedImage = Math.max(0, Math.min(selectedImage, maxCount - 1));
         var renderKey = displayedAcquisitions.map(function (acquisition) {
-          return acquisitions.indexOf(acquisition);
+          return acquisitions.indexOf(acquisition) + ":" + selectedAxisView(acquisition).label;
         }).join("|");
         lightboxImages.classList.toggle("image-lightbox__images--compare", displayedAcquisitions.length > 1);
         lightboxImages.style.setProperty("--lightbox-columns", displayedAcquisitions.length);
@@ -410,8 +432,8 @@
           lightboxRenderKey = renderKey;
         }
         lightboxImages.querySelectorAll("figure").forEach(function (figure, index) {
-          var acquisition = displayedAcquisitions[index];
-          var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
+          var acquisition = displayedViews[index];
+          var imageIndex = mappedIndex(acquisition, maxCount);
           var img = figure.querySelector("img");
           var caption = figure.querySelector("figcaption");
           var src = acquisition.images[imageIndex];
@@ -422,7 +444,38 @@
         lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
         lightboxSlider.max = Math.max(1, maxCount);
         lightboxSlider.value = selectedImage + 1;
-        preloadAround(displayedAcquisitions, maxCount);
+        preloadAround(displayedViews, maxCount);
+      }
+
+      function lightboxMaxImages() {
+        var acquisitions = acquisitionsFor(current());
+        var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        return maxImagesFor(displayedAcquisitions.map(function (acquisition) {
+          return selectedAxisView(acquisition);
+        }));
+      }
+
+      function selectedAxisView(acquisition) {
+        if (!acquisition || !acquisition.axisViews || !acquisition.axisViews.length) return acquisition;
+        var selectedLabel = lightboxAxisSelections[acquisitionKey(acquisition)] || acquisition.axisViews[0].label;
+        return acquisition.axisViews.find(function (view) {
+          return view.label === selectedLabel;
+        }) || acquisition.axisViews[0];
+      }
+
+      function setLightboxAxisOptions(displayedAcquisitions) {
+        var acquisition = displayedAcquisitions.length === 1 ? displayedAcquisitions[0] : null;
+        if (!acquisition || !acquisition.axisViews || acquisition.axisViews.length < 2) {
+          lightboxAxisControl.hidden = true;
+          lightboxAxisSelect.innerHTML = "";
+          return;
+        }
+        lightboxAxisControl.hidden = false;
+        var selectedView = selectedAxisView(acquisition);
+        lightboxAxisSelect.innerHTML = acquisition.axisViews.map(function (view) {
+          var selected = view.label === selectedView.label ? " selected" : "";
+          return '<option value="' + view.label + '"' + selected + '>' + view.label + '</option>';
+        }).join("");
       }
 
       function preloadAround(acquisitions, maxCount) {
@@ -465,6 +518,7 @@
         lightboxAcquisition = null;
         lightboxAcquisitions = null;
         lightboxRenderKey = "";
+        lightboxAxisControl.hidden = true;
       }
 
       document.getElementById("caseClose").addEventListener("click", goBack);
@@ -503,6 +557,16 @@
       lightboxWindowWidthSlider.addEventListener("click", function (event) { event.stopPropagation(); });
       lightboxWindowWidthSlider.addEventListener("input", function () {
         setWindowWidth(lightboxWindowWidthSlider.value);
+      });
+      lightboxAxisSelect.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxAxisSelect.addEventListener("change", function (event) {
+        event.stopPropagation();
+        var acquisition = lightboxAcquisitions ? null : lightboxAcquisition || acquisitionsFor(current())[0];
+        if (!acquisition) return;
+        lightboxAxisSelections[acquisitionKey(acquisition)] = lightboxAxisSelect.value;
+        selectedImage = 0;
+        lightboxRenderKey = "";
+        update();
       });
       imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
