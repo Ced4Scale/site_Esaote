@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-planes" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-planes2" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -160,16 +160,14 @@
         imageButton.hidden = true;
         compare.hidden = false;
         var hasPlanes = acquisitions.some(function (acquisition) { return acquisition.plane; });
-        if (hasPlanes) {
+        var planes = sortedPlanes(acquisitions);
+        var shouldGroupByPlane = planes.some(function (plane) {
+          return acquisitions.filter(function (acquisition) {
+            return (acquisition.plane || "Autres acquisitions") === plane;
+          }).length > 1;
+        });
+        if (hasPlanes && shouldGroupByPlane) {
           compare.classList.add("case-viewer__compare--grouped");
-          var planes = [];
-          acquisitions.forEach(function (acquisition) {
-            var plane = acquisition.plane || "Autres acquisitions";
-            if (planes.indexOf(plane) === -1) planes.push(plane);
-          });
-          planes.sort(function (a, b) {
-            return planeRank(a) - planeRank(b);
-          });
           compare.innerHTML = planes.map(function (plane) {
             var panes = acquisitions.map(function (acquisition, index) {
               if ((acquisition.plane || "Autres acquisitions") !== plane) return "";
@@ -180,6 +178,12 @@
         } else {
           compare.classList.remove("case-viewer__compare--grouped");
           compare.innerHTML = acquisitions.map(function (acquisition, index) {
+            return { acquisition: acquisition, index: index };
+          }).sort(function (a, b) {
+            return planeRank(a.acquisition.plane || "") - planeRank(b.acquisition.plane || "");
+          }).map(function (entry) {
+            var acquisition = entry.acquisition;
+            var index = entry.index;
             return renderPane(item, acquisition, index, maxCount);
           }).join("");
         }
@@ -188,6 +192,17 @@
             lightboxAcquisition = acquisitions[Number(button.dataset.acquisition)];
             openLightbox();
           });
+        });
+      }
+
+      function sortedPlanes(acquisitions) {
+        var planes = [];
+        acquisitions.forEach(function (acquisition) {
+          var plane = acquisition.plane || "Autres acquisitions";
+          if (planes.indexOf(plane) === -1) planes.push(plane);
+        });
+        return planes.sort(function (a, b) {
+          return planeRank(a) - planeRank(b);
         });
       }
 
