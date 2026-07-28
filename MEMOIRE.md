@@ -78,6 +78,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - O-scan : ajout de l'argument opérationnel "un seul manipulateur suffit pour assurer l'activité O-scan au quotidien" dans la fiche et les mots-clés du carrousel.
 - Examens métal : création et mise en ligne de `examens-metal.html`, page publique de démonstration avec 6 séries d'images DICOM converties localement en JPEG, sans fichiers DICOM ni tags patient. Lien ajouté depuis l'argument "Implants et prothèses".
 - Examens métal : ajout pour le cas "Genou post-opératoire" d'une lecture synchronisée des acquisitions coronal PD, axial PD et sagittal PD, avec un seul slider et lecture automatique commune.
+- Viewer examens : extraction du moteur de lecture dans `assets/case-viewer.js`, utilisé à la fois par `examens-metal.html` et `examens-charge.html` pour conserver les mêmes fonctions des deux côtés.
+- Rachis en charge : création de `examens-charge.html` avec lien "Voir examen en charge" depuis l'argument "Rachis en charge". Les séries G-Scan du dossier local fourni sont converties en JPEG anonymisés : 3D HYCE 0° couché/81° en charge, T2 sagittal 0°/81°, compléments couchés STIR et T1.
 - Examens métal : correction du cas "Épaule opérée" en rattachant la série Fast STIR coronal issue du viewer DICOM local, 15 images.
 - Examens métal : enrichissement du cas "Épaule opérée" avec une lecture synchronisée multi-acquisitions : T2 axial/coronal/sagittal, STIR sagittal/coronal et T1 sagittal/coronal.
 - Examens métal : regroupement des acquisitions synchronisées par plan quand disponible ; poignet/main enrichi avec 3D SHARC, STIR, STIR HR et T1 sur le plan coronal. Retrait du cas "Cheville / pied" du manifeste public car les images associées correspondaient à l'épaule.
