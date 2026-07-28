@@ -48,6 +48,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout d'un onglet "Documents" dans la fiche O-scan avec les documents officiels fournis : brochure, DICOM Conformance Statement et IHE Integration Statement. La brochure est aussi utilisée comme source d'images d'examens supplémentaires.
 
+- Ajout d'une section "Champ moyen en pratique" à partir des documents Esaote France fournis : susceptibilité/implants métalliques, True Motion, rachis en charge et interventionnel rachis lombaire. Le PDF du cours est ajouté aux documents du site. Les contenus HyperSpeed/HyperClarity marqués "CE mark pending / research only" sont conservés comme source interne mais non transformés en promesse commerciale publique.
+
 ### 2026-07-27
 
 - Ajout de la mention et du logo UniHA sur les fiches O-scan et G-scan : appareils indiqués comme référencés UniHA pour les projets d'achat hospitalier. Logo récupéré depuis le site officiel uniha.org.
