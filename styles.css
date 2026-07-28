@@ -380,6 +380,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .image-lightbox__images img {
   width: 100%; max-height: calc(88vh - 4.5rem); object-fit: contain;
   border-radius: var(--radius); background: #050505; box-shadow: var(--shadow-lg);
+  filter: contrast(var(--case-image-contrast, 100%));
 }
 .image-lightbox__images--compare img {
   aspect-ratio: 1 / 1; max-height: 70vh;
@@ -411,6 +412,10 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .image-lightbox__controls input {
   accent-color: var(--red);
+}
+.image-lightbox__contrast {
+  grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: center;
+  color: #fff; font-size: .78rem; font-weight: 800;
 }
 .image-lightbox__nav {
   position: fixed; top: 50%; z-index: 1; transform: translateY(-50%);
@@ -699,6 +704,10 @@ ul { margin: 0; padding: 0; list-style: none; }
   cursor: zoom-in; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
 }
 .case-viewer__image img { display: block; width: 100%; max-height: 62vh; object-fit: contain; }
+.case-viewer__image img,
+.case-viewer__pane img {
+  filter: contrast(var(--case-image-contrast, 100%));
+}
 .case-viewer__compare {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem;
 }
@@ -747,6 +756,20 @@ ul { margin: 0; padding: 0; list-style: none; }
   border-color: var(--red); background: var(--red);
 }
 .case-viewer__controls input { accent-color: var(--red); }
+.case-viewer__contrast {
+  display: grid; grid-template-columns: auto 1fr 58px; gap: .75rem; align-items: center;
+  margin-top: .75rem; color: #e8e8e8; font-size: .78rem; font-weight: 800;
+}
+.case-viewer__contrast input {
+  accent-color: var(--red);
+}
+.case-viewer__contrast button {
+  min-height: 34px; border: 1px solid rgba(255,255,255,.16); border-radius: 8px;
+  background: #2a2c31; color: #fff; font-size: .76rem; font-weight: 900; cursor: pointer;
+}
+.case-viewer__contrast button:hover {
+  border-color: var(--red); background: var(--red);
+}
 @media (max-width: 900px) {
   .case-viewer__layout { grid-template-columns: 1fr; }
   .case-viewer__list { max-height: none; grid-template-columns: repeat(2, minmax(0, 1fr)); }

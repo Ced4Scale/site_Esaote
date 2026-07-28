@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-sync-lightbox2" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-contrast" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -51,6 +51,11 @@
           <input id="caseSlider" type="range" min="1" max="1" value="1" />
           <button type="button" id="caseNext" aria-label="Coupe suivante">›</button>
         </div>
+        <div class="case-viewer__contrast">
+          <span>Contraste</span>
+          <input id="caseContrast" type="range" min="50" max="180" value="100" />
+          <button type="button" id="caseContrastReset" aria-label="Réinitialiser le contraste">100%</button>
+        </div>
       </section>
     </div>
   </main>
@@ -65,6 +70,10 @@
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
       <input id="caseLightboxSlider" type="range" min="1" max="1" value="1" />
       <button type="button" id="caseLightboxControlNext" aria-label="Coupe suivante">›</button>
+      <label class="image-lightbox__contrast">
+        <span>Contraste</span>
+        <input id="caseLightboxContrast" type="range" min="50" max="180" value="100" />
+      </label>
     </div>
     <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
   </div>
@@ -83,18 +92,22 @@
       var imageButton = document.getElementById("caseImageButton");
       var compare = document.getElementById("caseCompare");
       var slider = document.getElementById("caseSlider");
+      var contrastSlider = document.getElementById("caseContrast");
+      var contrastReset = document.getElementById("caseContrastReset");
       var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImages = document.getElementById("caseLightboxImages");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
       var lightboxControls = document.getElementById("caseLightboxControls");
       var lightboxSlider = document.getElementById("caseLightboxSlider");
+      var lightboxContrastSlider = document.getElementById("caseLightboxContrast");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
       var playTimer = null;
       var paneClickTimer = null;
       var lightboxAcquisition = null;
       var lightboxAcquisitions = null;
       var checkedAcquisitions = {};
+      var imageContrast = 100;
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -291,6 +304,14 @@
         checkedAcquisitions[key] = indexes;
       }
 
+      function setImageContrast(value) {
+        imageContrast = Math.max(50, Math.min(180, Number(value) || 100));
+        document.documentElement.style.setProperty("--case-image-contrast", imageContrast + "%");
+        contrastSlider.value = imageContrast;
+        lightboxContrastSlider.value = imageContrast;
+        contrastReset.textContent = imageContrast + "%";
+      }
+
       function step(delta) {
         selectedImage += delta;
         update();
@@ -378,10 +399,20 @@
         selectedImage = Number(slider.value) - 1;
         update();
       });
+      contrastSlider.addEventListener("input", function () {
+        setImageContrast(contrastSlider.value);
+      });
+      contrastReset.addEventListener("click", function () {
+        setImageContrast(100);
+      });
       lightboxSlider.addEventListener("click", function (event) { event.stopPropagation(); });
       lightboxSlider.addEventListener("input", function () {
         selectedImage = Number(lightboxSlider.value) - 1;
         update();
+      });
+      lightboxContrastSlider.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxContrastSlider.addEventListener("input", function () {
+        setImageContrast(lightboxContrastSlider.value);
       });
       imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
