@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Examens IRM métal - Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases" />
+</head>
+<body class="case-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html#produits" aria-label="Retour au site">
+      <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Examens</span>
+      <strong>IRM métal - cas de démonstration</strong>
+    </div>
+    <button class="document-viewer__close" id="caseClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="case-viewer">
+    <section class="case-viewer__intro">
+      <span class="kicker">Images DICOM converties localement</span>
+      <h1>Quelques examens spécifiques autour du métal</h1>
+      <p>Première sélection de séries anonymisées par conversion image, pour tester une navigation simple dans les coupes avant d'intégrer d'autres examens DICOM.</p>
+    </section>
+
+    <div class="case-viewer__layout">
+      <aside class="case-viewer__list" id="caseList" aria-label="Liste des examens"></aside>
+      <section class="case-viewer__stage">
+        <div class="case-viewer__head">
+          <div>
+            <span class="case-viewer__sequence" id="caseSequence">Séquence</span>
+            <h2 id="caseTitle">Chargement...</h2>
+          </div>
+          <span class="case-viewer__counter" id="caseCounter">0/0</span>
+        </div>
+        <p id="caseDescription"></p>
+        <button class="case-viewer__image" id="caseImageButton" type="button" aria-label="Agrandir l'image">
+          <img id="caseImage" alt="Coupe IRM" />
+        </button>
+        <div class="case-viewer__controls">
+          <button type="button" id="casePrev" aria-label="Coupe précédente">‹</button>
+          <input id="caseSlider" type="range" min="1" max="1" value="1" />
+          <button type="button" id="caseNext" aria-label="Coupe suivante">›</button>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="image-lightbox" id="caseLightbox" role="dialog" aria-modal="true" aria-label="Image agrandie" hidden>
+    <button class="image-lightbox__close" id="caseLightboxClose" aria-label="Fermer l'image agrandie">&times;</button>
+    <button class="image-lightbox__nav image-lightbox__nav--prev" id="caseLightboxPrev" aria-label="Image précédente">‹</button>
+    <img id="caseLightboxImage" alt="Coupe IRM agrandie" />
+    <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
+    <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
+  </div>
+
+  <script>
+    (function () {
+      var cases = [];
+      var selectedCase = 0;
+      var selectedImage = 0;
+      var list = document.getElementById("caseList");
+      var title = document.getElementById("caseTitle");
+      var sequence = document.getElementById("caseSequence");
+      var description = document.getElementById("caseDescription");
+      var counter = document.getElementById("caseCounter");
+      var image = document.getElementById("caseImage");
+      var slider = document.getElementById("caseSlider");
+      var lightbox = document.getElementById("caseLightbox");
+      var lightboxImage = document.getElementById("caseLightboxImage");
+      var lightboxCaption = document.getElementById("caseLightboxCaption");
+
+      function goBack() {
+        if (window.history.length > 1) window.history.back();
+        else window.location.href = "index.html#produits";
+      }
+
+      function current() {
+        return cases[selectedCase];
+      }
+
+      function renderList() {
+        list.innerHTML = cases.map(function (item, index) {
+          return '<button type="button" class="case-viewer__item" data-index="' + index + '">' +
+            '<strong>' + item.title + '</strong>' +
+            '<span>' + item.sequence + ' · ' + item.images.length + ' coupes</span>' +
+            '</button>';
+        }).join("");
+        list.querySelectorAll("button").forEach(function (button) {
+          button.addEventListener("click", function () {
+            selectedCase = Number(button.dataset.index);
+            selectedImage = 0;
+            update();
+          });
+        });
+      }
+
+      function update() {
+        var item = current();
+        if (!item) return;
+        selectedImage = Math.max(0, Math.min(selectedImage, item.images.length - 1));
+        title.textContent = item.title;
+        sequence.textContent = item.sequence;
+        description.textContent = item.description;
+        counter.textContent = (selectedImage + 1) + "/" + item.images.length;
+        slider.max = item.images.length;
+        slider.value = selectedImage + 1;
+        image.src = item.images[selectedImage];
+        image.alt = item.title + " - coupe " + (selectedImage + 1);
+        list.querySelectorAll("button").forEach(function (button, index) {
+          button.classList.toggle("is-active", index === selectedCase);
+        });
+        if (!lightbox.hidden) updateLightbox();
+      }
+
+      function step(delta) {
+        selectedImage += delta;
+        update();
+      }
+
+      function updateLightbox() {
+        var item = current();
+        lightboxImage.src = item.images[selectedImage];
+        lightboxCaption.textContent = item.title + " · " + item.sequence + " · coupe " + (selectedImage + 1) + "/" + item.images.length;
+      }
+
+      function openLightbox() {
+        lightbox.hidden = false;
+        lightbox.style.display = "flex";
+        updateLightbox();
+      }
+
+      function closeLightbox() {
+        lightbox.style.display = "none";
+        lightbox.hidden = true;
+      }
+
+      document.getElementById("caseClose").addEventListener("click", goBack);
+      document.getElementById("casePrev").addEventListener("click", function () { step(-1); });
+      document.getElementById("caseNext").addEventListener("click", function () { step(1); });
+      slider.addEventListener("input", function () {
+        selectedImage = Number(slider.value) - 1;
+        update();
+      });
+      document.getElementById("caseImageButton").addEventListener("click", openLightbox);
+      document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
+      document.getElementById("caseLightboxPrev").addEventListener("click", function (event) { event.stopPropagation(); step(-1); });
+      document.getElementById("caseLightboxNext").addEventListener("click", function (event) { event.stopPropagation(); step(1); });
+      lightbox.addEventListener("click", closeLightbox);
+      lightboxImage.addEventListener("click", function (event) { event.stopPropagation(); });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") {
+          if (!lightbox.hidden) closeLightbox();
+          else goBack();
+        }
+        if (event.key === "ArrowLeft") step(-1);
+        if (event.key === "ArrowRight") step(1);
+      });
+
+      fetch("assets/cases/irm-metal/manifest.json")
+        .then(function (response) { return response.json(); })
+        .then(function (data) {
+          cases = data.cases || [];
+          renderList();
+          update();
+        });
+    })();
+  </script>
+</body>
+</html>
