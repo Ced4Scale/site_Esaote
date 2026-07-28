@@ -42,6 +42,10 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Journal
 
+### 2026-07-28
+
+- Les badges UniHA O-scan et G-scan pointent désormais vers le marché UniHA Imagerie de coupe 2025, réf. M_2728 : O-scan lot 9 IRM bas champ dédié extrémités, G-scan lot 8 IRM bas champ ostéoarticulaire en charge.
+
 ### 2026-07-27
 
 - Ajout de la mention et du logo UniHA sur les fiches O-scan et G-scan : appareils indiqués comme référencés UniHA pour les projets d'achat hospitalier. Logo récupéré depuis le site officiel uniha.org.
