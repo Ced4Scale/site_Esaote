@@ -106,6 +106,7 @@
       var paneClickTimer = null;
       var lightboxAcquisition = null;
       var lightboxAcquisitions = null;
+      var lightboxRenderKey = "";
       var checkedAcquisitions = {};
       var imageContrast = 100;
 
@@ -198,25 +199,40 @@
         });
         if (hasPlanes && shouldGroupByPlane) {
           compare.classList.add("case-viewer__compare--grouped");
-          compare.innerHTML = planes.map(function (plane) {
-            var panes = acquisitions.map(function (acquisition, index) {
-              if ((acquisition.plane || "Autres acquisitions") !== plane) return "";
-              return renderPane(item, acquisition, index, maxCount);
+          var structureKey = caseKey() + "|grouped|" + planes.join("|") + "|" + acquisitions.length;
+          if (compare.dataset.structureKey !== structureKey) {
+            compare.innerHTML = planes.map(function (plane) {
+              var panes = acquisitions.map(function (acquisition, index) {
+                if ((acquisition.plane || "Autres acquisitions") !== plane) return "";
+                return renderPane(item, acquisition, index, maxCount);
+              }).join("");
+              return '<section class="case-viewer__plane"><h3>' + plane + '</h3><div class="case-viewer__plane-grid">' + panes + '</div></section>';
             }).join("");
-            return '<section class="case-viewer__plane"><h3>' + plane + '</h3><div class="case-viewer__plane-grid">' + panes + '</div></section>';
-          }).join("");
+            compare.dataset.structureKey = structureKey;
+            bindCompareControls(acquisitions);
+          }
         } else {
           compare.classList.remove("case-viewer__compare--grouped");
-          compare.innerHTML = acquisitions.map(function (acquisition, index) {
-            return { acquisition: acquisition, index: index };
-          }).sort(function (a, b) {
-            return planeRank(a.acquisition.plane || "") - planeRank(b.acquisition.plane || "");
-          }).map(function (entry) {
-            var acquisition = entry.acquisition;
-            var index = entry.index;
-            return renderPane(item, acquisition, index, maxCount);
-          }).join("");
+          var flatKey = caseKey() + "|flat|" + acquisitions.length;
+          if (compare.dataset.structureKey !== flatKey) {
+            compare.innerHTML = acquisitions.map(function (acquisition, index) {
+              return { acquisition: acquisition, index: index };
+            }).sort(function (a, b) {
+              return planeRank(a.acquisition.plane || "") - planeRank(b.acquisition.plane || "");
+            }).map(function (entry) {
+              var acquisition = entry.acquisition;
+              var index = entry.index;
+              return renderPane(item, acquisition, index, maxCount);
+            }).join("");
+            compare.dataset.structureKey = flatKey;
+            bindCompareControls(acquisitions);
+          }
         }
+        updateCompareImages(item, acquisitions, maxCount);
+        preloadAround(acquisitions, maxCount);
+      }
+
+      function bindCompareControls(acquisitions) {
         compare.querySelectorAll("button").forEach(function (button) {
           button.addEventListener("click", function () {
             var acquisitionIndex = Number(button.dataset.acquisition);
@@ -243,6 +259,21 @@
           checkbox.addEventListener("change", function () {
             setChecked(Number(checkbox.dataset.acquisition), checkbox.checked);
           });
+        });
+      }
+
+      function updateCompareImages(item, acquisitions, maxCount) {
+        compare.querySelectorAll(".case-viewer__pane").forEach(function (button) {
+          var acquisitionIndex = Number(button.dataset.acquisition);
+          var acquisition = acquisitions[acquisitionIndex];
+          if (!acquisition) return;
+          var imageIndex = mappedIndex(acquisition, maxCount);
+          var img = button.querySelector("img");
+          var label = button.querySelector("span");
+          var src = acquisition.images[imageIndex];
+          if (img.getAttribute("src") !== src) img.src = src;
+          img.alt = item.title + " - " + acquisition.label + " - coupe " + (imageIndex + 1);
+          label.textContent = acquisition.label + " · " + (imageIndex + 1) + "/" + acquisition.images.length;
         });
       }
 
@@ -346,16 +377,43 @@
         var acquisitions = acquisitionsFor(item);
         var maxCount = maxImages(item);
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        var renderKey = displayedAcquisitions.map(function (acquisition) {
+          return acquisitions.indexOf(acquisition);
+        }).join("|");
         lightboxImages.classList.toggle("image-lightbox__images--compare", displayedAcquisitions.length > 1);
         lightboxImages.style.setProperty("--lightbox-columns", displayedAcquisitions.length);
-        lightboxImages.innerHTML = displayedAcquisitions.map(function (acquisition) {
+        if (lightboxRenderKey !== renderKey) {
+          lightboxImages.innerHTML = displayedAcquisitions.map(function (acquisition) {
+            return '<figure><img alt="" /><figcaption></figcaption></figure>';
+          }).join("");
+          lightboxRenderKey = renderKey;
+        }
+        lightboxImages.querySelectorAll("figure").forEach(function (figure, index) {
+          var acquisition = displayedAcquisitions[index];
           var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
-          return '<figure><img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
-            '<figcaption>' + acquisition.label + ' · coupe ' + (imageIndex + 1) + '/' + acquisition.images.length + '</figcaption></figure>';
-        }).join("");
+          var img = figure.querySelector("img");
+          var caption = figure.querySelector("figcaption");
+          var src = acquisition.images[imageIndex];
+          if (img.getAttribute("src") !== src) img.src = src;
+          img.alt = item.title + " - " + acquisition.label + " - coupe " + (imageIndex + 1);
+          caption.textContent = acquisition.label + " · coupe " + (imageIndex + 1) + "/" + acquisition.images.length;
+        });
         lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
         lightboxSlider.max = Math.max(1, maxCount);
         lightboxSlider.value = selectedImage + 1;
+        preloadAround(displayedAcquisitions, maxCount);
+      }
+
+      function preloadAround(acquisitions, maxCount) {
+        [selectedImage + 1, selectedImage + 2].forEach(function (nextIndex) {
+          acquisitions.forEach(function (acquisition) {
+            if (!acquisition.images.length || maxCount <= 1) return;
+            var clamped = nextIndex % maxCount;
+            var imageIndex = Math.round((clamped / (maxCount - 1)) * (acquisition.images.length - 1));
+            var preload = new Image();
+            preload.src = acquisition.images[imageIndex];
+          });
+        });
       }
 
       function openLightbox() {
@@ -385,6 +443,7 @@
         lightbox.hidden = true;
         lightboxAcquisition = null;
         lightboxAcquisitions = null;
+        lightboxRenderKey = "";
       }
 
       document.getElementById("caseClose").addEventListener("click", goBack);
