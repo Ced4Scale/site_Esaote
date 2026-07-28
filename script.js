@@ -49,6 +49,27 @@
   var suppressLightboxClick = false;
   var lastTrigger = null;
   var closeTimer = null;
+  var termBubble = null;
+  var esaoteTerms = {
+    "True-Motion": "Mode d'imagerie dynamique Esaote utilisé pour observer une articulation en mouvement, par exemple le genou, selon la configuration du système.",
+    "True Motion": "Mode d'imagerie dynamique Esaote utilisé pour observer une articulation en mouvement, par exemple le genou, selon la configuration du système.",
+    "HyperClarity": "Technologie de reconstruction/traitement d'image par IA Esaote visant à améliorer la netteté perçue et le rapport signal/bruit, selon configuration et indications.",
+    "Hyper Clarity": "Technologie de reconstruction/traitement d'image par IA Esaote visant à améliorer la netteté perçue et le rapport signal/bruit, selon configuration et indications.",
+    "e-SPADES": "Suite de reconstruction/accélération Esaote assistée par IA, utilisée pour optimiser la qualité d'image et/ou les temps d'acquisition selon configuration.",
+    "e-SPADE": "Suite de reconstruction/accélération Esaote assistée par IA, utilisée pour optimiser la qualité d'image et/ou les temps d'acquisition selon configuration.",
+    "HyperSpeed": "Technologie Esaote orientée accélération des acquisitions et reconstruction plus rapide, selon séquences et configuration.",
+    "SHARC": "Séquence 3D Esaote utilisée notamment en imagerie ostéoarticulaire pour obtenir un volume fin pouvant être relu dans plusieurs plans.",
+    "HYCE": "Séquence 3D Esaote dédiée à l'imagerie du rachis/MSK, utile pour naviguer dans un volume et reconstruire des plans de lecture.",
+    "MARS": "Technique de réduction des artéfacts métalliques autour du matériel opératoire ou prothétique.",
+    "SPED": "Séquence Esaote de type densité de protons rapide, souvent utilisée en MSK pour les structures articulaires.",
+    "DPA": "Antenne dédiée Esaote à réseau phasé, conçue pour améliorer le signal sur une anatomie ciblée.",
+    "Open-Fauteuil": "Configuration ouverte où le patient est installé assis ou semi-assis, particulièrement adaptée aux extrémités sur O-scan.",
+    "iMRI": "IRM intra-opératoire : imagerie réalisée pendant l'intervention, sans transfert du patient hors du bloc.",
+    "I-Genius": "Solution Esaote d'IRM intra-opératoire pensée pour le bloc neurochirurgical.",
+    "Permanent magnet technology": "Technologie d'aimant permanent Esaote : champ magnétique maintenu sans hélium liquide ni cryogénie.",
+    "Green MRI": "Positionnement Esaote des IRM sobres : aimant permanent, absence d'hélium, consommation électrique réduite et installation simplifiée.",
+    "UniHA": "Union des hôpitaux pour les achats : centrale d'achat hospitalière française, utile pour faciliter certains projets publics."
+  };
 
   function getCarouselImages(img) {
     var value = img.getAttribute("data-carousel-images") || "";
@@ -85,6 +106,88 @@
       return "<span>" + argument + "</span>";
     }).join("");
     keyword.innerHTML = '<div class="carousel-keyword__track">' + line + line + "</div>";
+  }
+
+  function termPattern() {
+    return new RegExp("\\b(" + Object.keys(esaoteTerms).sort(function (a, b) {
+      return b.length - a.length;
+    }).map(function (term) {
+      return term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    }).join("|") + ")\\b", "g");
+  }
+
+  function canAnnotateNode(node) {
+    var parent = node.parentElement;
+    if (!parent || !node.nodeValue.trim()) return false;
+    if (parent.closest(".term-info, .term-popover, script, style, textarea, select, option, button, a")) return false;
+    return true;
+  }
+
+  function initTermBubbles(root) {
+    if (!root) return;
+    var pattern = termPattern();
+    var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (node) {
+        pattern.lastIndex = 0;
+        return canAnnotateNode(node) && pattern.test(node.nodeValue) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+      }
+    });
+    var nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach(function (node) {
+      pattern.lastIndex = 0;
+      var fragment = document.createDocumentFragment();
+      var text = node.nodeValue;
+      var cursor = 0;
+      text.replace(pattern, function (match, term, offset) {
+        if (offset > cursor) fragment.appendChild(document.createTextNode(text.slice(cursor, offset)));
+        var marker = document.createElement("span");
+        marker.className = "term-info";
+        marker.setAttribute("role", "button");
+        marker.setAttribute("tabindex", "0");
+        marker.setAttribute("data-term", term);
+        marker.setAttribute("aria-label", "Définition : " + term);
+        marker.textContent = match;
+        fragment.appendChild(marker);
+        cursor = offset + match.length;
+      });
+      if (cursor < text.length) fragment.appendChild(document.createTextNode(text.slice(cursor)));
+      node.parentNode.replaceChild(fragment, node);
+    });
+  }
+
+  function closeTermBubble() {
+    if (termBubble) {
+      termBubble.remove();
+      termBubble = null;
+    }
+    document.querySelectorAll(".term-info.is-open").forEach(function (item) {
+      item.classList.remove("is-open");
+      item.setAttribute("aria-expanded", "false");
+    });
+  }
+
+  function openTermBubble(trigger) {
+    var term = trigger.getAttribute("data-term");
+    var text = esaoteTerms[term];
+    if (!text) return;
+    closeTermBubble();
+    trigger.classList.add("is-open");
+    trigger.setAttribute("aria-expanded", "true");
+    termBubble = document.createElement("div");
+    termBubble.className = "term-popover";
+    termBubble.setAttribute("role", "dialog");
+    termBubble.innerHTML = '<button type="button" class="term-popover__close" aria-label="Fermer">×</button>' +
+      '<strong>' + term + '</strong><p>' + text + '</p>';
+    document.body.appendChild(termBubble);
+    var rect = trigger.getBoundingClientRect();
+    var bubbleRect = termBubble.getBoundingClientRect();
+    var left = Math.max(12, Math.min(window.innerWidth - bubbleRect.width - 12, rect.left + (rect.width / 2) - (bubbleRect.width / 2)));
+    var top = rect.bottom + 10;
+    if (top + bubbleRect.height > window.innerHeight - 12) top = Math.max(12, rect.top - bubbleRect.height - 10);
+    termBubble.style.left = left + "px";
+    termBubble.style.top = top + "px";
+    termBubble.querySelector(".term-popover__close").addEventListener("click", closeTermBubble);
   }
 
   function stopImageCarousels(root) {
@@ -307,6 +410,7 @@
     // injecte le contenu du template
     scroll.innerHTML = "";
     scroll.appendChild(tpl.content.cloneNode(true));
+    initTermBubbles(scroll);
     initImageCarousels(scroll);
     initExamImageZoom(scroll);
     initVideoZoom(scroll);
@@ -355,7 +459,30 @@
     });
   });
 
+  initTermBubbles(document.body);
   initImageCarousels(document);
+
+  document.addEventListener("click", function (e) {
+    var trigger = e.target.closest(".term-info");
+    if (trigger) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (trigger.classList.contains("is-open")) closeTermBubble();
+      else openTermBubble(trigger);
+      return;
+    }
+    if (termBubble && !e.target.closest(".term-popover")) closeTermBubble();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    var trigger = e.target.closest(".term-info");
+    if (trigger && (e.key === "Enter" || e.key === " ")) {
+      e.preventDefault();
+      if (trigger.classList.contains("is-open")) closeTermBubble();
+      else openTermBubble(trigger);
+    }
+    if (e.key === "Escape") closeTermBubble();
+  });
 
   // deep-link : #produit-<clé> ouvre directement la fiche (comme le ?entreprise= de StudApp)
   function openFromHash() {
