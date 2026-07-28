@@ -88,8 +88,11 @@
     });
   }
 
-  function updateCarouselKeyword(img, keywords) {
+  function updateCarouselKeyword(img, keywords, index) {
     if (!keywords.length) return;
+    var keywordDurations = [58, 64, 71, 77, 83, 68, 74];
+    var keywordOffsets = [0, -7, -14, -22, -31, -11, -26];
+    var safeIndex = Number.isFinite(index) ? index : 0;
     var media = img.closest(".product-card__media, .modal__media");
     var keyword = media ? media.querySelector(".carousel-keyword") : null;
     if (!keyword && media) {
@@ -105,6 +108,11 @@
       return "<span>" + argument + "</span>";
     }).join("");
     keyword.innerHTML = '<div class="carousel-keyword__track">' + line + line + "</div>";
+    var track = keyword.querySelector(".carousel-keyword__track");
+    if (track) {
+      track.style.setProperty("--keyword-duration", keywordDurations[safeIndex % keywordDurations.length] + "s");
+      track.style.setProperty("--keyword-delay", keywordOffsets[safeIndex % keywordOffsets.length] + "s");
+    }
     initTermBubbles(keyword);
   }
 
@@ -200,7 +208,7 @@
   }
 
   function initImageCarousels(root) {
-    root.querySelectorAll("img[data-carousel-images]").forEach(function (img) {
+    root.querySelectorAll("img[data-carousel-images]").forEach(function (img, index) {
       stopImageCarousels(img.parentElement || root);
       var images = getCarouselImages(img);
       var keywords = getCarouselKeywords(img);
@@ -212,7 +220,7 @@
       });
 
       var current = Math.max(0, images.indexOf(img.getAttribute("src")));
-      updateCarouselKeyword(img, keywords);
+      updateCarouselKeyword(img, keywords, index);
       img._carouselTimer = setInterval(function () {
         current = (current + 1) % images.length;
         img.classList.add("is-fading");

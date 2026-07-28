@@ -186,6 +186,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - QCM aide au choix : formulaire replié par défaut derrière un bouton "Faire le QCM", pour qu'il n'apparaisse que si le visiteur souhaite le faire.
 
+- Bandeaux d'arguments sous les photos : vitesses et positions de départ légèrement décalées pour éviter que tous les arguments changent ensemble et améliorer la lecture.
+
 - QCM aide au choix : ajout d'une question "Composition actuelle du plateau technique" pour différencier les stratégies scanner seul, deux scanners + IRM, IRM saturée, plateau complet ou projet à construire ; rappel de cette réponse dans le résultat.
 
 - QCM aide au choix : ajout d'une question "Personnel et compétences disponibles" sur le nombre de MERM, la formation à l'imagerie en coupe / IRM et la capacité à absorber une nouvelle activité ; rappel de cette réponse dans le résultat.
