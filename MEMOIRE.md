@@ -66,6 +66,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Argument "Simple d'utilisation" : ajout de l'écran intégré au statif pour aider au positionnement patient et indiquer la présence d'un élément métallique détecté, avec formulation prudente.
 - Carrousels produits : les badges de type "Open-Fauteuil · 0,31 T" restent au-dessus des images pendant le changement de photo pour éviter le clignotement.
 - Argument "Simple d'utilisation" : remplacement de "sans formation lourde" par une promesse plus concrète sur un MERM opérationnel après une journée de formation, même sans expérience IRM corps entier, avec rappel de l'écran intégré au statif.
+- O-scan/Open-Fauteuil : retrait de l'image générique True Motion du carrousel, jugée non adaptée pour illustrer le dynamique O-scan. Les images genou O-scan disponibles restent dans l'onglet examens car elles sont trop petites pour un carrousel principal HD.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
