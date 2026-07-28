@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-window-readout" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-zoom" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -99,6 +99,12 @@
         <input id="caseLightboxWindowWidth" type="range" min="50" max="180" value="100" />
         <output id="caseLightboxWindowWidthValue" for="caseLightboxWindowWidth">100%</output>
       </label>
+      <label class="image-lightbox__zoom">
+        <span>Zoom</span>
+        <input id="caseLightboxZoom" type="range" min="100" max="300" step="10" value="100" />
+        <output id="caseLightboxZoomValue" for="caseLightboxZoom">100%</output>
+        <button type="button" id="caseLightboxCenter" aria-label="Recentrer les images">Centrer</button>
+      </label>
       <label class="image-lightbox__axis" id="caseLightboxAxisControl" hidden>
         <span>Axe de lecture</span>
         <select id="caseLightboxAxis"></select>
@@ -140,6 +146,9 @@
       var lightboxWindowLevelValue = document.getElementById("caseLightboxWindowLevelValue");
       var lightboxWindowWidthSlider = document.getElementById("caseLightboxWindowWidth");
       var lightboxWindowWidthValue = document.getElementById("caseLightboxWindowWidthValue");
+      var lightboxZoomSlider = document.getElementById("caseLightboxZoom");
+      var lightboxZoomValue = document.getElementById("caseLightboxZoomValue");
+      var lightboxCenterButton = document.getElementById("caseLightboxCenter");
       var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
       var lightboxAxisSelect = document.getElementById("caseLightboxAxis");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
@@ -156,6 +165,10 @@
       var openingWindowWidth = 100;
       var windowLevel = openingWindowLevel;
       var windowWidth = openingWindowWidth;
+      var lightboxZoom = 100;
+      var lightboxPanX = 0;
+      var lightboxPanY = 0;
+      var lightboxDrag = null;
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -416,6 +429,35 @@
         lightboxWindowValues.textContent = "WL " + windowLevel + "% · WW " + windowWidth + "%";
       }
 
+      function updateZoomTransform() {
+        lightboxImages.style.setProperty("--lightbox-zoom", lightboxZoom / 100);
+        lightboxImages.style.setProperty("--lightbox-pan-x", lightboxPanX + "px");
+        lightboxImages.style.setProperty("--lightbox-pan-y", lightboxPanY + "px");
+        lightboxZoomSlider.value = lightboxZoom;
+        lightboxZoomValue.textContent = lightboxZoom + "%";
+        lightboxImages.classList.toggle("is-zoomed", lightboxZoom > 100);
+      }
+
+      function setLightboxZoom(value, centerPoint) {
+        var nextZoom = Math.max(100, Math.min(300, Number(value) || 100));
+        if (nextZoom === 100) {
+          lightboxPanX = 0;
+          lightboxPanY = 0;
+        } else if (centerPoint && lightboxZoom !== nextZoom) {
+          var factor = nextZoom / lightboxZoom;
+          lightboxPanX = centerPoint.x - ((centerPoint.x - lightboxPanX) * factor);
+          lightboxPanY = centerPoint.y - ((centerPoint.y - lightboxPanY) * factor);
+        }
+        lightboxZoom = nextZoom;
+        updateZoomTransform();
+      }
+
+      function centerLightboxZoom() {
+        lightboxPanX = 0;
+        lightboxPanY = 0;
+        updateZoomTransform();
+      }
+
       function step(delta) {
         selectedImage += delta;
         update();
@@ -519,6 +561,7 @@
         lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
         lightboxSlider.max = Math.max(1, maxCount);
         lightboxSlider.value = selectedImage + 1;
+        updateZoomTransform();
         preloadAround(displayedViews, maxCount);
       }
 
@@ -570,6 +613,7 @@
         lightbox.style.display = "flex";
         lightbox.classList.add("is-open");
         updateFullscreenButton();
+        updateZoomTransform();
         updateLightbox();
       }
 
@@ -595,6 +639,8 @@
         lightboxAcquisitions = null;
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
+        centerLightboxZoom();
+        setLightboxZoom(100);
         if (isLightboxFullscreen()) exitLightboxFullscreen();
         updateFullscreenButton();
       }
@@ -648,6 +694,14 @@
       lightboxWindowWidthSlider.addEventListener("input", function () {
         setWindowWidth(lightboxWindowWidthSlider.value);
       });
+      lightboxZoomSlider.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxZoomSlider.addEventListener("input", function () {
+        setLightboxZoom(lightboxZoomSlider.value);
+      });
+      lightboxCenterButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        centerLightboxZoom();
+      });
       lightboxAxisSelect.addEventListener("click", function (event) { event.stopPropagation(); });
       lightboxAxisSelect.addEventListener("change", function (event) {
         event.stopPropagation();
@@ -667,6 +721,40 @@
       lightboxControls.addEventListener("click", function (event) { event.stopPropagation(); });
       lightbox.addEventListener("click", closeLightbox);
       lightboxImages.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxImages.addEventListener("wheel", function (event) {
+        if (lightbox.hidden) return;
+        event.preventDefault();
+        event.stopPropagation();
+        var rect = lightboxImages.getBoundingClientRect();
+        var centerPoint = {
+          x: event.clientX - rect.left - (rect.width / 2),
+          y: event.clientY - rect.top - (rect.height / 2)
+        };
+        setLightboxZoom(lightboxZoom + (event.deltaY < 0 ? 10 : -10), centerPoint);
+      }, { passive: false });
+      lightboxImages.addEventListener("pointerdown", function (event) {
+        if (lightboxZoom <= 100) return;
+        event.preventDefault();
+        event.stopPropagation();
+        lightboxDrag = { x: event.clientX, y: event.clientY, panX: lightboxPanX, panY: lightboxPanY };
+        lightboxImages.setPointerCapture(event.pointerId);
+      });
+      lightboxImages.addEventListener("pointermove", function (event) {
+        if (!lightboxDrag) return;
+        event.preventDefault();
+        lightboxPanX = lightboxDrag.panX + event.clientX - lightboxDrag.x;
+        lightboxPanY = lightboxDrag.panY + event.clientY - lightboxDrag.y;
+        updateZoomTransform();
+      });
+      lightboxImages.addEventListener("pointerup", function (event) {
+        if (!lightboxDrag) return;
+        event.stopPropagation();
+        lightboxDrag = null;
+        lightboxImages.releasePointerCapture(event.pointerId);
+      });
+      lightboxImages.addEventListener("pointercancel", function () {
+        lightboxDrag = null;
+      });
       document.addEventListener("fullscreenchange", updateFullscreenButton);
       document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
       document.addEventListener("keydown", function (event) {
