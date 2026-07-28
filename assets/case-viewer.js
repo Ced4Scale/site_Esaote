@@ -748,7 +748,7 @@
 
       function selectedAxisView(acquisition) {
         if (!acquisition || !acquisition.axisViews || !acquisition.axisViews.length) return acquisition;
-        var selectedLabel = lightboxAxisSelections[acquisitionKey(acquisition)] || acquisition.axisViews[0].label;
+        var selectedLabel = selectedAxisLabel(acquisition);
         if (selectedLabel === mprAxesOption) return mprAxisViews(acquisition)[0] || acquisition.axisViews[0];
         return acquisition.axisViews.find(function (view) {
           return view.label === selectedLabel;
@@ -756,7 +756,7 @@
       }
 
       function isMprAxesSelected(acquisition) {
-        return acquisition && lightboxAxisSelections[acquisitionKey(acquisition)] === mprAxesOption && mprAxisViews(acquisition).length > 1;
+        return acquisition && selectedAxisLabel(acquisition) === mprAxesOption && mprAxisViews(acquisition).length > 1;
       }
 
       function mprAxisViews(acquisition) {
@@ -803,7 +803,10 @@
       }
 
       function selectedAxisLabel(acquisition) {
-        return lightboxAxisSelections[acquisitionKey(acquisition)] || (acquisition.axisViews[0] && acquisition.axisViews[0].label) || "";
+        var storedLabel = lightboxAxisSelections[acquisitionKey(acquisition)];
+        if (storedLabel) return storedLabel;
+        if (acquisition.defaultAxis === "mpr" && mprAxisViews(acquisition).length > 1) return mprAxesOption;
+        return (acquisition.axisViews[0] && acquisition.axisViews[0].label) || "";
       }
 
       function updateLightboxCubeControls(displayedAcquisitions) {
