@@ -84,7 +84,7 @@
     return value.split("|").map(function (keyword) {
       return keyword.trim();
     }).filter(function (keyword, index, list) {
-      return keyword && list.indexOf(keyword) === index;
+      return keyword && keyword !== "?" && list.indexOf(keyword) === index;
     });
   }
 
