@@ -96,7 +96,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout argument moyen champ + IA/prothèses : 1 bullet par fiche IRM et renforcement de la section Complémentarité, avec formulation prudente sur la réduction des artéfacts métalliques.
 
-- Désignation demandée pour l'O-scan : IRM ouverte Fauteuil.
+- Désignation demandée pour l'O-scan : IRM Open Fauteuil.
 
 - Ajout demandé sur la fiche O-scan : formation du manipulateur en électroradiologie médicale (MERM) en 1 journée, ou 4 manipulateurs en électroradiologie médicale (MERM) formés en 2 jours.
 
