@@ -816,7 +816,7 @@
 
       function lightboxCaptionMode(displayedAcquisitions, displayedViews) {
         if (displayedViews.some(function (view) { return view.showMprAxes; })) {
-          return "MPR avec axes · " + displayedViews.length + " plans synchronisés";
+          return "MPR · " + displayedViews.length + " plans synchronisés";
         }
         if (lightboxAcquisitions && lightboxAcquisitions.length > 1 && lightboxFocusedIndex !== null) {
           return "1 acquisition isolée · double-clic pour revenir à la comparaison";
@@ -896,7 +896,7 @@
         var cubeLabel = currentMpr ? currentMpr.label : selectedLabel;
         lightboxAxisCube.innerHTML = axisCubeMarkup(cubeLabel);
         lightboxAxisCube.setAttribute("aria-label", "Changer l'axe MPR, plan actuel " + axisCubeMeta(cubeLabel).name);
-        lightboxModeCube.textContent = currentMpr || isMprAxesSelected(acquisition) ? "2D" : "3D";
+        lightboxModeCube.textContent = isMprAxesSelected(acquisition) ? "MPR" : (currentMpr ? "2D" : "3D");
         lightboxModeCube.setAttribute("aria-pressed", currentMpr || isMprAxesSelected(acquisition) ? "false" : "true");
       }
 
@@ -952,7 +952,7 @@
         });
         if (mprViews.length > 1) {
           var selected = isMprAxesSelected(acquisition) ? " selected" : "";
-          options.push('<option value="' + mprAxesOption + '"' + selected + '>MPR avec axes</option>');
+          options.push('<option value="' + mprAxesOption + '"' + selected + '>MPR</option>');
         }
         lightboxAxisSelect.innerHTML = options.join("");
       }
