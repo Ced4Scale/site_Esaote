@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-window-values" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-fullscreen" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -81,6 +81,7 @@
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
       <input id="caseLightboxSlider" type="range" min="1" max="1" value="1" />
       <button type="button" id="caseLightboxControlNext" aria-label="Coupe suivante">›</button>
+      <button class="image-lightbox__fullscreen" type="button" id="caseLightboxFullscreen" aria-label="Passer en plein écran" aria-pressed="false">⛶</button>
       <select id="caseLightboxSpeed" aria-label="Vitesse de lecture">
         <option value="1000">Lent</option>
         <option value="700" selected>Normal</option>
@@ -140,6 +141,7 @@
       var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
       var lightboxAxisSelect = document.getElementById("caseLightboxAxis");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
+      var lightboxFullscreenButton = document.getElementById("caseLightboxFullscreen");
       var playTimer = null;
       var paneClickTimer = null;
       var lightboxAcquisition = null;
@@ -442,6 +444,39 @@
         if (playTimer) setPlaying(true);
       }
 
+      function fullscreenElement() {
+        return document.fullscreenElement || document.webkitFullscreenElement || null;
+      }
+
+      function isLightboxFullscreen() {
+        return fullscreenElement() === lightbox;
+      }
+
+      function updateFullscreenButton() {
+        var isFullscreen = isLightboxFullscreen();
+        lightboxFullscreenButton.textContent = isFullscreen ? "↙" : "⛶";
+        lightboxFullscreenButton.setAttribute("aria-pressed", isFullscreen ? "true" : "false");
+        lightboxFullscreenButton.setAttribute("aria-label", isFullscreen ? "Quitter le plein écran" : "Passer en plein écran");
+      }
+
+      function requestLightboxFullscreen() {
+        if (lightbox.requestFullscreen) return lightbox.requestFullscreen();
+        if (lightbox.webkitRequestFullscreen) return lightbox.webkitRequestFullscreen();
+        return null;
+      }
+
+      function exitLightboxFullscreen() {
+        if (document.exitFullscreen) return document.exitFullscreen();
+        if (document.webkitExitFullscreen) return document.webkitExitFullscreen();
+        return null;
+      }
+
+      function toggleLightboxFullscreen() {
+        if (isLightboxFullscreen()) exitLightboxFullscreen();
+        else requestLightboxFullscreen();
+        window.setTimeout(updateFullscreenButton, 60);
+      }
+
       function updateLightbox() {
         var item = current();
         var acquisitions = acquisitionsFor(item);
@@ -526,6 +561,7 @@
         lightbox.hidden = false;
         lightbox.style.display = "flex";
         lightbox.classList.add("is-open");
+        updateFullscreenButton();
         updateLightbox();
       }
 
@@ -551,6 +587,8 @@
         lightboxAcquisitions = null;
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
+        if (isLightboxFullscreen()) exitLightboxFullscreen();
+        updateFullscreenButton();
       }
 
       document.getElementById("caseClose").addEventListener("click", goBack);
@@ -560,6 +598,10 @@
       lightboxPlayButton.addEventListener("click", function (event) {
         event.stopPropagation();
         setPlaying(!playTimer);
+      });
+      lightboxFullscreenButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        toggleLightboxFullscreen();
       });
       slider.addEventListener("input", function () {
         selectedImage = Number(slider.value) - 1;
@@ -617,6 +659,8 @@
       lightboxControls.addEventListener("click", function (event) { event.stopPropagation(); });
       lightbox.addEventListener("click", closeLightbox);
       lightboxImages.addEventListener("click", function (event) { event.stopPropagation(); });
+      document.addEventListener("fullscreenchange", updateFullscreenButton);
+      document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
       document.addEventListener("keydown", function (event) {
         if (event.key === "Escape") {
           if (!lightbox.hidden) closeLightbox();
