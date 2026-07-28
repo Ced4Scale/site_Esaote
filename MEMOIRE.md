@@ -64,6 +64,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Branding : remplacement du logo/libellé "Esaote Medical France" en haut de page par le logo Ced4Scale fourni par Cédric. Les crédits Esaote restent conservés dans le footer pour les marques et visuels produits.
 - Footer : remplacement de la mention consultant Esaote Medical France par Ced4Scale et suppression de la phrase "Présentation commerciale de la gamme d'IRM ouvertes Esaote".
 - Argument "Simple d'utilisation" : ajout de l'écran intégré au statif pour aider au positionnement patient et indiquer la présence d'un élément métallique détecté, avec formulation prudente.
+- Carrousels produits : les badges de type "Open-Fauteuil · 0,31 T" restent au-dessus des images pendant le changement de photo pour éviter le clignotement.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
