@@ -75,6 +75,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - I-Genius : ajout de l'argument hygiène/workflow bloc avec formulation validée par Cédric : patient maintenu au bloc, sur la même table, sans transfert vers le service d'imagerie, avec réduction de la complexité, des ruptures de workflow et du risque infectieux.
 - I-Genius : remplacement de "table intégrée" / "table opératoire intégrée" par "table de bloc intégrée" dans la banderole et les bénéfices.
 - O-scan : remplacement de "ou en cabinet spécialisé" par une formulation marché français : installation en radiologie centrale ou dans le service d'imagerie en coupe.
+- O-scan : ajout de l'argument opérationnel "un seul manipulateur suffit pour assurer l'activité O-scan au quotidien" dans la fiche et les mots-clés du carrousel.
 - Examens métal : création et mise en ligne de `examens-metal.html`, page publique de démonstration avec 6 séries d'images DICOM converties localement en JPEG, sans fichiers DICOM ni tags patient. Lien ajouté depuis l'argument "Implants et prothèses".
 - RSE : précision de la formulation officielle "Green MRI par technologie d'aimant permanent Esaote (Permanent magnet technology)" pour nommer la technologie sans hélium ni cryogénie.
 - RSE : clarification de "Consommation minimale" : distinguer l'électricité consommée par l'IRM et l'électricité indirecte liée à la pompe à chaleur/climatisation de salle.
