@@ -49,6 +49,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Lecteur de documents PDF corrigé : iframe fixe sous l'en-tête, scroll activé et paramètres PDF pour afficher les documents avec navigation verticale au-delà de la première page.
 - Ajout des arguments défilants O-scan "Easy to use" et "Confort" sur la carte produit et dans la modale.
 - Clarification des arguments IA défilants : S-scan affiche "IA e-SPADES selon config." et Magnifico affiche "IA HyperClarity" en plus de "IA e-SPADES".
+- Référence O-scan : retrait du préfixe "Phrase KOL à partager" pour ne conserver que la citation.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
