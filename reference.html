@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Référence — Esaote Medical France</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260728-references" />
+</head>
+<body class="document-page reference-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html#produits" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Référence</span>
+      <strong id="referenceTitle">Esaote Medical France</strong>
+    </div>
+    <button class="document-viewer__close" id="referenceClose" type="button" aria-label="Fermer la référence et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="document-viewer">
+    <iframe id="referenceFrame" title="Référence publique Esaote" loading="eager"></iframe>
+    <div class="document-viewer__fallback" id="referenceFallback">
+      <h1 id="referenceFallbackTitle">Référence publique</h1>
+      <p id="referenceFallbackText">Si l'aperçu intégré est bloqué par le site source, ouvrez la référence dans un nouvel onglet.</p>
+      <a class="btn" id="referenceOpen" href="index.html#produits" target="_blank" rel="noopener">Ouvrir la source</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var references = {
+        "o-scan-bournemouth": {
+          title: "O-scan · Royal Bournemouth Hospital",
+          note: "Référence Esaote : Dr Paula McAlinden et Matthew Benbow, Royal Bournemouth Hospital, Royaume-Uni.",
+          src: "https://www.esaote.com/en-US/magnetic-resonance/magnetic-resonance-system/o-scan/"
+        },
+        "s-scan-zucchi": {
+          title: "S-scan Open · Zucchi Clinical Institutes",
+          note: "Référence Esaote : Prof. Alberto Aliprandi, Zucchi Clinical Institutes, Monza et Brianza, Italie.",
+          src: "https://www.esaote.com/fr-FR/resonance-magnetique/systeme-de-resonance-magnetique/s-scan-open/"
+        },
+        "g-scan-tristate": {
+          title: "G-scan Brio · Tristate Brain and Spine Institute",
+          note: "Référence Esaote : Dr Sunny S. Kim, Tristate Brain and Spine Institute, Alexandria, États-Unis.",
+          src: "https://www.esaote.com/fr-FR/resonance-magnetique/systeme-de-resonance-magnetique/g-scan-brio/"
+        },
+        "magnifico-sport-ortho": {
+          title: "Magnifico Open · Sport Ortho Urgent Care",
+          note: "Référence Esaote : première installation Magnifico Open en Amérique du Nord, Sport Ortho Urgent Care, Murfreesboro, Tennessee.",
+          src: "https://www.esaote.com/en-US/magnetic-resonance/magnetic-resonance-system/magnifico-open/"
+        },
+        "i-genius-eans": {
+          title: "I-Genius · EANS 2025",
+          note: "Référence Esaote : présentation I-Genius au congrès annuel EANS 2025 à Vienne.",
+          src: "https://www.esaote.com/fr-FR/groupe-esaote/article/esaote-presents-i-genius-on-the-occasion-of-the-25th-eans-annual-congress/"
+        },
+        "i-genius-linkedin": {
+          title: "I-Genius · LinkedIn Esaote",
+          note: "Publication LinkedIn publique Esaote autour du projet I-Genius.",
+          src: "https://www.linkedin.com/company/esaote"
+        }
+      };
+
+      var params = new URLSearchParams(window.location.search);
+      var reference = references[params.get("ref") || ""];
+      var allowedReturns = {
+        "produit-o-scan": true,
+        "produit-s-scan": true,
+        "produit-g-scan": true,
+        "produit-magnifico": true,
+        "produit-i-genius": true
+      };
+      var returnHash = allowedReturns[params.get("from") || ""] ? params.get("from") : "produits";
+      var title = document.getElementById("referenceTitle");
+      var frame = document.getElementById("referenceFrame");
+      var fallback = document.getElementById("referenceFallback");
+      var fallbackTitle = document.getElementById("referenceFallbackTitle");
+      var fallbackText = document.getElementById("referenceFallbackText");
+      var open = document.getElementById("referenceOpen");
+      var close = document.getElementById("referenceClose");
+
+      function goBack() {
+        window.location.href = "index.html#" + returnHash;
+      }
+
+      close.addEventListener("click", goBack);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") goBack();
+      });
+
+      if (!reference) {
+        frame.hidden = true;
+        fallbackTitle.textContent = "Référence indisponible";
+        fallbackText.textContent = "La référence demandée n'est pas disponible depuis ce lecteur.";
+        open.href = "index.html#produits";
+        open.target = "_self";
+        open.textContent = "Retour au site";
+        return;
+      }
+
+      document.title = reference.title + " — Esaote Medical France";
+      title.textContent = reference.title;
+      fallbackTitle.textContent = reference.title;
+      fallbackText.textContent = reference.note;
+      open.href = reference.src;
+      frame.src = reference.src;
+    })();
+  </script>
+</body>
+</html>
