@@ -51,6 +51,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Clarification des arguments IA défilants : S-scan affiche "IA e-SPADES selon config." et Magnifico affiche "IA HyperClarity" en plus de "IA e-SPADES".
 - Références KOL : retrait du préfixe "Phrase KOL à partager" sur les citations O-scan, S-scan, G-scan et Magnifico pour ne conserver que la phrase.
 - Enrichissement des références installées : ajout de sites publics supplémentaires avec établissement, ville/pays et référent public quand disponible (O-scan : St. Augustine, Columbia Memorial, Prof. Thermann Heidelberg ; S-scan : Prof. Thermann Heidelberg ; G-scan : Glan Clwyd, Spine Nevada ; Magnifico : ROC Aschheim).
+- Section "Champ moyen en pratique" enrichie avec un 5e argument I-Genius : bloc neuro / iMRI, contrôles per-opératoires sans transfert patient. La fiche Teams ajoute aussi le thème "Bloc neuro / I-Genius" à cocher.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
