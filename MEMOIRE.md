@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- QCM aide au choix : ajout d'une question "Personnel et compétences disponibles" sur le nombre de MERM, la formation à l'imagerie en coupe / IRM et la capacité à absorber une nouvelle activité ; rappel de cette réponse dans le résultat.
+
 - QCM aide au choix : titre remplacé par "Quelle IRM Open est la mieux adaptée à mon service d'imagerie ?".
 
 - QCM aide au choix : ajout d'une question "Prescripteurs moteurs" avec pondération dédiée et rappel dans le résultat, car les prescripteurs participent au choix de l'IRM adaptée au projet.

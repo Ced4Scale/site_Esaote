@@ -299,6 +299,7 @@
       var maxScore = Math.max(1, ranking[0].score);
       var best = ranking[0].product.name;
       var prescriberAnswer = quiz.querySelector('input[name="prescribers"]:checked + span');
+      var staffAnswer = quiz.querySelector('input[name="staff"]:checked + span');
 
       result.innerHTML = [
         '<p class="mri-quiz__eyebrow">Classement</p>',
@@ -318,6 +319,7 @@
           ].join("");
         }).join("") + "</div>",
         '<p class="mri-quiz__note"><strong>Prescripteurs pris en compte :</strong> ' + (prescriberAnswer ? prescriberAnswer.textContent : "aucune réponse spécifique sélectionnée") + ".</p>",
+        '<p class="mri-quiz__note"><strong>Personnel pris en compte :</strong> ' + (staffAnswer ? staffAnswer.textContent : "aucune réponse spécifique sélectionnée") + ".</p>",
         "<p class=\"mri-quiz__note\">Ce classement aide à orienter un projet d'achat. Le choix final doit intégrer le mix d'activité, la salle, les contraintes d'exploitation et l'objectif médical du centre.</p>",
         '<a class="btn" href="contact.html?demande=aide-choix-irm&amp;irm=' + encodeURIComponent(ranking[0].key) + '#contactForm">Discuter ce classement</a>'
       ].join("");
