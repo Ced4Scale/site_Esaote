@@ -257,7 +257,7 @@
       }
 
       function loadMetalCases() {
-        fetch("assets/cases/irm-metal/manifest.json?v=20260728-shoulder-planes")
+        fetch("assets/cases/irm-metal/manifest.json?v=20260728-true-mpr")
           .then(function (response) { return response.json(); })
           .then(function (data) {
             cases = data.cases || [];
@@ -629,10 +629,16 @@
           panKey: panKey,
           x: event.clientX,
           y: event.clientY,
+          currentX: event.clientX,
+          currentY: event.clientY,
           timer: window.setTimeout(function () {
             if (!lightboxMprPress || lightboxMprPress.id !== event.pointerId) return;
             lightboxImages.classList.add(action === "rotate" ? "is-mpr-rotating" : "is-mpr-moving");
-            startMprGuideDrag(event, figure, action);
+            startMprGuideDrag({
+              pointerId: event.pointerId,
+              clientX: lightboxMprPress.currentX,
+              clientY: lightboxMprPress.currentY
+            }, figure, action);
           }, 1000)
         };
         lightboxImages.classList.add("is-mpr-pressing");
@@ -640,9 +646,8 @@
 
       function updateMprLongPress(event) {
         if (!lightboxMprPress || lightboxMprPress.id !== event.pointerId || lightboxMprDrag) return;
-        var dx = event.clientX - lightboxMprPress.x;
-        var dy = event.clientY - lightboxMprPress.y;
-        if (Math.sqrt((dx * dx) + (dy * dy)) > 14) clearMprLongPress();
+        lightboxMprPress.currentX = event.clientX;
+        lightboxMprPress.currentY = event.clientY;
       }
 
       function lightboxPan(key) {
