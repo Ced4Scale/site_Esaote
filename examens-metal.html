@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-axis-tools" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-speed" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -50,6 +50,12 @@
           <button class="case-viewer__play" type="button" id="casePlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
           <input id="caseSlider" type="range" min="1" max="1" value="1" />
           <button type="button" id="caseNext" aria-label="Coupe suivante">›</button>
+          <select id="caseSpeed" aria-label="Vitesse de lecture">
+            <option value="1000">Lent</option>
+            <option value="700" selected>Normal</option>
+            <option value="400">Rapide</option>
+            <option value="220">Très rapide</option>
+          </select>
         </div>
         <div class="case-viewer__windowing">
           <span>Window level</span>
@@ -73,6 +79,12 @@
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
       <input id="caseLightboxSlider" type="range" min="1" max="1" value="1" />
       <button type="button" id="caseLightboxControlNext" aria-label="Coupe suivante">›</button>
+      <select id="caseLightboxSpeed" aria-label="Vitesse de lecture">
+        <option value="1000">Lent</option>
+        <option value="700" selected>Normal</option>
+        <option value="400">Rapide</option>
+        <option value="220">Très rapide</option>
+      </select>
       <label class="image-lightbox__windowing">
         <span>Window level</span>
         <input id="caseLightboxWindowLevel" type="range" min="50" max="150" value="100" />
@@ -103,6 +115,7 @@
       var imageButton = document.getElementById("caseImageButton");
       var compare = document.getElementById("caseCompare");
       var slider = document.getElementById("caseSlider");
+      var speedSelect = document.getElementById("caseSpeed");
       var windowLevelSlider = document.getElementById("caseWindowLevel");
       var windowLevelReset = document.getElementById("caseWindowLevelReset");
       var windowWidthSlider = document.getElementById("caseWindowWidth");
@@ -113,6 +126,7 @@
       var lightboxCaption = document.getElementById("caseLightboxCaption");
       var lightboxControls = document.getElementById("caseLightboxControls");
       var lightboxSlider = document.getElementById("caseLightboxSlider");
+      var lightboxSpeedSelect = document.getElementById("caseLightboxSpeed");
       var lightboxWindowLevelSlider = document.getElementById("caseLightboxWindowLevel");
       var lightboxWindowWidthSlider = document.getElementById("caseLightboxWindowWidth");
       var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
@@ -125,6 +139,7 @@
       var lightboxRenderKey = "";
       var lightboxAxisSelections = {};
       var checkedAcquisitions = {};
+      var playbackDelay = 700;
       var openingWindowLevel = 100;
       var openingWindowWidth = 100;
       var windowLevel = openingWindowLevel;
@@ -400,7 +415,7 @@
           playTimer = null;
         }
         if (isPlaying) {
-          playTimer = window.setInterval(loopStep, 700);
+          playTimer = window.setInterval(loopStep, playbackDelay);
         }
         playButton.textContent = isPlaying ? "Ⅱ" : "▶";
         lightboxPlayButton.textContent = isPlaying ? "Ⅱ" : "▶";
@@ -408,6 +423,13 @@
         lightboxPlayButton.setAttribute("aria-pressed", isPlaying ? "true" : "false");
         playButton.setAttribute("aria-label", isPlaying ? "Mettre en pause" : "Lancer la lecture automatique");
         lightboxPlayButton.setAttribute("aria-label", isPlaying ? "Mettre en pause" : "Lancer la lecture automatique");
+      }
+
+      function setPlaybackSpeed(value) {
+        playbackDelay = Math.max(120, Number(value) || 700);
+        speedSelect.value = String(playbackDelay);
+        lightboxSpeedSelect.value = String(playbackDelay);
+        if (playTimer) setPlaying(true);
       }
 
       function updateLightbox() {
@@ -533,6 +555,9 @@
         selectedImage = Number(slider.value) - 1;
         update();
       });
+      speedSelect.addEventListener("change", function () {
+        setPlaybackSpeed(speedSelect.value);
+      });
       windowLevelSlider.addEventListener("input", function () {
         setWindowLevel(windowLevelSlider.value);
       });
@@ -549,6 +574,11 @@
       lightboxSlider.addEventListener("input", function () {
         selectedImage = Number(lightboxSlider.value) - 1;
         update();
+      });
+      lightboxSpeedSelect.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxSpeedSelect.addEventListener("change", function (event) {
+        event.stopPropagation();
+        setPlaybackSpeed(lightboxSpeedSelect.value);
       });
       lightboxWindowLevelSlider.addEventListener("click", function (event) { event.stopPropagation(); });
       lightboxWindowLevelSlider.addEventListener("input", function () {
