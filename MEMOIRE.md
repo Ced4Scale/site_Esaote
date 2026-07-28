@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- Ajout d'un QCM autonome "Aide au choix" entre les 4 premières IRM Esaote : O-scan, S-scan, G-scan et Magnifico. Le formulaire calcule un classement pondéré, affiche les raisons et permet d'ouvrir directement les fiches produits.
+
 - Points forts défilants O-scan : liste complétée et réordonnée selon la nouvelle hiérarchie de la fiche, avec filtrage JS des libellés vides ou parasites.
 
 - Fiche O-scan : réorganisation du pitch et des arguments du plus important au moins important, avec priorité au confort patient, au suivi orthopédique, au dynamique, puis à l'organisation, l'installation, la RSE et UniHA.

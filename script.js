@@ -224,6 +224,122 @@
     });
   }
 
+  var quizProducts = {
+    "o-scan": {
+      name: "O-scan",
+      reason: "prioritaire si votre besoin porte sur les extrémités, les contrôles post-opératoires ciblés, le confort patient et une installation très compacte."
+    },
+    "s-scan": {
+      name: "S-scan",
+      reason: "pertinent pour structurer une activité MSK / rachis ouverte, avec table accessible, tête hors aimant et examens spécialisés en complément d'une IRM généraliste."
+    },
+    "g-scan": {
+      name: "G-scan",
+      reason: "à privilégier si votre différenciation repose sur le rachis en charge, la comparaison couché / debout et les symptômes déclenchés en position fonctionnelle."
+    },
+    "magnifico": {
+      name: "Magnifico",
+      reason: "meilleur choix si vous cherchez une IRM ouverte corps entier, polyvalente, sobre en énergie et utile au-delà du MSK strict."
+    }
+  };
+
+  function parseQuizScore(value) {
+    var score = {};
+    (value || "").split(",").forEach(function (item) {
+      var parts = item.split(":");
+      if (parts.length !== 2) return;
+      var key = parts[0].trim();
+      var amount = parseFloat(parts[1]);
+      if (quizProducts[key] && !isNaN(amount)) score[key] = amount;
+    });
+    return score;
+  }
+
+  function initMriQuiz() {
+    var quiz = document.getElementById("mriQuiz");
+    var result = document.getElementById("mriQuizResult");
+    if (!quiz || !result) return;
+
+    function selectedInputs() {
+      return Array.prototype.slice.call(quiz.querySelectorAll("input[data-score]")).filter(function (input) {
+        return input.checked;
+      });
+    }
+
+    function renderEmpty() {
+      result.innerHTML = [
+        '<p class="mri-quiz__eyebrow">Classement</p>',
+        "<h3>Répondez au QCM</h3>",
+        '<p class="mri-quiz__intro">Le classement apparaîtra ici avec les points forts de chaque IRM pour votre projet.</p>'
+      ].join("");
+    }
+
+    function renderResult() {
+      var inputs = selectedInputs();
+      if (!inputs.length) {
+        renderEmpty();
+        return;
+      }
+
+      var totals = {};
+      Object.keys(quizProducts).forEach(function (key) { totals[key] = 0; });
+      inputs.forEach(function (input) {
+        var scores = parseQuizScore(input.getAttribute("data-score"));
+        Object.keys(scores).forEach(function (key) {
+          totals[key] += scores[key];
+        });
+      });
+
+      var ranking = Object.keys(quizProducts).map(function (key) {
+        return { key: key, score: totals[key], product: quizProducts[key] };
+      }).sort(function (a, b) {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.product.name.localeCompare(b.product.name);
+      });
+      var maxScore = Math.max(1, ranking[0].score);
+      var best = ranking[0].product.name;
+
+      result.innerHTML = [
+        '<p class="mri-quiz__eyebrow">Classement</p>',
+        "<h3>" + best + " ressort en priorité</h3>",
+        '<div class="mri-quiz__ranking">' + ranking.map(function (item, index) {
+          var width = Math.max(6, Math.round((item.score / maxScore) * 100));
+          return [
+            '<article class="mri-rank">',
+            '<span class="mri-rank__pos">' + (index + 1) + "</span>",
+            "<div>",
+            '<div class="mri-rank__head"><span class="mri-rank__name">' + item.product.name + '</span><span class="mri-rank__score">' + item.score + " pts</span></div>",
+            '<div class="mri-rank__bar" aria-hidden="true"><span class="mri-rank__fill" style="--score:' + width + '%"></span></div>',
+            '<p class="mri-rank__reason">' + item.product.name + " est " + item.product.reason + "</p>",
+            '<button class="mri-rank__open" type="button" data-open-product="' + item.key + '">Voir la fiche ' + item.product.name + "</button>",
+            "</div>",
+            "</article>"
+          ].join("");
+        }).join("") + "</div>",
+        "<p class=\"mri-quiz__note\">Ce classement aide à orienter un projet d'achat. Le choix final doit intégrer le mix d'activité, la salle, les contraintes d'exploitation et l'objectif médical du centre.</p>",
+        '<a class="btn" href="contact.html?demande=aide-choix-irm&amp;irm=' + encodeURIComponent(ranking[0].key) + '#contactForm">Discuter ce classement</a>'
+      ].join("");
+      initTermBubbles(result);
+    }
+
+    quiz.addEventListener("change", renderResult);
+    quiz.addEventListener("submit", function (e) {
+      e.preventDefault();
+      renderResult();
+      result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    quiz.addEventListener("reset", function () {
+      setTimeout(renderEmpty, 0);
+    });
+    result.addEventListener("click", function (e) {
+      var trigger = e.target.closest("[data-open-product]");
+      if (!trigger) return;
+      var key = trigger.getAttribute("data-open-product");
+      var card = document.querySelector('.product-card[data-product="' + key + '"]');
+      openModal(key, card);
+    });
+  }
+
   function getImageGallery(img) {
     var grid = img.closest(".modal__exam-grid");
     if (!grid) return [];
@@ -461,6 +577,7 @@
 
   initTermBubbles(document.body);
   initImageCarousels(document);
+  initMriQuiz();
 
   document.addEventListener("click", function (e) {
     var trigger = e.target.closest(".term-info");

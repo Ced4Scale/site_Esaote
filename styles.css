@@ -259,6 +259,63 @@ ul { margin: 0; padding: 0; list-style: none; }
 .product-card__cta svg { width: 16px; height: 16px; transition: transform .2s ease; }
 .product-card:hover .product-card__cta svg { transform: translateX(4px); }
 
+/* ------------------------------ Aide au choix ------------------------------ */
+.mri-quiz {
+  display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(340px, .75fr);
+  gap: 1.4rem; align-items: start;
+}
+.mri-quiz__questions { display: grid; gap: 1rem; }
+.mri-quiz__group {
+  margin: 0; padding: 1rem; border: 1px solid var(--line); border-top: 3px solid var(--red);
+  border-radius: var(--radius); background: #fff; box-shadow: var(--shadow-sm);
+}
+.mri-quiz__group legend {
+  padding: 0 .35rem; color: var(--ink); font-size: .9rem; font-weight: 900;
+}
+.mri-quiz__choice {
+  display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: .65rem; align-items: start;
+  padding: .65rem .45rem; border-radius: 6px; color: var(--ink-soft); font-size: .9rem; line-height: 1.35;
+  cursor: pointer;
+}
+.mri-quiz__choice + .mri-quiz__choice { border-top: 1px solid var(--line); }
+.mri-quiz__choice:hover { background: var(--wash-2); color: var(--ink); }
+.mri-quiz__choice input { width: 18px; height: 18px; margin: .1rem 0 0; accent-color: var(--red); }
+.mri-quiz__choice span { min-width: 0; overflow-wrap: anywhere; }
+.mri-quiz__actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+.mri-quiz__result {
+  position: sticky; top: 92px; display: grid; gap: .85rem; padding: 1.2rem;
+  border: 1px solid var(--line); border-top: 4px solid var(--red); border-radius: var(--radius);
+  background: #fff; box-shadow: var(--shadow-md);
+}
+.mri-quiz__eyebrow {
+  margin: 0; color: var(--red); font-size: .72rem; font-weight: 900; letter-spacing: .14em; text-transform: uppercase;
+}
+.mri-quiz__result h3 { margin: 0; font-size: 1.28rem; font-weight: 900; }
+.mri-quiz__intro, .mri-quiz__note { margin: 0; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+.mri-quiz__ranking { display: grid; gap: .7rem; }
+.mri-rank {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .75rem; align-items: start;
+  padding: .85rem; border: 1px solid var(--line); border-radius: 8px; background: var(--wash-2);
+}
+.mri-rank:first-child { background: rgba(205,0,0,.055); border-color: rgba(205,0,0,.24); }
+.mri-rank__pos {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 999px;
+  background: var(--ink); color: #fff; font-size: .84rem; font-weight: 900;
+}
+.mri-rank:first-child .mri-rank__pos { background: var(--red); }
+.mri-rank__head { display: flex; align-items: baseline; justify-content: space-between; gap: .6rem; margin-bottom: .35rem; }
+.mri-rank__name { color: var(--ink); font-size: 1rem; font-weight: 900; }
+.mri-rank__score { color: var(--red); font-size: .78rem; font-weight: 900; white-space: nowrap; }
+.mri-rank__bar { height: 7px; overflow: hidden; border-radius: 999px; background: #e7e7e7; margin-bottom: .45rem; }
+.mri-rank__fill { display: block; height: 100%; width: var(--score); background: var(--grad-red); border-radius: inherit; }
+.mri-rank__reason { margin: 0 0 .65rem; color: var(--ink-soft); font-size: .82rem; line-height: 1.4; }
+.mri-rank__open {
+  display: inline-flex; align-items: center; justify-content: center; width: fit-content;
+  border: 0; background: transparent; color: var(--red); padding: 0; font: inherit; font-size: .8rem; font-weight: 900;
+  cursor: pointer;
+}
+.mri-rank__open:hover { color: var(--red-crimson); }
+
 /* ------------------------------ Champ moyen ------------------------------ */
 .field-proof { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .9rem; }
 .field-proof__item {
@@ -1059,13 +1116,20 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 /* ------------------------------ Responsive ------------------------------ */
 /* grilles : plusieurs colonnes en grand écran -> 2 en dessous de 1180px -> 1 en mobile */
-@media (max-width: 1180px) { .products, .pillars, .field-proof { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 1180px) {
+  .products, .pillars, .field-proof { grid-template-columns: repeat(2, 1fr); }
+  .nav { gap: .9rem; }
+  .nav a { font-size: .84rem; }
+  .nav .btn { padding-inline: 1rem; }
+}
 
 @media (max-width: 900px) {
   .hero { min-height: auto; padding: 5.5rem 0 4rem; }
   .hero__range { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 620px; }
   .modal__body { grid-template-columns: 1fr; }
   .contact-grid, .rdv-grid { grid-template-columns: 1fr; }
+  .mri-quiz { grid-template-columns: 1fr; }
+  .mri-quiz__result { position: static; }
   .stats, .rse { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 768px) {
@@ -1076,6 +1140,8 @@ ul { margin: 0; padding: 0; list-style: none; }
   .nav .btn { margin: .6rem var(--pad-x); width: calc(100% - 2 * var(--pad-x)); justify-content: center; }
   .nav-toggle { display: block; }
   .pillars, .products, .field-proof { grid-template-columns: 1fr; }
+  .mri-quiz__group { padding: .85rem; }
+  .mri-rank__head { display: grid; }
   .hero__range { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .5rem; margin-bottom: 1.35rem; }
   .range-card { min-height: 62px; padding: .65rem .7rem; }
   .range-card__name { font-size: .9rem; }
