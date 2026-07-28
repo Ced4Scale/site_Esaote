@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-fullscreen" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-window-readout" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -76,6 +76,7 @@
     <button class="image-lightbox__nav image-lightbox__nav--prev" id="caseLightboxPrev" aria-label="Image précédente">‹</button>
     <div class="image-lightbox__images" id="caseLightboxImages"></div>
     <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
+    <p class="image-lightbox__window-values" id="caseLightboxWindowValues">WL 100% · WW 100%</p>
     <div class="image-lightbox__controls" id="caseLightboxControls">
       <button type="button" id="caseLightboxControlPrev" aria-label="Coupe précédente">‹</button>
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
@@ -131,6 +132,7 @@
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImages = document.getElementById("caseLightboxImages");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
+      var lightboxWindowValues = document.getElementById("caseLightboxWindowValues");
       var lightboxControls = document.getElementById("caseLightboxControls");
       var lightboxSlider = document.getElementById("caseLightboxSlider");
       var lightboxSpeedSelect = document.getElementById("caseLightboxSpeed");
@@ -397,6 +399,7 @@
         lightboxWindowLevelSlider.value = windowLevel;
         windowLevelValue.textContent = windowLevel + "%";
         lightboxWindowLevelValue.textContent = windowLevel + "%";
+        updateWindowReadout();
       }
 
       function setWindowWidth(value) {
@@ -406,6 +409,11 @@
         lightboxWindowWidthSlider.value = windowWidth;
         windowWidthValue.textContent = windowWidth + "%";
         lightboxWindowWidthValue.textContent = windowWidth + "%";
+        updateWindowReadout();
+      }
+
+      function updateWindowReadout() {
+        lightboxWindowValues.textContent = "WL " + windowLevel + "% · WW " + windowWidth + "%";
       }
 
       function step(delta) {
