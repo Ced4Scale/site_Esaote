@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-oscan-pages" />
+  <link rel="stylesheet" href="styles.css?v=20260728-ce-docs" />
 </head>
 <body class="document-page">
   <header class="document-viewer__bar">
@@ -74,6 +74,51 @@
           title: "Brochure I-Genius",
           src: "assets/docs/i-genius-brochure-latest.pdf"
         },
+        "o-scan-ce": {
+          title: "Marquage CE / déclaration de conformité O-scan",
+          noticeTitle: "Déclaration de conformité O-scan",
+          revision: "DCS - O-scan - Revision 3.17",
+          product: "O-scan",
+          statement: "La page officielle Esaote indique que l'O-scan est conforme à la directive 93/42/CEE relative aux dispositifs médicaux et classé dispositif de classe IIa.",
+          sourceUrl: "https://www.esaote.com/fr-FR/resonance-magnetique/systeme-de-resonance-magnetique/o-scan/",
+          sourceLabel: "Ouvrir la page officielle O-scan"
+        },
+        "s-scan-open-ce": {
+          title: "Marquage CE / déclaration de conformité S-scan Open",
+          noticeTitle: "Déclaration de conformité S-scan Open",
+          revision: "DCS - S-scan Open - Revision 3.17",
+          product: "S-scan Open",
+          statement: "La page officielle Esaote liste la déclaration de conformité S-scan Open dans la rubrique Documentation - Brochure / DICOM / IHE.",
+          sourceUrl: "https://www.esaote.com/fr-FR/resonance-magnetique/systeme-de-resonance-magnetique/s-scan-open/",
+          sourceLabel: "Ouvrir la page officielle S-scan Open"
+        },
+        "g-scan-brio-ce": {
+          title: "Marquage CE / déclaration de conformité G-scan Brio",
+          noticeTitle: "Déclaration de conformité G-scan Brio",
+          revision: "DCS - G-scan Brio - Revision 3.17",
+          product: "G-scan Brio",
+          statement: "La page officielle Esaote indique que le G-scan Brio est conforme à la directive 93/42/CEE relative aux dispositifs médicaux et classé dispositif de classe IIa.",
+          sourceUrl: "https://www.esaote.com/en-BE/magnetic-resonance/magnetic-resonance-system/g-scan-brio/",
+          sourceLabel: "Ouvrir la page officielle G-scan Brio"
+        },
+        "magnifico-open-ce": {
+          title: "Marquage CE / déclaration de conformité Magnifico Open",
+          noticeTitle: "Déclaration de conformité Magnifico Open",
+          revision: "DCS - Magnifico Open - Revision 3.17",
+          product: "Magnifico Open",
+          statement: "La page officielle Esaote liste la déclaration de conformité Magnifico Open dans la rubrique Brochure / DICOM / IHE.",
+          sourceUrl: "https://www.esaote.com/fr-BE/resonance-magnetique/systeme-de-resonance-magnetique/magnifico-open/",
+          sourceLabel: "Ouvrir la page officielle Magnifico Open"
+        },
+        "i-genius-ce": {
+          title: "Marquage CE / conformité I-Genius",
+          noticeTitle: "Conformité I-Genius",
+          revision: "Documentation officielle Esaote disponible publiquement",
+          product: "I-Genius",
+          statement: "La page officielle I-Genius liste la brochure et le conformance statement DICOM. Aucune déclaration CE séparée publiquement identifiable n'a été trouvée ; le document de marquage CE est à confirmer auprès d'Esaote France.",
+          sourceUrl: "https://www.esaote.com/en-GB/magnetic-resonance/magnetic-resonance-system/igenius/",
+          sourceLabel: "Ouvrir la page officielle I-Genius"
+        },
         "dicom-mri-rel-3-17": {
           title: "DICOM Conformance Statement MRI Rel. 3.17",
           src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf"
@@ -130,6 +175,16 @@
         pages.innerHTML = doc.pages.map(function (src, index) {
           return '<figure class="document-viewer__page"><img src="' + src + '" alt="' + doc.title + ' - page ' + (index + 1) + '" loading="' + (index === 0 ? 'eager' : 'lazy') + '" /></figure>';
         }).join("");
+      } else if (doc.noticeTitle) {
+        frame.hidden = true;
+        pages.hidden = false;
+        pages.innerHTML = '<article class="document-viewer__notice">' +
+          '<span class="kicker">' + doc.product + '</span>' +
+          '<h1>' + doc.noticeTitle + '</h1>' +
+          '<p class="document-viewer__revision">' + doc.revision + '</p>' +
+          '<p>' + doc.statement + '</p>' +
+          '<a class="btn" href="' + doc.sourceUrl + '" target="_blank" rel="noopener">' + doc.sourceLabel + '</a>' +
+          '</article>';
       } else {
         frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
       }
