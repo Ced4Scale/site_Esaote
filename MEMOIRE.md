@@ -53,6 +53,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Enrichissement des références installées : ajout de sites publics supplémentaires avec établissement, ville/pays et référent public quand disponible (O-scan : St. Augustine, Columbia Memorial, Prof. Thermann Heidelberg ; S-scan : Prof. Thermann Heidelberg ; G-scan : Glan Clwyd, Spine Nevada ; Magnifico : ROC Aschheim).
 - Section "Champ moyen en pratique" enrichie avec un 5e argument I-Genius : bloc neuro / iMRI, contrôles per-opératoires sans transfert patient. La fiche Teams ajoute aussi le thème "Bloc neuro / I-Genius" à cocher.
 - Formulaire contact Teams enrichi : ajout des thèmes champs moyens, retour sur investissement et présentation produit au choix pour O-scan, S-scan, G-scan, Magnifico et I-Genius.
+- I-Genius : l'onglet anciennement "Voir les examens" est renommé "Voir le workflow", car les visuels disponibles sont des visuels de workflow/démonstration et non des images d'examens diagnostiques.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
