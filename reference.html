@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-reference-details" />
+  <link rel="stylesheet" href="styles.css?v=20260728-reference-fr" />
 </head>
 <body class="document-page reference-page">
   <header class="document-viewer__bar">
@@ -24,6 +24,7 @@
   </header>
 
   <main class="document-viewer">
+    <section class="reference-detail" id="referenceDetail" hidden></section>
     <iframe id="referenceFrame" title="Référence publique Esaote" loading="eager"></iframe>
     <div class="document-viewer__fallback" id="referenceFallback">
       <h1 id="referenceFallbackTitle">Référence publique</h1>
@@ -103,7 +104,105 @@
       };
 
       var params = new URLSearchParams(window.location.search);
-      var reference = references[params.get("ref") || ""];
+      var referenceId = params.get("ref") || "";
+      var reference = references[referenceId];
+      var referenceDetails = {
+        "o-scan-bournemouth": {
+          product: "O-scan",
+          site: "Royal Bournemouth Hospital",
+          location: "Bournemouth, Royaume-Uni",
+          people: "Dr Paula McAlinden ; Matthew Benbow",
+          summary: "L'O-scan est utilisé comme IRM dédiée aux extrémités pour absorber une partie des examens MSK, réduire les délais et préserver les créneaux des IRM corps entier pour les cas plus complexes.",
+          quote: "Aider à réduire la liste d'attente et libérer du temps machine pour les examens complexes."
+        },
+        "o-scan-st-augustine": {
+          product: "O-scan",
+          site: "St. Augustine Foot, Ankle and Vein Clinic",
+          location: "St. Augustine, Floride, États-Unis",
+          people: "Dr Thom Lebeau",
+          summary: "L'O-scan est présenté comme une solution d'imagerie directement intégrée dans une clinique spécialisée pied-cheville, pour simplifier le parcours patient et éviter une orientation systématique vers un centre externe."
+        },
+        "o-scan-columbia-memorial": {
+          product: "O-scan",
+          site: "Columbia Memorial Health · Bone and Joint Center",
+          location: "Hudson, New York, États-Unis",
+          people: "Dr Rakel Astorga",
+          summary: "Cette référence met en avant une IRM non immersive en cabinet orthopédique, pensée pour les extrémités et pour améliorer l'accès local à l'imagerie MSK."
+        },
+        "o-scan-thermann": {
+          product: "O-scan / S-scan",
+          site: "Internationales Zentrum für Hüft-, Knie- und Fußchirurgie",
+          location: "Heidelberg, Allemagne",
+          people: "Prof. Dr. med. Thermann",
+          summary: "La référence illustre l'utilisation d'IRM dédiées Esaote dans une pratique orthopédique spécialisée, avec intérêt pour les extrémités, le suivi et les questions cliniques ciblées."
+        },
+        "s-scan-zucchi": {
+          product: "S-scan Open",
+          site: "Zucchi Clinical Institutes",
+          location: "Monza et Brianza, Italie",
+          people: "Prof. Alberto Aliprandi",
+          summary: "Le témoignage valorise l'installation simple, le faible coût d'exploitation et la possibilité de réaliser des examens dynamiques pour répondre à des questions cliniques précises.",
+          quote: "Facilité d'installation, faible maintenance, faible consommation, et examens dynamiques ciblés."
+        },
+        "s-scan-thermann": {
+          product: "S-scan / O-scan",
+          site: "Internationales Zentrum für Hüft-, Knie- und Fußchirurgie",
+          location: "Heidelberg, Allemagne",
+          people: "Prof. Dr. med. Thermann",
+          summary: "Cette référence montre l'intérêt d'une imagerie dédiée MSK dans un environnement orthopédique spécialisé, en complément des modalités d'imagerie généralistes."
+        },
+        "g-scan-tristate": {
+          product: "G-scan Brio",
+          site: "Tristate Brain and Spine Institute",
+          location: "Alexandria, États-Unis",
+          people: "Dr Sunny S. Kim",
+          summary: "Le G-scan Brio est mis en avant pour l'imagerie du rachis en charge : comparer décubitus et position debout peut révéler des symptômes ou instabilités non visibles en IRM conventionnelle.",
+          quote: "Dans 90 % des cas, les symptômes apparaissent en position soumise au poids du corps."
+        },
+        "g-scan-glan-clwyd": {
+          product: "G-scan",
+          site: "Glan Clwyd Hospital · Betsi Cadwaladr University Health Board",
+          location: "Bodelwyddan, Pays de Galles, Royaume-Uni",
+          people: "Référent public non nommé dans la source",
+          summary: "La référence illustre la valeur ajoutée de l'IRM en charge dans l'analyse fonctionnelle du rachis et des symptômes liés à la posture."
+        },
+        "g-scan-spine-nevada": {
+          product: "G-scan",
+          site: "Spine Nevada Minimally Invasive Spine Institute",
+          location: "Reno, Nevada, États-Unis",
+          people: "Référent public non nommé dans la source",
+          summary: "La source montre un cas clinique autour de la sténose lombaire, avec l'intérêt d'une lecture en charge pour documenter des signes fonctionnels."
+        },
+        "magnifico-sport-ortho": {
+          product: "Magnifico Open",
+          site: "Sport Ortho Urgent Care",
+          location: "Murfreesboro, Tennessee, États-Unis",
+          people: "Brant Bell, MSM, PA-C",
+          summary: "La référence insiste sur l'intérêt d'une IRM ouverte corps entier dans une structure orthopédique : image de qualité, encombrement maîtrisé et continuité de prise en charge sur place.",
+          quote: "Un excellent aimant qui produit d'excellentes images, sans louer un nouvel espace."
+        },
+        "magnifico-roc-aschheim": {
+          product: "Magnifico Open",
+          site: "ROC Regeneratives Orthopädisches Centrum",
+          location: "Aschheim / Munich, Allemagne",
+          people: "Dr Daniel Filesch",
+          summary: "La référence présente l'installation du Magnifico Open dans un cabinet orthopédique, avec intérêt pour le confort patient, l'intégration dans le parcours de soins et l'imagerie MSK."
+        },
+        "i-genius-eans": {
+          product: "I-Genius",
+          site: "EANS 2025",
+          location: "Vienne, Autriche",
+          people: "Présentation congrès ; pas de site installé public nominatif",
+          summary: "I-Genius est présenté comme une IRM intra-opératoire dédiée à la neurochirurgie, pensée pour réaliser des contrôles pendant l'intervention sans transfert du patient."
+        },
+        "i-genius-linkedin": {
+          product: "I-Genius",
+          site: "LinkedIn Esaote",
+          location: "Média professionnel",
+          people: "Esaote",
+          summary: "Lien de contexte vers les communications publiques Esaote autour du projet I-Genius et de son positionnement en neurochirurgie intra-opératoire."
+        }
+      };
       var allowedReturns = {
         "produit-o-scan": true,
         "produit-s-scan": true,
@@ -113,6 +212,7 @@
       };
       var returnHash = allowedReturns[params.get("from") || ""] ? params.get("from") : "produits";
       var title = document.getElementById("referenceTitle");
+      var detail = document.getElementById("referenceDetail");
       var frame = document.getElementById("referenceFrame");
       var fallback = document.getElementById("referenceFallback");
       var fallbackTitle = document.getElementById("referenceFallbackTitle");
@@ -141,8 +241,21 @@
 
       document.title = reference.title + " — Esaote Medical France";
       title.textContent = reference.title;
+      var detailData = referenceDetails[referenceId];
+      if (detailData) {
+        detail.hidden = false;
+        detail.innerHTML = '<span class="kicker">' + detailData.product + '</span>' +
+          '<h1>' + detailData.site + '</h1>' +
+          '<dl>' +
+            '<div><dt>Lieu</dt><dd>' + detailData.location + '</dd></div>' +
+            '<div><dt>Référent public</dt><dd>' + detailData.people + '</dd></div>' +
+          '</dl>' +
+          '<p>' + detailData.summary + '</p>' +
+          (detailData.quote ? '<blockquote>« ' + detailData.quote + ' »</blockquote>' : '') +
+          '<a class="btn" href="' + reference.src + '" target="_blank" rel="noopener">Ouvrir la source originale</a>';
+      }
       fallbackTitle.textContent = reference.title;
-      fallbackText.textContent = reference.note;
+      fallbackText.textContent = "Synthèse en français affichée ci-dessus. Si l'aperçu intégré est bloqué par le site source, ouvrez la source originale.";
       open.href = reference.src;
       frame.src = reference.src;
     })();
