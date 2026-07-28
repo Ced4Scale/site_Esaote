@@ -53,11 +53,12 @@
   var esaoteTerms = {
     "True-Motion": "Mode d'imagerie dynamique Esaote utilisé pour observer une articulation en mouvement, par exemple le genou, selon la configuration du système.",
     "True Motion": "Mode d'imagerie dynamique Esaote utilisé pour observer une articulation en mouvement, par exemple le genou, selon la configuration du système.",
-    "HyperClarity": "Technologie de reconstruction/traitement d'image par IA Esaote visant à améliorer la netteté perçue et le rapport signal/bruit, selon configuration et indications.",
-    "Hyper Clarity": "Technologie de reconstruction/traitement d'image par IA Esaote visant à améliorer la netteté perçue et le rapport signal/bruit, selon configuration et indications.",
-    "e-SPADES": "Suite de reconstruction/accélération Esaote assistée par IA, utilisée pour optimiser la qualité d'image et/ou les temps d'acquisition selon configuration.",
-    "e-SPADE": "Suite de reconstruction/accélération Esaote assistée par IA, utilisée pour optimiser la qualité d'image et/ou les temps d'acquisition selon configuration.",
-    "HyperSpeed": "Technologie Esaote orientée accélération des acquisitions et reconstruction plus rapide, selon séquences et configuration.",
+    "AgilExam": "Technologie Esaote d'aide au positionnement des coupes : l'anatomie est reconnue sur le scout avec assistance IA pour accélérer et standardiser la préparation de l'examen, selon configuration.",
+    "HyperClarity": "Fonction e-SPADES Esaote appliquée à l'image reconstruite pour améliorer la résolution, réduire le bruit et renforcer la qualité d'image perçue, selon configuration.",
+    "Hyper Clarity": "Fonction e-SPADES Esaote appliquée à l'image reconstruite pour améliorer la résolution, réduire le bruit et renforcer la qualité d'image perçue, selon configuration.",
+    "e-SPADES": "Plateforme Esaote intégrant des algorithmes IA pour intervenir sur l'acquisition et la reconstruction : HyperSpeed accélère, HyperClarity améliore l'image, selon configuration.",
+    "e-SPADE": "Plateforme Esaote intégrant des algorithmes IA pour intervenir sur l'acquisition et la reconstruction : HyperSpeed accélère, HyperClarity améliore l'image, selon configuration.",
+    "HyperSpeed": "Fonction e-SPADES Esaote orientée accélération : réduction du temps d'acquisition tout en préservant l'information diagnostique, selon protocole et configuration.",
     "SHARC": "Séquence 3D Esaote utilisée notamment en imagerie ostéoarticulaire pour obtenir un volume fin pouvant être relu dans plusieurs plans.",
     "HYCE": "Séquence 3D Esaote dédiée à l'imagerie du rachis/MSK, utile pour naviguer dans un volume et reconstruire des plans de lecture.",
     "MARS": "Technique de réduction des artéfacts métalliques autour du matériel opératoire ou prothétique.",
@@ -104,6 +105,7 @@
       return "<span>" + argument + "</span>";
     }).join("");
     keyword.innerHTML = '<div class="carousel-keyword__track">' + line + line + "</div>";
+    initTermBubbles(keyword);
   }
 
   function termPattern() {

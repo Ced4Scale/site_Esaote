@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- Ajout public des termes Esaote AgilExam, HyperClarity et HyperSpeed dans les carrousels et fiches produits, avec bulles d'information cliquables basées sur les pages officielles Esaote.
+
 - Remplacer ou affiner les textes commerciaux.
 - Vérifier les coordonnées définitives.
 - Corriger le README.
