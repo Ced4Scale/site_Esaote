@@ -369,10 +369,10 @@ ul { margin: 0; padding: 0; list-style: none; }
   color: #fff; text-align: center; font-weight: 700; font-size: .95rem; line-height: 1.35;
 }
 .image-lightbox__images {
-  width: min(1180px, calc(100% - 6rem)); max-height: 88vh; display: grid; gap: .8rem;
+  width: min(1280px, calc(100% - 7rem)); max-height: 82vh; display: grid; gap: .8rem;
 }
 .image-lightbox__images--compare {
-  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  grid-template-columns: repeat(var(--lightbox-columns, 2), minmax(0, 1fr));
 }
 .image-lightbox__images figure {
   margin: 0; min-width: 0; display: grid; gap: .55rem;
@@ -390,6 +390,27 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .image-lightbox__caption {
   position: fixed; right: 1rem; bottom: .75rem; left: 1rem; margin: 0;
+}
+.image-lightbox__controls {
+  position: fixed; right: clamp(1rem, 6vw, 5rem); bottom: 2.3rem; left: clamp(1rem, 6vw, 5rem);
+  display: grid; grid-template-columns: 44px 44px 1fr 44px; gap: .75rem; align-items: center;
+  padding: .65rem .75rem; border-radius: 8px; background: rgba(20,20,20,.76);
+  box-shadow: var(--shadow-md); backdrop-filter: blur(8px);
+}
+.image-lightbox__controls button {
+  height: 42px; border-radius: 50%; border: 1px solid rgba(255,255,255,.18);
+  background: rgba(255,255,255,.92); color: var(--ink); font-size: 1.6rem; line-height: 1;
+  cursor: pointer;
+}
+.image-lightbox__controls button:hover,
+.image-lightbox__controls button[aria-pressed="true"] {
+  border-color: var(--red); background: var(--red); color: #fff;
+}
+.image-lightbox__play {
+  font-size: .95rem !important; font-weight: 900;
+}
+.image-lightbox__controls input {
+  accent-color: var(--red);
 }
 .image-lightbox__nav {
   position: fixed; top: 50%; z-index: 1; transform: translateY(-50%);
@@ -772,6 +793,9 @@ ul { margin: 0; padding: 0; list-style: none; }
   .image-lightbox { padding: 1rem .75rem 5.25rem; }
   .image-lightbox__images { width: 100%; max-height: 82vh; }
   .image-lightbox__images--compare { grid-template-columns: 1fr; }
+  .image-lightbox__controls {
+    right: .75rem; bottom: 4.5rem; left: .75rem; grid-template-columns: 40px 40px 1fr 40px;
+  }
   .image-lightbox__nav {
     top: auto; bottom: 16px; width: 56px; height: 44px; transform: none; font-size: 34px;
   }

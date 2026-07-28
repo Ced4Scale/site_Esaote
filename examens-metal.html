@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-sync-lightbox" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-sync-lightbox2" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -60,6 +60,12 @@
     <button class="image-lightbox__nav image-lightbox__nav--prev" id="caseLightboxPrev" aria-label="Image précédente">‹</button>
     <div class="image-lightbox__images" id="caseLightboxImages"></div>
     <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
+    <div class="image-lightbox__controls" id="caseLightboxControls">
+      <button type="button" id="caseLightboxControlPrev" aria-label="Coupe précédente">‹</button>
+      <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
+      <input id="caseLightboxSlider" type="range" min="1" max="1" value="1" />
+      <button type="button" id="caseLightboxControlNext" aria-label="Coupe suivante">›</button>
+    </div>
     <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
   </div>
 
@@ -81,6 +87,9 @@
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImages = document.getElementById("caseLightboxImages");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
+      var lightboxControls = document.getElementById("caseLightboxControls");
+      var lightboxSlider = document.getElementById("caseLightboxSlider");
+      var lightboxPlayButton = document.getElementById("caseLightboxPlay");
       var playTimer = null;
       var paneClickTimer = null;
       var lightboxAcquisition = null;
@@ -144,6 +153,8 @@
         counter.textContent = (selectedImage + 1) + "/" + maxCount;
         slider.max = Math.max(1, maxCount);
         slider.value = selectedImage + 1;
+        lightboxSlider.max = Math.max(1, maxCount);
+        lightboxSlider.value = selectedImage + 1;
         if (acquisitions.length > 1) renderCompare(item, acquisitions, maxCount);
         else renderSingle(item, acquisitions[0]);
         list.querySelectorAll("button").forEach(function (button, index) {
@@ -302,8 +313,11 @@
           playTimer = window.setInterval(loopStep, 700);
         }
         playButton.textContent = isPlaying ? "Ⅱ" : "▶";
+        lightboxPlayButton.textContent = isPlaying ? "Ⅱ" : "▶";
         playButton.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+        lightboxPlayButton.setAttribute("aria-pressed", isPlaying ? "true" : "false");
         playButton.setAttribute("aria-label", isPlaying ? "Mettre en pause" : "Lancer la lecture automatique");
+        lightboxPlayButton.setAttribute("aria-label", isPlaying ? "Mettre en pause" : "Lancer la lecture automatique");
       }
 
       function updateLightbox() {
@@ -312,12 +326,15 @@
         var maxCount = maxImages(item);
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
         lightboxImages.classList.toggle("image-lightbox__images--compare", displayedAcquisitions.length > 1);
+        lightboxImages.style.setProperty("--lightbox-columns", displayedAcquisitions.length);
         lightboxImages.innerHTML = displayedAcquisitions.map(function (acquisition) {
           var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
           return '<figure><img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
             '<figcaption>' + acquisition.label + ' · coupe ' + (imageIndex + 1) + '/' + acquisition.images.length + '</figcaption></figure>';
         }).join("");
         lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
+        lightboxSlider.max = Math.max(1, maxCount);
+        lightboxSlider.value = selectedImage + 1;
       }
 
       function openLightbox() {
@@ -343,6 +360,7 @@
       function closeLightbox() {
         lightbox.style.display = "none";
         lightbox.classList.remove("is-open");
+        lightboxImages.style.removeProperty("--lightbox-columns");
         lightbox.hidden = true;
         lightboxAcquisition = null;
         lightboxAcquisitions = null;
@@ -352,14 +370,26 @@
       document.getElementById("casePrev").addEventListener("click", function () { step(-1); });
       document.getElementById("caseNext").addEventListener("click", function () { step(1); });
       playButton.addEventListener("click", function () { setPlaying(!playTimer); });
+      lightboxPlayButton.addEventListener("click", function (event) {
+        event.stopPropagation();
+        setPlaying(!playTimer);
+      });
       slider.addEventListener("input", function () {
         selectedImage = Number(slider.value) - 1;
+        update();
+      });
+      lightboxSlider.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxSlider.addEventListener("input", function () {
+        selectedImage = Number(lightboxSlider.value) - 1;
         update();
       });
       imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
       document.getElementById("caseLightboxPrev").addEventListener("click", function (event) { event.stopPropagation(); step(-1); });
       document.getElementById("caseLightboxNext").addEventListener("click", function (event) { event.stopPropagation(); step(1); });
+      document.getElementById("caseLightboxControlPrev").addEventListener("click", function (event) { event.stopPropagation(); step(-1); });
+      document.getElementById("caseLightboxControlNext").addEventListener("click", function (event) { event.stopPropagation(); step(1); });
+      lightboxControls.addEventListener("click", function (event) { event.stopPropagation(); });
       lightbox.addEventListener("click", closeLightbox);
       lightboxImages.addEventListener("click", function (event) { event.stopPropagation(); });
       document.addEventListener("keydown", function (event) {
