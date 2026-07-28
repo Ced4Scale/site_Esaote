@@ -82,6 +82,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Examens métal : enrichissement du cas "Épaule opérée" avec une lecture synchronisée multi-acquisitions : T2 axial/coronal/sagittal, STIR sagittal/coronal et T1 sagittal/coronal.
 - Examens métal : regroupement des acquisitions synchronisées par plan quand disponible ; poignet/main enrichi avec 3D SHARC, STIR, STIR HR et T1 sur le plan coronal. Retrait du cas "Cheville / pied" du manifeste public car les images associées correspondaient à l'épaule.
 - Examens métal : retrait de la série 3D SHARC du cas "Poignet / main" après contrôle visuel, car elle contient des coupes confuses et possiblement une autre anatomie. Le cas poignet conserve STIR, STIR HR et T1 sur le plan coronal.
+- Examens métal : enrichissement des cas rachis. Le rachis lombaire regroupe 3D HYCE, axial 3D/T1 et sagittal T2/STIR. L'ancien "Rachis lombaire MARS" est renommé "Rachis cervical MARS" avec axial MARS et sagittales MARS/T1/T2/STIR.
 - RSE : précision de la formulation officielle "Green MRI par technologie d'aimant permanent Esaote (Permanent magnet technology)" pour nommer la technologie sans hélium ni cryogénie.
 - RSE : clarification de "Consommation minimale" : distinguer l'électricité consommée par l'IRM et l'électricité indirecte liée à la pompe à chaleur/climatisation de salle.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
