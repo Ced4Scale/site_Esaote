@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-fullscreen-top" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-axes" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -169,6 +169,7 @@
       var lightboxPanX = 0;
       var lightboxPanY = 0;
       var lightboxDrag = null;
+      var mprAxesOption = "__mpr_axes__";
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -532,24 +533,25 @@
         var acquisitions = acquisitionsFor(item);
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
         setLightboxAxisOptions(displayedAcquisitions);
-        var displayedViews = displayedAcquisitions.map(function (acquisition) {
-          return selectedAxisView(acquisition);
-        });
+        var displayedViews = lightboxDisplayViews(displayedAcquisitions);
         var maxCount = maxImagesFor(displayedViews);
         selectedImage = Math.max(0, Math.min(selectedImage, maxCount - 1));
-        var renderKey = displayedAcquisitions.map(function (acquisition) {
-          return acquisitions.indexOf(acquisition) + ":" + selectedAxisView(acquisition).label;
+        var renderKey = displayedViews.map(function (view) {
+          return view.label + ":" + (view.showMprAxes ? "mpr" : "standard");
         }).join("|");
-        lightboxImages.classList.toggle("image-lightbox__images--compare", displayedAcquisitions.length > 1);
-        lightboxImages.style.setProperty("--lightbox-columns", displayedAcquisitions.length);
+        lightboxImages.classList.toggle("image-lightbox__images--compare", displayedViews.length > 1);
+        lightboxImages.classList.toggle("image-lightbox__images--mpr", displayedViews.some(function (view) { return view.showMprAxes; }));
+        lightboxImages.style.setProperty("--lightbox-columns", displayedViews.length);
         if (lightboxRenderKey !== renderKey) {
-          lightboxImages.innerHTML = displayedAcquisitions.map(function (acquisition) {
-            return '<figure><img alt="" /><figcaption></figcaption></figure>';
+          lightboxImages.innerHTML = displayedViews.map(function (view) {
+            var className = view.showMprAxes ? ' class="has-mpr-axes"' : "";
+            return '<figure' + className + '><img alt="" /><figcaption></figcaption></figure>';
           }).join("");
           lightboxRenderKey = renderKey;
         }
         lightboxImages.querySelectorAll("figure").forEach(function (figure, index) {
           var acquisition = displayedViews[index];
+          figure.classList.toggle("has-mpr-axes", Boolean(acquisition.showMprAxes));
           var imageIndex = mappedIndex(acquisition, maxCount);
           var img = figure.querySelector("img");
           var caption = figure.querySelector("figcaption");
@@ -558,7 +560,7 @@
           img.alt = item.title + " - " + acquisition.label + " - coupe " + (imageIndex + 1);
           caption.textContent = acquisition.label + " · coupe " + (imageIndex + 1) + "/" + acquisition.images.length;
         });
-        lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
+        lightboxCaption.textContent = item.title + " · " + lightboxCaptionMode(displayedAcquisitions, displayedViews);
         lightboxSlider.max = Math.max(1, maxCount);
         lightboxSlider.value = selectedImage + 1;
         updateZoomTransform();
@@ -568,17 +570,47 @@
       function lightboxMaxImages() {
         var acquisitions = acquisitionsFor(current());
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
-        return maxImagesFor(displayedAcquisitions.map(function (acquisition) {
+        return maxImagesFor(lightboxDisplayViews(displayedAcquisitions));
+      }
+
+      function lightboxDisplayViews(displayedAcquisitions) {
+        if (displayedAcquisitions.length === 1 && isMprAxesSelected(displayedAcquisitions[0])) {
+          return mprAxisViews(displayedAcquisitions[0]).map(function (view) {
+            var copy = Object.assign({}, view);
+            copy.showMprAxes = true;
+            return copy;
+          });
+        }
+        return displayedAcquisitions.map(function (acquisition) {
           return selectedAxisView(acquisition);
-        }));
+        });
+      }
+
+      function lightboxCaptionMode(displayedAcquisitions, displayedViews) {
+        if (displayedViews.some(function (view) { return view.showMprAxes; })) {
+          return "MPR avec axes · " + displayedViews.length + " plans synchronisés";
+        }
+        return displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
       }
 
       function selectedAxisView(acquisition) {
         if (!acquisition || !acquisition.axisViews || !acquisition.axisViews.length) return acquisition;
         var selectedLabel = lightboxAxisSelections[acquisitionKey(acquisition)] || acquisition.axisViews[0].label;
+        if (selectedLabel === mprAxesOption) return mprAxisViews(acquisition)[0] || acquisition.axisViews[0];
         return acquisition.axisViews.find(function (view) {
           return view.label === selectedLabel;
         }) || acquisition.axisViews[0];
+      }
+
+      function isMprAxesSelected(acquisition) {
+        return acquisition && lightboxAxisSelections[acquisitionKey(acquisition)] === mprAxesOption && mprAxisViews(acquisition).length > 1;
+      }
+
+      function mprAxisViews(acquisition) {
+        if (!acquisition || !acquisition.axisViews) return [];
+        return acquisition.axisViews.filter(function (view) {
+          return (view.label || "").toLowerCase().indexOf("mpr") !== -1;
+        });
       }
 
       function setLightboxAxisOptions(displayedAcquisitions) {
@@ -589,11 +621,17 @@
           return;
         }
         lightboxAxisControl.hidden = false;
-        var selectedView = selectedAxisView(acquisition);
-        lightboxAxisSelect.innerHTML = acquisition.axisViews.map(function (view) {
-          var selected = view.label === selectedView.label ? " selected" : "";
+        var selectedLabel = lightboxAxisSelections[acquisitionKey(acquisition)] || selectedAxisView(acquisition).label;
+        var mprViews = mprAxisViews(acquisition);
+        var options = acquisition.axisViews.map(function (view) {
+          var selected = view.label === selectedLabel ? " selected" : "";
           return '<option value="' + view.label + '"' + selected + '>' + view.label + '</option>';
-        }).join("");
+        });
+        if (mprViews.length > 1) {
+          var selected = isMprAxesSelected(acquisition) ? " selected" : "";
+          options.push('<option value="' + mprAxesOption + '"' + selected + '>MPR avec axes</option>');
+        }
+        lightboxAxisSelect.innerHTML = options.join("");
       }
 
       function preloadAround(acquisitions, maxCount) {

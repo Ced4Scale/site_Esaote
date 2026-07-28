@@ -377,8 +377,19 @@ ul { margin: 0; padding: 0; list-style: none; }
   grid-template-columns: repeat(var(--lightbox-columns, 2), minmax(0, 1fr));
 }
 .image-lightbox__images figure {
-  margin: 0; min-width: 0; display: grid; gap: .55rem; overflow: hidden;
+  position: relative; margin: 0; min-width: 0; display: grid; gap: .55rem; overflow: hidden;
   border-radius: var(--radius); background: #050505;
+}
+.image-lightbox__images figure.has-mpr-axes::before,
+.image-lightbox__images figure.has-mpr-axes::after {
+  content: ""; position: absolute; z-index: 1; pointer-events: none;
+  background: rgba(205,0,0,.86); box-shadow: 0 0 0 1px rgba(255,255,255,.24);
+}
+.image-lightbox__images figure.has-mpr-axes::before {
+  top: 50%; right: .7rem; left: .7rem; height: 1px;
+}
+.image-lightbox__images figure.has-mpr-axes::after {
+  top: .7rem; bottom: 2.35rem; left: 50%; width: 1px;
 }
 .image-lightbox__images img {
   width: 100%; max-height: calc(88vh - 4.5rem); object-fit: contain;
@@ -396,6 +407,9 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .image-lightbox__images--compare img {
   aspect-ratio: 1 / 1; max-height: 70vh;
+}
+.image-lightbox__images--mpr img {
+  aspect-ratio: 1 / 1; max-height: 62vh;
 }
 .image-lightbox__images figcaption,
 .image-lightbox__caption {
