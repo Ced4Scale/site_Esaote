@@ -819,7 +819,8 @@
         lightboxAxisCube.innerHTML = axisCubeMarkup(cubeLabel);
         lightboxAxisCube.setAttribute("aria-label", "Changer l'axe MPR, plan actuel " + axisCubeMeta(cubeLabel).name);
         lightboxModeCube.textContent = isMprAxesSelected(acquisition) ? "MPR" : (currentMpr ? "2D" : "3D");
-        lightboxModeCube.setAttribute("aria-pressed", currentMpr || isMprAxesSelected(acquisition) ? "false" : "true");
+        lightboxModeCube.setAttribute("aria-label", "Changer le mode de lecture, mode actuel " + lightboxModeCube.textContent);
+        lightboxModeCube.setAttribute("aria-pressed", isMprAxesSelected(acquisition) ? "true" : "false");
       }
 
       function setAxisSelection(acquisition, label) {
@@ -849,10 +850,12 @@
         if (!acquisition) return;
         var selectedLabel = selectedAxisLabel(acquisition);
         var key = acquisitionKey(acquisition);
-        var isMpr = mprAxisViews(acquisition).some(function (view) { return view.label === selectedLabel; }) || selectedLabel === mprAxesOption;
-        if (isMpr) {
+        var isSingleMpr = mprAxisViews(acquisition).some(function (view) { return view.label === selectedLabel; });
+        if (selectedLabel === mprAxesOption) {
           var volumeView = volumeAxisView(acquisition);
           setAxisSelection(acquisition, volumeView ? volumeView.label : acquisition.axisViews[0].label);
+        } else if (isSingleMpr) {
+          setAxisSelection(acquisition, mprAxesOption);
         } else {
           setAxisSelection(acquisition, lastMprAxisSelections[key] || (mprAxisViews(acquisition)[0] && mprAxisViews(acquisition)[0].label));
         }
