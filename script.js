@@ -515,6 +515,42 @@
     });
   }
 
+  function initModalMobileJumps(root) {
+    var body = root.querySelector(".modal__body");
+    if (!body || root.querySelector(".modal-mobile-jumps")) return;
+
+    var items = [
+      { selector: ".modal__videos", label: "Vidéos" },
+      { selector: ".modal__exams", label: "Examens" },
+      { selector: ".modal__coils", label: "Antennes" },
+      { selector: ".modal__documents", label: "Documents" },
+      { selector: ".modal__references", label: "Références" }
+    ].filter(function (item) {
+      return !!root.querySelector(item.selector);
+    });
+    if (!items.length) return;
+
+    var jumps = document.createElement("nav");
+    jumps.className = "modal-mobile-jumps";
+    jumps.setAttribute("aria-label", "Accès rapide fiche produit");
+    jumps.innerHTML = [
+      '<p class="modal-mobile-jumps__title">Accès rapide</p>',
+      '<div class="modal-mobile-jumps__row">' + items.map(function (item) {
+        return '<button type="button" class="modal-mobile-jumps__btn" data-target="' + item.selector + '">' + item.label + "</button>";
+      }).join("") + "</div>"
+    ].join("");
+
+    root.insertBefore(jumps, body);
+    jumps.addEventListener("click", function (e) {
+      var button = e.target.closest("[data-target]");
+      if (!button) return;
+      var target = root.querySelector(button.getAttribute("data-target"));
+      if (!target) return;
+      target.open = true;
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  }
+
   function openModal(key, trigger) {
     var tpl = document.getElementById("tpl-" + key);
     if (!tpl || !overlay) return;
@@ -530,6 +566,7 @@
     initImageCarousels(scroll);
     initExamImageZoom(scroll);
     initVideoZoom(scroll);
+    initModalMobileJumps(scroll);
 
     // étiquette la modale pour l'accessibilité
     var titleEl = scroll.querySelector(".modal__title");
@@ -569,7 +606,7 @@
   }
 
   // ouverture depuis les cartes produit
-  document.querySelectorAll(".product-card[data-product], .range-card[data-product]").forEach(function (card) {
+  document.querySelectorAll(".product-card[data-product], .range-card[data-product], .mobile-product[data-product]").forEach(function (card) {
     card.addEventListener("click", function () {
       openModal(card.getAttribute("data-product"), card);
     });
