@@ -46,6 +46,7 @@
         </button>
         <div class="case-viewer__controls">
           <button type="button" id="casePrev" aria-label="Coupe précédente">‹</button>
+          <button class="case-viewer__play" type="button" id="casePlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
           <input id="caseSlider" type="range" min="1" max="1" value="1" />
           <button type="button" id="caseNext" aria-label="Coupe suivante">›</button>
         </div>
@@ -73,9 +74,11 @@
       var counter = document.getElementById("caseCounter");
       var image = document.getElementById("caseImage");
       var slider = document.getElementById("caseSlider");
+      var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImage = document.getElementById("caseLightboxImage");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
+      var playTimer = null;
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -125,6 +128,26 @@
         update();
       }
 
+      function loopStep() {
+        var item = current();
+        if (!item || !item.images.length) return;
+        selectedImage = (selectedImage + 1) % item.images.length;
+        update();
+      }
+
+      function setPlaying(isPlaying) {
+        if (playTimer) {
+          window.clearInterval(playTimer);
+          playTimer = null;
+        }
+        if (isPlaying) {
+          playTimer = window.setInterval(loopStep, 700);
+        }
+        playButton.textContent = isPlaying ? "Ⅱ" : "▶";
+        playButton.setAttribute("aria-pressed", isPlaying ? "true" : "false");
+        playButton.setAttribute("aria-label", isPlaying ? "Mettre en pause" : "Lancer la lecture automatique");
+      }
+
       function updateLightbox() {
         var item = current();
         lightboxImage.src = item.images[selectedImage];
@@ -145,6 +168,7 @@
       document.getElementById("caseClose").addEventListener("click", goBack);
       document.getElementById("casePrev").addEventListener("click", function () { step(-1); });
       document.getElementById("caseNext").addEventListener("click", function () { step(1); });
+      playButton.addEventListener("click", function () { setPlaying(!playTimer); });
       slider.addEventListener("input", function () {
         selectedImage = Number(slider.value) - 1;
         update();
@@ -163,6 +187,7 @@
         if (event.key === "ArrowLeft") step(-1);
         if (event.key === "ArrowRight") step(1);
       });
+      window.addEventListener("beforeunload", function () { setPlaying(false); });
 
       fetch("assets/cases/irm-metal/manifest.json")
         .then(function (response) { return response.json(); })
