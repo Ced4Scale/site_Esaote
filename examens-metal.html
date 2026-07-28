@@ -801,13 +801,17 @@
         return base;
       }
 
-      function lightboxDisplayViews(displayedAcquisitions) {
+      function lightboxDisplayViews(displayedAcquisitions, ignoreFocus) {
         if (displayedAcquisitions.length === 1 && isMprAxesSelected(displayedAcquisitions[0])) {
-          return mprAxisViews(displayedAcquisitions[0]).map(function (view) {
+          var views = mprAxisViews(displayedAcquisitions[0]).map(function (view) {
             var copy = Object.assign({}, view);
             copy.showMprAxes = true;
             return copy;
           });
+          if (!ignoreFocus && lightboxFocusedIndex !== null) {
+            return [views[lightboxFocusedIndex]].filter(Boolean);
+          }
+          return views;
         }
         return displayedAcquisitions.map(function (acquisition) {
           return selectedAxisView(acquisition);
@@ -816,6 +820,9 @@
 
       function lightboxCaptionMode(displayedAcquisitions, displayedViews) {
         if (displayedViews.some(function (view) { return view.showMprAxes; })) {
+          if (lightboxFocusedIndex !== null) {
+            return "1 plan MPR isolé · double-clic pour revenir aux 3 plans";
+          }
           return "MPR · " + displayedViews.length + " plans synchronisés";
         }
         if (lightboxAcquisitions && lightboxAcquisitions.length > 1 && lightboxFocusedIndex !== null) {
@@ -993,9 +1000,16 @@
       }
 
       function toggleFocusedLightboxImage(figure) {
-        if (!lightboxAcquisitions || lightboxAcquisitions.length < 2) return;
-        if (lightboxFocusedIndex !== null) lightboxFocusedIndex = null;
-        else lightboxFocusedIndex = Number(figure.dataset.lightboxIndex) || 0;
+        if (lightboxFocusedIndex !== null) {
+          lightboxFocusedIndex = null;
+        } else {
+          var displayedAcquisitions = displayedLightboxAcquisitions(acquisitionsFor(current()));
+          var displayedViews = lightboxDisplayViews(displayedAcquisitions, true);
+          var canFocusComparison = lightboxAcquisitions && lightboxAcquisitions.length > 1;
+          var canFocusMpr = displayedViews.length > 1 && displayedViews.some(function (view) { return view.showMprAxes; });
+          if (!canFocusComparison && !canFocusMpr) return;
+          lightboxFocusedIndex = Number(figure.dataset.lightboxIndex) || 0;
+        }
         lightboxRenderKey = "";
         updateLightbox();
       }
