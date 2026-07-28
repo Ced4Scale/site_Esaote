@@ -9,9 +9,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-guides" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-access-code" />
 </head>
-<body class="case-page">
+<body class="case-page case-page--auth-pending">
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html#produits" aria-label="Retour au site">
       <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
@@ -22,6 +22,23 @@
     </div>
     <button class="document-viewer__close" id="caseClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
   </header>
+
+  <section class="case-access" id="caseAccess" role="dialog" aria-labelledby="caseAccessTitle" aria-modal="true">
+    <form class="case-access__panel" id="caseAccessForm">
+      <span class="kicker">Accès réservé</span>
+      <h1 id="caseAccessTitle">Cas métal</h1>
+      <p>Entrez le code d'accès pour ouvrir les examens. L'autorisation restera active 15 jours sur cet appareil.</p>
+      <label>
+        <span>Code</span>
+        <input id="caseAccessCode" type="password" inputmode="tel" autocomplete="one-time-code" required />
+      </label>
+      <p class="case-access__error" id="caseAccessError" role="alert" hidden>Code incorrect.</p>
+      <div class="case-access__actions">
+        <button class="btn" type="submit">Ouvrir</button>
+        <button class="btn btn--ghost" type="button" id="caseAccessCancel">Retour</button>
+      </div>
+    </form>
+  </section>
 
   <main class="case-viewer">
     <section class="case-viewer__intro">
@@ -120,8 +137,16 @@
   <script>
     (function () {
       var cases = [];
+      var metalAccessKey = "ced4scale-metal-access";
+      var metalAccessDays = 15;
+      var metalAccessHash = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
       var selectedCase = 0;
       var selectedImage = 0;
+      var accessPanel = document.getElementById("caseAccess");
+      var accessForm = document.getElementById("caseAccessForm");
+      var accessCode = document.getElementById("caseAccessCode");
+      var accessError = document.getElementById("caseAccessError");
+      var accessCancel = document.getElementById("caseAccessCancel");
       var list = document.getElementById("caseList");
       var title = document.getElementById("caseTitle");
       var sequence = document.getElementById("caseSequence");
@@ -187,6 +212,57 @@
       function goBack() {
         if (window.history.length > 1) window.history.back();
         else window.location.href = "index.html#produits";
+      }
+
+      function normalizeMetalCode(value) {
+        var digits = String(value || "").replace(/\D/g, "");
+        if (digits.indexOf("0033") === 0) digits = "0" + digits.slice(4);
+        if (digits.indexOf("33") === 0 && digits.length === 11) digits = "0" + digits.slice(2);
+        return digits;
+      }
+
+      function hashText(value) {
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) {
+          return Promise.resolve(value);
+        }
+        return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+          return Array.from(new Uint8Array(buffer)).map(function (byte) {
+            return byte.toString(16).padStart(2, "0");
+          }).join("");
+        });
+      }
+
+      function storedMetalAccessIsValid() {
+        try {
+          var value = JSON.parse(window.localStorage.getItem(metalAccessKey) || "null");
+          return Boolean(value && value.expiresAt && value.expiresAt > Date.now());
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function storeMetalAccess() {
+        try {
+          window.localStorage.setItem(metalAccessKey, JSON.stringify({
+            expiresAt: Date.now() + (metalAccessDays * 24 * 60 * 60 * 1000)
+          }));
+        } catch (error) {}
+      }
+
+      function unlockMetalCases() {
+        document.body.classList.remove("case-page--auth-pending");
+        if (accessPanel) accessPanel.hidden = true;
+        loadMetalCases();
+      }
+
+      function loadMetalCases() {
+        fetch("assets/cases/irm-metal/manifest.json?v=20260728-shoulder-planes")
+          .then(function (response) { return response.json(); })
+          .then(function (data) {
+            cases = data.cases || [];
+            renderList();
+            update();
+          });
       }
 
       function current() {
@@ -1123,13 +1199,24 @@
       });
       window.addEventListener("beforeunload", function () { setPlaying(false); });
 
-      fetch("assets/cases/irm-metal/manifest.json?v=20260728-shoulder-planes")
-        .then(function (response) { return response.json(); })
-        .then(function (data) {
-          cases = data.cases || [];
-          renderList();
-          update();
+      if (accessCancel) accessCancel.addEventListener("click", goBack);
+      if (accessForm) {
+        accessForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var normalized = normalizeMetalCode(accessCode.value);
+          hashText(normalized).then(function (hash) {
+            if (hash === metalAccessHash || normalized === metalAccessHash) {
+              storeMetalAccess();
+              unlockMetalCases();
+              return;
+            }
+            if (accessError) accessError.hidden = false;
+            accessCode.select();
+          });
         });
+      }
+      if (storedMetalAccessIsValid()) unlockMetalCases();
+      else if (accessCode) accessCode.focus();
     })();
   </script>
 </body>

@@ -862,7 +862,45 @@ ul { margin: 0; padding: 0; list-style: none; }
 
 /* ------------------------------ Cas DICOM locaux ------------------------------ */
 .case-page { min-height: 100vh; background: #111; color: #fff; }
+.case-page--auth-pending { background: #050505; }
+.case-page--auth-pending .case-viewer,
+.case-page--auth-pending .image-lightbox {
+  display: none !important;
+}
 .case-viewer { padding: calc(68px + 1.5rem) var(--pad-x) 2rem; }
+.case-access {
+  min-height: calc(100vh - 68px); display: grid; place-items: center;
+  padding: calc(68px + 1.5rem) var(--pad-x) 2rem;
+  background: radial-gradient(circle at 50% 0%, rgba(205,0,0,.18), transparent 34%), #050505;
+}
+.case-access[hidden] { display: none; }
+.case-access__panel {
+  width: min(460px, 100%); display: grid; gap: 1rem; padding: clamp(1.4rem, 4vw, 2rem);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 8px;
+  background: rgba(20,20,20,.92); box-shadow: var(--shadow-lg);
+}
+.case-access__panel h1 {
+  margin: 0; font-size: clamp(2rem, 6vw, 3rem); line-height: .95;
+}
+.case-access__panel p {
+  margin: 0; color: #d8d8d8; font-size: .95rem; font-weight: 650; line-height: 1.45;
+}
+.case-access__panel label {
+  display: grid; gap: .45rem; color: #fff; font-size: .82rem; font-weight: 900;
+}
+.case-access__panel input {
+  min-height: 48px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
+  background: #fff; color: var(--ink); padding: .75rem .85rem; font: inherit; font-weight: 800;
+}
+.case-access__panel input:focus {
+  outline: 3px solid rgba(205,0,0,.28); border-color: var(--red);
+}
+.case-access__error {
+  color: #ffb7b7 !important; font-size: .82rem !important; font-weight: 900 !important;
+}
+.case-access__actions {
+  display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; align-items: center;
+}
 .case-viewer__intro { max-width: 980px; margin: 0 auto 1.4rem; text-align: center; }
 .case-viewer__intro h1 { margin: .35rem 0 .65rem; font-size: clamp(1.8rem, 4vw, 3rem); }
 .case-viewer__intro p { color: #d4d4d4; margin: 0 auto; max-width: 820px; line-height: 1.6; }
