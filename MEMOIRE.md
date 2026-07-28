@@ -57,6 +57,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Contact : ajout de "Retour sur investissement" dans le menu Sujet. Le champ Sujet qualifie la demande principale ; les thèmes à cocher détaillent le contenu souhaité pour une présentation Teams.
 - Contact : la case "Retour sur investissement" dans les thèmes Teams reçoit une couleur ambre distincte pour mieux ressortir.
 - Contact : le libellé "Message *" devient "Précisions sur votre projet *".
+- Audit qualité images : retrait des visuels basse définition des carrousels produits/cartes et modales. Les carrousels de présentation ne conservent que des images autour de 1080-1200 px ; les images plus petites restent uniquement dans les onglets dédiés quand elles sont utiles comme documents, examens, antennes ou workflow.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
