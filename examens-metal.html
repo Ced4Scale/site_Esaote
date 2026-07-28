@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-planes2" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-sync-lightbox" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -58,7 +58,7 @@
   <div class="image-lightbox" id="caseLightbox" role="dialog" aria-modal="true" aria-label="Image agrandie" hidden>
     <button class="image-lightbox__close" id="caseLightboxClose" aria-label="Fermer l'image agrandie">&times;</button>
     <button class="image-lightbox__nav image-lightbox__nav--prev" id="caseLightboxPrev" aria-label="Image précédente">‹</button>
-    <img id="caseLightboxImage" alt="Coupe IRM agrandie" />
+    <div class="image-lightbox__images" id="caseLightboxImages"></div>
     <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
     <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
   </div>
@@ -79,10 +79,13 @@
       var slider = document.getElementById("caseSlider");
       var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
-      var lightboxImage = document.getElementById("caseLightboxImage");
+      var lightboxImages = document.getElementById("caseLightboxImages");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
       var playTimer = null;
+      var paneClickTimer = null;
       var lightboxAcquisition = null;
+      var lightboxAcquisitions = null;
+      var checkedAcquisitions = {};
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -122,6 +125,8 @@
           button.addEventListener("click", function () {
             selectedCase = Number(button.dataset.index);
             selectedImage = 0;
+            lightboxAcquisition = null;
+            lightboxAcquisitions = null;
             update();
           });
         });
@@ -152,6 +157,7 @@
         compare.innerHTML = "";
         imageButton.hidden = false;
         lightboxAcquisition = null;
+        lightboxAcquisitions = null;
         image.src = acquisition.images[selectedImage];
         image.alt = item.title + " - coupe " + (selectedImage + 1);
       }
@@ -189,8 +195,29 @@
         }
         compare.querySelectorAll("button").forEach(function (button) {
           button.addEventListener("click", function () {
-            lightboxAcquisition = acquisitions[Number(button.dataset.acquisition)];
-            openLightbox();
+            var acquisitionIndex = Number(button.dataset.acquisition);
+            if (paneClickTimer) window.clearTimeout(paneClickTimer);
+            paneClickTimer = window.setTimeout(function () {
+              lightboxAcquisition = acquisitions[acquisitionIndex];
+              lightboxAcquisitions = null;
+              openLightbox();
+            }, 220);
+          });
+          button.addEventListener("dblclick", function (event) {
+            event.preventDefault();
+            if (paneClickTimer) {
+              window.clearTimeout(paneClickTimer);
+              paneClickTimer = null;
+            }
+            openSelectedLightbox();
+          });
+        });
+        compare.querySelectorAll("input").forEach(function (checkbox) {
+          checkbox.addEventListener("click", function (event) {
+            event.stopPropagation();
+          });
+          checkbox.addEventListener("change", function () {
+            setChecked(Number(checkbox.dataset.acquisition), checkbox.checked);
           });
         });
       }
@@ -217,10 +244,40 @@
 
       function renderPane(item, acquisition, index, maxCount) {
         var imageIndex = mappedIndex(acquisition, maxCount);
-        return '<button class="case-viewer__pane" type="button" data-acquisition="' + index + '">' +
+        var checked = checkedIndexes().indexOf(index) !== -1 ? " checked" : "";
+        return '<div class="case-viewer__pane-wrap">' +
+          '<label class="case-viewer__check">' +
+          '<input type="checkbox" data-acquisition="' + index + '"' + checked + ' />' +
+          '<span>Comparer</span>' +
+          '</label>' +
+          '<button class="case-viewer__pane" type="button" data-acquisition="' + index + '">' +
           '<img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
           '<span>' + acquisition.label + ' · ' + (imageIndex + 1) + '/' + acquisition.images.length + '</span>' +
-          '</button>';
+          '</button>' +
+          '</div>';
+      }
+
+      function caseKey() {
+        var item = current();
+        return item ? item.slug || item.title : "case";
+      }
+
+      function checkedIndexes() {
+        return checkedAcquisitions[caseKey()] || [];
+      }
+
+      function visibleCheckedIndexes() {
+        return Array.from(compare.querySelectorAll(".case-viewer__check input:checked")).map(function (checkbox) {
+          return Number(checkbox.dataset.acquisition);
+        });
+      }
+
+      function setChecked(index, isChecked) {
+        var key = caseKey();
+        var indexes = checkedAcquisitions[key] || [];
+        if (isChecked && indexes.indexOf(index) === -1) indexes.push(index);
+        if (!isChecked) indexes = indexes.filter(function (value) { return value !== index; });
+        checkedAcquisitions[key] = indexes;
       }
 
       function step(delta) {
@@ -230,8 +287,9 @@
 
       function loopStep() {
         var item = current();
-        if (!item || !item.images.length) return;
-        selectedImage = (selectedImage + 1) % item.images.length;
+        var maxCount = item ? maxImages(item) : 0;
+        if (!maxCount) return;
+        selectedImage = (selectedImage + 1) % maxCount;
         update();
       }
 
@@ -252,22 +310,42 @@
         var item = current();
         var acquisitions = acquisitionsFor(item);
         var maxCount = maxImages(item);
-        var acquisition = lightboxAcquisition || acquisitions[0];
-        var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
-        lightboxImage.src = acquisition.images[imageIndex];
-        lightboxCaption.textContent = item.title + " · " + acquisition.label + " · coupe " + (imageIndex + 1) + "/" + acquisition.images.length;
+        var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        lightboxImages.classList.toggle("image-lightbox__images--compare", displayedAcquisitions.length > 1);
+        lightboxImages.innerHTML = displayedAcquisitions.map(function (acquisition) {
+          var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
+          return '<figure><img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
+            '<figcaption>' + acquisition.label + ' · coupe ' + (imageIndex + 1) + '/' + acquisition.images.length + '</figcaption></figure>';
+        }).join("");
+        lightboxCaption.textContent = item.title + " · " + displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
       }
 
       function openLightbox() {
         lightbox.hidden = false;
         lightbox.style.display = "flex";
+        lightbox.classList.add("is-open");
         updateLightbox();
+      }
+
+      function openSelectedLightbox() {
+        var acquisitions = acquisitionsFor(current());
+        var indexes = visibleCheckedIndexes();
+        if (!indexes.length) indexes = checkedIndexes();
+        var selected = indexes.map(function (index) {
+          return acquisitions[index];
+        }).filter(Boolean);
+        if (!selected.length) return;
+        lightboxAcquisition = null;
+        lightboxAcquisitions = selected;
+        openLightbox();
       }
 
       function closeLightbox() {
         lightbox.style.display = "none";
+        lightbox.classList.remove("is-open");
         lightbox.hidden = true;
         lightboxAcquisition = null;
+        lightboxAcquisitions = null;
       }
 
       document.getElementById("caseClose").addEventListener("click", goBack);
@@ -283,7 +361,7 @@
       document.getElementById("caseLightboxPrev").addEventListener("click", function (event) { event.stopPropagation(); step(-1); });
       document.getElementById("caseLightboxNext").addEventListener("click", function (event) { event.stopPropagation(); step(1); });
       lightbox.addEventListener("click", closeLightbox);
-      lightboxImage.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxImages.addEventListener("click", function (event) { event.stopPropagation(); });
       document.addEventListener("keydown", function (event) {
         if (event.key === "Escape") {
           if (!lightbox.hidden) closeLightbox();
