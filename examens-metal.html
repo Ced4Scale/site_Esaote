@@ -44,6 +44,7 @@
         <button class="case-viewer__image" id="caseImageButton" type="button" aria-label="Agrandir l'image">
           <img id="caseImage" alt="Coupe IRM" />
         </button>
+        <div class="case-viewer__compare" id="caseCompare" hidden></div>
         <div class="case-viewer__controls">
           <button type="button" id="casePrev" aria-label="Coupe précédente">‹</button>
           <button class="case-viewer__play" type="button" id="casePlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
@@ -73,12 +74,15 @@
       var description = document.getElementById("caseDescription");
       var counter = document.getElementById("caseCounter");
       var image = document.getElementById("caseImage");
+      var imageButton = document.getElementById("caseImageButton");
+      var compare = document.getElementById("caseCompare");
       var slider = document.getElementById("caseSlider");
       var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImage = document.getElementById("caseLightboxImage");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
       var playTimer = null;
+      var lightboxAcquisition = null;
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -89,11 +93,29 @@
         return cases[selectedCase];
       }
 
+      function acquisitionsFor(item) {
+        if (item.acquisitions && item.acquisitions.length) return item.acquisitions;
+        return [{ label: item.sequence, images: item.images || [] }];
+      }
+
+      function maxImages(item) {
+        return acquisitionsFor(item).reduce(function (max, acquisition) {
+          return Math.max(max, acquisition.images.length);
+        }, 0);
+      }
+
+      function mappedIndex(acquisition, maxCount) {
+        if (!acquisition.images.length || maxCount <= 1) return 0;
+        return Math.round((selectedImage / (maxCount - 1)) * (acquisition.images.length - 1));
+      }
+
       function renderList() {
         list.innerHTML = cases.map(function (item, index) {
+          var acquisitions = acquisitionsFor(item);
+          var seriesText = acquisitions.length > 1 ? acquisitions.length + " acquisitions" : item.images.length + " coupes";
           return '<button type="button" class="case-viewer__item" data-index="' + index + '">' +
             '<strong>' + item.title + '</strong>' +
-            '<span>' + item.sequence + ' · ' + item.images.length + ' coupes</span>' +
+            '<span>' + item.sequence + ' · ' + seriesText + '</span>' +
             '</button>';
         }).join("");
         list.querySelectorAll("button").forEach(function (button) {
@@ -108,19 +130,48 @@
       function update() {
         var item = current();
         if (!item) return;
-        selectedImage = Math.max(0, Math.min(selectedImage, item.images.length - 1));
+        var acquisitions = acquisitionsFor(item);
+        var maxCount = maxImages(item);
+        selectedImage = Math.max(0, Math.min(selectedImage, maxCount - 1));
         title.textContent = item.title;
         sequence.textContent = item.sequence;
         description.textContent = item.description;
-        counter.textContent = (selectedImage + 1) + "/" + item.images.length;
-        slider.max = item.images.length;
+        counter.textContent = (selectedImage + 1) + "/" + maxCount;
+        slider.max = Math.max(1, maxCount);
         slider.value = selectedImage + 1;
-        image.src = item.images[selectedImage];
-        image.alt = item.title + " - coupe " + (selectedImage + 1);
+        if (acquisitions.length > 1) renderCompare(item, acquisitions, maxCount);
+        else renderSingle(item, acquisitions[0]);
         list.querySelectorAll("button").forEach(function (button, index) {
           button.classList.toggle("is-active", index === selectedCase);
         });
         if (!lightbox.hidden) updateLightbox();
+      }
+
+      function renderSingle(item, acquisition) {
+        compare.hidden = true;
+        compare.innerHTML = "";
+        imageButton.hidden = false;
+        lightboxAcquisition = null;
+        image.src = acquisition.images[selectedImage];
+        image.alt = item.title + " - coupe " + (selectedImage + 1);
+      }
+
+      function renderCompare(item, acquisitions, maxCount) {
+        imageButton.hidden = true;
+        compare.hidden = false;
+        compare.innerHTML = acquisitions.map(function (acquisition, index) {
+          var imageIndex = mappedIndex(acquisition, maxCount);
+          return '<button class="case-viewer__pane" type="button" data-acquisition="' + index + '">' +
+            '<img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
+            '<span>' + acquisition.label + ' · ' + (imageIndex + 1) + '/' + acquisition.images.length + '</span>' +
+            '</button>';
+        }).join("");
+        compare.querySelectorAll("button").forEach(function (button) {
+          button.addEventListener("click", function () {
+            lightboxAcquisition = acquisitions[Number(button.dataset.acquisition)];
+            openLightbox();
+          });
+        });
       }
 
       function step(delta) {
@@ -150,8 +201,12 @@
 
       function updateLightbox() {
         var item = current();
-        lightboxImage.src = item.images[selectedImage];
-        lightboxCaption.textContent = item.title + " · " + item.sequence + " · coupe " + (selectedImage + 1) + "/" + item.images.length;
+        var acquisitions = acquisitionsFor(item);
+        var maxCount = maxImages(item);
+        var acquisition = lightboxAcquisition || acquisitions[0];
+        var imageIndex = acquisitions.length > 1 ? mappedIndex(acquisition, maxCount) : selectedImage;
+        lightboxImage.src = acquisition.images[imageIndex];
+        lightboxCaption.textContent = item.title + " · " + acquisition.label + " · coupe " + (imageIndex + 1) + "/" + acquisition.images.length;
       }
 
       function openLightbox() {
@@ -163,6 +218,7 @@
       function closeLightbox() {
         lightbox.style.display = "none";
         lightbox.hidden = true;
+        lightboxAcquisition = null;
       }
 
       document.getElementById("caseClose").addEventListener("click", goBack);
@@ -173,7 +229,7 @@
         selectedImage = Number(slider.value) - 1;
         update();
       });
-      document.getElementById("caseImageButton").addEventListener("click", openLightbox);
+      imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
       document.getElementById("caseLightboxPrev").addEventListener("click", function (event) { event.stopPropagation(); step(-1); });
       document.getElementById("caseLightboxNext").addEventListener("click", function (event) { event.stopPropagation(); step(1); });
