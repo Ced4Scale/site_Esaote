@@ -54,6 +54,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout d'une lightbox vidéo : clic ou clavier sur une vidéo de fiche produit ouvre la vidéo en grand format, avec croix en haut à gauche, clic sur le fond ou touche Échap pour revenir à la fiche.
 
+- Simplification de la section "Champ moyen en pratique" : suppression des images dans les 4 arguments cliniques, conservation des titres et synthèses, ajout d'un bouton de demande de présentation Teams.
+
 - Les badges UniHA O-scan et G-scan pointent désormais vers le marché UniHA Imagerie de coupe 2025, réf. M_2728 : O-scan lot 9 IRM bas champ dédié extrémités, G-scan lot 8 IRM bas champ ostéoarticulaire en charge.
 
 - Ajout d'un onglet "Documents" dans la fiche O-scan avec les documents officiels fournis : brochure, DICOM Conformance Statement et IHE Integration Statement. La brochure est aussi utilisée comme source d'images d'examens supplémentaires.
