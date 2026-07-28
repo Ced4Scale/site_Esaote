@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- Fiche O-scan : réorganisation du pitch et des arguments du plus important au moins important, avec priorité au confort patient, au suivi orthopédique, au dynamique, puis à l'organisation, l'installation, la RSE et UniHA.
+
 - Vidéo O-scan St. Augustine : libellé clarifié en "Dr Thomas (Thom) Lebeau" et légende marquée comme source officielle Esaote.
 
 - Ajout public des termes Esaote AgilExam, HyperClarity et HyperSpeed dans les carrousels et fiches produits, avec bulles d'information cliquables basées sur les pages officielles Esaote.
