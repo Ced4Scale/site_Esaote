@@ -77,6 +77,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - O-scan : remplacement de "ou en cabinet spécialisé" par une formulation marché français : installation en radiologie centrale ou dans le service d'imagerie en coupe.
 - Examens métal : création et mise en ligne de `examens-metal.html`, page publique de démonstration avec 6 séries d'images DICOM converties localement en JPEG, sans fichiers DICOM ni tags patient. Lien ajouté depuis l'argument "Implants et prothèses".
 - RSE : précision de la formulation officielle "Green MRI par technologie d'aimant permanent Esaote (Permanent magnet technology)" pour nommer la technologie sans hélium ni cryogénie.
+- RSE : clarification de "Consommation minimale" : distinguer l'électricité consommée par l'IRM et l'électricité indirecte liée à la pompe à chaleur/climatisation de salle.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
