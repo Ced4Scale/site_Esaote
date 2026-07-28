@@ -74,6 +74,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Vidéos O-scan : retrait de l'ancienne vidéo officielle générique "Engineered for Performance, Designed for Comfort" car elle ne correspond plus au positionnement marché français actuel où une seule O-scan est commercialisée.
 - I-Genius : ajout de l'argument hygiène/workflow bloc avec formulation validée par Cédric : patient maintenu au bloc, sur la même table, sans transfert vers le service d'imagerie, avec réduction de la complexité, des ruptures de workflow et du risque infectieux.
 - I-Genius : remplacement de "table intégrée" / "table opératoire intégrée" par "table de bloc intégrée" dans la banderole et les bénéfices.
+- O-scan : remplacement de "ou en cabinet spécialisé" par une formulation marché français : installation en radiologie centrale ou dans le service d'imagerie en coupe.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
