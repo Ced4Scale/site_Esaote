@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-black-lightbox" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-windowing" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -51,10 +51,13 @@
           <input id="caseSlider" type="range" min="1" max="1" value="1" />
           <button type="button" id="caseNext" aria-label="Coupe suivante">›</button>
         </div>
-        <div class="case-viewer__contrast">
-          <span>Contraste</span>
-          <input id="caseContrast" type="range" min="50" max="180" value="100" />
-          <button type="button" id="caseContrastReset" aria-label="Réinitialiser le contraste">100%</button>
+        <div class="case-viewer__windowing">
+          <span>Window level</span>
+          <input id="caseWindowLevel" type="range" min="50" max="150" value="100" />
+          <button type="button" id="caseWindowLevelReset" aria-label="Réinitialiser le window level">100%</button>
+          <span>Window width</span>
+          <input id="caseWindowWidth" type="range" min="50" max="180" value="100" />
+          <button type="button" id="caseWindowWidthReset" aria-label="Réinitialiser le window width">100%</button>
         </div>
       </section>
     </div>
@@ -70,9 +73,13 @@
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
       <input id="caseLightboxSlider" type="range" min="1" max="1" value="1" />
       <button type="button" id="caseLightboxControlNext" aria-label="Coupe suivante">›</button>
-      <label class="image-lightbox__contrast">
-        <span>Contraste</span>
-        <input id="caseLightboxContrast" type="range" min="50" max="180" value="100" />
+      <label class="image-lightbox__windowing">
+        <span>Window level</span>
+        <input id="caseLightboxWindowLevel" type="range" min="50" max="150" value="100" />
+      </label>
+      <label class="image-lightbox__windowing">
+        <span>Window width</span>
+        <input id="caseLightboxWindowWidth" type="range" min="50" max="180" value="100" />
       </label>
     </div>
     <p class="image-lightbox__caption" id="caseLightboxCaption"></p>
@@ -92,15 +99,18 @@
       var imageButton = document.getElementById("caseImageButton");
       var compare = document.getElementById("caseCompare");
       var slider = document.getElementById("caseSlider");
-      var contrastSlider = document.getElementById("caseContrast");
-      var contrastReset = document.getElementById("caseContrastReset");
+      var windowLevelSlider = document.getElementById("caseWindowLevel");
+      var windowLevelReset = document.getElementById("caseWindowLevelReset");
+      var windowWidthSlider = document.getElementById("caseWindowWidth");
+      var windowWidthReset = document.getElementById("caseWindowWidthReset");
       var playButton = document.getElementById("casePlay");
       var lightbox = document.getElementById("caseLightbox");
       var lightboxImages = document.getElementById("caseLightboxImages");
       var lightboxCaption = document.getElementById("caseLightboxCaption");
       var lightboxControls = document.getElementById("caseLightboxControls");
       var lightboxSlider = document.getElementById("caseLightboxSlider");
-      var lightboxContrastSlider = document.getElementById("caseLightboxContrast");
+      var lightboxWindowLevelSlider = document.getElementById("caseLightboxWindowLevel");
+      var lightboxWindowWidthSlider = document.getElementById("caseLightboxWindowWidth");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
       var playTimer = null;
       var paneClickTimer = null;
@@ -108,7 +118,10 @@
       var lightboxAcquisitions = null;
       var lightboxRenderKey = "";
       var checkedAcquisitions = {};
-      var imageContrast = 100;
+      var openingWindowLevel = 100;
+      var openingWindowWidth = 100;
+      var windowLevel = openingWindowLevel;
+      var windowWidth = openingWindowWidth;
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -335,12 +348,20 @@
         checkedAcquisitions[key] = indexes;
       }
 
-      function setImageContrast(value) {
-        imageContrast = Math.max(50, Math.min(180, Number(value) || 100));
-        document.documentElement.style.setProperty("--case-image-contrast", imageContrast + "%");
-        contrastSlider.value = imageContrast;
-        lightboxContrastSlider.value = imageContrast;
-        contrastReset.textContent = imageContrast + "%";
+      function setWindowLevel(value) {
+        windowLevel = Math.max(50, Math.min(150, Number(value) || openingWindowLevel));
+        document.documentElement.style.setProperty("--case-window-level", windowLevel + "%");
+        windowLevelSlider.value = windowLevel;
+        lightboxWindowLevelSlider.value = windowLevel;
+        windowLevelReset.textContent = windowLevel + "%";
+      }
+
+      function setWindowWidth(value) {
+        windowWidth = Math.max(50, Math.min(180, Number(value) || openingWindowWidth));
+        document.documentElement.style.setProperty("--case-window-width", windowWidth + "%");
+        windowWidthSlider.value = windowWidth;
+        lightboxWindowWidthSlider.value = windowWidth;
+        windowWidthReset.textContent = windowWidth + "%";
       }
 
       function step(delta) {
@@ -458,20 +479,30 @@
         selectedImage = Number(slider.value) - 1;
         update();
       });
-      contrastSlider.addEventListener("input", function () {
-        setImageContrast(contrastSlider.value);
+      windowLevelSlider.addEventListener("input", function () {
+        setWindowLevel(windowLevelSlider.value);
       });
-      contrastReset.addEventListener("click", function () {
-        setImageContrast(100);
+      windowLevelReset.addEventListener("click", function () {
+        setWindowLevel(openingWindowLevel);
+      });
+      windowWidthSlider.addEventListener("input", function () {
+        setWindowWidth(windowWidthSlider.value);
+      });
+      windowWidthReset.addEventListener("click", function () {
+        setWindowWidth(openingWindowWidth);
       });
       lightboxSlider.addEventListener("click", function (event) { event.stopPropagation(); });
       lightboxSlider.addEventListener("input", function () {
         selectedImage = Number(lightboxSlider.value) - 1;
         update();
       });
-      lightboxContrastSlider.addEventListener("click", function (event) { event.stopPropagation(); });
-      lightboxContrastSlider.addEventListener("input", function () {
-        setImageContrast(lightboxContrastSlider.value);
+      lightboxWindowLevelSlider.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxWindowLevelSlider.addEventListener("input", function () {
+        setWindowLevel(lightboxWindowLevelSlider.value);
+      });
+      lightboxWindowWidthSlider.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxWindowWidthSlider.addEventListener("input", function () {
+        setWindowWidth(lightboxWindowWidthSlider.value);
       });
       imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
