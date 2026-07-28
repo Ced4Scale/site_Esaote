@@ -50,6 +50,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Ajout des arguments défilants O-scan "Easy to use" et "Confort" sur la carte produit et dans la modale.
 - Clarification des arguments IA défilants : S-scan affiche "IA e-SPADES selon config." et Magnifico affiche "IA HyperClarity" en plus de "IA e-SPADES".
 - Référence O-scan : retrait du préfixe "Phrase KOL à partager" pour ne conserver que la citation.
+- Enrichissement des références installées : ajout de sites publics supplémentaires avec établissement, ville/pays et référent public quand disponible (O-scan : St. Augustine, Columbia Memorial, Prof. Thermann Heidelberg ; S-scan : Prof. Thermann Heidelberg ; G-scan : Glan Clwyd, Spine Nevada ; Magnifico : ROC Aschheim).
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
