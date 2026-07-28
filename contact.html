@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,600;0,700;0,800;0,900;1,400&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-contact-fields" />
+  <link rel="stylesheet" href="styles.css?v=20260728-teams-form" />
 </head>
 <body>
 
@@ -106,6 +106,7 @@
               <select id="sujet" name="sujet">
                 <option value="">— Choisir —</option>
                 <option>Demande d'information générale</option>
+                <option>Présentation Teams — arguments cliniques</option>
                 <option>Demander une démonstration</option>
                 <option>O-scan — extrémités</option>
                 <option>S-scan — MSK &amp; rachis</option>
@@ -124,6 +125,15 @@
                 <option>Plus de 12 mois</option>
               </select>
             </div>
+            <fieldset class="field choice-field">
+              <legend>Thèmes à aborder pendant la présentation Teams</legend>
+              <div class="choice-grid">
+                <label><input type="checkbox" name="themes" value="Implants et prothèses" /> <span>Implants et prothèses</span></label>
+                <label><input type="checkbox" name="themes" value="IRM dynamique" /> <span>IRM dynamique</span></label>
+                <label><input type="checkbox" name="themes" value="Rachis en charge" /> <span>Rachis en charge</span></label>
+                <label><input type="checkbox" name="themes" value="Interventionnel rachis" /> <span>Interventionnel rachis</span></label>
+              </div>
+            </fieldset>
             <div class="field">
               <label for="message">Message *</label>
               <textarea id="message" name="message" required placeholder="Votre projet, vos questions…"></textarea>
@@ -179,6 +189,7 @@
         if (!form.checkValidity()) { form.reportValidity(); return; }
         var v = function (id) { var el = document.getElementById(id); return el ? el.value.trim() : ""; };
         var nom = v("nom"), email = v("email"), fonction = v("fonction"), telephone = v("telephone"), structure = v("structure"), sujet = v("sujet"), timing = v("timing"), message = v("message");
+        var themes = Array.prototype.slice.call(form.querySelectorAll('input[name="themes"]:checked')).map(function (input) { return input.value; });
         var subject = "Contact site IRM Esaote" + (sujet ? " — " + sujet : "") + (nom ? " — " + nom : "");
         var body =
           "Nom : " + nom + "\n" +
@@ -188,6 +199,7 @@
           "Établissement : " + (structure || "—") + "\n" +
           "Sujet : " + (sujet || "—") + "\n\n" +
           "Timing du projet : " + (timing || "—") + "\n\n" +
+          "Thèmes souhaités : " + (themes.length ? themes.join(", ") : "—") + "\n\n" +
           "Message :\n" + message + "\n";
         window.location.href = "mailto:" + DEST +
           "?subject=" + encodeURIComponent(subject) +
@@ -195,6 +207,15 @@
         ok.classList.add("is-visible");
         ok.scrollIntoView({ behavior: "smooth", block: "center" });
       });
+      var params = new URLSearchParams(window.location.search);
+      if (params.get("demande") === "presentation-teams") {
+        var sujet = document.getElementById("sujet");
+        var message = document.getElementById("message");
+        if (sujet) sujet.value = "Présentation Teams — arguments cliniques";
+        if (message && !message.value) {
+          message.value = "Bonjour Cédric,\n\nJe souhaite organiser une présentation Teams sur les arguments cliniques Esaote IRM.\n\nMerci,";
+        }
+      }
     })();
   </script>
 </body>
