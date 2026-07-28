@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-pinch-zoom" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-patient-axis" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -79,7 +79,7 @@
     <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
     <p class="image-lightbox__window-values" id="caseLightboxWindowValues">WL 100% · WW 100%</p>
     <div class="image-lightbox__cube-controls" id="caseLightboxCubeControls" hidden>
-      <button type="button" id="caseLightboxAxisCube" aria-label="Changer l'axe MPR">AX</button>
+      <button type="button" id="caseLightboxAxisCube" aria-label="Changer l'axe MPR"></button>
       <button type="button" id="caseLightboxModeCube" aria-label="Basculer 2D 3D">3D</button>
     </div>
     <div class="image-lightbox__controls" id="caseLightboxControls">
@@ -683,13 +683,26 @@
         return acquisition && acquisition.axisViews && acquisition.axisViews.length > 1 ? acquisition : null;
       }
 
-      function axisCubeLabel(label) {
+      function axisCubeMeta(label) {
         var normalized = (label || "").toLowerCase();
-        if (normalized.indexOf("axial 1") !== -1) return "AX1";
-        if (normalized.indexOf("axial 2") !== -1) return "AX2";
-        if (normalized.indexOf("coronal") !== -1) return "COR";
-        if (normalized.indexOf("mpr") !== -1) return "MPR";
-        return "AX";
+        if (normalized.indexOf("axial 1") !== -1) return { view: "axial", badge: "1", name: "axial 1" };
+        if (normalized.indexOf("axial 2") !== -1) return { view: "axial", badge: "2", name: "axial 2" };
+        if (normalized.indexOf("sagittal") !== -1) return { view: "sagittal", badge: "", name: "sagittal" };
+        if (normalized.indexOf("coronal") !== -1) return { view: "coronal", badge: "", name: "coronal" };
+        if (normalized.indexOf("mpr") !== -1) return { view: "sagittal", badge: "", name: "MPR" };
+        return { view: "axial", badge: "", name: "axial" };
+      }
+
+      function axisCubeMarkup(label) {
+        var meta = axisCubeMeta(label);
+        var badge = meta.badge ? '<span class="patient-axis__badge">' + meta.badge + '</span>' : "";
+        return '<span class="patient-axis patient-axis--' + meta.view + '" aria-hidden="true">' +
+          '<span class="patient-axis__body">' +
+          '<span class="patient-axis__head"></span>' +
+          '<span class="patient-axis__torso"></span>' +
+          '<span class="patient-axis__feet"></span>' +
+          '</span>' + badge +
+          '</span><span class="sr-only">Plan ' + meta.name + '</span>';
       }
 
       function selectedAxisLabel(acquisition) {
@@ -705,7 +718,9 @@
         lightboxCubeControls.hidden = false;
         var selectedLabel = selectedAxisLabel(acquisition);
         var currentMpr = mprAxisViews(acquisition).find(function (view) { return view.label === selectedLabel; });
-        lightboxAxisCube.textContent = currentMpr ? axisCubeLabel(currentMpr.label) : "AX";
+        var cubeLabel = currentMpr ? currentMpr.label : selectedLabel;
+        lightboxAxisCube.innerHTML = axisCubeMarkup(cubeLabel);
+        lightboxAxisCube.setAttribute("aria-label", "Changer l'axe MPR, plan actuel " + axisCubeMeta(cubeLabel).name);
         lightboxModeCube.textContent = currentMpr || isMprAxesSelected(acquisition) ? "2D" : "3D";
         lightboxModeCube.setAttribute("aria-pressed", currentMpr || isMprAxesSelected(acquisition) ? "false" : "true");
       }
