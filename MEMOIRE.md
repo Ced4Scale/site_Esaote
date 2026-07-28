@@ -61,6 +61,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Page champ moyen : les 5 blocs d'arguments cliniques sont affichés sur une seule ligne en desktop, avec repli en 2 colonnes puis 1 colonne sur écrans plus petits.
 - Images : retrait des photos perçues comme tronquées dans les carrousels principaux O-scan et G-scan, et suppression du léger zoom au survol des cartes pour éviter tout recadrage visuel.
 - Carrousel arguments : réduction de la taille de police et de la hauteur de la ligne de mots-clés qui défile sous les photos.
+- Branding : remplacement du logo/libellé "Esaote Medical France" en haut de page par le logo Ced4Scale fourni par Cédric. Les crédits Esaote restent conservés dans le footer pour les marques et visuels produits.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
