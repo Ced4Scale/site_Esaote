@@ -54,6 +54,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Section "Champ moyen en pratique" enrichie avec un 5e argument I-Genius : bloc neuro / iMRI, contrôles per-opératoires sans transfert patient. La fiche Teams ajoute aussi le thème "Bloc neuro / I-Genius" à cocher.
 - Formulaire contact Teams enrichi : ajout des thèmes champs moyens, retour sur investissement et présentation produit au choix pour O-scan, S-scan, G-scan, Magnifico et I-Genius.
 - I-Genius : l'onglet anciennement "Voir les examens" est renommé "Voir le workflow", car les visuels disponibles sont des visuels de workflow/démonstration et non des images d'examens diagnostiques.
+- Contact : ajout de "Retour sur investissement" dans le menu Sujet. Le champ Sujet qualifie la demande principale ; les thèmes à cocher détaillent le contenu souhaité pour une présentation Teams.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
