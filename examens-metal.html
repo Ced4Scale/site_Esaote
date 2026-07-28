@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-per-pane-pan" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-patient-icons" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -605,7 +605,7 @@
           lightboxImages.innerHTML = displayedViews.map(function (view, index) {
             var className = view.showMprAxes ? ' class="has-mpr-axes"' : "";
             var panKey = view.label + ":" + index;
-            return '<figure' + className + ' data-lightbox-index="' + index + '" data-pan-key="' + panKey + '"><img alt="" /><figcaption></figcaption></figure>';
+            return '<figure' + className + ' data-lightbox-index="' + index + '" data-pan-key="' + panKey + '"><span class="image-lightbox__plane-icon"></span><img alt="" /><figcaption></figcaption></figure>';
           }).join("");
           lightboxRenderKey = renderKey;
         }
@@ -615,10 +615,14 @@
           var imageIndex = mappedIndex(acquisition, maxCount);
           var img = figure.querySelector("img");
           var caption = figure.querySelector("figcaption");
+          var planeIcon = figure.querySelector(".image-lightbox__plane-icon");
           var src = acquisition.images[imageIndex];
           if (img.getAttribute("src") !== src) img.src = src;
           img.alt = item.title + " - " + acquisition.label + " - coupe " + (imageIndex + 1);
           caption.textContent = acquisition.label + " · coupe " + (imageIndex + 1) + "/" + acquisition.images.length;
+          if (planeIcon) {
+            planeIcon.innerHTML = acquisition.showMprAxes ? axisCubeMarkup(acquisition.label) : "";
+          }
         });
         lightboxCaption.textContent = item.title + " · " + lightboxCaptionMode(displayedAcquisitions, displayedViews);
         lightboxSlider.max = Math.max(1, maxCount);
