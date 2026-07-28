@@ -48,6 +48,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout d'un onglet "Références" sur les 5 fiches IRM : Royal Bournemouth Hospital pour O-scan, Zucchi Clinical Institutes pour S-scan Open, Tristate Brain and Spine Institute pour G-scan Brio, Sport Ortho Urgent Care pour Magnifico Open, EANS 2025 et LinkedIn Esaote pour I-Genius. Création de `reference.html` avec croix de retour et bouton d'ouverture de la source officielle.
 
+- Ajout de deux images cliniques officielles Esaote e-SPADES/HyperClarity dans les examens Magnifico, avec badge "HyperClarity" sous chaque image concernée.
+
 - Les badges UniHA O-scan et G-scan pointent désormais vers le marché UniHA Imagerie de coupe 2025, réf. M_2728 : O-scan lot 9 IRM bas champ dédié extrémités, G-scan lot 8 IRM bas champ ostéoarticulaire en charge.
 
 - Ajout d'un onglet "Documents" dans la fiche O-scan avec les documents officiels fournis : brochure, DICOM Conformance Statement et IHE Integration Statement. La brochure est aussi utilisée comme source d'images d'examens supplémentaires.
