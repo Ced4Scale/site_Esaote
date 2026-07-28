@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-axes" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-cubes" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -78,6 +78,10 @@
     <div class="image-lightbox__images" id="caseLightboxImages"></div>
     <button class="image-lightbox__nav image-lightbox__nav--next" id="caseLightboxNext" aria-label="Image suivante">›</button>
     <p class="image-lightbox__window-values" id="caseLightboxWindowValues">WL 100% · WW 100%</p>
+    <div class="image-lightbox__cube-controls" id="caseLightboxCubeControls" hidden>
+      <button type="button" id="caseLightboxAxisCube" aria-label="Changer l'axe MPR">AX</button>
+      <button type="button" id="caseLightboxModeCube" aria-label="Basculer 2D 3D">3D</button>
+    </div>
     <div class="image-lightbox__controls" id="caseLightboxControls">
       <button type="button" id="caseLightboxControlPrev" aria-label="Coupe précédente">‹</button>
       <button class="image-lightbox__play" type="button" id="caseLightboxPlay" aria-label="Lancer la lecture automatique" aria-pressed="false">▶</button>
@@ -151,6 +155,9 @@
       var lightboxCenterButton = document.getElementById("caseLightboxCenter");
       var lightboxAxisControl = document.getElementById("caseLightboxAxisControl");
       var lightboxAxisSelect = document.getElementById("caseLightboxAxis");
+      var lightboxCubeControls = document.getElementById("caseLightboxCubeControls");
+      var lightboxAxisCube = document.getElementById("caseLightboxAxisCube");
+      var lightboxModeCube = document.getElementById("caseLightboxModeCube");
       var lightboxPlayButton = document.getElementById("caseLightboxPlay");
       var lightboxFullscreenButton = document.getElementById("caseLightboxFullscreen");
       var playTimer = null;
@@ -170,6 +177,7 @@
       var lightboxPanY = 0;
       var lightboxDrag = null;
       var mprAxesOption = "__mpr_axes__";
+      var lastMprAxisSelections = {};
 
       function goBack() {
         if (window.history.length > 1) window.history.back();
@@ -533,6 +541,7 @@
         var acquisitions = acquisitionsFor(item);
         var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
         setLightboxAxisOptions(displayedAcquisitions);
+        updateLightboxCubeControls(displayedAcquisitions);
         var displayedViews = lightboxDisplayViews(displayedAcquisitions);
         var maxCount = maxImagesFor(displayedViews);
         selectedImage = Math.max(0, Math.min(selectedImage, maxCount - 1));
@@ -613,6 +622,83 @@
         });
       }
 
+      function volumeAxisView(acquisition) {
+        if (!acquisition || !acquisition.axisViews) return null;
+        return acquisition.axisViews.find(function (view) {
+          var label = (view.label || "").toLowerCase();
+          return label.indexOf("volume") !== -1 || label.indexOf("3d") !== -1;
+        }) || acquisition.axisViews[0];
+      }
+
+      function singleAxisAcquisition(displayedAcquisitions) {
+        if (displayedAcquisitions.length !== 1) return null;
+        var acquisition = displayedAcquisitions[0];
+        return acquisition && acquisition.axisViews && acquisition.axisViews.length > 1 ? acquisition : null;
+      }
+
+      function axisCubeLabel(label) {
+        var normalized = (label || "").toLowerCase();
+        if (normalized.indexOf("axial 1") !== -1) return "AX1";
+        if (normalized.indexOf("axial 2") !== -1) return "AX2";
+        if (normalized.indexOf("coronal") !== -1) return "COR";
+        if (normalized.indexOf("mpr") !== -1) return "MPR";
+        return "AX";
+      }
+
+      function selectedAxisLabel(acquisition) {
+        return lightboxAxisSelections[acquisitionKey(acquisition)] || (acquisition.axisViews[0] && acquisition.axisViews[0].label) || "";
+      }
+
+      function updateLightboxCubeControls(displayedAcquisitions) {
+        var acquisition = singleAxisAcquisition(displayedAcquisitions);
+        if (!acquisition || mprAxisViews(acquisition).length < 2) {
+          lightboxCubeControls.hidden = true;
+          return;
+        }
+        lightboxCubeControls.hidden = false;
+        var selectedLabel = selectedAxisLabel(acquisition);
+        var currentMpr = mprAxisViews(acquisition).find(function (view) { return view.label === selectedLabel; });
+        lightboxAxisCube.textContent = currentMpr ? axisCubeLabel(currentMpr.label) : "AX";
+        lightboxModeCube.textContent = currentMpr || isMprAxesSelected(acquisition) ? "2D" : "3D";
+        lightboxModeCube.setAttribute("aria-pressed", currentMpr || isMprAxesSelected(acquisition) ? "false" : "true");
+      }
+
+      function setAxisSelection(acquisition, label) {
+        if (!acquisition) return;
+        var key = acquisitionKey(acquisition);
+        lightboxAxisSelections[key] = label;
+        if (label !== mprAxesOption && mprAxisViews(acquisition).some(function (view) { return view.label === label; })) {
+          lastMprAxisSelections[key] = label;
+        }
+        selectedImage = 0;
+        lightboxRenderKey = "";
+        update();
+      }
+
+      function cycleMprAxis() {
+        var acquisition = singleAxisAcquisition(lightboxAcquisitions || [lightboxAcquisition || acquisitionsFor(current())[0]]);
+        if (!acquisition) return;
+        var mprViews = mprAxisViews(acquisition);
+        var selectedLabel = selectedAxisLabel(acquisition);
+        var selectedIndex = mprViews.findIndex(function (view) { return view.label === selectedLabel; });
+        var nextView = mprViews[(selectedIndex + 1 + mprViews.length) % mprViews.length] || mprViews[0];
+        setAxisSelection(acquisition, nextView.label);
+      }
+
+      function toggle2d3dAxis() {
+        var acquisition = singleAxisAcquisition(lightboxAcquisitions || [lightboxAcquisition || acquisitionsFor(current())[0]]);
+        if (!acquisition) return;
+        var selectedLabel = selectedAxisLabel(acquisition);
+        var key = acquisitionKey(acquisition);
+        var isMpr = mprAxisViews(acquisition).some(function (view) { return view.label === selectedLabel; }) || selectedLabel === mprAxesOption;
+        if (isMpr) {
+          var volumeView = volumeAxisView(acquisition);
+          setAxisSelection(acquisition, volumeView ? volumeView.label : acquisition.axisViews[0].label);
+        } else {
+          setAxisSelection(acquisition, lastMprAxisSelections[key] || (mprAxisViews(acquisition)[0] && mprAxisViews(acquisition)[0].label));
+        }
+      }
+
       function setLightboxAxisOptions(displayedAcquisitions) {
         var acquisition = displayedAcquisitions.length === 1 ? displayedAcquisitions[0] : null;
         if (!acquisition || !acquisition.axisViews || acquisition.axisViews.length < 2) {
@@ -677,6 +763,7 @@
         lightboxAcquisitions = null;
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
+        lightboxCubeControls.hidden = true;
         centerLightboxZoom();
         setLightboxZoom(100);
         if (isLightboxFullscreen()) exitLightboxFullscreen();
@@ -745,10 +832,16 @@
         event.stopPropagation();
         var acquisition = lightboxAcquisitions ? null : lightboxAcquisition || acquisitionsFor(current())[0];
         if (!acquisition) return;
-        lightboxAxisSelections[acquisitionKey(acquisition)] = lightboxAxisSelect.value;
-        selectedImage = 0;
-        lightboxRenderKey = "";
-        update();
+        setAxisSelection(acquisition, lightboxAxisSelect.value);
+      });
+      lightboxCubeControls.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxAxisCube.addEventListener("click", function (event) {
+        event.stopPropagation();
+        cycleMprAxis();
+      });
+      lightboxModeCube.addEventListener("click", function (event) {
+        event.stopPropagation();
+        toggle2d3dAxis();
       });
       imageButton.addEventListener("click", openLightbox);
       document.getElementById("caseLightboxClose").addEventListener("click", closeLightbox);
