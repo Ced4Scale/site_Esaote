@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- QCM aide au choix : ajout d'une question "Composition actuelle du plateau technique" pour différencier les stratégies scanner seul, deux scanners + IRM, IRM saturée, plateau complet ou projet à construire ; rappel de cette réponse dans le résultat.
+
 - QCM aide au choix : ajout d'une question "Personnel et compétences disponibles" sur le nombre de MERM, la formation à l'imagerie en coupe / IRM et la capacité à absorber une nouvelle activité ; rappel de cette réponse dans le résultat.
 
 - QCM aide au choix : titre remplacé par "Quelle IRM Open est la mieux adaptée à mon service d'imagerie ?".
