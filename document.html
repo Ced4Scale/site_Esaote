@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Document — Esaote Medical France</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260728-doc-viewer" />
+</head>
+<body class="document-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html#produits" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Document</span>
+      <strong id="documentTitle">Esaote Medical France</strong>
+    </div>
+    <button class="document-viewer__close" id="documentClose" type="button" aria-label="Fermer le document et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="document-viewer">
+    <iframe id="documentFrame" title="Document PDF Esaote" loading="eager"></iframe>
+    <div class="document-viewer__fallback" id="documentFallback" hidden>
+      <h1>Document indisponible</h1>
+      <p>Le document demandé n'est pas disponible depuis ce lecteur.</p>
+      <a class="btn" href="index.html#produits">Retour au site</a>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var docs = {
+        "champ-moyen": {
+          title: "Particularités Champs Moyens",
+          src: "assets/docs/esaote-fr-particularites-champs-moyens-du-irm-strasbourg.pdf"
+        },
+        "o-scan-brochure": {
+          title: "Brochure O-scan",
+          src: "assets/docs/o-scan-brochure.pdf"
+        },
+        "o-scan-dicom": {
+          title: "DICOM Conformance Statement",
+          src: "assets/docs/o-scan-dicom-conformance-statement-rel-3-14.pdf"
+        },
+        "o-scan-ihe": {
+          title: "IHE Integration Statement",
+          src: "assets/docs/o-scan-ihe-integration-statement.pdf"
+        }
+      };
+      var params = new URLSearchParams(window.location.search);
+      var doc = docs[params.get("doc") || ""];
+      var title = document.getElementById("documentTitle");
+      var frame = document.getElementById("documentFrame");
+      var fallback = document.getElementById("documentFallback");
+      var close = document.getElementById("documentClose");
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html#produits";
+        }
+      }
+
+      close.addEventListener("click", goBack);
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "Escape") goBack();
+      });
+
+      if (!doc) {
+        frame.hidden = true;
+        fallback.hidden = false;
+        return;
+      }
+
+      document.title = doc.title + " — Esaote Medical France";
+      title.textContent = doc.title;
+      frame.src = doc.src;
+    })();
+  </script>
+</body>
+</html>
