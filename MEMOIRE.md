@@ -50,6 +50,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Ajout de deux images cliniques officielles Esaote e-SPADES/HyperClarity dans les examens Magnifico, avec badge "HyperClarity" sous chaque image concernée.
 
+- Ajout de mots-clés défilants sur les carrousels d'images des 5 IRM, dans les cartes produits et les modales : Open, dynamique, interventionnel, en charge, IA, HyperClarity, etc.
+
 - Les badges UniHA O-scan et G-scan pointent désormais vers le marché UniHA Imagerie de coupe 2025, réf. M_2728 : O-scan lot 9 IRM bas champ dédié extrémités, G-scan lot 8 IRM bas champ ostéoarticulaire en charge.
 
 - Ajout d'un onglet "Documents" dans la fiche O-scan avec les documents officiels fournis : brochure, DICOM Conformance Statement et IHE Integration Statement. La brochure est aussi utilisée comme source d'images d'examens supplémentaires.

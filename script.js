@@ -53,6 +53,32 @@
     });
   }
 
+  function getCarouselKeywords(img) {
+    var value = img.getAttribute("data-carousel-keywords") || "";
+    return value.split("|").map(function (keyword) {
+      return keyword.trim();
+    }).filter(function (keyword, index, list) {
+      return keyword && list.indexOf(keyword) === index;
+    });
+  }
+
+  function updateCarouselKeyword(img, keywords, index) {
+    if (!keywords.length) return;
+    var media = img.closest(".product-card__media, .modal__media");
+    var keyword = media ? media.querySelector(".carousel-keyword") : null;
+    if (!keyword && media) {
+      keyword = document.createElement("span");
+      keyword.className = "carousel-keyword";
+      keyword.setAttribute("aria-live", "polite");
+      media.appendChild(keyword);
+    }
+    if (!keyword) return;
+    keyword.textContent = keywords[index % keywords.length];
+    keyword.classList.remove("is-changing");
+    void keyword.offsetWidth;
+    keyword.classList.add("is-changing");
+  }
+
   function stopImageCarousels(root) {
     root.querySelectorAll("img[data-carousel-images]").forEach(function (img) {
       if (img._carouselTimer) {
@@ -66,6 +92,7 @@
     root.querySelectorAll("img[data-carousel-images]").forEach(function (img) {
       stopImageCarousels(img.parentElement || root);
       var images = getCarouselImages(img);
+      var keywords = getCarouselKeywords(img);
       if (images.length < 2) return;
 
       images.forEach(function (src) {
@@ -74,11 +101,13 @@
       });
 
       var current = Math.max(0, images.indexOf(img.getAttribute("src")));
+      updateCarouselKeyword(img, keywords, current);
       img._carouselTimer = setInterval(function () {
         current = (current + 1) % images.length;
         img.classList.add("is-fading");
         setTimeout(function () {
           img.setAttribute("src", images[current]);
+          updateCarouselKeyword(img, keywords, current);
           img.classList.remove("is-fading");
         }, 220);
       }, 3000);
