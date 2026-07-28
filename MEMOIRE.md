@@ -46,6 +46,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Renforcement O-scan sur l'imagerie dynamique du genou : ajout des mots-clés "Genou dynamique" et "True-Motion", ajout du visuel True-Motion au carrousel et reformulation du bénéfice avec "selon configuration".
 - Le bouton "Demander une présentation Teams" ouvre désormais `contact.html?demande=presentation-teams#contactForm` avec une fiche préremplie et 4 thèmes à cocher : implants/prothèses, IRM dynamique, rachis en charge, interventionnel rachis.
 - Les arguments défilants des carrousels sont désormais placés sous les images, sur une ligne dédiée, avec un défilement ralenti.
+- Lecteur de documents PDF corrigé : iframe fixe sous l'en-tête, scroll activé et paramètres PDF pour afficher les documents avec navigation verticale au-delà de la première page.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
