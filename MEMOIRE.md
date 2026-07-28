@@ -38,6 +38,10 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Le site est simple à modifier : pas de framework, pas de build obligatoire.
 - Le README indique "3 piliers" alors que la page affiche 4 arguments. À corriger lors d'un passage de nettoyage.
+
+### 2026-07-28
+
+- Ajout de phrases KOL à partager dans l'onglet "Voir les références" lorsqu'une source officielle Esaote contient une citation exploitable : O-scan, S-scan, G-scan et Magnifico. I-Genius reste sans phrase KOL de site installé faute de source nominative publique trouvée.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
