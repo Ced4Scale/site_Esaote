@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-patient-icons" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-guides" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -178,6 +178,9 @@
       var lightboxDrag = null;
       var lightboxPointers = {};
       var lightboxPinch = null;
+      var lightboxMprDrag = null;
+      var mprGuideAngle = 0;
+      var mprGuidePosition = 50;
       var mprAxesOption = "__mpr_axes__";
       var lastMprAxisSelections = {};
 
@@ -452,6 +455,74 @@
         lightboxImages.classList.toggle("is-zoomed", lightboxZoom > 100);
       }
 
+      function updateMprGuideStyles(maxCount, hasMprAxes) {
+        if (hasMprAxes && maxCount > 1 && !lightboxMprDrag) {
+          mprGuidePosition = (selectedImage / (maxCount - 1)) * 100;
+        }
+        lightboxImages.style.setProperty("--mpr-guide-position", mprGuidePosition.toFixed(2) + "%");
+        lightboxImages.style.setProperty("--mpr-guide-angle", mprGuideAngle.toFixed(1) + "deg");
+        lightboxImages.classList.toggle("has-active-mpr-guides", Boolean(hasMprAxes));
+      }
+
+      function clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+      }
+
+      function imageRelativePoint(event, figure) {
+        var img = figure.querySelector("img");
+        var rect = (img || figure).getBoundingClientRect();
+        return {
+          rect: rect,
+          x: event.clientX - rect.left,
+          y: event.clientY - rect.top
+        };
+      }
+
+      function startMprGuideDrag(event, figure, action) {
+        var displayedAcquisitions = displayedLightboxAcquisitions(acquisitionsFor(current()));
+        var displayedViews = lightboxDisplayViews(displayedAcquisitions);
+        var maxCount = maxImagesFor(displayedViews);
+        var point = imageRelativePoint(event, figure);
+        var centerX = point.rect.left + (point.rect.width / 2);
+        var centerY = point.rect.top + (point.rect.height / 2);
+        lightboxMprDrag = {
+          id: event.pointerId,
+          action: action,
+          figure: figure,
+          maxCount: maxCount,
+          centerX: centerX,
+          centerY: centerY,
+          startPointerAngle: Math.atan2(event.clientY - centerY, event.clientX - centerX) * 180 / Math.PI,
+          startGuideAngle: mprGuideAngle
+        };
+        lightboxImages.classList.toggle("is-mpr-moving", action === "move");
+        lightboxImages.classList.toggle("is-mpr-rotating", action === "rotate");
+        moveMprGuideDrag(event);
+      }
+
+      function moveMprGuideDrag(event) {
+        if (!lightboxMprDrag || lightboxMprDrag.id !== event.pointerId) return;
+        if (lightboxMprDrag.action === "rotate") {
+          var angle = Math.atan2(event.clientY - lightboxMprDrag.centerY, event.clientX - lightboxMprDrag.centerX) * 180 / Math.PI;
+          mprGuideAngle = clamp(lightboxMprDrag.startGuideAngle + angle - lightboxMprDrag.startPointerAngle, -45, 45);
+          updateMprGuideStyles(lightboxMprDrag.maxCount, true);
+          return;
+        }
+        var point = imageRelativePoint(event, lightboxMprDrag.figure);
+        var ratio = clamp(point.y / point.rect.height, 0, 1);
+        mprGuidePosition = ratio * 100;
+        if (lightboxMprDrag.maxCount > 1) {
+          selectedImage = Math.round(ratio * (lightboxMprDrag.maxCount - 1));
+        }
+        update();
+      }
+
+      function endMprGuideDrag(event) {
+        if (!lightboxMprDrag || lightboxMprDrag.id !== event.pointerId) return;
+        lightboxMprDrag = null;
+        lightboxImages.classList.remove("is-mpr-moving", "is-mpr-rotating");
+      }
+
       function lightboxPan(key) {
         if (!key) key = "default";
         if (!lightboxPans[key]) lightboxPans[key] = { x: 0, y: 0 };
@@ -599,13 +670,21 @@
           return view.label + ":" + (view.showMprAxes ? "mpr" : "standard");
         }).join("|");
         lightboxImages.classList.toggle("image-lightbox__images--compare", displayedViews.length > 1);
-        lightboxImages.classList.toggle("image-lightbox__images--mpr", displayedViews.some(function (view) { return view.showMprAxes; }));
+        var hasMprAxes = displayedViews.some(function (view) { return view.showMprAxes; });
+        lightboxImages.classList.toggle("image-lightbox__images--mpr", hasMprAxes);
         lightboxImages.style.setProperty("--lightbox-columns", displayedViews.length);
         if (lightboxRenderKey !== renderKey) {
           lightboxImages.innerHTML = displayedViews.map(function (view, index) {
             var className = view.showMprAxes ? ' class="has-mpr-axes"' : "";
             var panKey = view.label + ":" + index;
-            return '<figure' + className + ' data-lightbox-index="' + index + '" data-pan-key="' + panKey + '"><span class="image-lightbox__plane-icon"></span><img alt="" /><figcaption></figcaption></figure>';
+            return '<figure' + className + ' data-lightbox-index="' + index + '" data-pan-key="' + panKey + '">' +
+              '<span class="image-lightbox__plane-icon"></span>' +
+              '<span class="image-lightbox__mpr-axis image-lightbox__mpr-axis--main"></span>' +
+              '<span class="image-lightbox__mpr-axis image-lightbox__mpr-axis--cross"></span>' +
+              '<span class="image-lightbox__mpr-hit image-lightbox__mpr-hit--move" data-mpr-action="move" aria-hidden="true"><span>↔</span></span>' +
+              '<span class="image-lightbox__mpr-hit image-lightbox__mpr-hit--rotate image-lightbox__mpr-hit--rotate-left" data-mpr-action="rotate" aria-hidden="true"><span>↻</span></span>' +
+              '<span class="image-lightbox__mpr-hit image-lightbox__mpr-hit--rotate image-lightbox__mpr-hit--rotate-right" data-mpr-action="rotate" aria-hidden="true"><span>↻</span></span>' +
+              '<img alt="" /><figcaption></figcaption></figure>';
           }).join("");
           lightboxRenderKey = renderKey;
         }
@@ -627,6 +706,7 @@
         lightboxCaption.textContent = item.title + " · " + lightboxCaptionMode(displayedAcquisitions, displayedViews);
         lightboxSlider.max = Math.max(1, maxCount);
         lightboxSlider.value = selectedImage + 1;
+        updateMprGuideStyles(maxCount, hasMprAxes);
         updateZoomTransform();
         preloadAround(displayedViews, maxCount);
       }
@@ -972,6 +1052,14 @@
         event.stopPropagation();
         var figure = event.target.closest("figure");
         var panKey = figure ? figure.dataset.panKey : null;
+        var mprAction = event.target.closest("[data-mpr-action]");
+        if (figure && mprAction && figure.classList.contains("has-mpr-axes")) {
+          event.preventDefault();
+          lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
+          try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
+          startMprGuideDrag(event, figure, mprAction.dataset.mprAction);
+          return;
+        }
         lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
         try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
         if (pointerList().length >= 2) {
@@ -989,6 +1077,11 @@
         event.stopPropagation();
         lightboxPointers[event.pointerId].x = event.clientX;
         lightboxPointers[event.pointerId].y = event.clientY;
+        if (lightboxMprDrag && lightboxMprDrag.id === event.pointerId) {
+          event.preventDefault();
+          moveMprGuideDrag(event);
+          return;
+        }
         var points = pointerList();
         if (points.length >= 2 && lightboxPinch) {
           event.preventDefault();
@@ -1006,6 +1099,7 @@
       lightboxImages.addEventListener("pointerup", function (event) {
         event.stopPropagation();
         delete lightboxPointers[event.pointerId];
+        endMprGuideDrag(event);
         if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
         try { lightboxImages.releasePointerCapture(event.pointerId); } catch (error) {}
         if (pointerList().length >= 2) startLightboxPinch();
@@ -1013,6 +1107,7 @@
       });
       lightboxImages.addEventListener("pointercancel", function (event) {
         delete lightboxPointers[event.pointerId];
+        endMprGuideDrag(event);
         if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
         if (pointerList().length < 2) lightboxPinch = null;
       });

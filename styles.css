@@ -370,6 +370,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .image-lightbox__images {
   --lightbox-zoom: 1; --lightbox-pan-x: 0px; --lightbox-pan-y: 0px;
+  --mpr-guide-position: 50%; --mpr-guide-angle: 0deg;
   width: min(1280px, calc(100% - 7rem)); max-height: 82vh; display: grid; gap: .8rem;
   touch-action: none;
 }
@@ -379,17 +380,6 @@ ul { margin: 0; padding: 0; list-style: none; }
 .image-lightbox__images figure {
   position: relative; margin: 0; min-width: 0; display: grid; gap: .55rem; overflow: hidden;
   border-radius: var(--radius); background: #050505;
-}
-.image-lightbox__images figure.has-mpr-axes::before,
-.image-lightbox__images figure.has-mpr-axes::after {
-  content: ""; position: absolute; z-index: 1; pointer-events: none;
-  background: rgba(205,0,0,.86); box-shadow: 0 0 0 1px rgba(255,255,255,.24);
-}
-.image-lightbox__images figure.has-mpr-axes::before {
-  top: 50%; right: .7rem; left: .7rem; height: 1px;
-}
-.image-lightbox__images figure.has-mpr-axes::after {
-  top: .7rem; bottom: 2.35rem; left: 50%; width: 1px;
 }
 .image-lightbox__plane-icon {
   position: absolute; right: .7rem; bottom: 2.65rem; z-index: 2; width: 42px; height: 42px;
@@ -414,6 +404,55 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .image-lightbox__plane-icon .patient-axis__feet {
   width: 10px; height: 4px;
+}
+.image-lightbox__mpr-axis,
+.image-lightbox__mpr-hit {
+  display: none;
+}
+.image-lightbox__images figure.has-mpr-axes .image-lightbox__mpr-axis {
+  position: absolute; z-index: 1; display: block; pointer-events: none;
+  background: rgba(205,0,0,.9); box-shadow: 0 0 0 1px rgba(255,255,255,.24);
+}
+.image-lightbox__mpr-axis--main {
+  top: var(--mpr-guide-position); right: .25rem; left: .25rem; height: 2px;
+  transform: rotate(var(--mpr-guide-angle)); transform-origin: center;
+}
+.image-lightbox__mpr-axis--cross {
+  top: .7rem; bottom: 2.35rem; left: 50%; width: 1px;
+  transform: rotate(var(--mpr-guide-angle)); transform-origin: center;
+}
+.image-lightbox__images figure.has-mpr-axes .image-lightbox__mpr-hit {
+  position: absolute; z-index: 3; display: grid; place-items: center;
+  touch-action: none; user-select: none;
+}
+.image-lightbox__mpr-hit span {
+  width: 32px; height: 32px; display: grid; place-items: center;
+  border-radius: 999px; background: rgba(255,255,255,.95); color: var(--red);
+  border: 1px solid rgba(205,0,0,.45); box-shadow: var(--shadow-md);
+  font-size: 1.1rem; font-weight: 900; line-height: 1;
+  opacity: 0; transform: scale(.88); transition: opacity .12s ease, transform .12s ease;
+}
+.image-lightbox__mpr-hit--move {
+  top: calc(var(--mpr-guide-position) - 18px); right: 18%; left: 18%; height: 36px;
+  cursor: ns-resize; transform: rotate(var(--mpr-guide-angle));
+}
+.image-lightbox__mpr-hit--rotate {
+  top: calc(var(--mpr-guide-position) - 22px); width: 44px; height: 44px;
+  cursor: grab;
+}
+.image-lightbox__mpr-hit--rotate-left { left: -.2rem; }
+.image-lightbox__mpr-hit--rotate-right { right: -.2rem; }
+.image-lightbox__mpr-hit:hover span,
+.image-lightbox__mpr-hit:focus-visible span,
+.image-lightbox__images.is-mpr-moving .image-lightbox__mpr-hit--move span,
+.image-lightbox__images.is-mpr-rotating .image-lightbox__mpr-hit--rotate span {
+  opacity: 1; transform: scale(1);
+}
+.image-lightbox__images.is-mpr-moving .image-lightbox__mpr-hit--move span {
+  color: #fff; background: var(--red);
+}
+.image-lightbox__images.is-mpr-rotating .image-lightbox__mpr-hit--rotate span {
+  color: #fff; background: var(--red);
 }
 .image-lightbox__images img {
   width: 100%; max-height: calc(88vh - 4.5rem); object-fit: contain;
