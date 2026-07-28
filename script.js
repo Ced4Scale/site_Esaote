@@ -38,6 +38,7 @@
   var videoLightbox = document.getElementById("videoLightbox");
   var videoLightboxFrame = document.getElementById("videoLightboxFrame");
   var videoLightboxTitle = document.getElementById("videoLightboxTitle");
+  var videoLightboxCaption = document.getElementById("videoLightboxCaption");
   var videoLightboxClose = document.getElementById("videoLightboxClose");
   var lastImageTrigger = null;
   var lastVideoTrigger = null;
@@ -221,6 +222,10 @@
     if (!videoLightbox || !videoLightboxFrame || !videoLightboxTitle || !iframe) return;
 
     var title = iframe.getAttribute("title") || "Vidéo Esaote";
+    var caption = "";
+    var videoItem = video.closest(".modal__video-list > div");
+    var captionEl = videoItem ? videoItem.querySelector("[data-video-caption]") : null;
+    if (captionEl) caption = captionEl.textContent;
     var clone = iframe.cloneNode(true);
     clone.setAttribute("loading", "eager");
     clone.setAttribute("allowfullscreen", "");
@@ -228,6 +233,10 @@
     clone.setAttribute("mozallowfullscreen", "");
 
     videoLightboxTitle.textContent = title;
+    if (videoLightboxCaption) {
+      videoLightboxCaption.textContent = caption;
+      videoLightboxCaption.hidden = !caption;
+    }
     videoLightboxFrame.innerHTML = "";
     videoLightboxFrame.appendChild(clone);
     lastVideoTrigger = trigger || video;
@@ -248,6 +257,10 @@
       videoLightbox.hidden = true;
       if (videoLightboxFrame) videoLightboxFrame.innerHTML = "";
       if (videoLightboxTitle) videoLightboxTitle.textContent = "";
+      if (videoLightboxCaption) {
+        videoLightboxCaption.textContent = "";
+        videoLightboxCaption.hidden = true;
+      }
       videoLightbox.removeEventListener("transitionend", finish);
       if (lastVideoTrigger && typeof lastVideoTrigger.focus === "function") lastVideoTrigger.focus();
       lastVideoTrigger = null;
@@ -374,6 +387,7 @@
   if (videoLightbox) videoLightbox.addEventListener("click", closeVideoLightbox);
   if (videoLightboxFrame) videoLightboxFrame.addEventListener("click", function (e) { e.stopPropagation(); });
   if (videoLightboxTitle) videoLightboxTitle.addEventListener("click", function (e) { e.stopPropagation(); });
+  if (videoLightboxCaption) videoLightboxCaption.addEventListener("click", function (e) { e.stopPropagation(); });
   if (imageLightbox) {
     imageLightbox.addEventListener("pointerdown", function (e) {
       lightboxPointerStartX = e.clientX;

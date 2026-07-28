@@ -70,6 +70,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Documents : la brochure O-scan est rendue en 12 images PNG haute résolution dans `assets/docs/o-scan-brochure-pages/` et affichée en scroll vertical dans `document.html`, pour éviter le blocage iPad/Safari sur la première page d'un PDF dans iframe.
 - Documents : ajout d'un document "Marquage CE / déclaration de conformité" dans les 5 fiches IRM. Les 4 documents O-scan, S-scan Open, G-scan Brio et Magnifico Open pointent vers les rubriques officielles Esaote DCS Revision 3.17 ; I-Genius est présenté comme conformité à confirmer car aucune déclaration CE séparée publique n'a été identifiée.
 - Références : `reference.html` affiche maintenant une fiche en français dans le site, avec produit, lieu, référent public, synthèse traduite et citation quand disponible, puis un bouton vers la source originale. La croix en haut à droite reste le retour à la page précédente/au produit.
+- Vidéos O-scan : ajout de la vidéo Vimeo officielle "Interview Dr Thom Lebeau - O-scan à la clinique St. Augustine" avec un sous-titrage/traduction française affiché sous la vidéo et repris dans la lightbox agrandie.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
