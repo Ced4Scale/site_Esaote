@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-controls-drawer" />
+  <link rel="stylesheet" href="styles.css?v=20260728-mpr-long-press" />
 </head>
 <body class="case-page case-page--auth-pending">
   <header class="document-viewer__bar">
@@ -204,6 +204,7 @@
       var lightboxPointers = {};
       var lightboxPinch = null;
       var lightboxMprDrag = null;
+      var lightboxMprPress = null;
       var mprGuideAngle = 0;
       var mprGuidePosition = 50;
       var mprAxesOption = "__mpr_axes__";
@@ -555,6 +556,7 @@
       }
 
       function startMprGuideDrag(event, figure, action) {
+        clearMprLongPress();
         var displayedAcquisitions = displayedLightboxAcquisitions(acquisitionsFor(current()));
         var displayedViews = lightboxDisplayViews(displayedAcquisitions);
         var maxCount = maxImagesFor(displayedViews);
@@ -597,6 +599,50 @@
         if (!lightboxMprDrag || lightboxMprDrag.id !== event.pointerId) return;
         lightboxMprDrag = null;
         lightboxImages.classList.remove("is-mpr-moving", "is-mpr-rotating");
+      }
+
+      function clearMprLongPress() {
+        if (lightboxMprPress && lightboxMprPress.timer) {
+          window.clearTimeout(lightboxMprPress.timer);
+        }
+        lightboxMprPress = null;
+        lightboxImages.classList.remove("is-mpr-pressing");
+      }
+
+      function mprActionFromPoint(event, figure) {
+        var point = imageRelativePoint(event, figure);
+        var guideY = point.rect.height * (mprGuidePosition / 100);
+        var distanceToGuide = Math.abs(point.y - guideY);
+        var nearGuide = distanceToGuide <= 24;
+        if (!nearGuide) return "";
+        var edgeZone = Math.min(72, point.rect.width * .18);
+        if (point.x <= edgeZone || point.x >= point.rect.width - edgeZone) return "rotate";
+        return "move";
+      }
+
+      function scheduleMprLongPress(event, figure, action, panKey) {
+        clearMprLongPress();
+        lightboxMprPress = {
+          id: event.pointerId,
+          figure: figure,
+          action: action,
+          panKey: panKey,
+          x: event.clientX,
+          y: event.clientY,
+          timer: window.setTimeout(function () {
+            if (!lightboxMprPress || lightboxMprPress.id !== event.pointerId) return;
+            lightboxImages.classList.add(action === "rotate" ? "is-mpr-rotating" : "is-mpr-moving");
+            startMprGuideDrag(event, figure, action);
+          }, 1000)
+        };
+        lightboxImages.classList.add("is-mpr-pressing");
+      }
+
+      function updateMprLongPress(event) {
+        if (!lightboxMprPress || lightboxMprPress.id !== event.pointerId || lightboxMprDrag) return;
+        var dx = event.clientX - lightboxMprPress.x;
+        var dy = event.clientY - lightboxMprPress.y;
+        if (Math.sqrt((dx * dx) + (dy * dy)) > 14) clearMprLongPress();
       }
 
       function lightboxPan(key) {
@@ -1029,6 +1075,7 @@
         lightboxPointers = {};
         lightboxPinch = null;
         lightboxDrag = null;
+        clearMprLongPress();
         centerLightboxZoom();
         setLightboxZoom(100);
         if (isLightboxFullscreen()) exitLightboxFullscreen();
@@ -1147,7 +1194,21 @@
           event.preventDefault();
           lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
           try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
-          startMprGuideDrag(event, figure, mprAction.dataset.mprAction);
+          scheduleMprLongPress(event, figure, mprAction.dataset.mprAction, panKey);
+          return;
+        }
+        if (figure && figure.classList.contains("has-mpr-axes")) {
+          var guideAction = mprActionFromPoint(event, figure);
+          if (guideAction) {
+            event.preventDefault();
+            lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
+            try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
+            scheduleMprLongPress(event, figure, guideAction, panKey);
+            return;
+          }
+        }
+        if (lightboxMprDrag) {
+          event.preventDefault();
           return;
         }
         lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
@@ -1167,6 +1228,7 @@
         event.stopPropagation();
         lightboxPointers[event.pointerId].x = event.clientX;
         lightboxPointers[event.pointerId].y = event.clientY;
+        updateMprLongPress(event);
         if (lightboxMprDrag && lightboxMprDrag.id === event.pointerId) {
           event.preventDefault();
           moveMprGuideDrag(event);
@@ -1189,6 +1251,7 @@
       lightboxImages.addEventListener("pointerup", function (event) {
         event.stopPropagation();
         delete lightboxPointers[event.pointerId];
+        clearMprLongPress();
         endMprGuideDrag(event);
         if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
         try { lightboxImages.releasePointerCapture(event.pointerId); } catch (error) {}
@@ -1197,6 +1260,7 @@
       });
       lightboxImages.addEventListener("pointercancel", function (event) {
         delete lightboxPointers[event.pointerId];
+        clearMprLongPress();
         endMprGuideDrag(event);
         if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
         if (pointerList().length < 2) lightboxPinch = null;
