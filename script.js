@@ -67,21 +67,23 @@
     });
   }
 
-  function updateCarouselKeyword(img, keywords, index) {
+  function updateCarouselKeyword(img, keywords) {
     if (!keywords.length) return;
     var media = img.closest(".product-card__media, .modal__media");
     var keyword = media ? media.querySelector(".carousel-keyword") : null;
     if (!keyword && media) {
-      keyword = document.createElement("span");
+      keyword = document.createElement("div");
       keyword.className = "carousel-keyword";
-      keyword.setAttribute("aria-live", "polite");
+      keyword.setAttribute("aria-label", "Arguments clés");
       media.appendChild(keyword);
     }
     if (!keyword) return;
-    keyword.textContent = keywords[index % keywords.length];
-    keyword.classList.remove("is-changing");
-    void keyword.offsetWidth;
-    keyword.classList.add("is-changing");
+    if (keyword.dataset.arguments === keywords.join("|")) return;
+    keyword.dataset.arguments = keywords.join("|");
+    var line = keywords.map(function (argument) {
+      return "<span>" + argument + "</span>";
+    }).join("");
+    keyword.innerHTML = '<div class="carousel-keyword__track">' + line + line + "</div>";
   }
 
   function stopImageCarousels(root) {
@@ -106,13 +108,12 @@
       });
 
       var current = Math.max(0, images.indexOf(img.getAttribute("src")));
-      updateCarouselKeyword(img, keywords, current);
+      updateCarouselKeyword(img, keywords);
       img._carouselTimer = setInterval(function () {
         current = (current + 1) % images.length;
         img.classList.add("is-fading");
         setTimeout(function () {
           img.setAttribute("src", images[current]);
-          updateCarouselKeyword(img, keywords, current);
           img.classList.remove("is-fading");
         }, 220);
       }, 3000);
