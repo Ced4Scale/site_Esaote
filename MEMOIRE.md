@@ -59,6 +59,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Contact : le libellé "Message *" devient "Précisions sur votre projet *".
 - Audit qualité images : retrait des visuels basse définition des carrousels produits/cartes et modales. Les carrousels de présentation ne conservent que des images autour de 1080-1200 px ; les images plus petites restent uniquement dans les onglets dédiés quand elles sont utiles comme documents, examens, antennes ou workflow.
 - Page champ moyen : les 5 blocs d'arguments cliniques sont affichés sur une seule ligne en desktop, avec repli en 2 colonnes puis 1 colonne sur écrans plus petits.
+- Images : retrait des photos perçues comme tronquées dans les carrousels principaux O-scan et G-scan, et suppression du léger zoom au survol des cartes pour éviter tout recadrage visuel.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
