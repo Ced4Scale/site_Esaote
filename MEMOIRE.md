@@ -182,6 +182,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 ## Prochaines étapes possibles
 
+- Fiche O-scan : remplacement du bloc "Pour" par une distinction claire entre utilisateur radiologue/service d'imagerie et prescripteurs à développer.
+
 - Présentation iPhone : ajout d'un bloc mobile d'accès rapide aux 5 IRM, aux examens métal, au rachis en charge et au QCM achat ; cartes IRM compactes en liste sur mobile ; raccourcis dans les modales vers vidéos, examens, antennes, documents et références.
 
 - Ajout d'un QCM autonome "Aide au choix" entre les 4 premières IRM Esaote : O-scan, S-scan, G-scan et Magnifico. Le formulaire calcule un classement pondéré, affiche les raisons et permet d'ouvrir directement les fiches produits.
