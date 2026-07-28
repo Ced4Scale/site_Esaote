@@ -76,6 +76,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - I-Genius : remplacement de "table intégrée" / "table opératoire intégrée" par "table de bloc intégrée" dans la banderole et les bénéfices.
 - O-scan : remplacement de "ou en cabinet spécialisé" par une formulation marché français : installation en radiologie centrale ou dans le service d'imagerie en coupe.
 - Examens métal : création et mise en ligne de `examens-metal.html`, page publique de démonstration avec 6 séries d'images DICOM converties localement en JPEG, sans fichiers DICOM ni tags patient. Lien ajouté depuis l'argument "Implants et prothèses".
+- RSE : précision de la formulation "Technologie d'aimant permanent" pour nommer la technologie sans hélium ni cryogénie.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
 
 ## Journal
