@@ -159,19 +159,41 @@
       function renderCompare(item, acquisitions, maxCount) {
         imageButton.hidden = true;
         compare.hidden = false;
-        compare.innerHTML = acquisitions.map(function (acquisition, index) {
-          var imageIndex = mappedIndex(acquisition, maxCount);
-          return '<button class="case-viewer__pane" type="button" data-acquisition="' + index + '">' +
-            '<img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
-            '<span>' + acquisition.label + ' · ' + (imageIndex + 1) + '/' + acquisition.images.length + '</span>' +
-            '</button>';
-        }).join("");
+        var hasPlanes = acquisitions.some(function (acquisition) { return acquisition.plane; });
+        if (hasPlanes) {
+          compare.classList.add("case-viewer__compare--grouped");
+          var planes = [];
+          acquisitions.forEach(function (acquisition) {
+            var plane = acquisition.plane || "Autres acquisitions";
+            if (planes.indexOf(plane) === -1) planes.push(plane);
+          });
+          compare.innerHTML = planes.map(function (plane) {
+            var panes = acquisitions.map(function (acquisition, index) {
+              if ((acquisition.plane || "Autres acquisitions") !== plane) return "";
+              return renderPane(item, acquisition, index, maxCount);
+            }).join("");
+            return '<section class="case-viewer__plane"><h3>' + plane + '</h3><div class="case-viewer__plane-grid">' + panes + '</div></section>';
+          }).join("");
+        } else {
+          compare.classList.remove("case-viewer__compare--grouped");
+          compare.innerHTML = acquisitions.map(function (acquisition, index) {
+            return renderPane(item, acquisition, index, maxCount);
+          }).join("");
+        }
         compare.querySelectorAll("button").forEach(function (button) {
           button.addEventListener("click", function () {
             lightboxAcquisition = acquisitions[Number(button.dataset.acquisition)];
             openLightbox();
           });
         });
+      }
+
+      function renderPane(item, acquisition, index, maxCount) {
+        var imageIndex = mappedIndex(acquisition, maxCount);
+        return '<button class="case-viewer__pane" type="button" data-acquisition="' + index + '">' +
+          '<img src="' + acquisition.images[imageIndex] + '" alt="' + item.title + ' - ' + acquisition.label + ' - coupe ' + (imageIndex + 1) + '" />' +
+          '<span>' + acquisition.label + ' · ' + (imageIndex + 1) + '/' + acquisition.images.length + '</span>' +
+          '</button>';
       }
 
       function step(delta) {

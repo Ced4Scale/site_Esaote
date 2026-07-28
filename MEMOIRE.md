@@ -80,6 +80,7 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Examens métal : ajout pour le cas "Genou post-opératoire" d'une lecture synchronisée des acquisitions coronal PD, axial PD et sagittal PD, avec un seul slider et lecture automatique commune.
 - Examens métal : correction du cas "Épaule opérée" en rattachant la série Fast STIR coronal issue du viewer DICOM local, 15 images.
 - Examens métal : enrichissement du cas "Épaule opérée" avec une lecture synchronisée multi-acquisitions : T2 axial/coronal/sagittal, STIR sagittal/coronal et T1 sagittal/coronal.
+- Examens métal : regroupement des acquisitions synchronisées par plan quand disponible ; poignet/main enrichi avec 3D SHARC, STIR, STIR HR et T1 sur le plan coronal. Retrait du cas "Cheville / pied" du manifeste public car les images associées correspondaient à l'épaule.
 - RSE : précision de la formulation officielle "Green MRI par technologie d'aimant permanent Esaote (Permanent magnet technology)" pour nommer la technologie sans hélium ni cryogénie.
 - RSE : clarification de "Consommation minimale" : distinguer l'électricité consommée par l'IRM et l'électricité indirecte liée à la pompe à chaleur/climatisation de salle.
 - Le formulaire de contact fonctionne avec `mailto:`. Pour un vrai envoi automatique, prévoir Formspree, Web3Forms ou autre service équivalent.
