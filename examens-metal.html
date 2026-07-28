@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-mpr-cubes" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-focus-compare" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -164,6 +164,7 @@
       var paneClickTimer = null;
       var lightboxAcquisition = null;
       var lightboxAcquisitions = null;
+      var lightboxFocusedIndex = null;
       var lightboxRenderKey = "";
       var lightboxAxisSelections = {};
       var checkedAcquisitions = {};
@@ -539,7 +540,7 @@
       function updateLightbox() {
         var item = current();
         var acquisitions = acquisitionsFor(item);
-        var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        var displayedAcquisitions = displayedLightboxAcquisitions(acquisitions);
         setLightboxAxisOptions(displayedAcquisitions);
         updateLightboxCubeControls(displayedAcquisitions);
         var displayedViews = lightboxDisplayViews(displayedAcquisitions);
@@ -552,9 +553,9 @@
         lightboxImages.classList.toggle("image-lightbox__images--mpr", displayedViews.some(function (view) { return view.showMprAxes; }));
         lightboxImages.style.setProperty("--lightbox-columns", displayedViews.length);
         if (lightboxRenderKey !== renderKey) {
-          lightboxImages.innerHTML = displayedViews.map(function (view) {
+          lightboxImages.innerHTML = displayedViews.map(function (view, index) {
             var className = view.showMprAxes ? ' class="has-mpr-axes"' : "";
-            return '<figure' + className + '><img alt="" /><figcaption></figcaption></figure>';
+            return '<figure' + className + ' data-lightbox-index="' + index + '"><img alt="" /><figcaption></figcaption></figure>';
           }).join("");
           lightboxRenderKey = renderKey;
         }
@@ -578,8 +579,16 @@
 
       function lightboxMaxImages() {
         var acquisitions = acquisitionsFor(current());
-        var displayedAcquisitions = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        var displayedAcquisitions = displayedLightboxAcquisitions(acquisitions);
         return maxImagesFor(lightboxDisplayViews(displayedAcquisitions));
+      }
+
+      function displayedLightboxAcquisitions(acquisitions) {
+        var base = lightboxAcquisitions || [lightboxAcquisition || acquisitions[0]];
+        if (lightboxAcquisitions && lightboxAcquisitions.length > 1 && lightboxFocusedIndex !== null) {
+          return [lightboxAcquisitions[lightboxFocusedIndex]].filter(Boolean);
+        }
+        return base;
       }
 
       function lightboxDisplayViews(displayedAcquisitions) {
@@ -598,6 +607,9 @@
       function lightboxCaptionMode(displayedAcquisitions, displayedViews) {
         if (displayedViews.some(function (view) { return view.showMprAxes; })) {
           return "MPR avec axes · " + displayedViews.length + " plans synchronisés";
+        }
+        if (lightboxAcquisitions && lightboxAcquisitions.length > 1 && lightboxFocusedIndex !== null) {
+          return "1 acquisition isolée · double-clic pour revenir à la comparaison";
         }
         return displayedAcquisitions.length + " acquisition" + (displayedAcquisitions.length > 1 ? "s synchronisées" : "");
       }
@@ -676,7 +688,7 @@
       }
 
       function cycleMprAxis() {
-        var acquisition = singleAxisAcquisition(lightboxAcquisitions || [lightboxAcquisition || acquisitionsFor(current())[0]]);
+        var acquisition = singleAxisAcquisition(displayedLightboxAcquisitions(acquisitionsFor(current())));
         if (!acquisition) return;
         var mprViews = mprAxisViews(acquisition);
         var selectedLabel = selectedAxisLabel(acquisition);
@@ -686,7 +698,7 @@
       }
 
       function toggle2d3dAxis() {
-        var acquisition = singleAxisAcquisition(lightboxAcquisitions || [lightboxAcquisition || acquisitionsFor(current())[0]]);
+        var acquisition = singleAxisAcquisition(displayedLightboxAcquisitions(acquisitionsFor(current())));
         if (!acquisition) return;
         var selectedLabel = selectedAxisLabel(acquisition);
         var key = acquisitionKey(acquisition);
@@ -751,7 +763,17 @@
         if (!selected.length) return;
         lightboxAcquisition = null;
         lightboxAcquisitions = selected;
+        lightboxFocusedIndex = null;
         openLightbox();
+      }
+
+      function toggleFocusedLightboxImage(figure) {
+        if (!lightboxAcquisitions || lightboxAcquisitions.length < 2) return;
+        if (lightboxFocusedIndex !== null) lightboxFocusedIndex = null;
+        else lightboxFocusedIndex = Number(figure.dataset.lightboxIndex) || 0;
+        lightboxRenderKey = "";
+        centerLightboxZoom();
+        updateLightbox();
       }
 
       function closeLightbox() {
@@ -761,6 +783,7 @@
         lightbox.hidden = true;
         lightboxAcquisition = null;
         lightboxAcquisitions = null;
+        lightboxFocusedIndex = null;
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
         lightboxCubeControls.hidden = true;
@@ -852,6 +875,13 @@
       lightboxControls.addEventListener("click", function (event) { event.stopPropagation(); });
       lightbox.addEventListener("click", closeLightbox);
       lightboxImages.addEventListener("click", function (event) { event.stopPropagation(); });
+      lightboxImages.addEventListener("dblclick", function (event) {
+        var figure = event.target.closest("figure");
+        if (!figure) return;
+        event.preventDefault();
+        event.stopPropagation();
+        toggleFocusedLightboxImage(figure);
+      });
       lightboxImages.addEventListener("wheel", function (event) {
         if (lightbox.hidden) return;
         event.preventDefault();
