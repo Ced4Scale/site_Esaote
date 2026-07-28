@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-focus-compare" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-pinch-zoom" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -177,6 +177,8 @@
       var lightboxPanX = 0;
       var lightboxPanY = 0;
       var lightboxDrag = null;
+      var lightboxPointers = {};
+      var lightboxPinch = null;
       var mprAxesOption = "__mpr_axes__";
       var lastMprAxisSelections = {};
 
@@ -466,6 +468,39 @@
         lightboxPanX = 0;
         lightboxPanY = 0;
         updateZoomTransform();
+      }
+
+      function pointerList() {
+        return Object.keys(lightboxPointers).map(function (key) {
+          return lightboxPointers[key];
+        });
+      }
+
+      function pinchDistance(points) {
+        var dx = points[0].x - points[1].x;
+        var dy = points[0].y - points[1].y;
+        return Math.sqrt((dx * dx) + (dy * dy));
+      }
+
+      function pinchCenter(points) {
+        var rect = lightboxImages.getBoundingClientRect();
+        return {
+          x: ((points[0].x + points[1].x) / 2) - rect.left - (rect.width / 2),
+          y: ((points[0].y + points[1].y) / 2) - rect.top - (rect.height / 2)
+        };
+      }
+
+      function startLightboxPinch() {
+        var points = pointerList();
+        if (points.length < 2) {
+          lightboxPinch = null;
+          return;
+        }
+        lightboxDrag = null;
+        lightboxPinch = {
+          distance: pinchDistance(points),
+          zoom: lightboxZoom
+        };
       }
 
       function step(delta) {
@@ -787,6 +822,9 @@
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
         lightboxCubeControls.hidden = true;
+        lightboxPointers = {};
+        lightboxPinch = null;
+        lightboxDrag = null;
         centerLightboxZoom();
         setLightboxZoom(100);
         if (isLightboxFullscreen()) exitLightboxFullscreen();
@@ -894,27 +932,47 @@
         setLightboxZoom(lightboxZoom + (event.deltaY < 0 ? 10 : -10), centerPoint);
       }, { passive: false });
       lightboxImages.addEventListener("pointerdown", function (event) {
+        event.stopPropagation();
+        lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+        try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
+        if (pointerList().length >= 2) {
+          event.preventDefault();
+          startLightboxPinch();
+          return;
+        }
         if (lightboxZoom <= 100) return;
         event.preventDefault();
-        event.stopPropagation();
-        lightboxDrag = { x: event.clientX, y: event.clientY, panX: lightboxPanX, panY: lightboxPanY };
-        lightboxImages.setPointerCapture(event.pointerId);
+        lightboxDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX: lightboxPanX, panY: lightboxPanY };
       });
       lightboxImages.addEventListener("pointermove", function (event) {
-        if (!lightboxDrag) return;
+        if (!lightboxPointers[event.pointerId]) return;
+        event.stopPropagation();
+        lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+        var points = pointerList();
+        if (points.length >= 2 && lightboxPinch) {
+          event.preventDefault();
+          var nextZoom = lightboxPinch.zoom * (pinchDistance(points) / lightboxPinch.distance);
+          setLightboxZoom(nextZoom, pinchCenter(points));
+          return;
+        }
+        if (!lightboxDrag || lightboxDrag.id !== event.pointerId) return;
         event.preventDefault();
         lightboxPanX = lightboxDrag.panX + event.clientX - lightboxDrag.x;
         lightboxPanY = lightboxDrag.panY + event.clientY - lightboxDrag.y;
         updateZoomTransform();
       });
       lightboxImages.addEventListener("pointerup", function (event) {
-        if (!lightboxDrag) return;
         event.stopPropagation();
-        lightboxDrag = null;
-        lightboxImages.releasePointerCapture(event.pointerId);
+        delete lightboxPointers[event.pointerId];
+        if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
+        try { lightboxImages.releasePointerCapture(event.pointerId); } catch (error) {}
+        if (pointerList().length >= 2) startLightboxPinch();
+        else lightboxPinch = null;
       });
-      lightboxImages.addEventListener("pointercancel", function () {
-        lightboxDrag = null;
+      lightboxImages.addEventListener("pointercancel", function (event) {
+        delete lightboxPointers[event.pointerId];
+        if (lightboxDrag && lightboxDrag.id === event.pointerId) lightboxDrag = null;
+        if (pointerList().length < 2) lightboxPinch = null;
       });
       document.addEventListener("fullscreenchange", updateFullscreenButton);
       document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
