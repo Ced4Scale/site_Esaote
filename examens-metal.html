@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-ipad2" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-planes" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -167,6 +167,9 @@
             var plane = acquisition.plane || "Autres acquisitions";
             if (planes.indexOf(plane) === -1) planes.push(plane);
           });
+          planes.sort(function (a, b) {
+            return planeRank(a) - planeRank(b);
+          });
           compare.innerHTML = planes.map(function (plane) {
             var panes = acquisitions.map(function (acquisition, index) {
               if ((acquisition.plane || "Autres acquisitions") !== plane) return "";
@@ -186,6 +189,15 @@
             openLightbox();
           });
         });
+      }
+
+      function planeRank(plane) {
+        var normalized = plane.toLowerCase();
+        if (normalized.indexOf("axial") !== -1) return 1;
+        if (normalized.indexOf("sagittal") !== -1) return 2;
+        if (normalized.indexOf("coronal") !== -1) return 3;
+        if (normalized.indexOf("3d") !== -1 || normalized.indexOf("volume") !== -1) return 4;
+        return 5;
       }
 
       function renderPane(item, acquisition, index, maxCount) {
