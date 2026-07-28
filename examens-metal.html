@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-patient-axis" />
+  <link rel="stylesheet" href="styles.css?v=20260728-metal-cases-per-pane-pan" />
 </head>
 <body class="case-page">
   <header class="document-viewer__bar">
@@ -174,8 +174,7 @@
       var windowLevel = openingWindowLevel;
       var windowWidth = openingWindowWidth;
       var lightboxZoom = 100;
-      var lightboxPanX = 0;
-      var lightboxPanY = 0;
+      var lightboxPans = {};
       var lightboxDrag = null;
       var lightboxPointers = {};
       var lightboxPinch = null;
@@ -443,30 +442,43 @@
 
       function updateZoomTransform() {
         lightboxImages.style.setProperty("--lightbox-zoom", lightboxZoom / 100);
-        lightboxImages.style.setProperty("--lightbox-pan-x", lightboxPanX + "px");
-        lightboxImages.style.setProperty("--lightbox-pan-y", lightboxPanY + "px");
+        lightboxImages.querySelectorAll("figure").forEach(function (figure) {
+          var pan = lightboxPan(figure.dataset.panKey);
+          figure.style.setProperty("--lightbox-pan-x", pan.x + "px");
+          figure.style.setProperty("--lightbox-pan-y", pan.y + "px");
+        });
         lightboxZoomSlider.value = lightboxZoom;
         lightboxZoomValue.textContent = lightboxZoom + "%";
         lightboxImages.classList.toggle("is-zoomed", lightboxZoom > 100);
       }
 
-      function setLightboxZoom(value, centerPoint) {
+      function lightboxPan(key) {
+        if (!key) key = "default";
+        if (!lightboxPans[key]) lightboxPans[key] = { x: 0, y: 0 };
+        return lightboxPans[key];
+      }
+
+      function resetLightboxPans() {
+        lightboxPans = {};
+      }
+
+      function setLightboxZoom(value, centerPoint, panKey) {
         var nextZoom = Math.max(100, Math.min(300, Number(value) || 100));
         if (nextZoom === 100) {
-          lightboxPanX = 0;
-          lightboxPanY = 0;
+          resetLightboxPans();
         } else if (centerPoint && lightboxZoom !== nextZoom) {
           var factor = nextZoom / lightboxZoom;
-          lightboxPanX = centerPoint.x - ((centerPoint.x - lightboxPanX) * factor);
-          lightboxPanY = centerPoint.y - ((centerPoint.y - lightboxPanY) * factor);
+          var pan = lightboxPan(panKey);
+          pan.x = centerPoint.x - ((centerPoint.x - pan.x) * factor);
+          pan.y = centerPoint.y - ((centerPoint.y - pan.y) * factor);
         }
         lightboxZoom = nextZoom;
         updateZoomTransform();
       }
 
-      function centerLightboxZoom() {
-        lightboxPanX = 0;
-        lightboxPanY = 0;
+      function centerLightboxZoom(panKey) {
+        if (panKey) lightboxPans[panKey] = { x: 0, y: 0 };
+        else resetLightboxPans();
         updateZoomTransform();
       }
 
@@ -483,7 +495,8 @@
       }
 
       function pinchCenter(points) {
-        var rect = lightboxImages.getBoundingClientRect();
+        var figure = points[0].figure || lightboxImages;
+        var rect = figure.getBoundingClientRect();
         return {
           x: ((points[0].x + points[1].x) / 2) - rect.left - (rect.width / 2),
           y: ((points[0].y + points[1].y) / 2) - rect.top - (rect.height / 2)
@@ -499,7 +512,8 @@
         lightboxDrag = null;
         lightboxPinch = {
           distance: pinchDistance(points),
-          zoom: lightboxZoom
+          zoom: lightboxZoom,
+          panKey: points[0].panKey
         };
       }
 
@@ -590,7 +604,8 @@
         if (lightboxRenderKey !== renderKey) {
           lightboxImages.innerHTML = displayedViews.map(function (view, index) {
             var className = view.showMprAxes ? ' class="has-mpr-axes"' : "";
-            return '<figure' + className + ' data-lightbox-index="' + index + '"><img alt="" /><figcaption></figcaption></figure>';
+            var panKey = view.label + ":" + index;
+            return '<figure' + className + ' data-lightbox-index="' + index + '" data-pan-key="' + panKey + '"><img alt="" /><figcaption></figcaption></figure>';
           }).join("");
           lightboxRenderKey = renderKey;
         }
@@ -822,7 +837,6 @@
         if (lightboxFocusedIndex !== null) lightboxFocusedIndex = null;
         else lightboxFocusedIndex = Number(figure.dataset.lightboxIndex) || 0;
         lightboxRenderKey = "";
-        centerLightboxZoom();
         updateLightbox();
       }
 
@@ -837,6 +851,7 @@
         lightboxRenderKey = "";
         lightboxAxisControl.hidden = true;
         lightboxCubeControls.hidden = true;
+        resetLightboxPans();
         lightboxPointers = {};
         lightboxPinch = null;
         lightboxDrag = null;
@@ -940,15 +955,20 @@
         event.preventDefault();
         event.stopPropagation();
         var rect = lightboxImages.getBoundingClientRect();
+        var figure = event.target.closest("figure");
+        var panKey = figure ? figure.dataset.panKey : null;
+        if (figure) rect = figure.getBoundingClientRect();
         var centerPoint = {
           x: event.clientX - rect.left - (rect.width / 2),
           y: event.clientY - rect.top - (rect.height / 2)
         };
-        setLightboxZoom(lightboxZoom + (event.deltaY < 0 ? 10 : -10), centerPoint);
+        setLightboxZoom(lightboxZoom + (event.deltaY < 0 ? 10 : -10), centerPoint, panKey);
       }, { passive: false });
       lightboxImages.addEventListener("pointerdown", function (event) {
         event.stopPropagation();
-        lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+        var figure = event.target.closest("figure");
+        var panKey = figure ? figure.dataset.panKey : null;
+        lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY, panKey: panKey, figure: figure };
         try { lightboxImages.setPointerCapture(event.pointerId); } catch (error) {}
         if (pointerList().length >= 2) {
           event.preventDefault();
@@ -957,23 +977,26 @@
         }
         if (lightboxZoom <= 100) return;
         event.preventDefault();
-        lightboxDrag = { id: event.pointerId, x: event.clientX, y: event.clientY, panX: lightboxPanX, panY: lightboxPanY };
+        var pan = lightboxPan(panKey);
+        lightboxDrag = { id: event.pointerId, panKey: panKey, x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
       });
       lightboxImages.addEventListener("pointermove", function (event) {
         if (!lightboxPointers[event.pointerId]) return;
         event.stopPropagation();
-        lightboxPointers[event.pointerId] = { x: event.clientX, y: event.clientY };
+        lightboxPointers[event.pointerId].x = event.clientX;
+        lightboxPointers[event.pointerId].y = event.clientY;
         var points = pointerList();
         if (points.length >= 2 && lightboxPinch) {
           event.preventDefault();
           var nextZoom = lightboxPinch.zoom * (pinchDistance(points) / lightboxPinch.distance);
-          setLightboxZoom(nextZoom, pinchCenter(points));
+          setLightboxZoom(nextZoom, pinchCenter(points), lightboxPinch.panKey);
           return;
         }
         if (!lightboxDrag || lightboxDrag.id !== event.pointerId) return;
         event.preventDefault();
-        lightboxPanX = lightboxDrag.panX + event.clientX - lightboxDrag.x;
-        lightboxPanY = lightboxDrag.panY + event.clientY - lightboxDrag.y;
+        var dragPan = lightboxPan(lightboxDrag.panKey);
+        dragPan.x = lightboxDrag.panX + event.clientX - lightboxDrag.x;
+        dragPan.y = lightboxDrag.panY + event.clientY - lightboxDrag.y;
         updateZoomTransform();
       });
       lightboxImages.addEventListener("pointerup", function (event) {
