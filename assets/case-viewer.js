@@ -918,8 +918,12 @@
       }
 
       function toggleFocusedLightboxImage(figure) {
+        var wasFocused = lightboxFocusedIndex !== null;
+        var shouldRequestFullscreen = false;
+        var shouldExitFullscreen = false;
         if (lightboxFocusedIndex !== null) {
           lightboxFocusedIndex = null;
+          shouldExitFullscreen = lightboxAcquisitions && lightboxAcquisitions.length > 1 && isLightboxFullscreen();
         } else {
           var displayedAcquisitions = displayedLightboxAcquisitions(acquisitionsFor(current()));
           var displayedViews = lightboxDisplayViews(displayedAcquisitions, true);
@@ -927,9 +931,20 @@
           var canFocusMpr = displayedViews.length > 1 && displayedViews.some(function (view) { return view.showMprAxes; });
           if (!canFocusComparison && !canFocusMpr) return;
           lightboxFocusedIndex = Number(figure.dataset.lightboxIndex) || 0;
+          shouldRequestFullscreen = canFocusComparison && !isLightboxFullscreen();
         }
         lightboxRenderKey = "";
         updateLightbox();
+        if (shouldRequestFullscreen) {
+          var fullscreenRequest = requestLightboxFullscreen();
+          if (fullscreenRequest && fullscreenRequest.catch) fullscreenRequest.catch(function () {});
+          window.setTimeout(updateFullscreenButton, 60);
+        }
+        if (wasFocused && shouldExitFullscreen) {
+          var fullscreenExit = exitLightboxFullscreen();
+          if (fullscreenExit && fullscreenExit.catch) fullscreenExit.catch(function () {});
+          window.setTimeout(updateFullscreenButton, 60);
+        }
       }
 
       function closeLightbox() {
