@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Glossaire — Esaote Medical France</title>
+  <meta name="description" content="Définitions des termes techniques Esaote utilisés sur le site : True-Motion, e-SPADES, AgilExam, HyperSpeed, HyperClarity et autres." />
+  <link rel="canonical" href="https://ced4scale.fr/glossaire.html" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260801-glossaire" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container site-header__bar">
+      <a class="brand brand--ced4scale" href="index.html" data-stats-trigger aria-label="Statistiques du site (accès protégé)">
+        <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
+      </a>
+      <button class="nav-toggle" id="navToggle" aria-label="Ouvrir le menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <nav class="nav" id="nav">
+        <a href="index.html#produits">Nos IRM</a>
+        <a href="index.html#pourquoi">Pourquoi Esaote</a>
+        <a href="index.html#rse">RSE</a>
+        <a class="btn" href="contact.html">Nous contacter</a>
+      </nav>
+    </div>
+  </header>
+
+  <section class="page-hero">
+    <div class="container">
+      <h1>Glossaire</h1>
+      <p>Les termes techniques Esaote utilisés sur ce site, expliqués simplement.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <dl class="glossary-list" id="glossaryList"></dl>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="site-footer__top">
+        <div class="site-footer__brand"><img src="assets/logo-esaote.svg" alt="Esaote" /></div>
+        <nav class="site-footer__links">
+          <a href="index.html#produits">Nos IRM</a>
+          <a href="index.html#pourquoi">Pourquoi Esaote</a>
+          <a href="contact.html">Nous contacter</a>
+        </nav>
+      </div>
+      <div class="site-footer__legal">
+        <p class="disclaimer">Support commercial présenté par Ced4Scale. Marque, logo et visuels © Esaote S.p.A.</p>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js?v=20260801-glossary-terms"></script>
+  <script src="assets/stats-access.js?v=20260731-timeline" defer></script>
+  <script>
+    (function () {
+      var terms = window.CED4SCALE_TERMS || {};
+      var list = document.getElementById("glossaryList");
+      if (!list) return;
+      /* Une seule entrée par notion : on ignore les variantes d'écriture déjà couvertes
+         (ex. "True Motion" est la même notion que "True-Motion"). */
+      var canonical = [
+        "True-Motion", "AgilExam", "HyperClarity", "e-SPADES", "HyperSpeed", "SHARC", "HYCE",
+        "MARS", "SPED", "DPA", "Open-Fauteuil", "Permanent magnet technology", "Green MRI", "UniHA",
+        "workflow"
+      ];
+      var names = canonical.filter(function (name) { return terms[name]; })
+        .sort(function (a, b) { return a.localeCompare(b, "fr"); });
+      list.innerHTML = names.map(function (name) {
+        return "<dt>" + name + "</dt><dd>" + terms[name] + "</dd>";
+      }).join("");
+    })();
+  </script>
+</body>
+</html>

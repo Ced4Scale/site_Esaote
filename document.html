@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260801-document-gate" />
+  <link rel="stylesheet" href="styles.css?v=20260801-glossaire" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="document-page">
@@ -65,21 +65,7 @@
         "o-scan-brochure": {
           title: "Brochure O-scan",
           src: "assets/docs/o-scan-brochure-latest.pdf",
-          access: "public",
-          pages: [
-            "assets/docs/o-scan-brochure-pages/page-01.png",
-            "assets/docs/o-scan-brochure-pages/page-02.png",
-            "assets/docs/o-scan-brochure-pages/page-03.png",
-            "assets/docs/o-scan-brochure-pages/page-04.png",
-            "assets/docs/o-scan-brochure-pages/page-05.png",
-            "assets/docs/o-scan-brochure-pages/page-06.png",
-            "assets/docs/o-scan-brochure-pages/page-07.png",
-            "assets/docs/o-scan-brochure-pages/page-08.png",
-            "assets/docs/o-scan-brochure-pages/page-09.png",
-            "assets/docs/o-scan-brochure-pages/page-10.png",
-            "assets/docs/o-scan-brochure-pages/page-11.png",
-            "assets/docs/o-scan-brochure-pages/page-12.png"
-          ]
+          access: "public"
         },
         "s-scan-open-brochure": {
           title: "Brochure S-scan Open",
@@ -248,14 +234,7 @@
         /* Documents publics (brochures, DICOM, IHE) : flux Power Automate pas encore branché,
            on garde l'ancien comportement (affichage direct) plutôt que de bloquer le visiteur
            sans rien lui donner. Cette branche ne concerne jamais les documents "restricted". */
-        if (doc.pages && doc.pages.length) {
-          pages.hidden = false;
-          pages.innerHTML = doc.pages.map(function (src, index) {
-            return '<figure class="document-viewer__page"><img src="' + src + '" alt="' + doc.title + ' - page ' + (index + 1) + '" loading="' + (index === 0 ? 'eager' : 'lazy') + '" /></figure>';
-          }).join("");
-        } else {
-          frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
-        }
+        frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
       } else if (doc.access === "restricted" && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
         /* Document restreint (ex. Site Planning Guide, notice d'instructions) : jamais
            d'affichage direct, même sans flux branché. Tant que le flux n'existe pas, on ne

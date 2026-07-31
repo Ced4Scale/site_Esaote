@@ -67,8 +67,11 @@
     "Open-Fauteuil": "Configuration ouverte où le patient est installé assis ou semi-assis, particulièrement adaptée aux extrémités sur O-scan.",
     "Permanent magnet technology": "Technologie d'aimant permanent Esaote : champ magnétique maintenu sans hélium liquide ni cryogénie.",
     "Green MRI": "Positionnement Esaote des IRM sobres : aimant permanent, absence d'hélium, consommation électrique réduite et installation simplifiée.",
-    "UniHA": "Union des hôpitaux pour les achats : centrale d'achat hospitalière française, utile pour faciliter certains projets publics."
+    "UniHA": "Union des hôpitaux pour les achats : centrale d'achat hospitalière française, utile pour faciliter certains projets publics.",
+    "workflow": "Enchaînement des étapes d'un examen ou d'une intervention : qui fait quoi, dans quel ordre, dans quelle salle. Un « workflow en une salle » veut dire que tout se déroule au même endroit, sans déplacer le patient.",
+    "Workflow": "Enchaînement des étapes d'un examen ou d'une intervention : qui fait quoi, dans quel ordre, dans quelle salle. Un « workflow en une salle » veut dire que tout se déroule au même endroit, sans déplacer le patient."
   };
+  window.CED4SCALE_TERMS = esaoteTerms;
 
   function getCarouselImages(img) {
     var value = img.getAttribute("data-carousel-images") || "";
