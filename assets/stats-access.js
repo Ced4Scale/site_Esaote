@@ -364,22 +364,26 @@
 
     function load(dateStr) {
       out.innerHTML = '<p class="stats-empty">Chargement…</p>';
-      var dayStart = new Date(dateStr + "T00:00:00");
-      var dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+      /* GoatCounter renvoie déjà "day" et "hourly" à l'heure du fuseau réglé sur le compte
+         (Europe/Paris) — donc pas de conversion de fuseau ici, sous peine de décaler l'heure
+         affichée (bug corrigé le 31/07/2026). On élargit juste la fenêtre demandée par sécurité,
+         puis on ne garde que les tranches horaires de la journée exacte demandée. */
+      var reqStart = new Date(dateStr + "T00:00:00");
+      reqStart.setHours(reqStart.getHours() - 6);
+      var reqEnd = new Date(dateStr + "T00:00:00");
+      reqEnd.setDate(reqEnd.getDate() + 1);
+      reqEnd.setHours(reqEnd.getHours() + 6);
 
-      apiGet("/stats/hits", { start: dayStart.toISOString(), end: dayEnd.toISOString(), limit: 200 }).then(function (data) {
+      apiGet("/stats/hits", { start: reqStart.toISOString(), end: reqEnd.toISOString(), limit: 200 }).then(function (data) {
         var buckets = {};
         (data.hits || []).forEach(function (hit) {
           var label = hit.event ? eventLabel(hit) : hit.path;
           (hit.stats || []).forEach(function (dayEntry) {
-            var dayBase = Date.parse(dayEntry.day + "T00:00:00Z");
+            if (dayEntry.day !== dateStr) return;
             (dayEntry.hourly || []).forEach(function (count, h) {
               if (!count) return;
-              var ts = dayBase + h * 60 * 60 * 1000;
-              if (ts < dayStart.getTime() || ts >= dayEnd.getTime()) return;
-              var localHour = new Date(ts).getHours();
-              buckets[localHour] = buckets[localHour] || {};
-              buckets[localHour][label] = (buckets[localHour][label] || 0) + count;
+              buckets[h] = buckets[h] || {};
+              buckets[h][label] = (buckets[h][label] || 0) + count;
             });
           });
         });
