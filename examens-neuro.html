@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Progression chirurgicale — Bloc neuro / iMRI — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260731-procedure-slideshow" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body class="document-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html#champ-moyen" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Bloc neuro / iMRI</span>
+      <strong>Progression chirurgicale</strong>
+    </div>
+    <button class="document-viewer__close" id="slideClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="procedure-slideshow">
+    <div class="procedure-slideshow__intro">
+      <span class="kicker">I-Genius — imagerie per-opératoire</span>
+      <h1>Suivi de la progression chirurgicale</h1>
+      <p>Source : brochure officielle Esaote I-Genius. Séquences 3D et reconstructions multiplanaires (MPR) utilisées pour contrôler la résection en cours d'intervention.</p>
+    </div>
+
+    <div class="procedure-slideshow__stage">
+      <button class="procedure-slideshow__nav procedure-slideshow__nav--prev" id="slidePrev" type="button" aria-label="Image précédente">‹</button>
+      <img id="slideImage" src="" alt="" />
+      <button class="procedure-slideshow__nav procedure-slideshow__nav--next" id="slideNext" type="button" aria-label="Image suivante">›</button>
+    </div>
+
+    <div class="procedure-slideshow__foot">
+      <span class="procedure-slideshow__counter" id="slideCounter">1/6</span>
+      <span class="procedure-slideshow__caption" id="slideCaption"></span>
+    </div>
+    <div class="procedure-slideshow__dots" id="slideDots"></div>
+  </main>
+
+  <script>
+    (function () {
+      var slides = [
+        { src: "assets/cases/irm-neuro/neuro-01-sagittal.webp", caption: "Coupe sagittale" },
+        { src: "assets/cases/irm-neuro/neuro-02-axial.webp", caption: "Coupe axiale" },
+        { src: "assets/cases/irm-neuro/neuro-03-sagittal-tumeur.webp", caption: "Contrôle en cours de résection (1)" },
+        { src: "assets/cases/irm-neuro/neuro-04-sagittal-tumeur-2.webp", caption: "Contrôle en cours de résection (2)" },
+        { src: "assets/cases/irm-neuro/neuro-05-mpr-coronal.webp", caption: "Reconstruction MPR coronale" },
+        { src: "assets/cases/irm-neuro/neuro-06-mpr-sagittal.webp", caption: "Reconstruction MPR sagittale" }
+      ];
+      var index = 0;
+      var image = document.getElementById("slideImage");
+      var caption = document.getElementById("slideCaption");
+      var counter = document.getElementById("slideCounter");
+      var dotsWrap = document.getElementById("slideDots");
+
+      slides.forEach(function (_, i) {
+        var dot = document.createElement("button");
+        dot.type = "button";
+        dot.setAttribute("aria-label", "Aller à l'image " + (i + 1));
+        dot.addEventListener("click", function () { show(i); });
+        dotsWrap.appendChild(dot);
+      });
+
+      function show(i) {
+        index = (i + slides.length) % slides.length;
+        var slide = slides[index];
+        image.src = slide.src;
+        image.alt = slide.caption;
+        caption.textContent = slide.caption;
+        counter.textContent = (index + 1) + "/" + slides.length;
+        Array.prototype.forEach.call(dotsWrap.children, function (dot, i2) {
+          dot.setAttribute("aria-current", i2 === index ? "true" : "false");
+        });
+        if (window.goatcounter && window.goatcounter.count) {
+          window.goatcounter.count({
+            path: "neuro-image-" + (index + 1),
+            title: "Bloc neuro iMRI - " + slide.caption,
+            event: true
+          });
+        }
+      }
+
+      document.getElementById("slidePrev").addEventListener("click", function () { show(index - 1); });
+      document.getElementById("slideNext").addEventListener("click", function () { show(index + 1); });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") show(index - 1);
+        if (event.key === "ArrowRight") show(index + 1);
+        if (event.key === "Escape") goBack();
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html#champ-moyen";
+        }
+      }
+      document.getElementById("slideClose").addEventListener("click", goBack);
+
+      show(0);
+    })();
+  </script>
+</body>
+</html>
