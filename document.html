@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260728-ce-docs" />
+  <link rel="stylesheet" href="styles.css?v=20260801-document-gate" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="document-page">
@@ -27,11 +27,27 @@
   <main class="document-viewer">
     <iframe id="documentFrame" title="Document PDF Esaote" loading="eager" scrolling="yes"></iframe>
     <div class="document-viewer__pages" id="documentPages" hidden></div>
+    <div class="document-viewer__gate" id="documentGate" hidden>
+      <form class="document-viewer__gate-panel" id="documentGateForm">
+        <span class="kicker">Document officiel</span>
+        <h1 id="documentGateTitle">Document</h1>
+        <p>Indiquez votre e-mail professionnel pour recevoir ce document directement dans votre boîte de réception.</p>
+        <label>
+          <span>E-mail</span>
+          <input type="email" id="documentGateEmail" required autocomplete="email" />
+        </label>
+        <button class="btn" type="submit">Recevoir le document</button>
+        <p class="document-viewer__gate-note">Aucune donnée n'est stockée sur ce site ; votre e-mail sert uniquement à vous envoyer ce document.</p>
+        <p class="document-viewer__gate-success" id="documentGateSuccess" role="status" hidden>✓ Merci&nbsp;! Vous allez recevoir <strong id="documentGateSuccessTitle"></strong> par e-mail dans quelques instants.</p>
+        <p class="document-viewer__gate-error" id="documentGateError" role="alert" hidden>Une erreur est survenue. Réessayez, ou <a href="contact.html">contactez-nous directement</a>.</p>
+      </form>
+    </div>
     <div class="document-viewer__fallback" id="documentFallback" hidden>
       <h1>Document indisponible</h1>
       <p>Le document demandé n'est pas disponible depuis ce lecteur.</p>
       <a class="btn" href="index.html#produits">Retour au site</a>
     </div>
+    <iframe name="documentGateFrame" id="documentGateFrame" hidden aria-hidden="true"></iframe>
   </main>
 
   <script>
@@ -141,13 +157,26 @@
           src: "assets/docs/magnifico-open-ihe-integration-statement-latest.pdf"
         }
       };
+      /* URL du déclencheur Power Automate ("Quand une requête HTTP est reçue") à créer
+         côté Cédric : reçoit { email, doc, title } et envoie le document en pièce jointe. */
+      var DOCUMENT_REQUEST_URL = "REMPLACER_PAR_URL_POWER_AUTOMATE";
+
       var params = new URLSearchParams(window.location.search);
-      var doc = docs[params.get("doc") || ""];
+      var docKey = params.get("doc") || "";
+      var doc = docs[docKey];
       var title = document.getElementById("documentTitle");
       var frame = document.getElementById("documentFrame");
       var pages = document.getElementById("documentPages");
       var fallback = document.getElementById("documentFallback");
       var close = document.getElementById("documentClose");
+      var gate = document.getElementById("documentGate");
+      var gateForm = document.getElementById("documentGateForm");
+      var gateTitle = document.getElementById("documentGateTitle");
+      var gateEmail = document.getElementById("documentGateEmail");
+      var gateSuccess = document.getElementById("documentGateSuccess");
+      var gateSuccessTitle = document.getElementById("documentGateSuccessTitle");
+      var gateError = document.getElementById("documentGateError");
+      var gateFrame = document.getElementById("documentGateFrame");
 
       function goBack() {
         if (window.history.length > 1) {
@@ -173,19 +202,13 @@
       window.addEventListener("load", function () {
         if (window.goatcounter && window.goatcounter.count) {
           window.goatcounter.count({
-            path: "document-" + (params.get("doc") || "inconnu"),
+            path: "document-" + (docKey || "inconnu"),
             title: "Document consulté — " + doc.title,
             event: true
           });
         }
       });
-      if (doc.pages && doc.pages.length) {
-        frame.hidden = true;
-        pages.hidden = false;
-        pages.innerHTML = doc.pages.map(function (src, index) {
-          return '<figure class="document-viewer__page"><img src="' + src + '" alt="' + doc.title + ' - page ' + (index + 1) + '" loading="' + (index === 0 ? 'eager' : 'lazy') + '" /></figure>';
-        }).join("");
-      } else if (doc.noticeTitle) {
+      if (doc.noticeTitle) {
         frame.hidden = true;
         pages.hidden = false;
         pages.innerHTML = '<article class="document-viewer__notice">' +
@@ -195,8 +218,60 @@
           '<p>' + doc.statement + '</p>' +
           '<a class="btn" href="' + doc.sourceUrl + '" target="_blank" rel="noopener">' + doc.sourceLabel + '</a>' +
           '</article>';
+      } else if (doc.src && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
+        /* Flux Power Automate pas encore branché : on garde l'ancien comportement
+           (affichage direct) plutôt que de bloquer le visiteur sans rien lui donner. */
+        if (doc.pages && doc.pages.length) {
+          pages.hidden = false;
+          pages.innerHTML = doc.pages.map(function (src, index) {
+            return '<figure class="document-viewer__page"><img src="' + src + '" alt="' + doc.title + ' - page ' + (index + 1) + '" loading="' + (index === 0 ? 'eager' : 'lazy') + '" /></figure>';
+          }).join("");
+        } else {
+          frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
+        }
+      } else if (doc.src) {
+        frame.hidden = true;
+        gate.hidden = false;
+        gateTitle.textContent = doc.title;
+        gateSuccessTitle.textContent = doc.title;
+
+        gateForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var sendForm = document.createElement("form");
+          sendForm.method = "POST";
+          sendForm.action = DOCUMENT_REQUEST_URL;
+          sendForm.target = "documentGateFrame";
+          sendForm.style.display = "none";
+          [
+            ["email", gateEmail.value.trim()],
+            ["doc", docKey],
+            ["title", doc.title]
+          ].forEach(function (pair) {
+            var input = document.createElement("input");
+            input.name = pair[0];
+            input.value = pair[1];
+            sendForm.appendChild(input);
+          });
+          document.body.appendChild(sendForm);
+          sendForm.submit();
+          sendForm.remove();
+
+          gateForm.querySelector('button[type="submit"]').disabled = true;
+          gateError.hidden = true;
+          gateSuccess.hidden = false;
+          gateSuccess.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+          if (window.goatcounter && window.goatcounter.count) {
+            window.goatcounter.count({
+              path: "document-demande-" + (docKey || "inconnu"),
+              title: "Document demandé par e-mail — " + doc.title,
+              event: true
+            });
+          }
+        });
       } else {
-        frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
+        frame.hidden = true;
+        fallback.hidden = false;
       }
     })();
   </script>
