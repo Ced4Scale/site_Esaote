@@ -51,7 +51,6 @@
       <p>Le document demandé n'est pas disponible depuis ce lecteur.</p>
       <a class="btn" href="index.html#produits">Retour au site</a>
     </div>
-    <iframe name="documentGateFrame" id="documentGateFrame" hidden aria-hidden="true"></iframe>
   </main>
 
   <script>
@@ -169,17 +168,12 @@
           previewImage: "assets/docs/previews/magnifico-open-ihe.webp"
         }
       };
-      /* URL du déclencheur Power Automate ("Quand une requête HTTP est reçue") à créer
-         côté Cédric : reçoit { email, doc, title, access, phone }. Le champ "access" vaut
-         "public" (brochures, DICOM, IHE — Esaote les publie déjà librement) ou "restricted"
-         (Site Planning Guide, notices d'instructions... documents portant une mention de
-         copyright restrictive ou venant d'un portail fermé). Le flux envoie directement si
-         "public" ; s'il vaut "restricted", il doit passer par une validation manuelle de Cédric
-         avant tout envoi, et "phone" est alors renseigné (demandé uniquement pour les documents
-         restricted). Voir la mémoire Power Automate pour la spécification complète du flux.
-         Tant que cette URL n'est pas renseignée, le formulaire reste actif (jamais d'affichage
-         direct du fichier) mais la demande part par mailto à Cédric, à traiter à la main. */
-      var DOCUMENT_REQUEST_URL = "REMPLACER_PAR_URL_POWER_AUTOMATE";
+      /* URL du déclencheur Power Automate "Site_Envoi_Documents_V1" (branché le 31/07/2026).
+         Reçoit du JSON { email, phone, doc, title, access }, va chercher le fichier dans
+         SharePoint (Documents site web/_ParCle/<doc>.pdf) et envoie l'e-mail au demandeur,
+         Cédric en copie. Version V1 volontairement simple : pas encore de validation manuelle
+         pour les documents "restricted" (à ajouter dans une prochaine version). */
+      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/25/workflows/9a48064a6f8b4f6fbcdd8302e1b8e599/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=sAbr6AFkh628Z20mFrO6jnu4MdopqkKMgSOuG2N_-wQ";
 
       var params = new URLSearchParams(window.location.search);
       var docKey = params.get("doc") || "";
@@ -201,7 +195,6 @@
       var gateSuccessTitle = document.getElementById("documentGateSuccessTitle");
       var gateSuccessTail = document.getElementById("documentGateSuccessTail");
       var gateError = document.getElementById("documentGateError");
-      var gateFrame = document.getElementById("documentGateFrame");
 
       function goBack() {
         if (window.history.length > 1) {
@@ -280,28 +273,39 @@
           event.preventDefault();
           var email = gateEmail.value.trim();
           var phone = isRestricted ? gatePhone.value.trim() : "";
+          var submitButton = gateForm.querySelector('button[type="submit"]');
+
+          function showSuccess() {
+            submitButton.disabled = true;
+            gateError.hidden = true;
+            gateSuccess.hidden = false;
+            gateSuccess.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            if (window.goatcounter && window.goatcounter.count) {
+              window.goatcounter.count({
+                path: "document-demande-" + (docKey || "inconnu"),
+                title: "Document demandé — " + doc.title,
+                event: true
+              });
+            }
+          }
 
           if (flowReady) {
-            var sendForm = document.createElement("form");
-            sendForm.method = "POST";
-            sendForm.action = DOCUMENT_REQUEST_URL;
-            sendForm.target = "documentGateFrame";
-            sendForm.style.display = "none";
-            [
-              ["email", email],
-              ["phone", phone],
-              ["doc", docKey],
-              ["title", doc.title],
-              ["access", doc.access || "public"]
-            ].forEach(function (pair) {
-              var input = document.createElement("input");
-              input.name = pair[0];
-              input.value = pair[1];
-              sendForm.appendChild(input);
+            fetch(DOCUMENT_REQUEST_URL, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                email: email,
+                phone: phone,
+                doc: docKey,
+                title: doc.title,
+                access: doc.access || "public"
+              })
+            }).then(function (response) {
+              if (!response.ok) throw new Error("HTTP " + response.status);
+              showSuccess();
+            }).catch(function () {
+              gateError.hidden = false;
             });
-            document.body.appendChild(sendForm);
-            sendForm.submit();
-            sendForm.remove();
           } else {
             var subject = "Demande de document — " + doc.title;
             var body = "Document demandé : " + doc.title + " (" + docKey + ")\n" +
@@ -312,19 +316,7 @@
               "?cc=" + encodeURIComponent(email) +
               "&subject=" + encodeURIComponent(subject) +
               "&body=" + encodeURIComponent(body);
-          }
-
-          gateForm.querySelector('button[type="submit"]').disabled = true;
-          gateError.hidden = true;
-          gateSuccess.hidden = false;
-          gateSuccess.scrollIntoView({ behavior: "smooth", block: "nearest" });
-
-          if (window.goatcounter && window.goatcounter.count) {
-            window.goatcounter.count({
-              path: "document-demande-" + (docKey || "inconnu"),
-              title: "Document demandé par e-mail — " + doc.title,
-              event: true
-            });
+            showSuccess();
           }
         });
       } else {
