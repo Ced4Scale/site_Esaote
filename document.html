@@ -31,14 +31,18 @@
       <form class="document-viewer__gate-panel" id="documentGateForm">
         <span class="kicker">Document officiel</span>
         <h1 id="documentGateTitle">Document</h1>
-        <p>Indiquez votre e-mail professionnel pour recevoir ce document. Votre demande est transmise pour validation avant l'envoi.</p>
+        <p id="documentGateIntro">Indiquez votre e-mail professionnel pour recevoir ce document.</p>
         <label>
           <span>E-mail</span>
           <input type="email" id="documentGateEmail" required autocomplete="email" />
         </label>
+        <label id="documentGatePhoneLabel" hidden>
+          <span>Téléphone</span>
+          <input type="tel" id="documentGatePhone" autocomplete="tel" />
+        </label>
         <button class="btn" type="submit">Demander le document</button>
-        <p class="document-viewer__gate-note">Aucune donnée n'est stockée sur ce site ; votre e-mail sert uniquement à vous envoyer ce document une fois la demande validée.</p>
-        <p class="document-viewer__gate-success" id="documentGateSuccess" role="status" hidden>✓ Merci&nbsp;! Votre demande pour <strong id="documentGateSuccessTitle"></strong> a bien été transmise. Vous recevrez le document par e-mail dès qu'elle aura été validée.</p>
+        <p class="document-viewer__gate-note" id="documentGateNote">Aucune donnée n'est stockée sur ce site ; votre e-mail sert uniquement à vous envoyer ce document.</p>
+        <p class="document-viewer__gate-success" id="documentGateSuccess" role="status" hidden>✓ Merci&nbsp;! Votre demande pour <strong id="documentGateSuccessTitle"></strong> a bien été transmise. <span id="documentGateSuccessTail"></span></p>
         <p class="document-viewer__gate-error" id="documentGateError" role="alert" hidden>Une erreur est survenue. Réessayez, ou <a href="contact.html">contactez-nous directement</a>.</p>
       </form>
     </div>
@@ -169,12 +173,13 @@
         }
       };
       /* URL du déclencheur Power Automate ("Quand une requête HTTP est reçue") à créer
-         côté Cédric : reçoit { email, doc, title, access }. Le champ "access" vaut "public"
-         (brochures, DICOM, IHE — Esaote les publie déjà librement) ou "restricted" (Site
-         Planning Guide, notices d'instructions... documents portant une mention de copyright
-         restrictive ou venant d'un portail fermé). Le flux envoie directement si "public" ;
-         s'il vaut "restricted", il doit passer par une validation manuelle de Cédric avant tout
-         envoi. Voir la mémoire Power Automate pour la spécification complète du flux. */
+         côté Cédric : reçoit { email, doc, title, access, phone }. Le champ "access" vaut
+         "public" (brochures, DICOM, IHE — Esaote les publie déjà librement) ou "restricted"
+         (Site Planning Guide, notices d'instructions... documents portant une mention de
+         copyright restrictive ou venant d'un portail fermé). Le flux envoie directement si
+         "public" ; s'il vaut "restricted", il doit passer par une validation manuelle de Cédric
+         avant tout envoi, et "phone" est alors renseigné (demandé uniquement pour les documents
+         restricted). Voir la mémoire Power Automate pour la spécification complète du flux. */
       var DOCUMENT_REQUEST_URL = "REMPLACER_PAR_URL_POWER_AUTOMATE";
 
       var params = new URLSearchParams(window.location.search);
@@ -188,9 +193,14 @@
       var gate = document.getElementById("documentGate");
       var gateForm = document.getElementById("documentGateForm");
       var gateTitle = document.getElementById("documentGateTitle");
+      var gateIntro = document.getElementById("documentGateIntro");
       var gateEmail = document.getElementById("documentGateEmail");
+      var gatePhoneLabel = document.getElementById("documentGatePhoneLabel");
+      var gatePhone = document.getElementById("documentGatePhone");
+      var gateNote = document.getElementById("documentGateNote");
       var gateSuccess = document.getElementById("documentGateSuccess");
       var gateSuccessTitle = document.getElementById("documentGateSuccessTitle");
+      var gateSuccessTail = document.getElementById("documentGateSuccessTail");
       var gateError = document.getElementById("documentGateError");
       var gateFrame = document.getElementById("documentGateFrame");
 
@@ -264,6 +274,21 @@
         gateTitle.textContent = doc.title;
         gateSuccessTitle.textContent = doc.title;
 
+        var isRestricted = doc.access === "restricted";
+        if (isRestricted) {
+          gateIntro.textContent = "Ce document nécessite une validation. Indiquez votre e-mail professionnel et un numéro de téléphone.";
+          gateNote.textContent = "Aucune donnée n'est stockée sur ce site ; votre e-mail et votre téléphone servent uniquement à traiter votre demande.";
+          gateSuccessTail.textContent = "Vous recevrez le document par e-mail dès qu'elle aura été validée.";
+          gatePhoneLabel.hidden = false;
+          gatePhone.required = true;
+        } else {
+          gateIntro.textContent = "Indiquez votre e-mail professionnel pour recevoir ce document.";
+          gateNote.textContent = "Aucune donnée n'est stockée sur ce site ; votre e-mail sert uniquement à vous envoyer ce document.";
+          gateSuccessTail.textContent = "Vous allez recevoir le document par e-mail dans quelques instants.";
+          gatePhoneLabel.hidden = true;
+          gatePhone.required = false;
+        }
+
         gateForm.addEventListener("submit", function (event) {
           event.preventDefault();
           var sendForm = document.createElement("form");
@@ -273,6 +298,7 @@
           sendForm.style.display = "none";
           [
             ["email", gateEmail.value.trim()],
+            ["phone", isRestricted ? gatePhone.value.trim() : ""],
             ["doc", docKey],
             ["title", doc.title],
             ["access", doc.access || "public"]
