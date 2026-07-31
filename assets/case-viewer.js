@@ -117,6 +117,14 @@
       function unlockMetalCases() {
         document.body.classList.remove("case-page--auth-pending");
         if (accessPanel) accessPanel.hidden = true;
+        if (window.goatcounter && window.goatcounter.count) {
+          var kind = (config.manifestUrl || "").indexOf("irm-charge") !== -1 ? "charge" : "metal";
+          window.goatcounter.count({
+            path: "examens-deverrouilles-" + kind,
+            title: "Examens débloqués — " + kind,
+            event: true
+          });
+        }
         loadMetalCases();
       }
 

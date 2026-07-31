@@ -274,7 +274,10 @@
       });
     }
 
+    var lastRankedProduct = null;
+
     function renderEmpty() {
+      lastRankedProduct = null;
       result.innerHTML = [
         '<p class="mri-quiz__eyebrow">Classement</p>',
         "<h3>Répondez au QCM</h3>",
@@ -306,6 +309,7 @@
       });
       var maxScore = Math.max(1, ranking[0].score);
       var best = ranking[0].product.name;
+      lastRankedProduct = ranking[0].key;
       var platformAnswer = quiz.querySelector('input[name="platform"]:checked + span');
       var prescriberAnswer = quiz.querySelector('input[name="prescribers"]:checked + span');
       var staffAnswer = quiz.querySelector('input[name="staff"]:checked + span');
@@ -341,6 +345,13 @@
       e.preventDefault();
       renderResult();
       result.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      if (lastRankedProduct && window.goatcounter && window.goatcounter.count) {
+        window.goatcounter.count({
+          path: "qcm-resultat-" + lastRankedProduct,
+          title: "QCM aide au choix — résultat : " + lastRankedProduct,
+          event: true
+        });
+      }
     });
     quiz.addEventListener("reset", function () {
       setTimeout(renderEmpty, 0);

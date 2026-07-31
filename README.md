@@ -24,8 +24,6 @@ Ouvrir `index.html` dans un navigateur (double-clic).
 Le fichier `.nojekyll` désactive le traitement Jekyll (site 100 % statique).
 
 ## À finaliser
-- Remplacer l'**e-mail** et le **téléphone** de Cédric (placeholders, repérés par la classe CSS `.ph` ;
-  e-mail aussi dans la variable `DEST` en haut du script de `contact.html`).
 - Optionnel : envoi automatique du formulaire via Formspree / Web3Forms.
 
 ---
