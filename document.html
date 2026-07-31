@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260801-glossaire" />
+  <link rel="stylesheet" href="styles.css?v=20260801-communication" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="document-page">
@@ -165,7 +165,9 @@
          copyright restrictive ou venant d'un portail fermé). Le flux envoie directement si
          "public" ; s'il vaut "restricted", il doit passer par une validation manuelle de Cédric
          avant tout envoi, et "phone" est alors renseigné (demandé uniquement pour les documents
-         restricted). Voir la mémoire Power Automate pour la spécification complète du flux. */
+         restricted). Voir la mémoire Power Automate pour la spécification complète du flux.
+         Tant que cette URL n'est pas renseignée, le formulaire reste actif (jamais d'affichage
+         direct du fichier) mais la demande part par mailto à Cédric, à traiter à la main. */
       var DOCUMENT_REQUEST_URL = "REMPLACER_PAR_URL_POWER_AUTOMATE";
 
       var params = new URLSearchParams(window.location.search);
@@ -230,30 +232,18 @@
           '<p>' + doc.statement + '</p>' +
           '<a class="btn" href="' + doc.sourceUrl + '" target="_blank" rel="noopener">' + doc.sourceLabel + '</a>' +
           '</article>';
-      } else if (doc.access !== "restricted" && doc.src && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
-        /* Documents publics (brochures, DICOM, IHE) : flux Power Automate pas encore branché,
-           on garde l'ancien comportement (affichage direct) plutôt que de bloquer le visiteur
-           sans rien lui donner. Cette branche ne concerne jamais les documents "restricted". */
-        frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
-      } else if (doc.access === "restricted" && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
-        /* Document restreint (ex. Site Planning Guide, notice d'instructions) : jamais
-           d'affichage direct, même sans flux branché. Tant que le flux n'existe pas, on ne
-           peut pas mettre la demande en attente de validation, donc on redirige vers le contact. */
-        frame.hidden = true;
-        pages.hidden = false;
-        pages.innerHTML = '<article class="document-viewer__notice">' +
-          '<span class="kicker">Document sur demande</span>' +
-          '<h1>' + doc.title + '</h1>' +
-          '<p>Ce document est soumis à autorisation d’Esaote et à validation. Contactez-nous directement pour le recevoir.</p>' +
-          '<a class="btn" href="contact.html">Nous contacter</a>' +
-          '</article>';
       } else if (doc.src) {
+        /* Jamais d'affichage direct du fichier, même tant que le flux Power Automate n'existe
+           pas encore : le formulaire est toujours actif. Sans flux branché, la demande part par
+           e-mail (mailto) à Cédric, qui traite alors la demande à la main en attendant que
+           l'envoi automatique soit construit. */
         frame.hidden = true;
         gate.hidden = false;
         gateTitle.textContent = doc.title;
         gateSuccessTitle.textContent = doc.title;
 
         var isRestricted = doc.access === "restricted";
+        var flowReady = DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") !== 0;
         if (isRestricted) {
           gateIntro.textContent = "Ce document nécessite une validation. Indiquez votre e-mail professionnel et un numéro de téléphone.";
           gateNote.textContent = "Aucune donnée n'est stockée sur ce site ; votre e-mail et votre téléphone servent uniquement à traiter votre demande.";
@@ -270,26 +260,41 @@
 
         gateForm.addEventListener("submit", function (event) {
           event.preventDefault();
-          var sendForm = document.createElement("form");
-          sendForm.method = "POST";
-          sendForm.action = DOCUMENT_REQUEST_URL;
-          sendForm.target = "documentGateFrame";
-          sendForm.style.display = "none";
-          [
-            ["email", gateEmail.value.trim()],
-            ["phone", isRestricted ? gatePhone.value.trim() : ""],
-            ["doc", docKey],
-            ["title", doc.title],
-            ["access", doc.access || "public"]
-          ].forEach(function (pair) {
-            var input = document.createElement("input");
-            input.name = pair[0];
-            input.value = pair[1];
-            sendForm.appendChild(input);
-          });
-          document.body.appendChild(sendForm);
-          sendForm.submit();
-          sendForm.remove();
+          var email = gateEmail.value.trim();
+          var phone = isRestricted ? gatePhone.value.trim() : "";
+
+          if (flowReady) {
+            var sendForm = document.createElement("form");
+            sendForm.method = "POST";
+            sendForm.action = DOCUMENT_REQUEST_URL;
+            sendForm.target = "documentGateFrame";
+            sendForm.style.display = "none";
+            [
+              ["email", email],
+              ["phone", phone],
+              ["doc", docKey],
+              ["title", doc.title],
+              ["access", doc.access || "public"]
+            ].forEach(function (pair) {
+              var input = document.createElement("input");
+              input.name = pair[0];
+              input.value = pair[1];
+              sendForm.appendChild(input);
+            });
+            document.body.appendChild(sendForm);
+            sendForm.submit();
+            sendForm.remove();
+          } else {
+            var subject = "Demande de document — " + doc.title;
+            var body = "Document demandé : " + doc.title + " (" + docKey + ")\n" +
+              "E-mail du demandeur : " + email + "\n" +
+              (phone ? "Téléphone du demandeur : " + phone + "\n" : "") +
+              "\nEnvoyé automatiquement depuis ced4scale.fr (flux d'envoi pas encore branché).";
+            window.location.href = "mailto:cedric.goillot@ced4scale.fr" +
+              "?cc=" + encodeURIComponent(email) +
+              "&subject=" + encodeURIComponent(subject) +
+              "&body=" + encodeURIComponent(body);
+          }
 
           gateForm.querySelector('button[type="submit"]').disabled = true;
           gateError.hidden = true;
