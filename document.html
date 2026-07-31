@@ -261,13 +261,17 @@
         if (isRestricted) {
           gateIntro.textContent = "Ce document nécessite une validation. Indiquez votre e-mail professionnel et un numéro de téléphone.";
           gateNote.textContent = "Aucune donnée n'est stockée sur ce site ; votre e-mail et votre téléphone servent uniquement à traiter votre demande.";
-          gateSuccessTail.textContent = "Vous recevrez le document par e-mail dès qu'elle aura été validée.";
+          gateSuccessTail.textContent = flowReady
+            ? "Vous recevrez le document par e-mail dès qu'elle aura été validée."
+            : "Un brouillon d'e-mail vient de s'ouvrir dans votre messagerie, à destination de Cédric : vérifiez qu'il parte bien, l'envoi automatique n'est pas encore actif.";
           gatePhoneLabel.hidden = false;
           gatePhone.required = true;
         } else {
           gateIntro.textContent = "Indiquez votre e-mail professionnel pour recevoir ce document.";
           gateNote.textContent = "Aucune donnée n'est stockée sur ce site ; votre e-mail sert uniquement à vous envoyer ce document.";
-          gateSuccessTail.textContent = "Vous allez recevoir le document par e-mail dans quelques instants.";
+          gateSuccessTail.textContent = flowReady
+            ? "Vous allez recevoir le document par e-mail dans quelques instants."
+            : "Un brouillon d'e-mail vient de s'ouvrir dans votre messagerie, à destination de Cédric : vérifiez qu'il parte bien, l'envoi automatique n'est pas encore actif.";
           gatePhoneLabel.hidden = true;
           gatePhone.required = false;
         }
