@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Déroulement d'une procédure — Interventionnel rachis lombaire — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260731-procedure-slideshow" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body class="document-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html#champ-moyen" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Interventionnel rachis</span>
+      <strong>Déroulement d'une procédure</strong>
+    </div>
+    <button class="document-viewer__close" id="slideClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="procedure-slideshow">
+    <div class="procedure-slideshow__intro">
+      <span class="kicker">Magnifico Open — infiltration rachis lombaire guidée par IRM</span>
+      <h1>Déroulement d'une procédure</h1>
+      <p>Source : document officiel Esaote "Particularités Champs Moyens". Les 5 étapes d'un geste interventionnel sous IRM, du positionnement du patient à la délivrance de la dose.</p>
+    </div>
+
+    <div class="procedure-slideshow__stage">
+      <button class="procedure-slideshow__nav procedure-slideshow__nav--prev" id="slidePrev" type="button" aria-label="Étape précédente">‹</button>
+      <img id="slideImage" src="" alt="" />
+      <button class="procedure-slideshow__nav procedure-slideshow__nav--next" id="slideNext" type="button" aria-label="Étape suivante">›</button>
+    </div>
+
+    <div class="procedure-slideshow__foot">
+      <span class="procedure-slideshow__counter" id="slideCounter">1/5</span>
+      <span class="procedure-slideshow__caption" id="slideCaption"></span>
+    </div>
+    <div class="procedure-slideshow__dots" id="slideDots"></div>
+  </main>
+
+  <script>
+    (function () {
+      var slides = [
+        { src: "assets/cases/irm-infiltration/01-position-patient.webp", caption: "1. Position du patient" },
+        { src: "assets/cases/irm-infiltration/02-acquisition-mesures.webp", caption: "2. Acquisition et mesures" },
+        { src: "assets/cases/irm-infiltration/03-position-trocard.webp", caption: "3. Position du trocart" },
+        { src: "assets/cases/irm-infiltration/04-controle-injection.webp", caption: "4. Contrôle image puis injection" },
+        { src: "assets/cases/irm-infiltration/05-delivrance-dose.webp", caption: "5. Délivrance de la dose" }
+      ];
+      var index = 0;
+      var image = document.getElementById("slideImage");
+      var caption = document.getElementById("slideCaption");
+      var counter = document.getElementById("slideCounter");
+      var dotsWrap = document.getElementById("slideDots");
+
+      slides.forEach(function (_, i) {
+        var dot = document.createElement("button");
+        dot.type = "button";
+        dot.setAttribute("aria-label", "Aller à l'étape " + (i + 1));
+        dot.addEventListener("click", function () { show(i); });
+        dotsWrap.appendChild(dot);
+      });
+
+      function show(i) {
+        index = (i + slides.length) % slides.length;
+        var slide = slides[index];
+        image.src = slide.src;
+        image.alt = slide.caption;
+        caption.textContent = slide.caption;
+        counter.textContent = (index + 1) + "/" + slides.length;
+        Array.prototype.forEach.call(dotsWrap.children, function (dot, i2) {
+          dot.setAttribute("aria-current", i2 === index ? "true" : "false");
+        });
+        if (window.goatcounter && window.goatcounter.count) {
+          window.goatcounter.count({
+            path: "infiltration-etape-" + (index + 1),
+            title: "Infiltration rachis - " + slide.caption,
+            event: true
+          });
+        }
+      }
+
+      document.getElementById("slidePrev").addEventListener("click", function () { show(index - 1); });
+      document.getElementById("slideNext").addEventListener("click", function () { show(index + 1); });
+      document.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowLeft") show(index - 1);
+        if (event.key === "ArrowRight") show(index + 1);
+        if (event.key === "Escape") goBack();
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html#champ-moyen";
+        }
+      }
+      document.getElementById("slideClose").addEventListener("click", goBack);
+
+      show(0);
+    })();
+  </script>
+</body>
+</html>
