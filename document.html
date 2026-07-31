@@ -60,32 +60,38 @@
         "champ-moyen": {
           title: "Particularités Champs Moyens",
           src: "assets/docs/esaote-fr-particularites-champs-moyens-du-irm-strasbourg.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/champ-moyen.webp"
         },
         "o-scan-brochure": {
           title: "Brochure O-scan",
           src: "assets/docs/o-scan-brochure-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/o-scan-brochure-pages/page-01.png"
         },
         "s-scan-open-brochure": {
           title: "Brochure S-scan Open",
           src: "assets/docs/s-scan-open-brochure-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/s-scan-open-brochure.webp"
         },
         "g-scan-brio-brochure": {
           title: "Brochure G-scan Brio",
           src: "assets/docs/g-scan-brio-brochure-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/g-scan-brio-brochure.webp"
         },
         "magnifico-open-brochure": {
           title: "Brochure Magnifico Open",
           src: "assets/docs/magnifico-open-brochure-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/magnifico-open-brochure.webp"
         },
         "i-genius-brochure": {
           title: "Brochure I-Genius",
           src: "assets/docs/i-genius-brochure-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/i-genius-brochure.webp"
         },
         "o-scan-ce": {
           title: "Marquage CE / déclaration de conformité O-scan",
@@ -135,27 +141,32 @@
         "dicom-mri-rel-3-17": {
           title: "DICOM Conformance Statement MRI Rel. 3.17",
           src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/dicom-mri-rel-3-17.webp"
         },
         "o-scan-dicom": {
           title: "DICOM Conformance Statement MRI Rel. 3.17",
           src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/dicom-mri-rel-3-17.webp"
         },
         "o-scan-ihe": {
           title: "IHE Integration Statement O-scan",
           src: "assets/docs/o-scan-ihe-integration-statement-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/o-scan-ihe.webp"
         },
         "g-scan-brio-ihe": {
           title: "IHE Integration Statement G-scan Brio",
           src: "assets/docs/g-scan-brio-ihe-integration-statement-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/g-scan-brio-ihe.webp"
         },
         "magnifico-open-ihe": {
           title: "IHE Integration Statement Magnifico Open",
           src: "assets/docs/magnifico-open-ihe-integration-statement-latest.pdf",
-          access: "public"
+          access: "public",
+          previewImage: "assets/docs/previews/magnifico-open-ihe.webp"
         }
       };
       /* URL du déclencheur Power Automate ("Quand une requête HTTP est reçue") à créer
@@ -241,6 +252,9 @@
         gate.hidden = false;
         gateTitle.textContent = doc.title;
         gateSuccessTitle.textContent = doc.title;
+        if (doc.previewImage) {
+          gate.style.setProperty("--preview-img", "url(" + doc.previewImage + ")");
+        }
 
         var isRestricted = doc.access === "restricted";
         var flowReady = DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") !== 0;

@@ -1099,6 +1099,7 @@ ul { margin: 0; padding: 0; list-style: none; }
 .document-viewer iframe {
   display: block; width: 100%; height: 100%; border: 0; background: #2a2a2a; overflow: auto;
 }
+.document-viewer iframe[hidden] { display: none; }
 .document-viewer__pages {
   height: 100%; overflow: auto; padding: clamp(1rem, 3vw, 2rem); background: #2a2a2a;
 }
@@ -1125,12 +1126,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 .document-viewer__fallback p { color: #d8d8d8; }
 
 .document-viewer__gate {
-  min-height: 100%; display: grid; place-items: center; overflow: auto;
+  position: relative; min-height: 100%; display: grid; place-items: center; overflow: hidden;
   padding: clamp(1.4rem, 4vw, 2.4rem); background: #2a2a2a;
 }
+.document-viewer__gate::before {
+  content: ""; position: absolute; inset: -20px; z-index: 0;
+  background-image: var(--preview-img, none); background-size: cover; background-position: center top;
+  filter: blur(16px) brightness(.55); transform: scale(1.06);
+}
 .document-viewer__gate-panel {
+  position: relative; z-index: 1;
   width: min(460px, 100%); display: grid; gap: 1rem; padding: clamp(1.4rem, 4vw, 2.2rem);
-  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-md); color: var(--ink);
+  background: #fff; border-radius: var(--radius); box-shadow: var(--shadow-lg); color: var(--ink);
 }
 .document-viewer__gate-panel h1 { margin: 0; font-size: clamp(1.4rem, 3vw, 1.8rem); }
 .document-viewer__gate-panel p { margin: 0; color: var(--ink-soft); font-size: .92rem; line-height: 1.5; }
