@@ -210,18 +210,31 @@
         var nom = v("nom"), email = v("email"), fonction = v("fonction"), telephone = v("telephone"), structure = v("structure"), sujet = v("sujet"), timing = v("timing"), message = v("message");
         var themes = Array.prototype.slice.call(form.querySelectorAll('input[name="themes"]:checked')).map(function (input) { return input.value; });
         var subject = "Contact site IRM Esaote" + (sujet ? " — " + sujet : "") + (nom ? " — " + nom : "");
-        var body =
-          "Nom : " + nom + "\n" +
-          "E-mail : " + email + "\n" +
-          "Fonction : " + (fonction || "—") + "\n" +
-          "Téléphone : " + (telephone || "—") + "\n" +
-          "Établissement : " + (structure || "—") + "\n" +
-          "Sujet : " + (sujet || "—") + "\n\n" +
-          "Timing du projet : " + (timing || "—") + "\n\n" +
-          "Thèmes souhaités : " + (themes.length ? themes.join(", ") : "—") + "\n\n" +
-          "Message :\n" + message + "\n";
+
+        var introParts = [];
+        if (fonction) introParts.push(fonction);
+        if (structure) introParts.push("chez " + structure);
+        var intro = "Je suis " + nom + (introParts.length ? ", " + introParts.join(" ") : "") + ".";
+
+        var lines = ["Bonjour Cédric,", "", intro, "", message, ""];
+        if (telephone) {
+          lines.push("Vous pouvez me recontacter au " + telephone + " ou par retour de mail.", "");
+        }
+        lines.push("Cordialement,", nom);
+
+        var meta = [];
+        if (sujet) meta.push("Sujet : " + sujet);
+        if (timing) meta.push("Timing du projet : " + timing);
+        if (themes.length) meta.push("Thèmes à aborder : " + themes.join(", "));
+        if (meta.length) {
+          lines.push("", "—", meta.join("\n"));
+        }
+        lines.push("", "Envoyé depuis ced4scale.fr");
+
+        var body = lines.join("\n");
         window.location.href = "mailto:" + DEST +
-          "?subject=" + encodeURIComponent(subject) +
+          "?cc=" + encodeURIComponent(email) +
+          "&subject=" + encodeURIComponent(subject) +
           "&body=" + encodeURIComponent(body);
         if (window.goatcounter && window.goatcounter.count) {
           window.goatcounter.count({
