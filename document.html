@@ -55,11 +55,13 @@
       var docs = {
         "champ-moyen": {
           title: "Particularités Champs Moyens",
-          src: "assets/docs/esaote-fr-particularites-champs-moyens-du-irm-strasbourg.pdf"
+          src: "assets/docs/esaote-fr-particularites-champs-moyens-du-irm-strasbourg.pdf",
+          access: "public"
         },
         "o-scan-brochure": {
           title: "Brochure O-scan",
           src: "assets/docs/o-scan-brochure-latest.pdf",
+          access: "public",
           pages: [
             "assets/docs/o-scan-brochure-pages/page-01.png",
             "assets/docs/o-scan-brochure-pages/page-02.png",
@@ -77,19 +79,23 @@
         },
         "s-scan-open-brochure": {
           title: "Brochure S-scan Open",
-          src: "assets/docs/s-scan-open-brochure-latest.pdf"
+          src: "assets/docs/s-scan-open-brochure-latest.pdf",
+          access: "public"
         },
         "g-scan-brio-brochure": {
           title: "Brochure G-scan Brio",
-          src: "assets/docs/g-scan-brio-brochure-latest.pdf"
+          src: "assets/docs/g-scan-brio-brochure-latest.pdf",
+          access: "public"
         },
         "magnifico-open-brochure": {
           title: "Brochure Magnifico Open",
-          src: "assets/docs/magnifico-open-brochure-latest.pdf"
+          src: "assets/docs/magnifico-open-brochure-latest.pdf",
+          access: "public"
         },
         "i-genius-brochure": {
           title: "Brochure I-Genius",
-          src: "assets/docs/i-genius-brochure-latest.pdf"
+          src: "assets/docs/i-genius-brochure-latest.pdf",
+          access: "public"
         },
         "o-scan-ce": {
           title: "Marquage CE / déclaration de conformité O-scan",
@@ -138,29 +144,37 @@
         },
         "dicom-mri-rel-3-17": {
           title: "DICOM Conformance Statement MRI Rel. 3.17",
-          src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf"
+          src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf",
+          access: "public"
         },
         "o-scan-dicom": {
           title: "DICOM Conformance Statement MRI Rel. 3.17",
-          src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf"
+          src: "assets/docs/dicom-conformance-statement-mri-rel-3-17.pdf",
+          access: "public"
         },
         "o-scan-ihe": {
           title: "IHE Integration Statement O-scan",
-          src: "assets/docs/o-scan-ihe-integration-statement-latest.pdf"
+          src: "assets/docs/o-scan-ihe-integration-statement-latest.pdf",
+          access: "public"
         },
         "g-scan-brio-ihe": {
           title: "IHE Integration Statement G-scan Brio",
-          src: "assets/docs/g-scan-brio-ihe-integration-statement-latest.pdf"
+          src: "assets/docs/g-scan-brio-ihe-integration-statement-latest.pdf",
+          access: "public"
         },
         "magnifico-open-ihe": {
           title: "IHE Integration Statement Magnifico Open",
-          src: "assets/docs/magnifico-open-ihe-integration-statement-latest.pdf"
+          src: "assets/docs/magnifico-open-ihe-integration-statement-latest.pdf",
+          access: "public"
         }
       };
       /* URL du déclencheur Power Automate ("Quand une requête HTTP est reçue") à créer
-         côté Cédric : reçoit { email, doc, title }, enregistre la demande, attend la validation
-         manuelle de Cédric (approbation), puis envoie le document en pièce jointe seulement s'il
-         valide. Voir la mémoire Power Automate pour la spécification complète du flux. */
+         côté Cédric : reçoit { email, doc, title, access }. Le champ "access" vaut "public"
+         (brochures, DICOM, IHE — Esaote les publie déjà librement) ou "restricted" (Site
+         Planning Guide, notices d'instructions... documents portant une mention de copyright
+         restrictive ou venant d'un portail fermé). Le flux envoie directement si "public" ;
+         s'il vaut "restricted", il doit passer par une validation manuelle de Cédric avant tout
+         envoi. Voir la mémoire Power Automate pour la spécification complète du flux. */
       var DOCUMENT_REQUEST_URL = "REMPLACER_PAR_URL_POWER_AUTOMATE";
 
       var params = new URLSearchParams(window.location.search);
@@ -220,9 +234,10 @@
           '<p>' + doc.statement + '</p>' +
           '<a class="btn" href="' + doc.sourceUrl + '" target="_blank" rel="noopener">' + doc.sourceLabel + '</a>' +
           '</article>';
-      } else if (doc.src && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
-        /* Flux Power Automate pas encore branché : on garde l'ancien comportement
-           (affichage direct) plutôt que de bloquer le visiteur sans rien lui donner. */
+      } else if (doc.access !== "restricted" && doc.src && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
+        /* Documents publics (brochures, DICOM, IHE) : flux Power Automate pas encore branché,
+           on garde l'ancien comportement (affichage direct) plutôt que de bloquer le visiteur
+           sans rien lui donner. Cette branche ne concerne jamais les documents "restricted". */
         if (doc.pages && doc.pages.length) {
           pages.hidden = false;
           pages.innerHTML = doc.pages.map(function (src, index) {
@@ -231,6 +246,18 @@
         } else {
           frame.src = doc.src + "#toolbar=1&navpanes=0&scrollbar=1&page=1&view=FitH";
         }
+      } else if (doc.access === "restricted" && DOCUMENT_REQUEST_URL.indexOf("REMPLACER_PAR_URL") === 0) {
+        /* Document restreint (ex. Site Planning Guide, notice d'instructions) : jamais
+           d'affichage direct, même sans flux branché. Tant que le flux n'existe pas, on ne
+           peut pas mettre la demande en attente de validation, donc on redirige vers le contact. */
+        frame.hidden = true;
+        pages.hidden = false;
+        pages.innerHTML = '<article class="document-viewer__notice">' +
+          '<span class="kicker">Document sur demande</span>' +
+          '<h1>' + doc.title + '</h1>' +
+          '<p>Ce document est soumis à autorisation d’Esaote et à validation. Contactez-nous directement pour le recevoir.</p>' +
+          '<a class="btn" href="contact.html">Nous contacter</a>' +
+          '</article>';
       } else if (doc.src) {
         frame.hidden = true;
         gate.hidden = false;
@@ -247,7 +274,8 @@
           [
             ["email", gateEmail.value.trim()],
             ["doc", docKey],
-            ["title", doc.title]
+            ["title", doc.title],
+            ["access", doc.access || "public"]
           ].forEach(function (pair) {
             var input = document.createElement("input");
             input.name = pair[0];
