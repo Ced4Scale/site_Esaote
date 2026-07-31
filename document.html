@@ -33,6 +33,10 @@
         <h1 id="documentGateTitle">Document</h1>
         <p id="documentGateIntro">Indiquez votre e-mail professionnel pour recevoir ce document.</p>
         <label>
+          <span>Votre nom</span>
+          <input type="text" id="documentGateName" required autocomplete="name" />
+        </label>
+        <label>
           <span>E-mail</span>
           <input type="email" id="documentGateEmail" required autocomplete="email" />
         </label>
@@ -169,11 +173,12 @@
         }
       };
       /* URL du déclencheur Power Automate "Site_Envoi_Documents_V1" (branché le 31/07/2026).
-         Reçoit du JSON { email, phone, doc, title, access }, va chercher le fichier dans
-         SharePoint (Documents site web/_ParCle/<doc>.pdf) et envoie l'e-mail au demandeur,
-         Cédric en copie. Version V1 volontairement simple : pas encore de validation manuelle
-         pour les documents "restricted" (à ajouter dans une prochaine version). */
-      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/25/workflows/9a48064a6f8b4f6fbcdd8302e1b8e599/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=sAbr6AFkh628Z20mFrO6jnu4MdopqkKMgSOuG2N_-wQ";
+         Reçoit du JSON { name, email, phone, doc, title, access }, va chercher le fichier dans
+         SharePoint (Documents site web/_ParCle/<doc>.pdf) et envoie l'e-mail au demandeur
+         (salutation personnalisée "Bonjour {name}," + signature complète), Cédric en copie.
+         Version V1 volontairement simple : pas encore de validation manuelle pour les
+         documents "restricted" (à ajouter dans une prochaine version). */
+      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/17/workflows/1ddc668711b14acfab5b4d37caec9bc5/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=DSSwg-X9n8wBQNIngYGLtswi05b6CyS49imp7pb3n9I";
 
       var params = new URLSearchParams(window.location.search);
       var docKey = params.get("doc") || "";
@@ -187,6 +192,7 @@
       var gateForm = document.getElementById("documentGateForm");
       var gateTitle = document.getElementById("documentGateTitle");
       var gateIntro = document.getElementById("documentGateIntro");
+      var gateName = document.getElementById("documentGateName");
       var gateEmail = document.getElementById("documentGateEmail");
       var gatePhoneLabel = document.getElementById("documentGatePhoneLabel");
       var gatePhone = document.getElementById("documentGatePhone");
@@ -271,6 +277,7 @@
 
         gateForm.addEventListener("submit", function (event) {
           event.preventDefault();
+          var name = gateName.value.trim();
           var email = gateEmail.value.trim();
           var phone = isRestricted ? gatePhone.value.trim() : "";
           var submitButton = gateForm.querySelector('button[type="submit"]');
@@ -294,6 +301,7 @@
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
+                name: name,
                 email: email,
                 phone: phone,
                 doc: docKey,
@@ -309,6 +317,7 @@
           } else {
             var subject = "Demande de document — " + doc.title;
             var body = "Document demandé : " + doc.title + " (" + docKey + ")\n" +
+              "Nom du demandeur : " + name + "\n" +
               "E-mail du demandeur : " + email + "\n" +
               (phone ? "Téléphone du demandeur : " + phone + "\n" : "") +
               "\nEnvoyé automatiquement depuis ced4scale.fr (flux d'envoi pas encore branché).";
