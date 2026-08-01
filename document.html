@@ -33,13 +33,26 @@
         <h1 id="documentGateTitle">Document</h1>
         <p id="documentGateIntro">Indiquez votre e-mail professionnel pour recevoir ce document.</p>
         <label>
-          <span>Votre nom</span>
-          <input type="text" id="documentGateName" required autocomplete="name" />
+          <span>Prénom</span>
+          <input type="text" id="documentGatePrenom" required autocomplete="given-name" />
+        </label>
+        <label>
+          <span>Nom</span>
+          <input type="text" id="documentGateNom" required autocomplete="family-name" />
         </label>
         <label>
           <span>E-mail</span>
           <input type="email" id="documentGateEmail" required autocomplete="email" />
         </label>
+        <p class="document-viewer__gate-nudge" id="documentGatePersonalNudge" role="alert" hidden>
+          Il semble que vous avez indiqué une adresse personnelle. Auriez-vous une adresse
+          professionnelle&nbsp;? Cela vous permet de recevoir le document immédiatement, sans
+          étape supplémentaire.
+          <span class="document-viewer__gate-nudge-actions">
+            <button type="button" class="btn btn--ghost" id="documentGateNudgeEdit">Modifier mon adresse</button>
+            <button type="button" class="btn btn--ghost" id="documentGateNudgeContinue">Continuer quand même</button>
+          </span>
+        </p>
         <label id="documentGatePhoneLabel" hidden>
           <span>Téléphone</span>
           <input type="tel" id="documentGatePhone" autocomplete="tel" />
@@ -180,17 +193,32 @@
           previewImage: "assets/docs/previews/magnifico-open-ihe.webp"
         }
       };
-      /* URL du déclencheur Power Automate "Site_Envoi_Documents_V2" (branché le 01/08/2026).
-         Reçoit du JSON { name, email, phone, doc, title, access }.
-         - access = "public" : envoi automatique immédiat, comme avant (fichier dans
-           SharePoint Documents site web/_ParCle/<doc>.pdf + e-mail personnalisé "Bonjour
-           {name}," + lien Microsoft Bookings + signature complète, Cédric en copie).
-         - access = "restricted" : Cédric reçoit d'abord une notification (approbation
-           Power Automate gratuite, sur son téléphone/mail/Outlook) avec le nom, l'e-mail,
-           le téléphone et le document demandé. S'il approuve, le document part comme pour
-           "public". S'il refuse, un e-mail explique qu'il recontactera la personne, avec
-           quand même le lien de rendez-vous pour réserver un créneau en attendant. */
-      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/16/workflows/fbd684623af4413b81ea0c4da6b3d598/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RjCSZdOkDSHjHwahHbCmm-2883KVsWF_VvqDhT58Gg4";
+      /* URL du déclencheur Power Automate "Site_Envoi_Documents_V3" (branché le 01/08/2026).
+         Reçoit du JSON { name, prenom, email, phone, doc, title, access }. Le document part
+         automatiquement sauf dans 3 cas, qui déclenchent une demande de validation à Cédric
+         (approbation Power Automate gratuite, sur son téléphone/mail/Outlook) :
+         - le document est classé "restricted" (ex. Site Planning Guide) ;
+         - l'adresse e-mail appartient à un domaine concurrent connu (silencieux, la personne
+           ne voit rien de spécial) ;
+         - l'adresse e-mail est un fournisseur grand public (Gmail, Hotmail...) et la personne
+           a choisi "Continuer quand même" après le message d'invitation à donner une adresse
+           professionnelle (voir PERSONAL_EMAIL_DOMAINS ci-dessus).
+         Si Cédric approuve, le document part comme d'habitude. S'il refuse : message "je vous
+         recontacte" (restricted/concurrent) ou "auriez-vous une adresse professionnelle ?"
+         (adresse perso) — toujours avec le lien de rendez-vous Microsoft Bookings. */
+      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/14/workflows/9b3beefe7d794c81824c78cbd737f310/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=u6E9dQjVd0Sv7TpqoEDA-IxC-7kyP9UNMC_PaB-01tA";
+
+      /* Liste des fournisseurs d'e-mail grand public (pas une adresse professionnelle).
+         Sert uniquement à afficher un message d'invitation avant l'envoi (le vrai filet de
+         sécurité, pour ceux qui continuent quand même, est côté flux Power Automate — voir
+         "Site_Envoi_Documents_V2"). À tenir synchronisée avec la même liste côté flux si elle
+         change (pas de source unique possible entre le site et Power Automate). */
+      var PERSONAL_EMAIL_DOMAINS = [
+        "gmail.com", "hotmail.com", "hotmail.fr", "outlook.com", "outlook.fr", "live.com",
+        "live.fr", "yahoo.com", "yahoo.fr", "icloud.com", "me.com", "mac.com", "orange.fr",
+        "wanadoo.fr", "free.fr", "laposte.net", "sfr.fr", "bbox.fr", "neuf.fr", "aol.com",
+        "gmx.com", "protonmail.com", "yopmail.com"
+      ];
 
       var params = new URLSearchParams(window.location.search);
       var docKey = params.get("doc") || "";
@@ -204,8 +232,12 @@
       var gateForm = document.getElementById("documentGateForm");
       var gateTitle = document.getElementById("documentGateTitle");
       var gateIntro = document.getElementById("documentGateIntro");
-      var gateName = document.getElementById("documentGateName");
+      var gatePrenom = document.getElementById("documentGatePrenom");
+      var gateNom = document.getElementById("documentGateNom");
       var gateEmail = document.getElementById("documentGateEmail");
+      var gatePersonalNudge = document.getElementById("documentGatePersonalNudge");
+      var gateNudgeEdit = document.getElementById("documentGateNudgeEdit");
+      var gateNudgeContinue = document.getElementById("documentGateNudgeContinue");
       var gatePhoneLabel = document.getElementById("documentGatePhoneLabel");
       var gatePhone = document.getElementById("documentGatePhone");
       var gateNote = document.getElementById("documentGateNote");
@@ -287,9 +319,34 @@
           gatePhone.required = false;
         }
 
-        gateForm.addEventListener("submit", function (event) {
-          event.preventDefault();
-          var name = gateName.value.trim();
+        var emailConfirmedPersonal = false;
+
+        function isPersonalEmailDomain(email) {
+          var parts = email.split("@");
+          if (parts.length !== 2) return false;
+          return PERSONAL_EMAIL_DOMAINS.indexOf(parts[1].trim().toLowerCase()) !== -1;
+        }
+
+        gateEmail.addEventListener("input", function () {
+          emailConfirmedPersonal = false;
+          gatePersonalNudge.hidden = true;
+        });
+
+        gateNudgeEdit.addEventListener("click", function () {
+          gatePersonalNudge.hidden = true;
+          gateEmail.focus();
+        });
+
+        gateNudgeContinue.addEventListener("click", function () {
+          emailConfirmedPersonal = true;
+          gatePersonalNudge.hidden = true;
+          submitRequest();
+        });
+
+        function submitRequest() {
+          var prenom = gatePrenom.value.trim();
+          var nom = gateNom.value.trim();
+          var name = (prenom + " " + nom).trim();
           var email = gateEmail.value.trim();
           var phone = isRestricted ? gatePhone.value.trim() : "";
           var submitButton = gateForm.querySelector('button[type="submit"]');
@@ -314,6 +371,7 @@
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 name: name,
+                prenom: prenom,
                 email: email,
                 phone: phone,
                 doc: docKey,
@@ -339,6 +397,17 @@
               "&body=" + encodeURIComponent(body);
             showSuccess();
           }
+        }
+
+        gateForm.addEventListener("submit", function (event) {
+          event.preventDefault();
+          var email = gateEmail.value.trim();
+          if (!emailConfirmedPersonal && isPersonalEmailDomain(email)) {
+            gatePersonalNudge.hidden = false;
+            gatePersonalNudge.scrollIntoView({ behavior: "smooth", block: "nearest" });
+            return;
+          }
+          submitRequest();
         });
       } else {
         frame.hidden = true;
