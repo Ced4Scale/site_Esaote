@@ -159,6 +159,14 @@
           access: "public",
           previewImage: "assets/docs/previews/o-scan-ihe.webp"
         },
+        /* Document copyright Esaote (restricted) : le vrai fichier vit uniquement dans
+           SharePoint (_ParCle), jamais dans ce dépôt public. "src" n'est utilisé que pour
+           activer le formulaire de demande (jamais affiché/récupéré directement). */
+        "o-scan-site-planning-guide": {
+          title: "Guide d'implantation O-scan SMART (Site Planning Guide, rev1)",
+          src: "assets/docs/o-scan-site-planning-guide-non-public.pdf",
+          access: "restricted"
+        },
         "g-scan-brio-ihe": {
           title: "IHE Integration Statement G-scan Brio",
           src: "assets/docs/g-scan-brio-ihe-integration-statement-latest.pdf",
@@ -172,14 +180,17 @@
           previewImage: "assets/docs/previews/magnifico-open-ihe.webp"
         }
       };
-      /* URL du déclencheur Power Automate "Site_Envoi_Documents_V1" (branché le 31/07/2026).
-         Reçoit du JSON { name, email, phone, doc, title, access }, va chercher le fichier dans
-         SharePoint (Documents site web/_ParCle/<doc>.pdf) et envoie l'e-mail au demandeur
-         (salutation personnalisée "Bonjour {name}," + lien Microsoft Bookings pour prendre
-         rendez-vous, 20 min, appel ou Teams au choix + signature complète), Cédric en copie.
-         Version V1 volontairement simple : pas encore de validation manuelle pour les
-         documents "restricted" (à ajouter dans une prochaine version). */
-      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/16/workflows/c19407e82a3e4b528a2c4568dfd52003/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=i7QIMD9etuqJcmoDuzE9djyKgxhXifSNSrVdS0sSNVA";
+      /* URL du déclencheur Power Automate "Site_Envoi_Documents_V2" (branché le 01/08/2026).
+         Reçoit du JSON { name, email, phone, doc, title, access }.
+         - access = "public" : envoi automatique immédiat, comme avant (fichier dans
+           SharePoint Documents site web/_ParCle/<doc>.pdf + e-mail personnalisé "Bonjour
+           {name}," + lien Microsoft Bookings + signature complète, Cédric en copie).
+         - access = "restricted" : Cédric reçoit d'abord une notification (approbation
+           Power Automate gratuite, sur son téléphone/mail/Outlook) avec le nom, l'e-mail,
+           le téléphone et le document demandé. S'il approuve, le document part comme pour
+           "public". S'il refuse, un e-mail explique qu'il recontactera la personne, avec
+           quand même le lien de rendez-vous pour réserver un créneau en attendant. */
+      var DOCUMENT_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/16/workflows/fbd684623af4413b81ea0c4da6b3d598/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=RjCSZdOkDSHjHwahHbCmm-2883KVsWF_VvqDhT58Gg4";
 
       var params = new URLSearchParams(window.location.search);
       var docKey = params.get("doc") || "";
