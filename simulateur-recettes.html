@@ -119,9 +119,17 @@
                 <input type="text" id="simEtablissement" required placeholder="CHU, clinique, cabinet…" />
               </div>
               <div class="field">
+                <label for="simFonction">Fonction</label>
+                <input type="text" id="simFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+              </div>
+              <div class="field">
                 <label for="simEmail">E-mail</label>
                 <input type="email" id="simEmail" required autocomplete="email" />
               </div>
+            </div>
+            <div class="field">
+              <label for="simCommentaire">Commentaire</label>
+              <textarea id="simCommentaire" placeholder="Précisions sur le contexte, le projet…" rows="3"></textarea>
             </div>
             <button type="submit" class="btn btn--lg" id="simExportSubmit">Recevoir ma simulation en PDF</button>
             <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
@@ -190,8 +198,8 @@
         { key: "g-scan", label: "G-scan", classKey: "le05" },
         { key: "magnifico", label: "Magnifico", classKey: "le05" },
         { key: "mid", label: "Champ > 0,5 T et < 1,5 T", classKey: "mid" },
-        { key: "t15", label: "Champ 1,5 T standard", classKey: "t15" },
-        { key: "sup15", label: "Champ > 1,5 T (3 T, 5 T…)", classKey: "sup15" }
+        { key: "t15", label: "Champ 1,5 T", classKey: "t15" },
+        { key: "sup15", label: "Champ 3T (5T, 7T ...)", classKey: "sup15" }
       ];
 
       // Palette catégorielle validée (skill dataviz) — ordre fixe, 4 emplacements.
@@ -316,17 +324,19 @@
           tr.appendChild(tdLabel);
           var totalLigne = 0;
           var values = [];
+          var cumul = [0];
           for (var i = 0; i < 7; i++) {
             var ca = caPourAnnee(sc.iso, classe, zone, volume, i, rejoue);
             values.push(ca);
             totalLigne += ca;
+            cumul.push(totalLigne);
             var td = document.createElement("td");
             td.textContent = euros.format(ca);
             tr.appendChild(td);
           }
           tbody.appendChild(tr);
           totaux.push({ label: sc.label, total: totalLigne });
-          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values });
+          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values, cumul: cumul });
         });
 
         var chuteEl = document.getElementById("simChute");
@@ -394,10 +404,10 @@
         }
 
         var maxVal = 0;
-        derniereSerie.forEach(function (s) { s.values.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
+        derniereSerie.forEach(function (s) { s.cumul.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
         var yMax = niceCeil(maxVal * 1.08);
 
-        function xAt(i) { return PAD.left + (PLOT_W * i) / 6; }
+        function xAt(i) { return PAD.left + (PLOT_W * i) / 7; }
         function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * v) / yMax; }
 
         // Gridlines horizontales (0 / 25% / 50% / 75% / 100%), hairline, recessives.
@@ -410,34 +420,34 @@
           svg.appendChild(labelY);
         }
 
-        // Axe X : Année 1..7.
-        for (var i = 0; i < 7; i++) {
+        // Axe X : Départ (0 €) puis Année 1..7, en cumulé.
+        for (var i = 0; i <= 7; i++) {
           var lx = svgEl("text", { x: xAt(i), y: 300 - 8, class: "simulator__axis-label", "text-anchor": "middle" });
-          lx.textContent = "A" + (i + 1);
+          lx.textContent = i === 0 ? "Départ" : "A" + i;
           svg.appendChild(lx);
         }
 
-        // Une ligne par scénario : 2px, jointures rondes, marqueurs 8px avec anneau blanc,
-        // libellé de valeur au point final.
+        // Une ligne par scénario, en chiffre d'affaires CUMULÉ depuis 0 € : 2px, jointures
+        // rondes, marqueurs 8px avec anneau blanc, libellé de valeur au point final.
         derniereSerie.forEach(function (s) {
-          var points = s.values.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
+          var points = s.cumul.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
           svg.appendChild(svgEl("polyline", {
             points: points, fill: "none", stroke: s.color, "stroke-width": "2",
             "stroke-linejoin": "round", "stroke-linecap": "round"
           }));
-          s.values.forEach(function (v, i) {
+          s.cumul.forEach(function (v, i) {
             svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 6, fill: "#fcfcfb" }));
             svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 4, fill: s.color }));
           });
-          var lastX = xAt(6), lastY = yAt(s.values[6]);
+          var lastX = xAt(7), lastY = yAt(s.cumul[7]);
           var endLabel = svgEl("text", {
             x: lastX + 8, y: lastY + 3, class: "simulator__end-label", fill: s.color
           });
-          endLabel.textContent = euros.format(s.values[6]);
+          endLabel.textContent = euros.format(s.cumul[7]);
           svg.appendChild(endLabel);
         });
 
-        // Couche de survol : hairline verticale + tooltip listant toutes les séries à l'année.
+        // Couche de survol : hairline verticale + tooltip listant toutes les séries au point.
         var crosshair = svgEl("line", { x1: 0, x2: 0, y1: PAD.top, y2: PAD.top + PLOT_H, class: "simulator__crosshair", visibility: "hidden" });
         svg.appendChild(crosshair);
         var hitArea = svgEl("rect", { x: PAD.left, y: PAD.top, width: PLOT_W, height: PLOT_H, fill: "transparent" });
@@ -447,17 +457,17 @@
           var rect = svg.getBoundingClientRect();
           var scaleX = 640 / rect.width;
           var xViewBox = (evt.clientX - rect.left) * scaleX;
-          var i = Math.round(((xViewBox - PAD.left) / PLOT_W) * 6);
-          i = Math.max(0, Math.min(6, i));
+          var i = Math.round(((xViewBox - PAD.left) / PLOT_W) * 7);
+          i = Math.max(0, Math.min(7, i));
           crosshair.setAttribute("x1", xAt(i));
           crosshair.setAttribute("x2", xAt(i));
           crosshair.setAttribute("visibility", "visible");
 
           var lignes = derniereSerie.map(function (s) {
             return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.color + '"></span>' +
-              '<strong>' + euros.format(s.values[i]) + '</strong> — Départ ' + s.label + '</div>';
+              '<strong>' + euros.format(s.cumul[i]) + '</strong> — Départ ' + s.label + '</div>';
           }).join("");
-          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">Année ' + (i + 1) + '</div>' + lignes;
+          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + (i === 0 ? "Départ" : "Cumul année " + i) + '</div>' + lignes;
           tooltipEl.hidden = false;
 
           var scaleRect = rect.width / 640;
@@ -500,6 +510,8 @@
       function genererPdfBase64() {
         var doc = new window.jspdf.jsPDF();
         var etablissement = document.getElementById("simEtablissement").value.trim();
+        var fonction = document.getElementById("simFonction").value.trim();
+        var commentaire = document.getElementById("simCommentaire").value.trim();
         var zoneLabel = document.getElementById("simZone");
         zoneLabel = zoneLabel.options[zoneLabel.selectedIndex].textContent;
         var volume = document.getElementById("simVolume").value;
@@ -516,6 +528,7 @@
         doc.setTextColor(0);
         doc.setFontSize(11);
         doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+        if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
         doc.text("Machine : " + machineLabel, 15, y); y += 6;
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 12;
@@ -553,6 +566,13 @@
         var chuteTexte = document.getElementById("simChute").textContent;
         var lignesChute = doc.splitTextToSize(chuteTexte, 180);
         doc.text(lignesChute, 15, y); y += 5 * lignesChute.length + 3;
+        if (commentaire) {
+          doc.setTextColor(0);
+          doc.text("Commentaire :", 15, y); y += 5;
+          var lignesCommentaire = doc.splitTextToSize(commentaire, 180);
+          doc.text(lignesCommentaire, 15, y); y += 5 * lignesCommentaire.length + 3;
+          doc.setTextColor(140);
+        }
         doc.text("Forfait technique uniquement (hors acte du radiologue). Source : arrêté du 20 juin 2024", 15, y); y += 5;
         doc.text("modifié, Journal officiel (Légifrance). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
 
@@ -569,6 +589,8 @@
         var prenom = document.getElementById("simPrenom").value.trim();
         var nom = document.getElementById("simNom").value.trim();
         var etablissement = document.getElementById("simEtablissement").value.trim();
+        var fonction = document.getElementById("simFonction").value.trim();
+        var commentaire = document.getElementById("simCommentaire").value.trim();
         var email = document.getElementById("simEmail").value.trim();
         var zoneSelect = document.getElementById("simZone");
         var zoneLabel = zoneSelect.options[zoneSelect.selectedIndex].textContent;
@@ -587,6 +609,8 @@
             nom: nom,
             email: email,
             etablissement: etablissement,
+            fonction: fonction,
+            commentaire: commentaire,
             filename: "simulation-recettes-irm.pdf",
             pdfBase64: pdfBase64,
             volume: volume,
