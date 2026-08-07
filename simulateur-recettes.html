@@ -71,7 +71,15 @@
           <select id="simDateSel3"></select>
         </div>
 
-        <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" et suit la vraie évolution des tarifs ensuite (les 4 dates connues à ce jour) — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
+        <div class="field">
+          <label>Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="simRejoue" value="oui" checked /> Oui — suivre la vraie chronologie</label>
+            <label><input type="radio" name="simRejoue" value="non" /> Non — geler le tarif de départ</label>
+          </div>
+        </div>
+
+        <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
       </div>
 
       <div class="simulator__results">
@@ -163,13 +171,15 @@
             { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 86.10, nonAmorti: 154.71 }, idf: { amorti: 85.13, nonAmorti: 151.46 }, province: { amorti: 84.79, nonAmorti: 150.30 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } }
           ]
         },
-        t15membres: {
-          label: "1,5 T dédié membres", REF: 4500, SEUIL1: 8000, SEUIL2: 11000,
+        sup15: {
+          // Pas de tarif "amorti" publié pour cette classe (uniquement "non amorti") — sans
+          // incidence ici puisque ce simulateur n'utilise jamais le tarif amorti (voir plus haut).
+          label: "> 1,5 T", REF: 4500, SEUIL1: 8000, SEUIL2: 11000,
           dates: [
-            { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { amorti: 138.96, nonAmorti: 102.32 }, idf: { amorti: 133.38, nonAmorti: 101.91 }, province: { amorti: 125.57, nonAmorti: 101.76 } }, reduits: { seuil1: 64.09, seuil2: 55.80, plafond: 36.10 } },
-            { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { amorti: 138.96, nonAmorti: 102.32 }, idf: { amorti: 133.38, nonAmorti: 101.91 }, province: { amorti: 125.57, nonAmorti: 101.76 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
-            { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { amorti: 137.52, nonAmorti: 100.10 }, idf: { amorti: 131.99, nonAmorti: 99.69 }, province: { amorti: 124.26, nonAmorti: 99.55 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
-            { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 136.07, nonAmorti: 97.21 }, idf: { amorti: 130.60, nonAmorti: 96.81 }, province: { amorti: 122.96, nonAmorti: 96.67 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
+            { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { nonAmorti: 187.52 }, idf: { nonAmorti: 185.76 }, province: { nonAmorti: 185.32 } }, reduits: { seuil1: 64.09, seuil2: 55.80, plafond: 36.10 } },
+            { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { nonAmorti: 187.52 }, idf: { nonAmorti: 185.76 }, province: { nonAmorti: 185.32 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+            { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { nonAmorti: 183.45 }, idf: { nonAmorti: 181.72 }, province: { nonAmorti: 181.29 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+            { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { nonAmorti: 178.15 }, idf: { nonAmorti: 176.47 }, province: { nonAmorti: 176.05 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
           ]
         }
       };
@@ -179,9 +189,9 @@
         { key: "s-scan", label: "S-scan", classKey: "le05" },
         { key: "g-scan", label: "G-scan", classKey: "le05" },
         { key: "magnifico", label: "Magnifico", classKey: "le05" },
-        { key: "mid", label: "Concurrent > 0,5 T et < 1,5 T", classKey: "mid" },
-        { key: "t15", label: "Concurrent 1,5 T standard", classKey: "t15" },
-        { key: "t15membres", label: "Concurrent 1,5 T dédié membres", classKey: "t15membres" }
+        { key: "mid", label: "Champ > 0,5 T et < 1,5 T", classKey: "mid" },
+        { key: "t15", label: "Champ 1,5 T standard", classKey: "t15" },
+        { key: "sup15", label: "Champ > 1,5 T (3 T, 5 T…)", classKey: "sup15" }
       ];
 
       // Palette catégorielle validée (skill dataviz) — ordre fixe, 4 emplacements.
@@ -248,13 +258,20 @@
         return choisi;
       }
 
-      // La date choisie devient "année 1" du scénario ; les années suivantes rejouent la vraie
-      // chronologie des tarifs connus. Toujours "non amorti" : 7 ans est exactement la durée
-      // d'amortissement, donc la machine ne devient jamais amortie à l'intérieur de la fenêtre.
-      function caPourAnnee(dateDepartIso, classe, zone, volume, anneeIndex) {
-        var anneeDepart = new Date(dateDepartIso + "T00:00:00").getFullYear();
-        var dateEval = new Date(anneeDepart + anneeIndex, 11, 31);
-        var ligne = trouverTarifDate(classe, dateEval);
+      // La date choisie devient "année 1" du scénario. Si "rejoue" est vrai, les années
+      // suivantes suivent la vraie chronologie des tarifs connus (comme un décret réel qui
+      // s'applique à sa date d'effet) ; sinon le tarif de départ reste gelé sur les 7 ans.
+      // Toujours "non amorti" : 7 ans est exactement la durée d'amortissement, donc la machine
+      // ne devient jamais amortie à l'intérieur de la fenêtre.
+      function caPourAnnee(dateDepartIso, classe, zone, volume, anneeIndex, rejoue) {
+        var ligne;
+        if (rejoue) {
+          var anneeDepart = new Date(dateDepartIso + "T00:00:00").getFullYear();
+          var dateEval = new Date(anneeDepart + anneeIndex, 11, 31);
+          ligne = trouverTarifDate(classe, dateEval);
+        } else {
+          ligne = classe.dates.filter(function (d) { return d.iso === dateDepartIso; })[0];
+        }
         var tarifPlein = ligne.plein[zone].nonAmorti;
         return calculerCA(volume, tarifPlein, ligne.reduits, classe);
       }
@@ -272,6 +289,7 @@
         var zone = document.getElementById("simZone").value;
         var volume = Math.max(0, parseInt(document.getElementById("simVolume").value, 10) || 0);
         var classe = classeCourante();
+        var rejoue = document.querySelector('input[name="simRejoue"]:checked').value === "oui";
 
         var scenarios = [];
         dateSelects.forEach(function (select, slot) {
@@ -299,7 +317,7 @@
           var totalLigne = 0;
           var values = [];
           for (var i = 0; i < 7; i++) {
-            var ca = caPourAnnee(sc.iso, classe, zone, volume, i);
+            var ca = caPourAnnee(sc.iso, classe, zone, volume, i, rejoue);
             values.push(ca);
             totalLigne += ca;
             var td = document.createElement("td");
@@ -460,6 +478,9 @@
         document.getElementById(id).addEventListener("input", recalculer);
       });
       dateSelects.forEach(function (select) { select.addEventListener("change", recalculer); });
+      document.querySelectorAll('input[name="simRejoue"]').forEach(function (radio) {
+        radio.addEventListener("change", recalculer);
+      });
       machineSelect.addEventListener("change", function () {
         remplirSelectsDates();
         recalculer();
