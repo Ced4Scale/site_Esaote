@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur de recettes IRM — Forfait technique — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260807-simulateur" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>Recettes IRM — forfait technique</strong>
+    </div>
+    <button class="document-viewer__close" id="simClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">O-scan · S-scan · G-scan · Magnifico — toutes en classe "≤ 0,5 T"</span>
+      <h1>Simulateur de recettes IRM</h1>
+      <p>Calcule le <strong>forfait technique</strong> versé par l'assurance maladie pour un plateau IRM ≤ 0,5 T (le tarif est identique pour O-scan, S-scan, G-scan et Magnifico — seul le volume d'examens change la recette). N'inclut pas l'acte du radiologue. I-Genius n'est pas concerné (usage per-opératoire, hors de cette grille).</p>
+      <p class="simulator__source">Source : arrêté du 20 juin 2024 modifié, annexe 2, sous-titre 3 — <a href="https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000052400971" target="_blank" rel="noopener">texte officiel sur Légifrance</a>.</p>
+    </div>
+
+    <div class="simulator__layout">
+      <div class="form-card simulator__form">
+        <h3 style="margin-bottom:1.2rem">Paramètres</h3>
+        <div class="field">
+          <label for="simDate">Date de mise en service de la machine</label>
+          <input type="date" id="simDate" value="2022-01-01" />
+        </div>
+        <div class="field">
+          <label for="simZone">Zone géographique</label>
+          <select id="simZone">
+            <option value="province">Province</option>
+            <option value="idf">Île-de-France (hors Paris)</option>
+            <option value="paris">Paris</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="simVolume">Nombre d'examens IRM prévus par an</label>
+          <input type="number" id="simVolume" value="3500" min="0" step="50" />
+        </div>
+        <p class="simulator__hint">La machine devient <strong>amortie</strong> le 31 décembre de l'année de ses 7 ans — le statut est recalculé automatiquement pour chacune des 4 dates ci-dessous.</p>
+      </div>
+
+      <div class="simulator__results">
+        <table class="stats-table simulator__table" id="simTable">
+          <thead>
+            <tr>
+              <th>Au&nbsp;:</th>
+              <th>5 nov. 2025</th>
+              <th>1er janv. 2026</th>
+              <th>1er juil. 2026</th>
+              <th>1er janv. 2027</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Statut machine</td>
+              <td data-cell="statut-0"></td>
+              <td data-cell="statut-1"></td>
+              <td data-cell="statut-2"></td>
+              <td data-cell="statut-3"></td>
+            </tr>
+            <tr>
+              <td>Tarif plein appliqué</td>
+              <td data-cell="tarif-0"></td>
+              <td data-cell="tarif-1"></td>
+              <td data-cell="tarif-2"></td>
+              <td data-cell="tarif-3"></td>
+            </tr>
+            <tr class="simulator__row-ca">
+              <td>Chiffre d'affaires annuel</td>
+              <td data-cell="ca-0"></td>
+              <td data-cell="ca-1"></td>
+              <td data-cell="ca-2"></td>
+              <td data-cell="ca-3"></td>
+            </tr>
+            <tr>
+              <td>Recette moyenne / examen</td>
+              <td data-cell="moy-0"></td>
+              <td data-cell="moy-1"></td>
+              <td data-cell="moy-2"></td>
+              <td data-cell="moy-3"></td>
+            </tr>
+          </tbody>
+        </table>
+        <p class="simulator__hint">Au-delà de 3&nbsp;500 examens/an, chaque examen supplémentaire est payé moins cher (barème dégressif par tranches : 8&nbsp;000 puis 11&nbsp;000 examens/an) — la recette moyenne par examen baisse mécaniquement avec le volume.</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      // Classe "≤ 0,5 T" uniquement — O-scan, S-scan, G-scan, Magnifico.
+      // Activité de référence et seuils (identiques aux 4 dates).
+      var REF = 3500, SEUIL1 = 8000, SEUIL2 = 11000;
+
+      // Tarifs plein (amorti / non amorti) par zone, et tarifs réduits par tranche (identiques aux 3 zones).
+      var DATES = [
+        {
+          label: "5 nov. 2025",
+          plein: {
+            paris: { amorti: 125.32, nonAmorti: 120.58 },
+            idf: { amorti: 121.79, nonAmorti: 117.25 },
+            province: { amorti: 120.58, nonAmorti: 112.01 }
+          },
+          reduits: { seuil1: 62.85, seuil2: 50.60, plafond: 25.46 },
+          iso: "2025-11-05"
+        },
+        {
+          label: "1er janv. 2026",
+          plein: {
+            paris: { amorti: 125.32, nonAmorti: 120.58 },
+            idf: { amorti: 121.79, nonAmorti: 117.25 },
+            province: { amorti: 120.58, nonAmorti: 112.01 }
+          },
+          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
+          iso: "2026-01-01"
+        },
+        {
+          label: "1er juil. 2026",
+          plein: {
+            paris: { amorti: 124.01, nonAmorti: 117.96 },
+            idf: { amorti: 120.52, nonAmorti: 114.71 },
+            province: { amorti: 119.32, nonAmorti: 109.58 }
+          },
+          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
+          iso: "2026-07-01"
+        },
+        {
+          label: "1er janv. 2027",
+          plein: {
+            paris: { amorti: 122.71, nonAmorti: 114.56 },
+            idf: { amorti: 119.25, nonAmorti: 111.39 },
+            province: { amorti: 118.06, nonAmorti: 106.41 }
+          },
+          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
+          iso: "2027-01-01"
+        }
+      ];
+
+      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+      var entiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+      function estAmortie(dateMiseEnService, dateEvaluee) {
+        var anneeMES = dateMiseEnService.getFullYear();
+        var bascule = new Date(anneeMES + 7, 11, 31); // 31 décembre de l'année des 7 ans
+        return dateEvaluee > bascule;
+      }
+
+      function calculerCA(volume, tarifPlein, reduits) {
+        var ca = Math.min(volume, REF) * tarifPlein;
+        if (volume > REF) ca += (Math.min(volume, SEUIL1) - REF) * reduits.seuil1;
+        if (volume > SEUIL1) ca += (Math.min(volume, SEUIL2) - SEUIL1) * reduits.seuil2;
+        if (volume > SEUIL2) ca += (volume - SEUIL2) * reduits.plafond;
+        return ca;
+      }
+
+      function cell(name) { return document.querySelector('[data-cell="' + name + '"]'); }
+
+      function recalculer() {
+        var dateMES = new Date(document.getElementById("simDate").value + "T00:00:00");
+        var zone = document.getElementById("simZone").value;
+        var volume = Math.max(0, parseInt(document.getElementById("simVolume").value, 10) || 0);
+
+        DATES.forEach(function (d, i) {
+          var dateEval = new Date(d.iso + "T00:00:00");
+          var amortie = isNaN(dateMES.getTime()) ? true : estAmortie(dateMES, dateEval);
+          var tarifPlein = amortie ? d.plein[zone].amorti : d.plein[zone].nonAmorti;
+          var ca = calculerCA(volume, tarifPlein, d.reduits);
+          var moyenne = volume > 0 ? ca / volume : 0;
+
+          cell("statut-" + i).textContent = amortie ? "Amortie" : "Non amortie";
+          cell("tarif-" + i).textContent = euros.format(tarifPlein);
+          cell("ca-" + i).textContent = euros.format(ca);
+          cell("moy-" + i).textContent = euros.format(moyenne) + " (" + entiers.format(volume) + " ex.)";
+        });
+      }
+
+      ["simDate", "simZone", "simVolume"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", recalculer);
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html";
+        }
+      }
+      document.getElementById("simClose").addEventListener("click", goBack);
+
+      recalculer();
+    })();
+  </script>
+</body>
+</html>

@@ -188,6 +188,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Bandeaux d'arguments sous les photos : vitesses et positions de départ légèrement décalées pour éviter que tous les arguments changent ensemble et améliorer la lecture.
 
+- Visuel True Motion : retrait de la capture vidéo des carrousels photos S-scan, G-scan et Magnifico ; ajout de la vidéo officielle "True motion MRI" dans les onglets vidéos correspondants.
+
 - QCM aide au choix : ajout d'une question "Composition actuelle du plateau technique" pour différencier les stratégies scanner seul, deux scanners + IRM, IRM saturée, plateau complet ou projet à construire ; rappel de cette réponse dans le résultat.
 
 - QCM aide au choix : ajout d'une question "Personnel et compétences disponibles" sur le nombre de MERM, la formation à l'imagerie en coupe / IRM et la capacité à absorber une nouvelle activité ; rappel de cette réponse dans le résultat.
@@ -209,6 +211,8 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 - Vidéo O-scan St. Augustine : libellé clarifié en "Dr Thomas (Thom) Lebeau" et légende marquée comme source officielle Esaote.
 
 - Ajout public des termes Esaote AgilExam, HyperClarity et HyperSpeed dans les carrousels et fiches produits, avec bulles d'information cliquables basées sur les pages officielles Esaote.
+
+- Nouvelle page outil `simulateur-recettes.html` (non indexée) : simulateur du forfait technique IRM versé par l'assurance maladie, pour les 4 IRM Esaote en classe "≤ 0,5 T" (O-scan, S-scan, G-scan, Magnifico — tarif identique pour les 4 ; I-Genius exclu, usage per-opératoire hors de cette grille). Basé sur l'arrêté du 20 juin 2024 modifié (Légifrance, art. 6). Entrées : date de mise en service (calcule automatiquement le statut amorti/non amorti — bascule au 31 décembre de l'année des 7 ans), zone géographique, nombre d'examens/an. Sortie : chiffre d'affaires annuel calculé pour chacune des 4 dates de la réforme (05/11/2025, 01/01/2026, 01/07/2026, 01/01/2027) avec barème dégressif par tranches (référence 3 500, seuils 8 000 et 11 000). Chiffres croisés avec le simulateur Excel personnel de Cédric (`OneDrive/Pro/Esaote/Suivi-Financier/ESAOTE FT juin 26.xlsx`, onglet "FT amortis et non amortis") — concordance exacte vérifiée sur plusieurs cas (Paris/Province, amorti/non amorti). Pensé pour être utilisé en direct pendant un appel Teams avec un prospect ; V1 volontairement limitée au chiffre d'affaires brut (pas l'acte du radiologue, pas les charges) — loyer/électricité/RH à ajouter dans une V2 si besoin, sur le même principe que l'onglet Excel de Cédric qui va plus loin (calcul d'un résultat net).
 
 - Remplacer ou affiner les textes commerciaux.
 - Vérifier les coordonnées définitives.
