@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260807-simulateur" />
+  <link rel="stylesheet" href="styles.css?v=20260808-simulateur-comparatif" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -27,17 +27,17 @@
 
   <main class="simulator">
     <div class="simulator__intro">
-      <span class="kicker">O-scan · S-scan · G-scan · Magnifico — toutes en classe "≤ 0,5 T"</span>
+      <span class="kicker">Comparateur — forfait technique sur 7 ans</span>
       <h1>Simulateur de recettes IRM</h1>
-      <p>Calcule le <strong>forfait technique</strong> versé par l'assurance maladie pour un plateau IRM ≤ 0,5 T (le tarif est identique pour O-scan, S-scan, G-scan et Magnifico — seul le volume d'examens change la recette). N'inclut pas l'acte du radiologue. I-Genius n'est pas concerné (usage per-opératoire, hors de cette grille).</p>
-      <p class="simulator__source">Source : arrêté du 20 juin 2024 modifié, annexe 2, sous-titre 3 — <a href="https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000052400971" target="_blank" rel="noopener">texte officiel sur Légifrance</a>.</p>
+      <p>Compare le <strong>forfait technique</strong> versé par l'assurance maladie entre deux machines (ex. un Esaote et une 1,5&nbsp;T concurrente), sur les 7 années suivant la mise en service — la durée d'amortissement réglementaire. N'inclut pas l'acte du radiologue. I-Genius n'est pas concerné (usage per-opératoire, hors de cette grille).</p>
+      <p class="simulator__source">Source : arrêté du 20 juin 2024 modifié, annexe 2, sous-titre 3 — <a href="https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000052400971" target="_blank" rel="noopener">texte officiel sur Légifrance</a>. Chiffres classe "≤ 0,5 T" croisés et confirmés avec le suivi financier interne ; les autres classes n'ont pas encore été recroisées avec une autre source.</p>
     </div>
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <h3 style="margin-bottom:1.2rem">Paramètres</h3>
+        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
         <div class="field">
-          <label for="simDate">Date de mise en service de la machine</label>
+          <label for="simDate">Date de mise en service</label>
           <input type="date" id="simDate" value="2022-01-01" />
         </div>
         <div class="field">
@@ -49,58 +49,49 @@
           </select>
         </div>
         <div class="field">
-          <label for="simVolume">Nombre d'examens IRM prévus par an</label>
+          <label for="simVolume">Nombre d'examens IRM par an</label>
           <input type="number" id="simVolume" value="3500" min="0" step="50" />
         </div>
-        <p class="simulator__hint">La machine devient <strong>amortie</strong> le 31 décembre de l'année de ses 7 ans — le statut est recalculé automatiquement pour chacune des 4 dates ci-dessous.</p>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Machine A</h3>
+        <div class="field">
+          <label for="simMachineA">Choix du champ / machine</label>
+          <select id="simMachineA"></select>
+        </div>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Machine B</h3>
+        <div class="field">
+          <label for="simMachineB">Choix du champ / machine</label>
+          <select id="simMachineB"></select>
+        </div>
+
+        <p class="simulator__hint">Une machine devient <strong>amortie</strong> le 31 décembre de l'année de ses 7 ans — recalculé automatiquement pour chaque année, avec le tarif réellement en vigueur à cette date (au-delà de janvier 2027, dernier tarif connu maintenu).</p>
       </div>
 
       <div class="simulator__results">
         <table class="stats-table simulator__table" id="simTable">
           <thead>
-            <tr>
-              <th>Au&nbsp;:</th>
-              <th>5 nov. 2025</th>
-              <th>1er janv. 2026</th>
-              <th>1er juil. 2026</th>
-              <th>1er janv. 2027</th>
+            <tr id="simTableHead">
+              <th>Année&nbsp;:</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Statut machine</td>
-              <td data-cell="statut-0"></td>
-              <td data-cell="statut-1"></td>
-              <td data-cell="statut-2"></td>
-              <td data-cell="statut-3"></td>
+              <td id="simLabelA">Machine A</td>
             </tr>
             <tr>
-              <td>Tarif plein appliqué</td>
-              <td data-cell="tarif-0"></td>
-              <td data-cell="tarif-1"></td>
-              <td data-cell="tarif-2"></td>
-              <td data-cell="tarif-3"></td>
+              <td id="simLabelB">Machine B</td>
             </tr>
             <tr class="simulator__row-ca">
-              <td>Chiffre d'affaires annuel</td>
-              <td data-cell="ca-0"></td>
-              <td data-cell="ca-1"></td>
-              <td data-cell="ca-2"></td>
-              <td data-cell="ca-3"></td>
-            </tr>
-            <tr>
-              <td>Recette moyenne / examen</td>
-              <td data-cell="moy-0"></td>
-              <td data-cell="moy-1"></td>
-              <td data-cell="moy-2"></td>
-              <td data-cell="moy-3"></td>
+              <td>Écart A − B</td>
             </tr>
           </tbody>
         </table>
-        <p class="simulator__hint">Au-delà de 3&nbsp;500 examens/an, chaque examen supplémentaire est payé moins cher (barème dégressif par tranches : 8&nbsp;000 puis 11&nbsp;000 examens/an) — la recette moyenne par examen baisse mécaniquement avec le volume.</p>
+        <p class="simulator__hint" id="simEcartCumule"></p>
+        <p class="simulator__hint">Au-delà de l'activité de référence de chaque classe, chaque examen supplémentaire est payé moins cher (barème dégressif par tranches à 8&nbsp;000 puis 11&nbsp;000 examens/an).</p>
 
         <div class="simulator__export" id="simExport">
-          <h3 style="margin-bottom:.6rem">Recevoir cette simulation par e-mail</h3>
+          <h3 style="margin-bottom:.6rem">Recevoir cette comparaison par e-mail</h3>
           <p class="simulator__hint" style="margin-bottom:1rem">Utile en fin d'appel Teams avec un prospect : il reçoit le récapitulatif en PDF, vous gardez un premier contact exploitable.</p>
           <form id="simExportForm">
             <div class="simulator__export-grid">
@@ -121,11 +112,11 @@
                 <input type="email" id="simEmail" required autocomplete="email" />
               </div>
             </div>
-            <button type="submit" class="btn btn--lg" id="simExportSubmit">Recevoir ma simulation en PDF</button>
-            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+            <button type="submit" class="btn btn--lg" id="simExportSubmit">Recevoir ma comparaison en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre comparaison.</p>
           </form>
           <div class="simulator__export-success" id="simExportSuccess" role="status" hidden>
-            ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+            ✓ Merci&nbsp;! Vous allez recevoir votre comparaison par e-mail dans quelques instants.
           </div>
           <p class="simulator__export-error" id="simExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
         </div>
@@ -135,56 +126,74 @@
 
   <script>
     (function () {
-      // Classe "≤ 0,5 T" uniquement — O-scan, S-scan, G-scan, Magnifico.
-      // Activité de référence et seuils (identiques aux 4 dates).
-      var REF = 3500, SEUIL1 = 8000, SEUIL2 = 11000;
-
-      // Tarifs plein (amorti / non amorti) par zone, et tarifs réduits par tranche (identiques aux 3 zones).
-      var DATES = [
-        {
-          label: "5 nov. 2025",
-          plein: {
-            paris: { amorti: 125.32, nonAmorti: 120.58 },
-            idf: { amorti: 121.79, nonAmorti: 117.25 },
-            province: { amorti: 120.58, nonAmorti: 112.01 }
-          },
-          reduits: { seuil1: 62.85, seuil2: 50.60, plafond: 25.46 },
-          iso: "2025-11-05"
+      // ============ Barème du forfait technique par classe de puissance d'aimant ============
+      // Les 4 IRM Esaote sont toutes en classe "le05" (≤ 0,5 T) — même tarif pour les 4.
+      // "osteoArt" et "sup15" existent dans le texte mais n'ont pas de tarif "amorti" publié
+      // (uniquement "non amorti") — volontairement exclues du comparateur pour ne pas deviner.
+      var CLASSES = {
+        le05: {
+          label: "≤ 0,5 T", REF: 3500, SEUIL1: 8000, SEUIL2: 11000,
+          dates: [
+            { iso: "2025-11-05", plein: { paris: { amorti: 125.32, nonAmorti: 120.58 }, idf: { amorti: 121.79, nonAmorti: 117.25 }, province: { amorti: 120.58, nonAmorti: 112.01 } }, reduits: { seuil1: 62.85, seuil2: 50.60, plafond: 25.46 } },
+            { iso: "2026-01-01", plein: { paris: { amorti: 125.32, nonAmorti: 120.58 }, idf: { amorti: 121.79, nonAmorti: 117.25 }, province: { amorti: 120.58, nonAmorti: 112.01 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } },
+            { iso: "2026-07-01", plein: { paris: { amorti: 124.01, nonAmorti: 117.96 }, idf: { amorti: 120.52, nonAmorti: 114.71 }, province: { amorti: 119.32, nonAmorti: 109.58 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } },
+            { iso: "2027-01-01", plein: { paris: { amorti: 122.71, nonAmorti: 114.56 }, idf: { amorti: 119.25, nonAmorti: 111.39 }, province: { amorti: 118.06, nonAmorti: 106.41 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } }
+          ]
         },
-        {
-          label: "1er janv. 2026",
-          plein: {
-            paris: { amorti: 125.32, nonAmorti: 120.58 },
-            idf: { amorti: 121.79, nonAmorti: 117.25 },
-            province: { amorti: 120.58, nonAmorti: 112.01 }
-          },
-          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
-          iso: "2026-01-01"
+        mid: {
+          label: "> 0,5 T et < 1,5 T", REF: 4000, SEUIL1: 8000, SEUIL2: 11000,
+          dates: [
+            { iso: "2025-11-05", plein: { paris: { amorti: 75.42, nonAmorti: 178.73 }, idf: { amorti: 74.97, nonAmorti: 174.69 }, province: { amorti: 74.81, nonAmorti: 174.72 } }, reduits: { seuil1: 42.93, seuil2: 36.18, plafond: 23.83 } },
+            { iso: "2026-01-01", plein: { paris: { amorti: 75.42, nonAmorti: 178.73 }, idf: { amorti: 74.97, nonAmorti: 174.69 }, province: { amorti: 74.81, nonAmorti: 174.72 } }, reduits: { seuil1: 50.51, seuil2: 42.57, plafond: 28.04 } },
+            { iso: "2026-07-01", plein: { paris: { amorti: 74.63, nonAmorti: 174.85 }, idf: { amorti: 74.19, nonAmorti: 170.89 }, province: { amorti: 74.03, nonAmorti: 170.92 } }, reduits: { seuil1: 50.51, seuil2: 42.57, plafond: 28.04 } },
+            { iso: "2027-01-01", plein: { paris: { amorti: 73.85, nonAmorti: 169.80 }, idf: { amorti: 73.40, nonAmorti: 165.95 }, province: { amorti: 73.25, nonAmorti: 165.99 } }, reduits: { seuil1: 50.51, seuil2: 42.57, plafond: 28.04 } }
+          ]
         },
-        {
-          label: "1er juil. 2026",
-          plein: {
-            paris: { amorti: 124.01, nonAmorti: 117.96 },
-            idf: { amorti: 120.52, nonAmorti: 114.71 },
-            province: { amorti: 119.32, nonAmorti: 109.58 }
-          },
-          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
-          iso: "2026-07-01"
+        t15: {
+          label: "1,5 T standard", REF: 4750, SEUIL1: 8000, SEUIL2: 11000,
+          dates: [
+            { iso: "2025-11-05", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 44.81, seuil2: 37.89, plafond: 24.91 } },
+            { iso: "2026-01-01", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } },
+            { iso: "2026-07-01", plein: { paris: { amorti: 87.02, nonAmorti: 159.31 }, idf: { amorti: 86.03, nonAmorti: 155.97 }, province: { amorti: 85.69, nonAmorti: 154.77 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } },
+            { iso: "2027-01-01", plein: { paris: { amorti: 86.10, nonAmorti: 154.71 }, idf: { amorti: 85.13, nonAmorti: 151.46 }, province: { amorti: 84.79, nonAmorti: 150.30 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } }
+          ]
         },
-        {
-          label: "1er janv. 2027",
-          plein: {
-            paris: { amorti: 122.71, nonAmorti: 114.56 },
-            idf: { amorti: 119.25, nonAmorti: 111.39 },
-            province: { amorti: 118.06, nonAmorti: 106.41 }
-          },
-          reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 },
-          iso: "2027-01-01"
+        t15membres: {
+          label: "1,5 T dédié membres", REF: 4500, SEUIL1: 8000, SEUIL2: 11000,
+          dates: [
+            { iso: "2025-11-05", plein: { paris: { amorti: 138.96, nonAmorti: 102.32 }, idf: { amorti: 133.38, nonAmorti: 101.91 }, province: { amorti: 125.57, nonAmorti: 101.76 } }, reduits: { seuil1: 64.09, seuil2: 55.80, plafond: 36.10 } },
+            { iso: "2026-01-01", plein: { paris: { amorti: 138.96, nonAmorti: 102.32 }, idf: { amorti: 133.38, nonAmorti: 101.91 }, province: { amorti: 125.57, nonAmorti: 101.76 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+            { iso: "2026-07-01", plein: { paris: { amorti: 137.52, nonAmorti: 100.10 }, idf: { amorti: 131.99, nonAmorti: 99.69 }, province: { amorti: 124.26, nonAmorti: 99.55 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+            { iso: "2027-01-01", plein: { paris: { amorti: 136.07, nonAmorti: 97.21 }, idf: { amorti: 130.60, nonAmorti: 96.81 }, province: { amorti: 122.96, nonAmorti: 96.67 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
+          ]
         }
+      };
+
+      var MACHINES = [
+        { key: "o-scan", label: "O-scan", classKey: "le05" },
+        { key: "s-scan", label: "S-scan", classKey: "le05" },
+        { key: "g-scan", label: "G-scan", classKey: "le05" },
+        { key: "magnifico", label: "Magnifico", classKey: "le05" },
+        { key: "mid", label: "Concurrent > 0,5 T et < 1,5 T", classKey: "mid" },
+        { key: "t15", label: "Concurrent 1,5 T standard", classKey: "t15" },
+        { key: "t15membres", label: "Concurrent 1,5 T dédié membres", classKey: "t15membres" }
       ];
 
-      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
-      var entiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+      function remplirSelect(select, defaultKey) {
+        MACHINES.forEach(function (m) {
+          var opt = document.createElement("option");
+          opt.value = m.key;
+          opt.textContent = m.label + " (" + CLASSES[m.classKey].label + ")";
+          select.appendChild(opt);
+        });
+        select.value = defaultKey;
+      }
+      var selectA = document.getElementById("simMachineA");
+      var selectB = document.getElementById("simMachineB");
+      remplirSelect(selectA, "magnifico");
+      remplirSelect(selectB, "t15");
 
       function estAmortie(dateMiseEnService, dateEvaluee) {
         var anneeMES = dateMiseEnService.getFullYear();
@@ -192,38 +201,83 @@
         return dateEvaluee > bascule;
       }
 
-      function calculerCA(volume, tarifPlein, reduits) {
-        var ca = Math.min(volume, REF) * tarifPlein;
-        if (volume > REF) ca += (Math.min(volume, SEUIL1) - REF) * reduits.seuil1;
-        if (volume > SEUIL1) ca += (Math.min(volume, SEUIL2) - SEUIL1) * reduits.seuil2;
-        if (volume > SEUIL2) ca += (volume - SEUIL2) * reduits.plafond;
+      // Renvoie la ligne tarifaire de la classe applicable à une date donnée : la plus récente
+      // dont la date d'entrée en vigueur est déjà passée (tient le dernier tarif connu au-delà
+      // de janvier 2027, faute de date de réforme plus loin).
+      function trouverTarifDate(classe, dateEvaluee) {
+        var choisi = classe.dates[0];
+        classe.dates.forEach(function (d) {
+          if (new Date(d.iso + "T00:00:00") <= dateEvaluee) choisi = d;
+        });
+        return choisi;
+      }
+
+      function calculerCA(volume, tarifPlein, reduits, classe) {
+        var ca = Math.min(volume, classe.REF) * tarifPlein;
+        if (volume > classe.REF) ca += (Math.min(volume, classe.SEUIL1) - classe.REF) * reduits.seuil1;
+        if (volume > classe.SEUIL1) ca += (Math.min(volume, classe.SEUIL2) - classe.SEUIL1) * reduits.seuil2;
+        if (volume > classe.SEUIL2) ca += (volume - classe.SEUIL2) * reduits.plafond;
         return ca;
       }
 
-      function cell(name) { return document.querySelector('[data-cell="' + name + '"]'); }
+      function caPourAnnee(machineKey, zone, dateMES, volume, anneeIndex) {
+        var machine = MACHINES.filter(function (m) { return m.key === machineKey; })[0];
+        var classe = CLASSES[machine.classKey];
+        var dateEval = new Date(dateMES.getFullYear() + anneeIndex, 11, 31);
+        var ligne = trouverTarifDate(classe, dateEval);
+        var amortie = estAmortie(dateMES, dateEval);
+        var tarifPlein = amortie ? ligne.plein[zone].amorti : ligne.plein[zone].nonAmorti;
+        return calculerCA(volume, tarifPlein, ligne.reduits, classe);
+      }
+
+      var thead = document.getElementById("simTableHead");
+      var rowA = document.querySelector("#simLabelA").parentElement;
+      var rowB = document.querySelector("#simLabelB").parentElement;
+      var rowEcart = document.querySelector(".simulator__row-ca");
 
       function recalculer() {
         var dateMES = new Date(document.getElementById("simDate").value + "T00:00:00");
+        if (isNaN(dateMES.getTime())) return;
         var zone = document.getElementById("simZone").value;
         var volume = Math.max(0, parseInt(document.getElementById("simVolume").value, 10) || 0);
+        var keyA = selectA.value, keyB = selectB.value;
+        var labelA = selectA.options[selectA.selectedIndex].textContent;
+        var labelB = selectB.options[selectB.selectedIndex].textContent;
 
-        DATES.forEach(function (d, i) {
-          var dateEval = new Date(d.iso + "T00:00:00");
-          var amortie = isNaN(dateMES.getTime()) ? true : estAmortie(dateMES, dateEval);
-          var tarifPlein = amortie ? d.plein[zone].amorti : d.plein[zone].nonAmorti;
-          var ca = calculerCA(volume, tarifPlein, d.reduits);
-          var moyenne = volume > 0 ? ca / volume : 0;
+        document.getElementById("simLabelA").textContent = "A — " + labelA;
+        document.getElementById("simLabelB").textContent = "B — " + labelB;
 
-          cell("statut-" + i).textContent = amortie ? "Amortie" : "Non amortie";
-          cell("tarif-" + i).textContent = euros.format(tarifPlein);
-          cell("ca-" + i).textContent = euros.format(ca);
-          cell("moy-" + i).textContent = euros.format(moyenne) + " (" + entiers.format(volume) + " ex.)";
+        while (thead.children.length > 1) thead.removeChild(thead.lastChild);
+        [rowA, rowB, rowEcart].forEach(function (row) {
+          while (row.children.length > 1) row.removeChild(row.lastChild);
         });
+
+        var ecartCumule = 0;
+        for (var i = 0; i < 7; i++) {
+          var annee = dateMES.getFullYear() + i;
+          var th = document.createElement("th");
+          th.textContent = annee;
+          thead.appendChild(th);
+
+          var caA = caPourAnnee(keyA, zone, dateMES, volume, i);
+          var caB = caPourAnnee(keyB, zone, dateMES, volume, i);
+          var ecart = caA - caB;
+          ecartCumule += ecart;
+
+          var tdA = document.createElement("td"); tdA.textContent = euros.format(caA); rowA.appendChild(tdA);
+          var tdB = document.createElement("td"); tdB.textContent = euros.format(caB); rowB.appendChild(tdB);
+          var tdE = document.createElement("td"); tdE.textContent = (ecart >= 0 ? "+" : "") + euros.format(ecart); rowEcart.appendChild(tdE);
+        }
+
+        document.getElementById("simEcartCumule").innerHTML =
+          "<strong>Écart cumulé sur 7 ans : " + (ecartCumule >= 0 ? "+" : "") + euros.format(ecartCumule) + "</strong> en faveur de " + (ecartCumule >= 0 ? "A (" + labelA + ")" : "B (" + labelB + ")") + ".";
       }
 
       ["simDate", "simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+      selectA.addEventListener("change", recalculer);
+      selectB.addEventListener("change", recalculer);
 
       /* URL du déclencheur Power Automate "Simulateur_Recettes_Envoi_PDF_V1" (branché le
          07/08/2026, même principe que "Site_Envoi_Documents_V3" dans document.html). Reçoit du
@@ -234,53 +288,69 @@
          demande d'approbation est envoyée à Cédric avant tout envoi. */
       var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
 
-      function genererPdfBase64(dateMESValue, zoneLabel, volume) {
+      function genererPdfBase64() {
         var doc = new window.jspdf.jsPDF();
         var etablissement = document.getElementById("simEtablissement").value.trim();
+        var dateMESValue = document.getElementById("simDate").value;
+        var zoneLabel = selectA.parentNode; // placeholder, remplacé plus bas
+        zoneLabel = document.getElementById("simZone");
+        zoneLabel = zoneLabel.options[zoneLabel.selectedIndex].textContent;
+        var volume = document.getElementById("simVolume").value;
+        var labelA = document.getElementById("simLabelA").textContent;
+        var labelB = document.getElementById("simLabelB").textContent;
+
         var y = 20;
         doc.setFontSize(16);
-        doc.text("Simulation de recettes IRM — forfait technique", 15, y);
+        doc.text("Comparaison de recettes IRM — forfait technique", 15, y);
         y += 8;
         doc.setFontSize(10);
         doc.setTextColor(120);
-        doc.text("O-scan / S-scan / G-scan / Magnifico — classe ≤ 0,5 T — Ced4Scale", 15, y);
+        doc.text("Sur 7 ans — Ced4Scale / Esaote Medical France", 15, y);
         y += 10;
         doc.setTextColor(0);
         doc.setFontSize(11);
         doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
         doc.text("Date de mise en service : " + (dateMESValue || "—"), 15, y); y += 6;
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
-        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 12;
+        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 6;
+        doc.text("Machine A : " + labelA, 15, y); y += 6;
+        doc.text("Machine B : " + labelB, 15, y); y += 12;
 
-        var cols = [40, 30, 34, 34, 34];
-        var headers = ["", "5 nov. 25", "1er janv. 26", "1er juil. 26", "1er janv. 27"];
-        var rows = [
-          ["Statut machine", cell("statut-0").textContent, cell("statut-1").textContent, cell("statut-2").textContent, cell("statut-3").textContent],
-          ["Tarif plein", cell("tarif-0").textContent, cell("tarif-1").textContent, cell("tarif-2").textContent, cell("tarif-3").textContent],
-          ["CA annuel", cell("ca-0").textContent, cell("ca-1").textContent, cell("ca-2").textContent, cell("ca-3").textContent],
-          ["Recette / examen", cell("moy-0").textContent, cell("moy-1").textContent, cell("moy-2").textContent, cell("moy-3").textContent]
-        ];
-        doc.setFontSize(9);
-        var x0 = 15;
-        function drawRow(values, bold) {
+        var headCells = [document.querySelector("#simTableHead")];
+        var theadCells = document.querySelectorAll("#simTableHead th");
+        var rowACells = rowA.querySelectorAll("td");
+        var rowBCells = rowB.querySelectorAll("td");
+        var rowECells = rowEcart.querySelectorAll("td");
+
+        var x0 = 15, colWidth = 24;
+        doc.setFontSize(8);
+        function drawRow(label, cells, bold) {
           var x = x0;
           doc.setFont(undefined, bold ? "bold" : "normal");
-          values.forEach(function (v, i) {
-            doc.text(String(v), x, y);
-            x += cols[i];
+          doc.text(label, x, y);
+          x += 32;
+          cells.forEach(function (c) {
+            doc.text(c.textContent, x, y);
+            x += colWidth;
           });
           y += 7;
         }
-        drawRow(headers, true);
+        var headerLabels = ["Année"];
+        theadCells.forEach(function (th) { headerLabels.push(th.textContent); });
+        drawRow(headerLabels[0], Array.prototype.slice.call(theadCells), true);
         doc.setDrawColor(200);
-        doc.line(x0, y - 4, x0 + cols.reduce(function (a, b) { return a + b; }, 0), y - 4);
-        rows.forEach(function (r) { drawRow(r, false); });
+        doc.line(x0, y - 4, x0 + 32 + colWidth * theadCells.length, y - 4);
+        drawRow(labelA.slice(0, 18), rowACells, false);
+        drawRow(labelB.slice(0, 18), rowBCells, false);
+        drawRow("Écart A-B", rowECells, true);
 
         y += 8;
         doc.setFontSize(8);
         doc.setTextColor(140);
-        doc.text("Forfait technique uniquement (hors acte du radiologue). Barème dégressif par tranches :", 15, y); y += 5;
-        doc.text("3 500 examens/an (référence), puis 8 000 et 11 000 (seuils). Source : arrêté du 20 juin 2024", 15, y); y += 5;
+        var ecartTexte = document.getElementById("simEcartCumule").textContent;
+        var lignesEcart = doc.splitTextToSize(ecartTexte, 180);
+        doc.text(lignesEcart, 15, y); y += 5 * lignesEcart.length + 3;
+        doc.text("Forfait technique uniquement (hors acte du radiologue). Source : arrêté du 20 juin 2024", 15, y); y += 5;
         doc.text("modifié, Journal officiel (Légifrance). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
 
         return doc.output("datauristring").split(",")[1];
@@ -302,7 +372,7 @@
         var dateMESValue = document.getElementById("simDate").value;
         var volume = document.getElementById("simVolume").value;
 
-        var pdfBase64 = genererPdfBase64(dateMESValue, zoneLabel, volume);
+        var pdfBase64 = genererPdfBase64();
 
         submitButton.disabled = true;
         exportError.hidden = true;
@@ -315,7 +385,7 @@
             nom: nom,
             email: email,
             etablissement: etablissement,
-            filename: "simulation-recettes-irm.pdf",
+            filename: "comparaison-recettes-irm.pdf",
             pdfBase64: pdfBase64,
             volume: volume,
             zone: zoneLabel,
@@ -326,7 +396,7 @@
           exportSuccess.hidden = false;
           exportForm.hidden = true;
           if (window.goatcounter && window.goatcounter.count) {
-            window.goatcounter.count({ path: "simulateur-recettes-envoye", title: "Simulation recettes envoyée", event: true });
+            window.goatcounter.count({ path: "simulateur-recettes-envoye", title: "Comparaison recettes envoyée", event: true });
           }
         }).catch(function () {
           exportError.hidden = false;
