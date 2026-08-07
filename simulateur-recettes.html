@@ -435,6 +435,36 @@
           svg.appendChild(lx);
         }
 
+        // Zone d'écart : remplissage entre la meilleure et la moins bonne ligne à chaque mois —
+        // rend visible, en surface, l'écart qui se creuse au fil du temps (pas seulement au
+        // point final). Dessinée en premier, sous les lignes.
+        if (derniereSerie.length >= 2) {
+          var hautVals = [], basVals = [];
+          for (var mi = 0; mi <= NB_MOIS; mi++) {
+            var vHaut = -Infinity, vBas = Infinity;
+            derniereSerie.forEach(function (s) {
+              if (s.cumulMensuel[mi] > vHaut) vHaut = s.cumulMensuel[mi];
+              if (s.cumulMensuel[mi] < vBas) vBas = s.cumulMensuel[mi];
+            });
+            hautVals.push(vHaut);
+            basVals.push(vBas);
+          }
+          var hautPts = hautVals.map(function (v, i) { return xAt(i) + "," + yAt(v); });
+          var basPts = basVals.map(function (v, i) { return xAt(i) + "," + yAt(v); });
+          var zonePoints = hautPts.concat(basPts.reverse()).join(" ");
+          svg.appendChild(svgEl("polygon", { points: zonePoints, class: "simulator__ecart-zone" }));
+
+          // Libellé de l'écart directement dans la zone, au point final — l'argument visuel
+          // principal du graphe, pas seulement le texte "chute sur 7 ans" en dessous.
+          var ecartFinal = hautVals[NB_MOIS] - basVals[NB_MOIS];
+          var midY = (yAt(hautVals[NB_MOIS]) + yAt(basVals[NB_MOIS])) / 2;
+          var ecartLabel = svgEl("text", {
+            x: xAt(NB_MOIS) - 6, y: midY, class: "simulator__ecart-label", "text-anchor": "end"
+          });
+          ecartLabel.textContent = "écart : " + euros.format(ecartFinal);
+          svg.appendChild(ecartLabel);
+        }
+
         // Une ligne par scénario, en chiffre d'affaires CUMULÉ mois par mois depuis 0 € : 2px,
         // jointures rondes. Marqueurs 8px avec anneau blanc uniquement aux repères annuels (sinon
         // 85 points par ligne rendraient le graphe illisible), libellé de valeur au point final.
@@ -518,7 +548,62 @@
          le PDF part encodé deux fois et ne s'ouvre pas (piège déjà rencontré une fois). */
       var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
 
+      // Sérialise le SVG du graphe en PNG (via un <canvas> hors écran) pour pouvoir l'insérer
+      // dans le PDF — jsPDF ne sait pas dessiner du SVG directement.
+      function graphePngDataUrl() {
+        return new Promise(function (resolve, reject) {
+          var svgString = new XMLSerializer().serializeToString(svg);
+          var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+          var url = URL.createObjectURL(svgBlob);
+          var img = new Image();
+          img.onload = function () {
+            var scale = 2; // export net (retina) plutôt que la taille d'affichage
+            var canvas = document.createElement("canvas");
+            canvas.width = 640 * scale;
+            canvas.height = 300 * scale;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fcfcfb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      // Charge une image locale (logo) et la renvoie en PNG base64, via un <canvas> hors écran
+      // — même technique que pour le graphe, jsPDF a besoin d'une image bitmap, pas d'un chemin.
+      function imageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      // Coordonnées Ced4Scale — mêmes informations publiques que contact.html (propriétaire de
+      // cette info : ne pas dupliquer ailleurs si elles changent un jour).
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+
       function genererPdfBase64() {
+        return Promise.all([graphePngDataUrl(), imageDataUrl("assets/logo-ced4scale.png")]).then(function (images) {
+        var graphePng = images[0], logoPng = images[1];
         var doc = new window.jspdf.jsPDF();
         var etablissement = document.getElementById("simEtablissement").value.trim();
         var fonction = document.getElementById("simFonction").value.trim();
@@ -528,13 +613,30 @@
         var volume = document.getElementById("simVolume").value;
         var machineLabel = machineSelect.options[machineSelect.selectedIndex].textContent;
 
-        var y = 20;
+        // En-tête : logo à gauche, coordonnées Ced4Scale alignées à droite.
+        var logoH = 12, logoW = logoH * 3.2; // ratio approximatif du logo, ajusté visuellement
+        doc.addImage(logoPng, "PNG", 15, 14, logoW, logoH);
+        doc.setFontSize(10);
+        doc.setTextColor(0);
+        doc.setFont(undefined, "bold");
+        doc.text(CED4SCALE_CONTACT.nom, 195, 16, { align: "right" });
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(110);
+        doc.text(CED4SCALE_CONTACT.role, 195, 20, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, 195, 24, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.site, 195, 28, { align: "right" });
+        doc.setDrawColor(220);
+        doc.line(15, 33, 195, 33);
+
+        var y = 44;
+        doc.setTextColor(0);
         doc.setFontSize(16);
         doc.text("Simulation de recettes IRM selon les arrêtés", 15, y);
         y += 8;
         doc.setFontSize(10);
         doc.setTextColor(120);
-        doc.text("Chute du forfait technique sur 7 ans — Ced4Scale / Esaote Medical France", 15, y);
+        doc.text("Chute du forfait technique sur 7 ans", 15, y);
         y += 10;
         doc.setTextColor(0);
         doc.setFontSize(11);
@@ -542,7 +644,11 @@
         if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
         doc.text("Machine : " + machineLabel, 15, y); y += 6;
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
-        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 12;
+        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
+
+        var imgWidth = 180, imgHeight = (imgWidth * 300) / 640;
+        doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
+        y += imgHeight + 10;
 
         var theadCells = document.querySelectorAll("#simTableHead th");
         var x0 = 15, labelWidth = 42, colWidth = 20;
@@ -588,6 +694,7 @@
         doc.text("modifié, Journal officiel (Légifrance). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
 
         return doc.output("datauristring").split(",")[1];
+        });
       }
 
       var exportForm = document.getElementById("simExportForm");
@@ -607,12 +714,11 @@
         var zoneLabel = zoneSelect.options[zoneSelect.selectedIndex].textContent;
         var volume = document.getElementById("simVolume").value;
 
-        var pdfBase64 = genererPdfBase64();
-
         submitButton.disabled = true;
         exportError.hidden = true;
 
-        fetch(SIMULATOR_REQUEST_URL, {
+        genererPdfBase64().then(function (pdfBase64) {
+        return fetch(SIMULATOR_REQUEST_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -634,6 +740,10 @@
           if (window.goatcounter && window.goatcounter.count) {
             window.goatcounter.count({ path: "simulateur-recettes-envoye", title: "Simulation recettes envoyée", event: true });
           }
+        }).catch(function () {
+          exportError.hidden = false;
+          submitButton.disabled = false;
+        });
         }).catch(function () {
           exportError.hidden = false;
           submitButton.disabled = false;
