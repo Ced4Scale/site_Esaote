@@ -325,18 +325,23 @@
           var totalLigne = 0;
           var values = [];
           var cumul = [0];
+          var cumulMensuel = [0]; // pour le graphe uniquement : 84 pas d'1 mois (7 ans x 12)
           for (var i = 0; i < 7; i++) {
             var ca = caPourAnnee(sc.iso, classe, zone, volume, i, rejoue);
             values.push(ca);
             totalLigne += ca;
             cumul.push(totalLigne);
+            var caMensuel = ca / 12;
+            for (var m = 0; m < 12; m++) {
+              cumulMensuel.push(cumulMensuel[cumulMensuel.length - 1] + caMensuel);
+            }
             var td = document.createElement("td");
             td.textContent = euros.format(ca);
             tr.appendChild(td);
           }
           tbody.appendChild(tr);
           totaux.push({ label: sc.label, total: totalLigne });
-          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values, cumul: cumul });
+          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values, cumul: cumul, cumulMensuel: cumulMensuel });
         });
 
         var chuteEl = document.getElementById("simChute");
@@ -403,11 +408,13 @@
           return;
         }
 
+        var NB_MOIS = 84; // 7 ans x 12 mois — résolution du graphe uniquement (le tableau reste annuel)
+
         var maxVal = 0;
-        derniereSerie.forEach(function (s) { s.cumul.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
+        derniereSerie.forEach(function (s) { s.cumulMensuel.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
         var yMax = niceCeil(maxVal * 1.08);
 
-        function xAt(i) { return PAD.left + (PLOT_W * i) / 7; }
+        function xAt(i) { return PAD.left + (PLOT_W * i) / NB_MOIS; }
         function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * v) / yMax; }
 
         // Gridlines horizontales (0 / 25% / 50% / 75% / 100%), hairline, recessives.
@@ -420,34 +427,37 @@
           svg.appendChild(labelY);
         }
 
-        // Axe X : Départ (0 €) puis Année 1..7, en cumulé.
-        for (var i = 0; i <= 7; i++) {
-          var lx = svgEl("text", { x: xAt(i), y: 300 - 8, class: "simulator__axis-label", "text-anchor": "middle" });
-          lx.textContent = i === 0 ? "Départ" : "A" + i;
+        // Axe X : Départ (0 €) puis Année 1..7 (un repère tous les 12 mois) — la courbe, elle,
+        // avance mois par mois (voir cumulMensuel).
+        for (var an = 0; an <= 7; an++) {
+          var lx = svgEl("text", { x: xAt(an * 12), y: 300 - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          lx.textContent = an === 0 ? "Départ" : "A" + an;
           svg.appendChild(lx);
         }
 
-        // Une ligne par scénario, en chiffre d'affaires CUMULÉ depuis 0 € : 2px, jointures
-        // rondes, marqueurs 8px avec anneau blanc, libellé de valeur au point final.
+        // Une ligne par scénario, en chiffre d'affaires CUMULÉ mois par mois depuis 0 € : 2px,
+        // jointures rondes. Marqueurs 8px avec anneau blanc uniquement aux repères annuels (sinon
+        // 85 points par ligne rendraient le graphe illisible), libellé de valeur au point final.
         derniereSerie.forEach(function (s) {
-          var points = s.cumul.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
+          var points = s.cumulMensuel.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
           svg.appendChild(svgEl("polyline", {
             points: points, fill: "none", stroke: s.color, "stroke-width": "2",
             "stroke-linejoin": "round", "stroke-linecap": "round"
           }));
-          s.cumul.forEach(function (v, i) {
-            svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 6, fill: "#fcfcfb" }));
-            svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 4, fill: s.color }));
-          });
-          var lastX = xAt(7), lastY = yAt(s.cumul[7]);
+          for (var an2 = 0; an2 <= 7; an2++) {
+            var v2 = s.cumulMensuel[an2 * 12];
+            svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 6, fill: "#fcfcfb" }));
+            svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 4, fill: s.color }));
+          }
+          var lastX = xAt(NB_MOIS), lastY = yAt(s.cumulMensuel[NB_MOIS]);
           var endLabel = svgEl("text", {
             x: lastX + 8, y: lastY + 3, class: "simulator__end-label", fill: s.color
           });
-          endLabel.textContent = euros.format(s.cumul[7]);
+          endLabel.textContent = euros.format(s.cumulMensuel[NB_MOIS]);
           svg.appendChild(endLabel);
         });
 
-        // Couche de survol : hairline verticale + tooltip listant toutes les séries au point.
+        // Couche de survol : hairline verticale + tooltip listant toutes les séries au mois.
         var crosshair = svgEl("line", { x1: 0, x2: 0, y1: PAD.top, y2: PAD.top + PLOT_H, class: "simulator__crosshair", visibility: "hidden" });
         svg.appendChild(crosshair);
         var hitArea = svgEl("rect", { x: PAD.left, y: PAD.top, width: PLOT_W, height: PLOT_H, fill: "transparent" });
@@ -457,17 +467,18 @@
           var rect = svg.getBoundingClientRect();
           var scaleX = 640 / rect.width;
           var xViewBox = (evt.clientX - rect.left) * scaleX;
-          var i = Math.round(((xViewBox - PAD.left) / PLOT_W) * 7);
-          i = Math.max(0, Math.min(7, i));
+          var i = Math.round(((xViewBox - PAD.left) / PLOT_W) * NB_MOIS);
+          i = Math.max(0, Math.min(NB_MOIS, i));
           crosshair.setAttribute("x1", xAt(i));
           crosshair.setAttribute("x2", xAt(i));
           crosshair.setAttribute("visibility", "visible");
 
+          var titre = i === 0 ? "Départ" : "Mois " + i + " (année " + (Math.ceil(i / 12)) + ")";
           var lignes = derniereSerie.map(function (s) {
             return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.color + '"></span>' +
-              '<strong>' + euros.format(s.cumul[i]) + '</strong> — Départ ' + s.label + '</div>';
+              '<strong>' + euros.format(s.cumulMensuel[i]) + '</strong> — Départ ' + s.label + '</div>';
           }).join("");
-          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + (i === 0 ? "Départ" : "Cumul année " + i) + '</div>' + lignes;
+          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + titre + '</div>' + lignes;
           tooltipEl.hidden = false;
 
           var scaleRect = rect.width / 640;
