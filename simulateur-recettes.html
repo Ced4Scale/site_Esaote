@@ -40,6 +40,7 @@
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
         </div>
+        <p class="simulator__seuils" id="simSeuils"></p>
         <div class="field">
           <label for="simZone">Zone géographique</label>
           <select id="simZone">
@@ -507,7 +508,17 @@
         });
       }
 
+      var seuilsEntiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+      function afficherSeuils() {
+        var classe = classeCourante();
+        document.getElementById("simSeuils").innerHTML =
+          "<strong>Seuils de cette classe</strong> — activité de référence : " + seuilsEntiers.format(classe.REF) +
+          " · seuil 1 : " + seuilsEntiers.format(classe.SEUIL1) +
+          " · seuil 2 : " + seuilsEntiers.format(classe.SEUIL2) + " forfaits/an";
+      }
+
       remplirSelectsDates();
+      afficherSeuils();
 
       ["simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
@@ -518,6 +529,7 @@
       });
       machineSelect.addEventListener("change", function () {
         remplirSelectsDates();
+        afficherSeuils();
         recalculer();
       });
 
