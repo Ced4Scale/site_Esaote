@@ -605,6 +605,9 @@
         return Promise.all([graphePngDataUrl(), imageDataUrl("assets/logo-ced4scale.png")]).then(function (images) {
         var graphePng = images[0], logoPng = images[1];
         var doc = new window.jspdf.jsPDF();
+        var prenom = document.getElementById("simPrenom").value.trim();
+        var nom = document.getElementById("simNom").value.trim();
+        var email = document.getElementById("simEmail").value.trim();
         var etablissement = document.getElementById("simEtablissement").value.trim();
         var fonction = document.getElementById("simFonction").value.trim();
         var commentaire = document.getElementById("simCommentaire").value.trim();
@@ -637,11 +640,29 @@
         doc.setFontSize(10);
         doc.setTextColor(120);
         doc.text("Chute du forfait technique sur 7 ans", 15, y);
+        y += 6;
+        doc.text(new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }), 15, y);
         y += 10;
+
+        var nomComplet = (prenom + " " + nom).trim();
         doc.setTextColor(0);
         doc.setFontSize(11);
-        doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+        doc.text("À l'attention de : " + (nomComplet || "—"), 15, y); y += 6;
         if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
+        doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+        if (email) { doc.text("E-mail : " + email, 15, y); y += 6; }
+        y += 4;
+
+        doc.setFontSize(10.5);
+        var salutation = "Bonjour" + (prenom ? " " + prenom : "") + ",";
+        doc.text(salutation, 15, y); y += 6;
+        var courtoisie = doc.splitTextToSize(
+          "Merci pour votre intérêt — vous trouverez ci-dessous la simulation demandée, ainsi qu'un récapitulatif détaillé sur 7 ans.",
+          180
+        );
+        doc.text(courtoisie, 15, y); y += 5 * courtoisie.length + 8;
+
+        doc.setFontSize(11);
         doc.text("Machine : " + machineLabel, 15, y); y += 6;
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
