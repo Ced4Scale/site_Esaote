@@ -5,12 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Simulateur de recettes IRM — Forfait technique — Ced4Scale</title>
   <meta name="robots" content="noindex" />
-  <link rel="icon" href="assets/logo-esaote.svg" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260807-simulateur" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -97,6 +98,37 @@
           </tbody>
         </table>
         <p class="simulator__hint">Au-delà de 3&nbsp;500 examens/an, chaque examen supplémentaire est payé moins cher (barème dégressif par tranches : 8&nbsp;000 puis 11&nbsp;000 examens/an) — la recette moyenne par examen baisse mécaniquement avec le volume.</p>
+
+        <div class="simulator__export" id="simExport">
+          <h3 style="margin-bottom:.6rem">Recevoir cette simulation par e-mail</h3>
+          <p class="simulator__hint" style="margin-bottom:1rem">Utile en fin d'appel Teams avec un prospect : il reçoit le récapitulatif en PDF, vous gardez un premier contact exploitable.</p>
+          <form id="simExportForm">
+            <div class="simulator__export-grid">
+              <div class="field">
+                <label for="simPrenom">Prénom</label>
+                <input type="text" id="simPrenom" required autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label for="simNom">Nom</label>
+                <input type="text" id="simNom" required autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label for="simEtablissement">Établissement</label>
+                <input type="text" id="simEtablissement" required placeholder="CHU, clinique, cabinet…" />
+              </div>
+              <div class="field">
+                <label for="simEmail">E-mail</label>
+                <input type="email" id="simEmail" required autocomplete="email" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn--lg" id="simExportSubmit">Recevoir ma simulation en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+          </form>
+          <div class="simulator__export-success" id="simExportSuccess" role="status" hidden>
+            ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+          </div>
+          <p class="simulator__export-error" id="simExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
       </div>
     </div>
   </main>
@@ -191,6 +223,115 @@
 
       ["simDate", "simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+
+      /* URL du déclencheur Power Automate "Simulateur_Recettes_Envoi_PDF_V1" (branché le
+         07/08/2026, même principe que "Site_Envoi_Documents_V3" dans document.html). Reçoit du
+         JSON { prenom, nom, email, etablissement, filename, pdfBase64, volume, zone,
+         dateMiseEnService }. Le PDF part automatiquement par e-mail au visiteur (Cédric
+         toujours en copie), sauf si le domaine de l'e-mail appartient à un concurrent connu
+         (liste identique à celle de document.html/Site_Envoi_Documents) : dans ce cas, une
+         demande d'approbation est envoyée à Cédric avant tout envoi. */
+      var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      function genererPdfBase64(dateMESValue, zoneLabel, volume) {
+        var doc = new window.jspdf.jsPDF();
+        var etablissement = document.getElementById("simEtablissement").value.trim();
+        var y = 20;
+        doc.setFontSize(16);
+        doc.text("Simulation de recettes IRM — forfait technique", 15, y);
+        y += 8;
+        doc.setFontSize(10);
+        doc.setTextColor(120);
+        doc.text("O-scan / S-scan / G-scan / Magnifico — classe ≤ 0,5 T — Ced4Scale", 15, y);
+        y += 10;
+        doc.setTextColor(0);
+        doc.setFontSize(11);
+        doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+        doc.text("Date de mise en service : " + (dateMESValue || "—"), 15, y); y += 6;
+        doc.text("Zone : " + zoneLabel, 15, y); y += 6;
+        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 12;
+
+        var cols = [40, 30, 34, 34, 34];
+        var headers = ["", "5 nov. 25", "1er janv. 26", "1er juil. 26", "1er janv. 27"];
+        var rows = [
+          ["Statut machine", cell("statut-0").textContent, cell("statut-1").textContent, cell("statut-2").textContent, cell("statut-3").textContent],
+          ["Tarif plein", cell("tarif-0").textContent, cell("tarif-1").textContent, cell("tarif-2").textContent, cell("tarif-3").textContent],
+          ["CA annuel", cell("ca-0").textContent, cell("ca-1").textContent, cell("ca-2").textContent, cell("ca-3").textContent],
+          ["Recette / examen", cell("moy-0").textContent, cell("moy-1").textContent, cell("moy-2").textContent, cell("moy-3").textContent]
+        ];
+        doc.setFontSize(9);
+        var x0 = 15;
+        function drawRow(values, bold) {
+          var x = x0;
+          doc.setFont(undefined, bold ? "bold" : "normal");
+          values.forEach(function (v, i) {
+            doc.text(String(v), x, y);
+            x += cols[i];
+          });
+          y += 7;
+        }
+        drawRow(headers, true);
+        doc.setDrawColor(200);
+        doc.line(x0, y - 4, x0 + cols.reduce(function (a, b) { return a + b; }, 0), y - 4);
+        rows.forEach(function (r) { drawRow(r, false); });
+
+        y += 8;
+        doc.setFontSize(8);
+        doc.setTextColor(140);
+        doc.text("Forfait technique uniquement (hors acte du radiologue). Barème dégressif par tranches :", 15, y); y += 5;
+        doc.text("3 500 examens/an (référence), puis 8 000 et 11 000 (seuils). Source : arrêté du 20 juin 2024", 15, y); y += 5;
+        doc.text("modifié, Journal officiel (Légifrance). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
+
+        return doc.output("datauristring").split(",")[1];
+      }
+
+      var exportForm = document.getElementById("simExportForm");
+      var exportSuccess = document.getElementById("simExportSuccess");
+      var exportError = document.getElementById("simExportError");
+
+      exportForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submitButton = document.getElementById("simExportSubmit");
+        var prenom = document.getElementById("simPrenom").value.trim();
+        var nom = document.getElementById("simNom").value.trim();
+        var etablissement = document.getElementById("simEtablissement").value.trim();
+        var email = document.getElementById("simEmail").value.trim();
+        var zoneSelect = document.getElementById("simZone");
+        var zoneLabel = zoneSelect.options[zoneSelect.selectedIndex].textContent;
+        var dateMESValue = document.getElementById("simDate").value;
+        var volume = document.getElementById("simVolume").value;
+
+        var pdfBase64 = genererPdfBase64(dateMESValue, zoneLabel, volume);
+
+        submitButton.disabled = true;
+        exportError.hidden = true;
+
+        fetch(SIMULATOR_REQUEST_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prenom: prenom,
+            nom: nom,
+            email: email,
+            etablissement: etablissement,
+            filename: "simulation-recettes-irm.pdf",
+            pdfBase64: pdfBase64,
+            volume: volume,
+            zone: zoneLabel,
+            dateMiseEnService: dateMESValue
+          })
+        }).then(function (response) {
+          if (!response.ok) throw new Error("HTTP " + response.status);
+          exportSuccess.hidden = false;
+          exportForm.hidden = true;
+          if (window.goatcounter && window.goatcounter.count) {
+            window.goatcounter.count({ path: "simulateur-recettes-envoye", title: "Simulation recettes envoyée", event: true });
+          }
+        }).catch(function () {
+          exportError.hidden = false;
+          submitButton.disabled = false;
+        });
       });
 
       function goBack() {
