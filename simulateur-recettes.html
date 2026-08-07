@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulateur de recettes IRM — Forfait technique — Ced4Scale</title>
+  <title>Simulateur de recettes IRM selon les arrêtés — Ced4Scale</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" href="assets/logo-ced4scale.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-simulateur-basic" />
+  <link rel="stylesheet" href="styles.css?v=20260808-simulateur-graphe" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
@@ -20,7 +20,7 @@
     </a>
     <div class="document-viewer__title">
       <span>Outil de simulation</span>
-      <strong>Recettes IRM — forfait technique</strong>
+      <strong>Recettes IRM selon les arrêtés</strong>
     </div>
     <button class="document-viewer__close" id="simClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
   </header>
@@ -28,9 +28,9 @@
   <main class="simulator">
     <div class="simulator__intro">
       <span class="kicker">Chute du forfait technique — trajectoire sur 7 ans</span>
-      <h1>Simulateur de recettes IRM</h1>
-      <p>À machine, volume et zone identiques, compare la trajectoire de <strong>chiffre d'affaires sur 7 ans</strong> (la durée d'amortissement réglementaire) selon la <strong>date de forfait technique</strong> retenue comme référence — pour montrer concrètement à un radiologue l'ampleur de la baisse. N'inclut pas l'acte du radiologue. I-Genius n'est pas concerné (usage per-opératoire, hors de cette grille).</p>
-      <p class="simulator__source">Source : arrêté du 20 juin 2024 modifié, annexe 2, sous-titre 3 — <a href="https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000052400971" target="_blank" rel="noopener">texte officiel sur Légifrance</a>. Chiffres classe "≤ 0,5 T" croisés et confirmés avec le suivi financier interne ; les autres classes n'ont pas encore été recroisées avec une autre source.</p>
+      <h1>Simulateur de recettes IRM selon les arrêtés</h1>
+      <p>À machine, volume et zone identiques, compare la trajectoire de <strong>chiffre d'affaires sur 7 ans</strong> (la durée d'amortissement réglementaire) selon la <strong>date de forfait technique</strong> retenue comme point de départ — pour montrer concrètement à un radiologue l'ampleur de la baisse. Chaque ligne rejoue la vraie chronologie des tarifs à partir de sa date de départ. N'inclut pas l'acte du radiologue. I-Genius n'est pas concerné (usage per-opératoire, hors de cette grille).</p>
+      <p class="simulator__source">Source : arrêté du 20 juin 2024 modifié, annexe 2, sous-titre 3 — <a href="https://www.legifrance.gouv.fr/jorf/article_jo/JORFARTI000052400971" target="_blank" rel="noopener">texte officiel sur Légifrance</a>. Chiffres classe "≤ 0,5 T" croisés et confirmés avec le suivi financier interne ; les autres classes n'ont pas encore été recroisées avec une autre source. Historique antérieur à 2025 pas encore intégré.</p>
     </div>
 
     <div class="simulator__layout">
@@ -39,10 +39,6 @@
         <div class="field">
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
-        </div>
-        <div class="field">
-          <label for="simDate">Date de mise en service</label>
-          <input type="date" id="simDate" value="2022-01-01" />
         </div>
         <div class="field">
           <label for="simZone">Zone géographique</label>
@@ -57,15 +53,35 @@
           <input type="number" id="simVolume" value="3500" min="0" step="50" />
         </div>
 
+        <h3 style="margin:1.4rem 0 1.2rem">Dates de forfait technique à comparer</h3>
         <div class="field">
-          <label>Dates de forfait technique à comparer (jusqu'à 4)</label>
-          <div class="simulator__dates-check" id="simDatesCheck"></div>
+          <label for="simDateSel0"><span class="simulator__swatch" data-slot="0"></span> Date 1</label>
+          <select id="simDateSel0"></select>
+        </div>
+        <div class="field">
+          <label for="simDateSel1"><span class="simulator__swatch" data-slot="1"></span> Date 2</label>
+          <select id="simDateSel1"></select>
+        </div>
+        <div class="field">
+          <label for="simDateSel2"><span class="simulator__swatch" data-slot="2"></span> Date 3</label>
+          <select id="simDateSel2"></select>
+        </div>
+        <div class="field">
+          <label for="simDateSel3"><span class="simulator__swatch" data-slot="3"></span> Date 4</label>
+          <select id="simDateSel3"></select>
         </div>
 
-        <p class="simulator__hint">Chaque ligne du tableau tient le tarif de <strong>sa</strong> date fixe pendant les 7 ans (seul le statut amorti/non amorti évolue, il bascule au 31 décembre de l'année des 7 ans) — pour isoler l'effet de la baisse réglementaire du reste.</p>
+        <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" et suit la vraie évolution des tarifs ensuite (les 4 dates connues à ce jour) — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
       </div>
 
       <div class="simulator__results">
+        <div class="simulator__chart-card">
+          <div class="simulator__legend" id="simLegend"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="simChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Courbes de chiffre d'affaires sur 7 ans, une par date de forfait technique choisie"></svg>
+            <div class="simulator__tooltip" id="simTooltip" hidden></div>
+          </div>
+        </div>
         <table class="stats-table simulator__table" id="simTable">
           <thead>
             <tr id="simTableHead">
@@ -117,6 +133,8 @@
       // Les 4 IRM Esaote sont toutes en classe "le05" (≤ 0,5 T) — même tarif pour les 4.
       // "osteoArt" et "sup15" existent dans le texte mais n'ont pas de tarif "amorti" publié
       // (uniquement "non amorti") — volontairement exclues pour ne pas deviner.
+      // Historique antérieur à 2025 pas encore intégré (recherche en cours, textes officiels
+      // pas toujours lisibles automatiquement — voir mémoire du site).
       var CLASSES = {
         le05: {
           label: "≤ 0,5 T", REF: 3500, SEUIL1: 8000, SEUIL2: 11000,
@@ -166,6 +184,9 @@
         { key: "t15membres", label: "Concurrent 1,5 T dédié membres", classKey: "t15membres" }
       ];
 
+      // Palette catégorielle validée (skill dataviz) — ordre fixe, 4 emplacements.
+      var SLOT_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
+
       var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
       var machineSelect = document.getElementById("simMachine");
@@ -182,32 +203,31 @@
         return CLASSES[m.classKey];
       }
 
-      var datesCheckWrap = document.getElementById("simDatesCheck");
-      function construireCheckboxesDates() {
-        datesCheckWrap.innerHTML = "";
-        var classe = classeCourante();
-        classe.dates.forEach(function (d, i) {
-          var id = "simDateCheck" + i;
-          var label = document.createElement("label");
-          label.className = "simulator__date-check";
-          var input = document.createElement("input");
-          input.type = "checkbox";
-          input.id = id;
-          input.value = d.iso;
-          input.checked = true;
-          input.addEventListener("change", recalculer);
-          label.appendChild(input);
-          var span = document.createElement("span");
-          span.textContent = d.label;
-          label.appendChild(span);
-          datesCheckWrap.appendChild(label);
-        });
-      }
+      var dateSelects = [0, 1, 2, 3].map(function (i) { return document.getElementById("simDateSel" + i); });
+      var DEFAULTS = ["2025-11-05", "2027-01-01", "", ""];
 
-      function estAmortie(dateMiseEnService, dateEvaluee) {
-        var anneeMES = dateMiseEnService.getFullYear();
-        var bascule = new Date(anneeMES + 7, 11, 31); // 31 décembre de l'année des 7 ans
-        return dateEvaluee > bascule;
+      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
+        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+
+      function remplirSelectsDates() {
+        var classe = classeCourante();
+        dateSelects.forEach(function (select, i) {
+          var previous = select.value;
+          select.innerHTML = "";
+          var optNone = document.createElement("option");
+          optNone.value = "";
+          optNone.textContent = "— Aucune —";
+          select.appendChild(optNone);
+          classe.dates.forEach(function (d) {
+            var opt = document.createElement("option");
+            opt.value = d.iso;
+            opt.textContent = d.label;
+            select.appendChild(opt);
+          });
+          var keep = classe.dates.some(function (d) { return d.iso === previous; });
+          select.value = keep ? previous : DEFAULTS[i];
+        });
       }
 
       function calculerCA(volume, tarifPlein, reduits, classe) {
@@ -218,59 +238,77 @@
         return ca;
       }
 
-      // Le tarif de la ligne (date fixe choisie) est tenu constant sur les 7 ans — seul le
-      // statut amorti/non amorti évolue avec l'âge réel de la machine. Isole ainsi l'effet de
-      // la baisse réglementaire (comparer les lignes entre elles) de l'effet de l'amortissement
-      // (déjà visible à l'intérieur de chaque ligne).
-      function caPourAnnee(ligneDate, classe, zone, dateMES, volume, anneeIndex) {
-        var dateEval = new Date(dateMES.getFullYear() + anneeIndex, 11, 31);
-        var amortie = estAmortie(dateMES, dateEval);
-        var tarifPlein = amortie ? ligneDate.plein[zone].amorti : ligneDate.plein[zone].nonAmorti;
-        return calculerCA(volume, tarifPlein, ligneDate.reduits, classe);
+      // Renvoie la ligne tarifaire applicable à une date donnée : la plus récente déjà en
+      // vigueur (tient le dernier tarif connu au-delà de janvier 2027, faute de date plus loin).
+      function trouverTarifDate(classe, dateEvaluee) {
+        var choisi = classe.dates[0];
+        classe.dates.forEach(function (d) {
+          if (new Date(d.iso + "T00:00:00") <= dateEvaluee) choisi = d;
+        });
+        return choisi;
+      }
+
+      // La date choisie devient "année 1" du scénario ; les années suivantes rejouent la vraie
+      // chronologie des tarifs connus. Toujours "non amorti" : 7 ans est exactement la durée
+      // d'amortissement, donc la machine ne devient jamais amortie à l'intérieur de la fenêtre.
+      function caPourAnnee(dateDepartIso, classe, zone, volume, anneeIndex) {
+        var anneeDepart = new Date(dateDepartIso + "T00:00:00").getFullYear();
+        var dateEval = new Date(anneeDepart + anneeIndex, 11, 31);
+        var ligne = trouverTarifDate(classe, dateEval);
+        var tarifPlein = ligne.plein[zone].nonAmorti;
+        return calculerCA(volume, tarifPlein, ligne.reduits, classe);
       }
 
       var thead = document.getElementById("simTableHead");
       var tbody = document.getElementById("simTableBody");
+      var legendEl = document.getElementById("simLegend");
+      var svg = document.getElementById("simChart");
+      var tooltipEl = document.getElementById("simTooltip");
+      var SVG_NS = "http://www.w3.org/2000/svg";
+
+      var derniereSerie = []; // [{ label, color, values: [7 CA] }]
 
       function recalculer() {
-        var dateMES = new Date(document.getElementById("simDate").value + "T00:00:00");
-        if (isNaN(dateMES.getTime())) return;
         var zone = document.getElementById("simZone").value;
         var volume = Math.max(0, parseInt(document.getElementById("simVolume").value, 10) || 0);
         var classe = classeCourante();
 
-        var datesChoisies = Array.prototype.filter.call(
-          datesCheckWrap.querySelectorAll("input[type=checkbox]"),
-          function (cb) { return cb.checked; }
-        ).map(function (cb) {
-          return classe.dates.filter(function (d) { return d.iso === cb.value; })[0];
+        var scenarios = [];
+        dateSelects.forEach(function (select, slot) {
+          if (!select.value) return;
+          var ligneDepart = classe.dates.filter(function (d) { return d.iso === select.value; })[0];
+          scenarios.push({ slot: slot, color: SLOT_COLORS[slot], label: ligneDepart.label, iso: ligneDepart.iso });
         });
 
         while (thead.children.length > 1) thead.removeChild(thead.lastChild);
         for (var i = 0; i < 7; i++) {
           var th = document.createElement("th");
-          th.textContent = dateMES.getFullYear() + i;
+          th.textContent = "Année " + (i + 1);
           thead.appendChild(th);
         }
 
         tbody.innerHTML = "";
         var totaux = [];
+        derniereSerie = [];
 
-        datesChoisies.forEach(function (ligneDate) {
+        scenarios.forEach(function (sc) {
           var tr = document.createElement("tr");
           var tdLabel = document.createElement("td");
-          tdLabel.textContent = "Tarif du " + ligneDate.label;
+          tdLabel.innerHTML = '<span class="simulator__swatch" style="background:' + sc.color + '"></span> Départ ' + sc.label;
           tr.appendChild(tdLabel);
           var totalLigne = 0;
+          var values = [];
           for (var i = 0; i < 7; i++) {
-            var ca = caPourAnnee(ligneDate, classe, zone, dateMES, volume, i);
+            var ca = caPourAnnee(sc.iso, classe, zone, volume, i);
+            values.push(ca);
             totalLigne += ca;
             var td = document.createElement("td");
             td.textContent = euros.format(ca);
             tr.appendChild(td);
           }
           tbody.appendChild(tr);
-          totaux.push({ label: ligneDate.label, total: totalLigne });
+          totaux.push({ label: sc.label, total: totalLigne });
+          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values });
         });
 
         var chuteEl = document.getElementById("simChute");
@@ -282,30 +320,158 @@
           });
           var chute = meilleur.total - pire.total;
           var pourcentage = meilleur.total > 0 ? Math.round((chute / meilleur.total) * 100) : 0;
-          chuteEl.innerHTML = "<strong>Chute sur 7 ans entre le tarif du " + meilleur.label + " et celui du " + pire.label +
+          chuteEl.innerHTML = "<strong>Chute sur 7 ans entre un départ au " + meilleur.label + " et un départ au " + pire.label +
             " : −" + euros.format(chute) + " (soit −" + pourcentage + " %)</strong> à machine, volume et zone strictement identiques.";
+        } else if (totaux.length === 1) {
+          chuteEl.textContent = "Choisis une 2ᵉ date pour voir l'écart entre elles.";
         } else {
-          chuteEl.textContent = "Coche au moins 2 dates pour voir l'écart entre elles.";
+          chuteEl.textContent = "Choisis au moins une date de départ.";
         }
+
+        dessinerGraphe();
+        dessinerLegende(scenarios);
       }
 
-      construireCheckboxesDates();
+      function dessinerLegende(scenarios) {
+        legendEl.innerHTML = "";
+        if (scenarios.length === 0) return;
+        scenarios.forEach(function (sc) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = sc.color;
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = "Départ " + sc.label;
+          item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
 
-      ["simDate", "simZone", "simVolume"].forEach(function (id) {
+      // Géométrie du graphe (viewBox 640x300).
+      var PAD = { left: 60, right: 16, top: 18, bottom: 28 };
+      var PLOT_W = 640 - PAD.left - PAD.right;
+      var PLOT_H = 300 - PAD.top - PAD.bottom;
+
+      function niceCeil(value) {
+        if (value <= 0) return 100000;
+        var pow = Math.pow(10, Math.floor(Math.log10(value)));
+        var n = value / pow;
+        var niceN = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+        return niceN * pow;
+      }
+
+      function svgEl(tag, attrs) {
+        var el = document.createElementNS(SVG_NS, tag);
+        Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+        return el;
+      }
+
+      function dessinerGraphe() {
+        svg.innerHTML = "";
+        if (derniereSerie.length === 0) {
+          tooltipEl.hidden = true;
+          return;
+        }
+
+        var maxVal = 0;
+        derniereSerie.forEach(function (s) { s.values.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
+        var yMax = niceCeil(maxVal * 1.08);
+
+        function xAt(i) { return PAD.left + (PLOT_W * i) / 6; }
+        function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * v) / yMax; }
+
+        // Gridlines horizontales (0 / 25% / 50% / 75% / 100%), hairline, recessives.
+        for (var g = 0; g <= 4; g++) {
+          var val = (yMax * g) / 4;
+          var y = yAt(val);
+          svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: PAD.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = euros.format(val);
+          svg.appendChild(labelY);
+        }
+
+        // Axe X : Année 1..7.
+        for (var i = 0; i < 7; i++) {
+          var lx = svgEl("text", { x: xAt(i), y: 300 - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          lx.textContent = "A" + (i + 1);
+          svg.appendChild(lx);
+        }
+
+        // Une ligne par scénario : 2px, jointures rondes, marqueurs 8px avec anneau blanc,
+        // libellé de valeur au point final.
+        derniereSerie.forEach(function (s) {
+          var points = s.values.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
+          svg.appendChild(svgEl("polyline", {
+            points: points, fill: "none", stroke: s.color, "stroke-width": "2",
+            "stroke-linejoin": "round", "stroke-linecap": "round"
+          }));
+          s.values.forEach(function (v, i) {
+            svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 6, fill: "#fcfcfb" }));
+            svg.appendChild(svgEl("circle", { cx: xAt(i), cy: yAt(v), r: 4, fill: s.color }));
+          });
+          var lastX = xAt(6), lastY = yAt(s.values[6]);
+          var endLabel = svgEl("text", {
+            x: lastX + 8, y: lastY + 3, class: "simulator__end-label", fill: s.color
+          });
+          endLabel.textContent = euros.format(s.values[6]);
+          svg.appendChild(endLabel);
+        });
+
+        // Couche de survol : hairline verticale + tooltip listant toutes les séries à l'année.
+        var crosshair = svgEl("line", { x1: 0, x2: 0, y1: PAD.top, y2: PAD.top + PLOT_H, class: "simulator__crosshair", visibility: "hidden" });
+        svg.appendChild(crosshair);
+        var hitArea = svgEl("rect", { x: PAD.left, y: PAD.top, width: PLOT_W, height: PLOT_H, fill: "transparent" });
+        svg.appendChild(hitArea);
+
+        function survol(evt) {
+          var rect = svg.getBoundingClientRect();
+          var scaleX = 640 / rect.width;
+          var xViewBox = (evt.clientX - rect.left) * scaleX;
+          var i = Math.round(((xViewBox - PAD.left) / PLOT_W) * 6);
+          i = Math.max(0, Math.min(6, i));
+          crosshair.setAttribute("x1", xAt(i));
+          crosshair.setAttribute("x2", xAt(i));
+          crosshair.setAttribute("visibility", "visible");
+
+          var lignes = derniereSerie.map(function (s) {
+            return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.color + '"></span>' +
+              '<strong>' + euros.format(s.values[i]) + '</strong> — Départ ' + s.label + '</div>';
+          }).join("");
+          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">Année ' + (i + 1) + '</div>' + lignes;
+          tooltipEl.hidden = false;
+
+          var scaleRect = rect.width / 640;
+          var leftPx = xAt(i) * scaleRect;
+          tooltipEl.style.left = Math.min(leftPx + 10, rect.width - 190) + "px";
+          tooltipEl.style.top = "6px";
+        }
+        hitArea.addEventListener("pointermove", survol);
+        hitArea.addEventListener("pointerleave", function () {
+          crosshair.setAttribute("visibility", "hidden");
+          tooltipEl.hidden = true;
+        });
+      }
+
+      remplirSelectsDates();
+
+      ["simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+      dateSelects.forEach(function (select) { select.addEventListener("change", recalculer); });
       machineSelect.addEventListener("change", function () {
-        construireCheckboxesDates();
+        remplirSelectsDates();
         recalculer();
       });
 
       /* URL du déclencheur Power Automate "Simulateur_Recettes_Envoi_PDF_V1" (branché le
          07/08/2026, même principe que "Site_Envoi_Documents_V3" dans document.html). Reçoit du
-         JSON { prenom, nom, email, etablissement, filename, pdfBase64, volume, zone,
-         dateMiseEnService }. Le PDF part automatiquement par e-mail au visiteur (Cédric
-         toujours en copie), sauf si le domaine de l'e-mail appartient à un concurrent connu
-         (liste identique à celle de document.html/Site_Envoi_Documents) : dans ce cas, une
-         demande d'approbation est envoyée à Cédric avant tout envoi.
+         JSON { prenom, nom, email, etablissement, filename, pdfBase64, volume, zone }. Le PDF
+         part automatiquement par e-mail au visiteur (Cédric toujours en copie), sauf si le
+         domaine de l'e-mail appartient à un concurrent connu (liste identique à celle de
+         document.html/Site_Envoi_Documents) : dans ce cas, une demande d'approbation est
+         envoyée à Cédric avant tout envoi.
          Corrigé le 07/08/2026 : ContentBytes doit passer par base64ToBinary() côté flux, sinon
          le PDF part encodé deux fois et ne s'ouvre pas (piège déjà rencontré une fois). */
       var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
@@ -313,7 +479,6 @@
       function genererPdfBase64() {
         var doc = new window.jspdf.jsPDF();
         var etablissement = document.getElementById("simEtablissement").value.trim();
-        var dateMESValue = document.getElementById("simDate").value;
         var zoneLabel = document.getElementById("simZone");
         zoneLabel = zoneLabel.options[zoneLabel.selectedIndex].textContent;
         var volume = document.getElementById("simVolume").value;
@@ -321,17 +486,16 @@
 
         var y = 20;
         doc.setFontSize(16);
-        doc.text("Simulation de recettes IRM — chute du forfait technique", 15, y);
+        doc.text("Simulation de recettes IRM selon les arrêtés", 15, y);
         y += 8;
         doc.setFontSize(10);
         doc.setTextColor(120);
-        doc.text("Sur 7 ans — Ced4Scale / Esaote Medical France", 15, y);
+        doc.text("Chute du forfait technique sur 7 ans — Ced4Scale / Esaote Medical France", 15, y);
         y += 10;
         doc.setTextColor(0);
         doc.setFontSize(11);
         doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
         doc.text("Machine : " + machineLabel, 15, y); y += 6;
-        doc.text("Date de mise en service : " + (dateMESValue || "—"), 15, y); y += 6;
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 12;
 
@@ -387,7 +551,6 @@
         var email = document.getElementById("simEmail").value.trim();
         var zoneSelect = document.getElementById("simZone");
         var zoneLabel = zoneSelect.options[zoneSelect.selectedIndex].textContent;
-        var dateMESValue = document.getElementById("simDate").value;
         var volume = document.getElementById("simVolume").value;
 
         var pdfBase64 = genererPdfBase64();
@@ -406,8 +569,7 @@
             filename: "simulation-recettes-irm.pdf",
             pdfBase64: pdfBase64,
             volume: volume,
-            zone: zoneLabel,
-            dateMiseEnService: dateMESValue
+            zone: zoneLabel
           })
         }).then(function (response) {
           if (!response.ok) throw new Error("HTTP " + response.status);
