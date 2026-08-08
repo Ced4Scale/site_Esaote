@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-doc-maison" />
+  <link rel="stylesheet" href="styles.css?v=20260808-camemberts" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-doc-maison"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-camemberts"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -78,17 +78,18 @@
 
       <div class="simulator__results">
         <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Composition des recettes de l'année 1</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année. La taille des deux camemberts est proportionnelle au total de recettes de chacun — pour ne pas donner l'impression que les deux dates rapportent pareil.</p>
+          <div class="simulator__legend" id="simLegend2"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
+          </div>
+        </div>
+        <div class="simulator__chart-card">
           <div class="simulator__legend" id="simLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="simChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Courbes de chiffre d'affaires sur 7 ans, une par date de forfait technique choisie"></svg>
             <div class="simulator__tooltip" id="simTooltip" hidden></div>
-          </div>
-        </div>
-        <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Comparaison des paliers tarifaires (1 an)</h3>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Même code couleur qu'au-dessus. Montre le montant du forfait plein et de chaque seuil du barème dégressif, pour chaque date choisie — indépendamment de la chronologie qui suit.</p>
-          <div class="simulator__chart-wrap">
-            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Comparaison en barres du forfait plein et des seuils du barème dégressif, une couleur par date de forfait technique choisie"></svg>
           </div>
         </div>
         <table class="stats-table simulator__table" id="simTable">
@@ -137,7 +138,7 @@
                 <label><input type="checkbox" id="simIncludeChart1" checked /> Trajectoire de recettes sur 7 ans</label>
               </div>
               <div class="simulator__checkbox-field">
-                <label><input type="checkbox" id="simIncludeChart2" checked /> Comparaison des paliers tarifaires sur 1 an</label>
+                <label><input type="checkbox" id="simIncludeChart2" checked /> Composition des recettes de l'année 1 (camemberts)</label>
               </div>
             </div>
             <div class="field simulator__checkbox-field">
@@ -227,6 +228,17 @@
         return ca;
       }
 
+      // Même formule que calculerCA, mais renvoie le détail par palier — pour le camembert
+      // "composition des recettes de l'année 1" (une part par palier, pas juste le total).
+      function calculerDetailCA(volume, tarifPlein, reduits, classe) {
+        var detail = { plein: 0, seuil1: 0, seuil2: 0, plafond: 0 };
+        detail.plein = Math.min(volume, classe.REF) * tarifPlein;
+        if (volume > classe.REF) detail.seuil1 = (Math.min(volume, classe.SEUIL1) - classe.REF) * reduits.seuil1;
+        if (volume > classe.SEUIL1) detail.seuil2 = (Math.min(volume, classe.SEUIL2) - classe.SEUIL1) * reduits.seuil2;
+        if (volume > classe.SEUIL2) detail.plafond = (volume - classe.SEUIL2) * reduits.plafond;
+        return detail;
+      }
+
       // Renvoie la ligne tarifaire applicable à une date donnée : la plus récente déjà en
       // vigueur (tient le dernier tarif connu au-delà de janvier 2027, faute de date plus loin).
       function trouverTarifDate(classe, dateEvaluee) {
@@ -282,13 +294,9 @@
         derniereScenariosIso = scenarios.map(function (sc) { return sc.iso; });
         derniereBaremes = scenarios.map(function (sc) {
           var ligneDepart = classe.dates.filter(function (d) { return d.iso === sc.iso; })[0];
-          return {
-            label: sc.label, color: sc.color,
-            plein: ligneDepart.plein[zone].nonAmorti,
-            seuil1: ligneDepart.reduits.seuil1,
-            seuil2: ligneDepart.reduits.seuil2,
-            plafond: ligneDepart.reduits.plafond
-          };
+          var detail = calculerDetailCA(volume, ligneDepart.plein[zone].nonAmorti, ligneDepart.reduits, classe);
+          var total = detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond;
+          return { label: sc.label, iso: sc.iso, detail: detail, total: total };
         });
 
         while (thead.children.length > 1) thead.removeChild(thead.lastChild);
@@ -347,8 +355,9 @@
         }
 
         dessinerGraphe();
-        dessinerGrapheBarres();
+        dessinerCamemberts();
         dessinerLegende(scenarios);
+        dessinerLegendeCamembert();
       }
 
       function dessinerLegende(scenarios) {
@@ -493,67 +502,82 @@
         });
       }
 
-      // Graphe en barres groupées : compare le montant du forfait plein et de chaque seuil du
-      // barème dégressif entre les dates choisies — pas une trajectoire, juste une photo à un
-      // instant donné (contrairement au graphe ci-dessus), donc pas de tooltip de survol ici,
-      // les valeurs sont directement écrites au-dessus de chaque barre.
-      var PAD_B = { left: 78, right: 16, top: 18, bottom: 34 };
-      var PLOT_W_B = 640 - PAD_B.left - PAD_B.right;
-      var PLOT_H_B = 300 - PAD_B.top - PAD_B.bottom;
-      var CATEGORIES_BAREME = [
-        { key: "plein", label: "Forfait plein" },
-        { key: "seuil1", label: "Seuil 1" },
-        { key: "seuil2", label: "Seuil 2" },
-        { key: "plafond", label: "Plafond" }
+      // Camemberts "composition des recettes de l'année 1" : un camembert par date choisie,
+      // une part par palier du barème dégressif (forfait plein / seuil 1 / seuil 2 / plafond).
+      // Couleur = palier (fixe, la même pour les deux camemberts) — différent des autres
+      // graphes de cette page où la couleur encode la date ; légende dédiée (#simLegend2) pour
+      // éviter toute confusion. Taille des camemberts proportionnelle au total de chacun (pas
+      // deux camemberts de même taille qui donneraient l'impression d'un même total).
+      var PALIERS = [
+        { key: "plein", label: "Forfait plein", color: SLOT_COLORS[0] },
+        { key: "seuil1", label: "Seuil 1", color: SLOT_COLORS[1] },
+        { key: "seuil2", label: "Seuil 2", color: SLOT_COLORS[2] },
+        { key: "plafond", label: "Plafond", color: SLOT_COLORS[3] }
       ];
 
-      function dessinerGrapheBarres() {
+      function dessinerLegendeCamembert() {
+        var legendEl2 = document.getElementById("simLegend2");
+        legendEl2.innerHTML = "";
+        PALIERS.forEach(function (p) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = p.color;
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = p.label;
+          item.appendChild(text);
+          legendEl2.appendChild(item);
+        });
+      }
+
+      function pieSlicePath(cx, cy, r, startAngle, endAngle) {
+        var largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+        var x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+        var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+        return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
+      }
+
+      function dessinerUnCamembert(cx, cy, r, camembert) {
+        var startAngle = -Math.PI / 2;
+        PALIERS.forEach(function (p) {
+          var part = camembert.detail[p.key];
+          if (!part) return; // palier non atteint à ce volume (ex. sous l'activité de référence)
+          var fraction = part / camembert.total;
+          var endAngle = startAngle + fraction * 2 * Math.PI;
+          svg2.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, r, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+          // Étiquette directe uniquement sur les parts assez grandes pour rester lisibles.
+          if (fraction >= 0.08) {
+            var midAngle = (startAngle + endAngle) / 2;
+            var lx = cx + r * 0.68 * Math.cos(midAngle), ly = cy + r * 0.68 * Math.sin(midAngle);
+            var label = svgEl("text", { x: lx, y: ly, class: "simulator__pie-label", "text-anchor": "middle" });
+            label.textContent = Math.round(fraction * 100) + "%";
+            svg2.appendChild(label);
+          }
+          startAngle = endAngle;
+        });
+        var caption = svgEl("text", { x: cx, y: cy + r + 22, class: "simulator__axis-label", "text-anchor": "middle" });
+        caption.textContent = "Départ " + camembert.label;
+        svg2.appendChild(caption);
+        var captionTotal = svgEl("text", { x: cx, y: cy + r + 36, class: "simulator__axis-label", "text-anchor": "middle" });
+        captionTotal.textContent = euros.format(camembert.total) + " (année 1)";
+        svg2.appendChild(captionTotal);
+      }
+
+      function dessinerCamemberts() {
         svg2.innerHTML = "";
         if (derniereBaremes.length === 0) return;
 
-        var maxVal = 0;
-        derniereBaremes.forEach(function (b) {
-          CATEGORIES_BAREME.forEach(function (c) { if (b[c.key] > maxVal) maxVal = b[c.key]; });
-        });
-        var yMax = niceCeil(maxVal * 1.15);
-
-        function yAtB(v) { return PAD_B.top + PLOT_H_B - (PLOT_H_B * v) / yMax; }
-
-        for (var g = 0; g <= 4; g++) {
-          var val = (yMax * g) / 4;
-          var y = yAtB(val);
-          svg2.appendChild(svgEl("line", { x1: PAD_B.left, x2: 640 - PAD_B.right, y1: y, y2: y, class: "simulator__gridline" }));
-          var labelY = svgEl("text", { x: PAD_B.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
-          labelY.textContent = euros.format(val);
-          svg2.appendChild(labelY);
-        }
-
-        var groupWidth = PLOT_W_B / CATEGORIES_BAREME.length;
+        var maxR = 78;
+        var maxTotal = Math.max.apply(null, derniereBaremes.map(function (b) { return b.total; }));
         var n = derniereBaremes.length;
-        var gap = 8;
-        var barWidth = (groupWidth - gap * (n + 1)) / n;
+        var centerY = 128;
+        var centers = n === 1 ? [320] : [170, 470];
 
-        CATEGORIES_BAREME.forEach(function (cat, ci) {
-          var groupX = PAD_B.left + ci * groupWidth;
-          derniereBaremes.forEach(function (b, bi) {
-            var val = b[cat.key];
-            var barX = groupX + gap * (bi + 1) + barWidth * bi;
-            var barY = yAtB(val);
-            var barH = PAD_B.top + PLOT_H_B - barY;
-            svg2.appendChild(svgEl("rect", {
-              x: barX, y: barY, width: barWidth, height: barH, fill: b.color, rx: 3, ry: 3
-            }));
-            var label = svgEl("text", {
-              x: barX + barWidth / 2, y: barY - 5, class: "simulator__axis-label", "text-anchor": "middle"
-            });
-            label.textContent = euros.format(val);
-            svg2.appendChild(label);
-          });
-          var lx = svgEl("text", {
-            x: groupX + groupWidth / 2, y: 300 - 12, class: "simulator__axis-label", "text-anchor": "middle"
-          });
-          lx.textContent = cat.label;
-          svg2.appendChild(lx);
+        derniereBaremes.forEach(function (b, i) {
+          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
+          dessinerUnCamembert(centers[i], centerY, r, b);
         });
       }
 
@@ -731,17 +755,17 @@
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
 
         var imgWidth = 180, imgHeight = (imgWidth * 300) / 640;
-        if (graphePng) {
-          doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
-          y += imgHeight + 10;
-        }
         if (graphe2Png) {
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
-          doc.text("Comparaison des paliers tarifaires (1 an)", 15, y); y += 5;
+          doc.text("Composition des recettes de l'année 1", 15, y); y += 5;
           doc.setFont(undefined, "normal");
           doc.addImage(graphe2Png, "PNG", 15, y, imgWidth, imgHeight);
+          y += imgHeight + 10;
+        }
+        if (graphePng) {
+          doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
           y += imgHeight + 10;
         }
 
