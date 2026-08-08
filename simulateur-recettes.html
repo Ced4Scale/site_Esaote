@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-paysage" />
+  <link rel="stylesheet" href="styles.css?v=20260808-moyenne-gras" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-paysage"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-moyenne-gras"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -582,9 +582,17 @@
         // Uniquement le forfait moyen par examen ici (pas le total) — c'est le chiffre le
         // plus parlant à cet endroit, juste au-dessus du détail par palier (demande de
         // Cédric du 08/08/2026).
-        var caption = svgEl("text", { x: cx, y: 16, class: "simulator__axis-label", "text-anchor": "middle" });
+        var caption = svgEl("text", { x: cx, y: 17, class: "simulator__axis-label", "text-anchor": "middle" });
         var moyenneCamembert = camembert.volume > 0 ? camembert.total / camembert.volume : 0;
-        caption.textContent = "Départ " + camembert.label + " — forfait moyen : " + euros.format(moyenneCamembert) + " / examen";
+        var prefixSpan = svgEl("tspan", {});
+        prefixSpan.textContent = "Départ " + camembert.label + " — forfait moyen : ";
+        caption.appendChild(prefixSpan);
+        var montantSpan = svgEl("tspan", { class: "simulator__pie-caption-montant" });
+        montantSpan.textContent = euros.format(moyenneCamembert);
+        caption.appendChild(montantSpan);
+        var suffixSpan = svgEl("tspan", {});
+        suffixSpan.textContent = " / examen";
+        caption.appendChild(suffixSpan);
         svg2.appendChild(caption);
       }
 
