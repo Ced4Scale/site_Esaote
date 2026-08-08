@@ -105,7 +105,8 @@
 
         <div class="simulator__export" id="simExport">
           <h3 style="margin-bottom:.6rem">Recevoir ce tableau par e-mail</h3>
-          <form id="simExportForm">
+          <button type="button" class="btn btn--lg" id="simExportToggle">Recevoir ce tableau par e-mail</button>
+          <form id="simExportForm" hidden>
             <div class="simulator__export-grid">
               <div class="field">
                 <label for="simPrenom">Prénom</label>
@@ -1001,6 +1002,15 @@
       var exportForm = document.getElementById("simExportForm");
       var exportSuccess = document.getElementById("simExportSuccess");
       var exportError = document.getElementById("simExportError");
+      var exportToggle = document.getElementById("simExportToggle");
+
+      // Le formulaire (et tout ce qu'il contient) reste caché jusqu'à ce que le visiteur
+      // clique sur ce bouton — demande de Cédric du 08/08/2026, pour ne pas afficher
+      // d'emblée tous ces champs sous le tableau.
+      exportToggle.addEventListener("click", function () {
+        exportToggle.hidden = true;
+        exportForm.hidden = false;
+      });
 
       exportForm.addEventListener("submit", function (event) {
         event.preventDefault();
