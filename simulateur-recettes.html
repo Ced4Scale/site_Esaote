@@ -443,7 +443,8 @@
 
         // Une ligne par scénario, en chiffre d'affaires CUMULÉ mois par mois depuis 0 € : 2px,
         // jointures rondes. Marqueurs 8px avec anneau blanc uniquement aux repères annuels (sinon
-        // 85 points par ligne rendraient le graphe illisible), libellé de valeur au point final.
+        // 85 points par ligne rendraient le graphe illisible) — les valeurs exactes sont dans le
+        // tableau et la bulle de survol, pas directement sur le graphe.
         derniereSerie.forEach(function (s) {
           var points = s.cumulMensuel.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
           svg.appendChild(svgEl("polyline", {
@@ -455,12 +456,6 @@
             svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 6, fill: "#fcfcfb" }));
             svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 4, fill: s.color }));
           }
-          var lastX = xAt(NB_MOIS), lastY = yAt(s.cumulMensuel[NB_MOIS]);
-          var endLabel = svgEl("text", {
-            x: lastX + 8, y: lastY + 3, class: "simulator__end-label", fill: s.color
-          });
-          endLabel.textContent = euros.format(s.cumulMensuel[NB_MOIS]);
-          svg.appendChild(endLabel);
         });
 
         // Couche de survol : hairline verticale + tooltip listant toutes les séries au mois.
