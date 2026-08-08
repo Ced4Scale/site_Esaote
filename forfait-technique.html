@@ -45,10 +45,17 @@
               <th>Province</th>
               <th>Barème dégressif (seuil 1 / seuil 2 / plafond)</th>
             </tr>
+            <tr>
+              <th></th>
+              <th>amorti / non amorti</th>
+              <th>amorti / non amorti</th>
+              <th>amorti / non amorti</th>
+              <th></th>
+            </tr>
           </thead>
           <tbody id="fthTableBody"></tbody>
         </table>
-        <p class="simulator__hint" style="margin-top:1rem">Tarifs "non amorti" du forfait technique plein. Synthèse Ced4Scale, à titre indicatif — le texte officiel ci-dessus fait foi.</p>
+        <p class="simulator__hint" style="margin-top:1rem">"Amorti" : machine installée depuis plus de 7 ans. "Non amorti" : moins de 7 ans, ou classe où le texte officiel ne distingue plus les deux (uniquement un tarif "non amorti" publié — voir le texte officiel ci-dessus). Synthèse Ced4Scale, à titre indicatif — le texte officiel fait foi.</p>
 
         <div class="simulator__export" id="fthExport">
           <h3 style="margin-bottom:.6rem">Recevoir cette synthèse par e-mail</h3>
@@ -123,8 +130,10 @@
 
         ["paris", "idf", "province"].forEach(function (zone) {
           var td = document.createElement("td");
-          var val = ligne.plein[zone].nonAmorti;
-          td.textContent = val != null ? euros.format(val) : "—";
+          var z = ligne.plein[zone];
+          var amortiTxt = z.amorti != null ? euros.format(z.amorti) : "—";
+          var nonAmortiTxt = z.nonAmorti != null ? euros.format(z.nonAmorti) : "—";
+          td.textContent = amortiTxt + " / " + nonAmortiTxt;
           tr.appendChild(td);
         });
 
@@ -230,8 +239,9 @@
             doc.setFont(undefined, "normal");
             doc.setFontSize(9.5);
             [["Paris", item.ligne.plein.paris], ["Île-de-France (hors Paris)", item.ligne.plein.idf], ["Province", item.ligne.plein.province]].forEach(function (z) {
-              var val = z[1].nonAmorti;
-              doc.text(z[0] + " : " + (val != null ? euros.format(val) : "—"), 20, y); y += 5.5;
+              var amortiTxt = z[1].amorti != null ? euros.format(z[1].amorti) : "—";
+              var nonAmortiTxt = z[1].nonAmorti != null ? euros.format(z[1].nonAmorti) : "—";
+              doc.text(z[0] + " : amorti " + amortiTxt + " / non amorti " + nonAmortiTxt, 20, y); y += 5.5;
             });
             doc.text("Barème dégressif : " + euros.format(item.ligne.reduits.seuil1) + " puis " + euros.format(item.ligne.reduits.seuil2) + " puis " + euros.format(item.ligne.reduits.plafond) + " (seuils : " + seuilsEntiers.format(item.classe.REF) + " / " + seuilsEntiers.format(item.classe.SEUIL1) + " / " + seuilsEntiers.format(item.classe.SEUIL2) + ")", 20, y); y += 8;
           });

@@ -726,12 +726,13 @@
         doc.setFontSize(10.5);
         doc.setTextColor(0);
         doc.setFont(undefined, "bold");
-        doc.text("Forfait technique plein (non amorti)", 15, y); y += 6;
+        doc.text("Forfait technique plein (amorti / non amorti)", 15, y); y += 6;
         doc.setFont(undefined, "normal");
         doc.setFontSize(9.5);
         [["Paris", ligne.plein.paris], ["Île-de-France (hors Paris)", ligne.plein.idf], ["Province", ligne.plein.province]].forEach(function (z) {
-          var val = z[1].nonAmorti;
-          doc.text(z[0] + " : " + (val != null ? euros.format(val) : "—"), 20, y); y += 5.5;
+          var amortiTxt = z[1].amorti != null ? euros.format(z[1].amorti) : "—";
+          var nonAmortiTxt = z[1].nonAmorti != null ? euros.format(z[1].nonAmorti) : "—";
+          doc.text(z[0] + " : amorti " + amortiTxt + " / non amorti " + nonAmortiTxt, 20, y); y += 5.5;
         });
         y += 3;
 
