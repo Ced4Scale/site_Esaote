@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sources et hypothèses — Coût énergétique IRM — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260808-energie" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="assets/machines-energie-data.js?v=20260808-energie"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Sources</span>
+      <strong>Coût énergétique IRM — hypothèses de calcul</strong>
+    </div>
+    <button class="document-viewer__close" id="srcClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Méthode de calcul</span>
+      <h1>Sources et hypothèses du simulateur de coût énergétique</h1>
+      <p>Ce simulateur distingue <strong>trois états de consommation électrique</strong> par machine : à l'arrêt, prête (sous tension, sans patient) et en acquisition (gradients actifs). C'est cette distinction qui fait la différence entre les technologies : un aimant <strong>supraconducteur</strong> (la plupart des IRM du marché) doit maintenir un froid permanent — sa consommation à l'arrêt reste donc significative, jour et nuit, week-end compris. Un aimant <strong>permanent</strong> (les IRM Esaote) n'a pas ce besoin : sa consommation à l'arrêt est quasi nulle.</p>
+    </div>
+
+    <div class="simulator__layout" style="grid-template-columns:1fr">
+      <div class="form-card">
+        <h3 style="margin-bottom:.8rem">Hypothèses de temps</h3>
+        <ul style="margin:0 0 1.2rem 1.2rem;font-size:.92rem;line-height:1.7;color:var(--ink-soft)">
+          <li>Durée moyenne d'un slot patient (préparation comprise) : <strong id="srcSlot"></strong> minutes.</li>
+          <li>Durée moyenne d'acquisition réelle (gradients actifs) dans ce slot : <strong id="srcAcq"></strong> minutes — le reste du temps, la machine est comptée "prête, sans patient".</li>
+          <li>52 semaines identiques par an (les jours fériés ne sont pas retirés séparément — légère surestimation pour les machines à faible consommation de veille, légère sous-estimation pour les autres).</li>
+          <li>Le volume de patients saisi est réparti entre semaine / samedi / dimanche au prorata du temps d'ouverture de chaque type de jour.</li>
+          <li>Surconsommation du refroidissement du local technique (climatisation ou eau glacée), pour les IRM à aimant supraconducteur : <strong>+33 %</strong> de la consommation de la machine elle-même — un ordre de grandeur, pas une mesure au compteur. Nulle pour les IRM Esaote, qui n'ont pas de système de maintien en froid à alimenter.</li>
+        </ul>
+
+        <h3 style="margin-bottom:.8rem">Valeurs par machine</h3>
+        <p class="simulator__hint" style="margin-bottom:1rem">Toutes les valeurs ci-dessous sont des <strong>estimations Ced4Scale</strong>, construites à partir de recoupements techniques disponibles. Aucune n'est une donnée officiellement publiée et garantie par le fabricant — un lien vers une source officielle sera ajouté ici dès qu'elle sera confirmée. En attendant, considérez ces chiffres comme des ordres de grandeur pour comparer deux technologies, pas comme un engagement contractuel.</p>
+        <div style="overflow-x:auto">
+          <table class="stats-table" id="srcTable">
+            <thead>
+              <tr>
+                <th>Machine</th>
+                <th>Aimant</th>
+                <th>À l'arrêt</th>
+                <th>Prête</th>
+                <th>En acquisition</th>
+                <th>Refroidissement local technique</th>
+                <th>Confiance</th>
+              </tr>
+            </thead>
+            <tbody id="srcTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      document.getElementById("srcSlot").textContent = ENERGIE_HYPOTHESES.dureeSlotMinutes;
+      document.getElementById("srcAcq").textContent = ENERGIE_HYPOTHESES.dureeAcquisitionMinutes;
+
+      var tbody = document.getElementById("srcTableBody");
+      ENERGIE_MACHINES.forEach(function (m) {
+        var tr = document.createElement("tr");
+        function td(text) {
+          var cell = document.createElement("td");
+          cell.textContent = text;
+          tr.appendChild(cell);
+        }
+        td(m.marque + " " + m.modele);
+        td(m.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur");
+        td(m.eteint + " kW");
+        td(m.pret + " kW");
+        td(m.mesure + " kW");
+        td(m.refroidissement);
+        td(m.confiance);
+        tbody.appendChild(tr);
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "simulateur-energie.html";
+        }
+      }
+      document.getElementById("srcClose").addEventListener("click", goBack);
+    })();
+  </script>
+</body>
+</html>

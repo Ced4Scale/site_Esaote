@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur de coût énergétique IRM — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260808-energie" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="assets/machines-energie-data.js?v=20260808-energie"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>Coût énergétique IRM</strong>
+    </div>
+    <button class="document-viewer__close" id="eneClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Consommation électrique — comparateur à 2 machines</span>
+      <h1>Simulateur de coût énergétique IRM</h1>
+      <p>Compare le <strong>coût énergétique annuel</strong> et le <strong>coût énergétique par patient</strong> de deux IRM, selon vos horaires d'ouverture et votre activité. Distingue trois états de consommation (arrêt / prêt / en acquisition) — l'écart entre un aimant permanent (Esaote) et un aimant supraconducteur (maintien en froid permanent, y compris fermé) vient surtout de là.</p>
+      <p class="simulator__source">Valeurs estimées par Ced4Scale à partir de sources techniques disponibles — <a href="sources-energie.html">détail des hypothèses</a>. Un lien vers les sources officielles est joint à chaque simulation reçue par e-mail dès qu'elles seront confirmées auprès des fabricants.</p>
+    </div>
+
+    <div class="simulator__layout">
+      <div class="form-card simulator__form">
+        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
+        <div class="field">
+          <label for="enePrix">Coût du kWh (€, TTC)</label>
+          <input type="number" id="enePrix" value="0.20" min="0" step="0.01" />
+        </div>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Horaires d'ouverture aux patients</h3>
+        <div class="field">
+          <label for="eneHeuresSemaine">Amplitude par jour, du lundi au vendredi (heures)</label>
+          <input type="number" id="eneHeuresSemaine" value="10" min="0" max="24" step="0.5" />
+        </div>
+        <div class="field">
+          <label for="eneSamedi">Samedi</label>
+          <select id="eneSamedi">
+            <option value="0">Fermé</option>
+            <option value="4">Ouvert le matin (4h)</option>
+            <option value="8">Ouvert toute la journée (8h)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="eneDimanche">Dimanche</label>
+          <select id="eneDimanche">
+            <option value="0" selected>Fermé</option>
+            <option value="4">Ouvert le matin (4h)</option>
+            <option value="8">Ouvert toute la journée (8h)</option>
+          </select>
+        </div>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Activité</h3>
+        <div class="field">
+          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré type</label>
+            <label><input type="radio" name="eneActiviteMode" value="an" /> Patients par an</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
+          <input type="number" id="eneActivite" value="20" min="0" step="1" />
+        </div>
+        <p class="simulator__hint">Hypothèse de calcul : slot patient de <span id="eneDureeSlot"></span>&nbsp;min (préparation comprise), dont <span id="eneDureeAcq"></span>&nbsp;min d'acquisition réelle (gradients actifs) — le reste du temps ouvert est compté "prêt, sans patient".</p>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
+        <div class="field">
+          <label for="eneMachineA"><span class="simulator__swatch" data-slot="0"></span> Machine A</label>
+          <select id="eneMachineA"></select>
+        </div>
+        <div class="field">
+          <label for="eneMachineB"><span class="simulator__swatch" data-slot="1"></span> Machine B</label>
+          <select id="eneMachineB"></select>
+        </div>
+        <p class="simulator__hint" id="eneRefroidissement"></p>
+      </div>
+
+      <div class="simulator__results">
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — A vs B</h3>
+          <div class="simulator__legend" id="eneLegend"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Comparaison en barres du coût énergétique annuel et du coût par patient des deux machines choisies"></svg>
+          </div>
+        </div>
+
+        <table class="stats-table simulator__table" id="eneTable">
+          <thead>
+            <tr>
+              <th></th>
+              <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
+              <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+            </tr>
+          </thead>
+          <tbody id="eneTableBody"></tbody>
+        </table>
+        <p class="simulator__hint" id="eneEcart"></p>
+        <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche).</p>
+
+        <div class="simulator__export" id="eneExport">
+          <button type="button" class="btn btn--lg" id="eneExportToggle">Recevoir ce comparatif par e-mail</button>
+          <form id="eneExportForm" hidden>
+            <div class="simulator__export-grid">
+              <div class="field">
+                <label for="enePrenom">Prénom</label>
+                <input type="text" id="enePrenom" required autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label for="eneNom">Nom</label>
+                <input type="text" id="eneNom" required autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label for="eneEtablissement">Établissement</label>
+                <input type="text" id="eneEtablissement" required placeholder="CHU, clinique, cabinet…" />
+              </div>
+              <div class="field">
+                <label for="eneFonction">Fonction</label>
+                <input type="text" id="eneFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+              </div>
+              <div class="field">
+                <label for="eneEmail">E-mail</label>
+                <input type="email" id="eneEmail" required autocomplete="email" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="eneCommentaire">Commentaire</label>
+              <textarea id="eneCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn--lg" id="eneExportSubmit">Recevoir ma simulation en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+          </form>
+          <div class="simulator__export-success" id="eneExportSuccess" role="status" hidden>
+            ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+          </div>
+          <p class="simulator__export-error" id="eneExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var MACHINES = ENERGIE_MACHINES;
+      var HYP = ENERGIE_HYPOTHESES;
+      var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      var eurosCent = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+      var kwhFmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+      var entiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+      document.getElementById("eneDureeSlot").textContent = HYP.dureeSlotMinutes;
+      document.getElementById("eneDureeAcq").textContent = HYP.dureeAcquisitionMinutes;
+
+      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
+        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+
+      var selectA = document.getElementById("eneMachineA");
+      var selectB = document.getElementById("eneMachineB");
+      [selectA, selectB].forEach(function (select) {
+        MACHINES.forEach(function (m) {
+          var opt = document.createElement("option");
+          opt.value = m.key;
+          opt.textContent = m.marque + " " + m.modele;
+          select.appendChild(opt);
+        });
+      });
+      selectA.value = "esaote-g-scan";
+      selectB.value = "siemens-altea";
+
+      function machineParKey(key) {
+        return MACHINES.filter(function (m) { return m.key === key; })[0];
+      }
+
+      // ---- Calcul du profil horaire annuel d'une machine ----
+      // Renvoie { heuresEteint, heuresPret, heuresMesure } cumulés sur l'année, à partir des
+      // horaires d'ouverture communs et du volume de patients réparti proportionnellement au
+      // temps d'ouverture de chaque type de jour (semaine / samedi / dimanche).
+      function profilAnnuel(params) {
+        var heuresSemaineJour = params.heuresSemaineJour;
+        var heuresSamediJour = params.heuresSamediJour;
+        var heuresDimancheJour = params.heuresDimancheJour;
+        var patientsAn = params.patientsAn;
+
+        var totalHeuresOuvertesSemaine = 5 * heuresSemaineJour + heuresSamediJour + heuresDimancheJour;
+        var patientsParSemaine = patientsAn / 52;
+
+        var typesJour = [
+          { nb: 5, heuresOuverture: heuresSemaineJour },
+          { nb: 1, heuresOuverture: heuresSamediJour },
+          { nb: 1, heuresOuverture: heuresDimancheJour }
+        ];
+
+        var acc = { heuresEteint: 0, heuresPret: 0, heuresMesure: 0 };
+        var tAcqH = HYP.dureeAcquisitionMinutes / 60;
+
+        typesJour.forEach(function (t) {
+          if (t.heuresOuverture <= 0) {
+            acc.heuresEteint += 24 * t.nb * 52;
+            return;
+          }
+          var partHeures = totalHeuresOuvertesSemaine > 0 ? t.heuresOuverture / totalHeuresOuvertesSemaine : 0;
+          var patientsCeTypeParSemaine = patientsParSemaine * partHeures;
+          var patientsParJourCeType = patientsCeTypeParSemaine / t.nb;
+
+          var heuresMesureJour = Math.min(t.heuresOuverture, patientsParJourCeType * tAcqH);
+          var heuresPretJour = t.heuresOuverture - heuresMesureJour;
+          var heuresEteintJour = 24 - t.heuresOuverture;
+
+          acc.heuresEteint += heuresEteintJour * t.nb * 52;
+          acc.heuresPret += heuresPretJour * t.nb * 52;
+          acc.heuresMesure += heuresMesureJour * t.nb * 52;
+        });
+
+        return acc;
+      }
+
+      function kwhAnnuel(machine, profil) {
+        var kwhBrut = profil.heuresEteint * machine.eteint + profil.heuresPret * machine.pret + profil.heuresMesure * machine.mesure;
+        return kwhBrut * (1 + machine.coeffRefroidissement);
+      }
+
+      var derniereComparaison = null;
+
+      function activiteAnnuelle() {
+        var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var valeur = Math.max(0, parseFloat(document.getElementById("eneActivite").value) || 0);
+        if (mode === "jour") {
+          var heuresSemaineJour = Math.max(0, parseFloat(document.getElementById("eneHeuresSemaine").value) || 0);
+          var heuresSamediJour = parseFloat(document.getElementById("eneSamedi").value) || 0;
+          var heuresDimancheJour = parseFloat(document.getElementById("eneDimanche").value) || 0;
+          var totalHeuresOuvertesSemaine = 5 * heuresSemaineJour + heuresSamediJour + heuresDimancheJour;
+          // "valeur" = patients par jour ouvré type (jour de semaine plein) — on en déduit un
+          // taux horaire, appliqué aussi au samedi/dimanche au prorata de leurs heures.
+          var tauxHoraire = heuresSemaineJour > 0 ? valeur / heuresSemaineJour : 0;
+          var patientsSemaineTotale = valeur * 5 + tauxHoraire * heuresSamediJour + tauxHoraire * heuresDimancheJour;
+          return patientsSemaineTotale * 52;
+        }
+        return valeur;
+      }
+
+      function recalculer() {
+        var prix = Math.max(0, parseFloat(document.getElementById("enePrix").value) || 0);
+        var heuresSemaineJour = Math.max(0, Math.min(24, parseFloat(document.getElementById("eneHeuresSemaine").value) || 0));
+        var heuresSamediJour = parseFloat(document.getElementById("eneSamedi").value) || 0;
+        var heuresDimancheJour = parseFloat(document.getElementById("eneDimanche").value) || 0;
+        var patientsAn = activiteAnnuelle();
+
+        var machineA = machineParKey(selectA.value);
+        var machineB = machineParKey(selectB.value);
+
+        var refroidissementTxt = [];
+        [["A", machineA], ["B", machineB]].forEach(function (pair) {
+          refroidissementTxt.push(pair[0] + " — " + pair[1].marque + " " + pair[1].modele + " : refroidissement " + pair[1].refroidissement + ".");
+        });
+        document.getElementById("eneRefroidissement").innerHTML = refroidissementTxt.join("<br>");
+
+        var profil = profilAnnuel({
+          heuresSemaineJour: heuresSemaineJour,
+          heuresSamediJour: heuresSamediJour,
+          heuresDimancheJour: heuresDimancheJour,
+          patientsAn: patientsAn
+        });
+
+        var resultats = [machineA, machineB].map(function (m, i) {
+          var kwh = kwhAnnuel(m, profil);
+          var coutAnnuel = kwh * prix;
+          var coutParPatient = patientsAn > 0 ? coutAnnuel / patientsAn : 0;
+          return {
+            slot: i,
+            color: SLOT_COLORS[i],
+            machine: m,
+            kwh: kwh,
+            coutAnnuel: coutAnnuel,
+            coutParPatient: coutParPatient,
+            profil: profil
+          };
+        });
+        derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
+
+        remplirTableau(resultats, patientsAn);
+        dessinerLegende(resultats);
+        dessinerGraphe(resultats);
+
+        var ecartEl = document.getElementById("eneEcart");
+        var diff = resultats[0].coutAnnuel - resultats[1].coutAnnuel;
+        var plusCher = diff > 0 ? resultats[0] : resultats[1];
+        var moinsCher = diff > 0 ? resultats[1] : resultats[0];
+        var ecartAbs = Math.abs(diff);
+        var pct = plusCher.coutAnnuel > 0 ? Math.round((ecartAbs / plusCher.coutAnnuel) * 100) : 0;
+        if (ecartAbs < 1) {
+          ecartEl.innerHTML = "<strong>Coût énergétique quasiment identique entre les deux machines choisies.</strong>";
+        } else {
+          ecartEl.innerHTML = "<strong>" + moinsCher.machine.marque + " " + moinsCher.machine.modele + " coûte " + euros.format(ecartAbs) +
+            " de moins par an en énergie que " + plusCher.machine.marque + " " + plusCher.machine.modele +
+            " (soit −" + pct + " %)</strong>, à horaires et activité identiques.";
+        }
+      }
+
+      function remplirTableau(resultats, patientsAn) {
+        var tbody = document.getElementById("eneTableBody");
+        tbody.innerHTML = "";
+        function ligne(label, cells) {
+          var tr = document.createElement("tr");
+          var tdLabel = document.createElement("td");
+          tdLabel.textContent = label;
+          tr.appendChild(tdLabel);
+          cells.forEach(function (c) {
+            var td = document.createElement("td");
+            td.textContent = c;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+        ligne("Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
+        ligne("Consommation annuelle (kWh)", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
+        ligne("Coût énergétique annuel", resultats.map(function (r) { return euros.format(r.coutAnnuel); }));
+        ligne("Patients par an (commun)", resultats.map(function () { return entiers.format(patientsAn); }));
+        ligne("Coût énergétique par patient", resultats.map(function (r) { return eurosCent.format(r.coutParPatient); }));
+        ligne("Dont heures à l'arrêt / an", resultats.map(function (r) { return entiers.format(r.profil.heuresEteint) + " h"; }));
+        ligne("Dont heures prêt (sans patient) / an", resultats.map(function (r) { return entiers.format(r.profil.heuresPret) + " h"; }));
+        ligne("Dont heures en acquisition / an", resultats.map(function (r) { return entiers.format(r.profil.heuresMesure) + " h"; }));
+      }
+
+      function dessinerLegende(resultats) {
+        var legendEl = document.getElementById("eneLegend");
+        legendEl.innerHTML = "";
+        resultats.forEach(function (r) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = r.color;
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = r.machine.marque + " " + r.machine.modele;
+          item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
+
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      function svgEl(tag, attrs) {
+        var el = document.createElementNS(SVG_NS, tag);
+        Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+        return el;
+      }
+      function niceCeil(value) {
+        if (value <= 0) return 100;
+        var pow = Math.pow(10, Math.floor(Math.log10(value)));
+        var n = value / pow;
+        var niceN = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+        return niceN * pow;
+      }
+
+      // Deux groupes de barres : "Coût annuel" et "Coût par patient" (échelles différentes,
+      // donc deux sous-graphes côte à côte plutôt qu'un seul axe commun trompeur).
+      function dessinerGraphe(resultats) {
+        var svg = document.getElementById("eneChart");
+        svg.innerHTML = "";
+
+        var groupes = [
+          { label: "Coût énergétique annuel", values: resultats.map(function (r) { return r.coutAnnuel; }), fmt: euros },
+          { label: "Coût par patient", values: resultats.map(function (r) { return r.coutParPatient; }), fmt: eurosCent }
+        ];
+
+        var panelW = 300, gap = 40, top = 30, bottom = 40, chartH = 230;
+        groupes.forEach(function (g, gi) {
+          var panelX = 20 + gi * (panelW + gap);
+          var maxVal = Math.max.apply(null, g.values.concat([0.0001]));
+          var yMax = niceCeil(maxVal * 1.15);
+
+          var titre = svgEl("text", { x: panelX + panelW / 2, y: 16, class: "simulator__axis-label", "text-anchor": "middle" });
+          titre.textContent = g.label;
+          titre.style.fontWeight = "700";
+          svg.appendChild(titre);
+
+          svg.appendChild(svgEl("line", { x1: panelX, x2: panelX + panelW, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+
+          var barGap = 40;
+          var barWidth = (panelW - barGap * 3) / 2;
+          resultats.forEach(function (r, i) {
+            var val = g.values[i];
+            var barH = yMax > 0 ? (val / yMax) * chartH : 0;
+            var barX = panelX + barGap + i * (barWidth + barGap);
+            var barY = top + chartH - barH;
+            svg.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: barH, fill: r.color, rx: 3, ry: 3 }));
+            var amountLabel = svgEl("text", { x: barX + barWidth / 2, y: barY - 6, class: "simulator__axis-label", "text-anchor": "middle" });
+            amountLabel.textContent = g.fmt.format(val);
+            svg.appendChild(amountLabel);
+            var nameLabel = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 18, class: "simulator__axis-label", "text-anchor": "middle" });
+            nameLabel.textContent = i === 0 ? "A" : "B";
+            svg.appendChild(nameLabel);
+          });
+        });
+      }
+
+      // ---------------------------------------------------------------------------------
+      // Export PDF par e-mail — réutilise le même déclencheur Power Automate que le
+      // simulateur de recettes ("Simulateur_Recettes_Envoi_PDF_V1"), générique : il envoie
+      // simplement le PDF joint par e-mail au demandeur. "volume"/"zone" ne servent qu'au
+      // message de validation manuelle envoyé à Cédric si le domaine e-mail est concurrent —
+      // on y met donc le volume annuel de patients et un résumé de la comparaison.
+      // ---------------------------------------------------------------------------------
+      var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      function svgVersPng(svgSource) {
+        return new Promise(function (resolve, reject) {
+          var viewBox = svgSource.viewBox.baseVal;
+          var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
+          var vbHeight = viewBox && viewBox.height ? viewBox.height : 300;
+          var svgString = new XMLSerializer().serializeToString(svgSource);
+          var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+          var url = URL.createObjectURL(svgBlob);
+          var img = new Image();
+          img.onload = function () {
+            var scale = 2;
+            var canvas = document.createElement("canvas");
+            canvas.width = vbWidth * scale;
+            canvas.height = vbHeight * scale;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fcfcfb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve({ dataUrl: canvas.toDataURL("image/png"), width: vbWidth, height: vbHeight });
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      function imageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+
+      function genererPdfBase64() {
+        return Promise.all([
+          svgVersPng(document.getElementById("eneChart")),
+          imageDataUrl("assets/logo-ced4scale.png")
+        ]).then(function (images) {
+          var chartPng = images[0], logoPng = images[1];
+          var doc = new window.jspdf.jsPDF({ orientation: "portrait" });
+          var RIGHT_X = 195;
+          var prenom = document.getElementById("enePrenom").value.trim();
+          var nom = document.getElementById("eneNom").value.trim();
+          var email = document.getElementById("eneEmail").value.trim();
+          var etablissement = document.getElementById("eneEtablissement").value.trim();
+          var fonction = document.getElementById("eneFonction").value.trim();
+          var commentaire = document.getElementById("eneCommentaire").value.trim();
+
+          var logoH = 12, logoW = logoH * 3.2;
+          doc.addImage(logoPng, "PNG", 15, 14, logoW, logoH, undefined, "MEDIUM");
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
+          doc.setDrawColor(220);
+          doc.line(15, 33, RIGHT_X, 33);
+
+          var y = 44;
+          doc.setTextColor(0);
+          doc.setFontSize(16);
+          doc.text("Simulation de coût énergétique IRM", 15, y); y += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(120);
+          doc.text("Comparatif entre deux machines, à horaires et activité identiques", 15, y); y += 6;
+          doc.text(new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }), 15, y); y += 10;
+
+          var nomComplet = (prenom + " " + nom).trim();
+          doc.setTextColor(0);
+          doc.setFontSize(11);
+          doc.text("À l'attention de : " + (nomComplet || "—"), 15, y); y += 6;
+          if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
+          doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+          if (email) { doc.text("E-mail : " + email, 15, y); y += 6; }
+          y += 4;
+
+          doc.setFontSize(10.5);
+          var salutation = "Bonjour" + (prenom ? " " + prenom : "") + ",";
+          doc.text(salutation, 15, y); y += 6;
+          var courtoisie = doc.splitTextToSize(
+            "Merci pour votre intérêt — vous trouverez ci-dessous la simulation de coût énergétique demandée.",
+            RIGHT_X - 15
+          );
+          doc.text(courtoisie, 15, y); y += 5 * courtoisie.length + 8;
+
+          var comp = derniereComparaison;
+          var rA = comp.resultats[0], rB = comp.resultats[1];
+          doc.setFontSize(11);
+          doc.text("Machine A : " + rA.machine.marque + " " + rA.machine.modele, 15, y); y += 6;
+          doc.text("Machine B : " + rB.machine.marque + " " + rB.machine.modele, 15, y); y += 6;
+          doc.text("Coût du kWh : " + eurosCent.format(comp.prix), 15, y); y += 6;
+          doc.text("Patients simulés : " + entiers.format(comp.patientsAn) + " / an", 15, y); y += 10;
+
+          var imgWidth = RIGHT_X - 15;
+          var imgHeight = (imgWidth * chartPng.height) / chartPng.width;
+          doc.addImage(chartPng.dataUrl, "PNG", 15, y, imgWidth, imgHeight, undefined, "MEDIUM");
+          y += imgHeight + 10;
+
+          function ensureSpace(needed) {
+            if (y + needed > 270) { doc.addPage(); y = 20; }
+          }
+
+          ensureSpace(60);
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Détail du comparatif", 15, y); y += 7;
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(9);
+          var rows = [
+            ["Aimant", rA.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"],
+            ["Consommation annuelle", kwhFmt.format(rA.kwh) + " kWh", kwhFmt.format(rB.kwh) + " kWh"],
+            ["Coût énergétique annuel", euros.format(rA.coutAnnuel), euros.format(rB.coutAnnuel)],
+            ["Coût énergétique / patient", eurosCent.format(rA.coutParPatient), eurosCent.format(rB.coutParPatient)]
+          ];
+          var colX = [15, 90, 145];
+          rows.forEach(function (r) {
+            ensureSpace(7);
+            doc.text(r[0], colX[0], y);
+            doc.text(r[1], colX[1], y);
+            doc.text(r[2], colX[2], y);
+            y += 7;
+          });
+          y += 3;
+
+          ensureSpace(14);
+          doc.setTextColor(0);
+          doc.setFontSize(10);
+          var ecartTexte = document.getElementById("eneEcart").textContent;
+          var lignesEcart = doc.splitTextToSize(ecartTexte, RIGHT_X - 15);
+          ensureSpace(5 * lignesEcart.length + 5);
+          doc.text(lignesEcart, 15, y); y += 5 * lignesEcart.length + 6;
+
+          if (commentaire) {
+            ensureSpace(10);
+            doc.setTextColor(0);
+            doc.text("Commentaire :", 15, y); y += 5;
+            var lignesCommentaire = doc.splitTextToSize(commentaire, RIGHT_X - 15);
+            ensureSpace(5 * lignesCommentaire.length);
+            doc.text(lignesCommentaire, 15, y); y += 5 * lignesCommentaire.length + 5;
+          }
+
+          ensureSpace(20);
+          doc.setFontSize(8);
+          doc.setTextColor(140);
+          doc.text("Valeurs de consommation estimées par Ced4Scale à partir de sources techniques disponibles, à confirmer auprès des fabricants. Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y, { maxWidth: RIGHT_X - 15 });
+          y += 10;
+          doc.setTextColor(40, 90, 200);
+          doc.textWithLink("Refaire cette simulation avec d'autres paramètres sur ced4scale.fr", 15, y, { url: "https://ced4scale.fr/simulateur-energie.html" });
+          y += 6;
+          doc.textWithLink("Voir le détail des hypothèses et sources", 15, y, { url: "https://ced4scale.fr/sources-energie.html" });
+
+          return doc.output("datauristring").split(",")[1];
+        });
+      }
+
+      var exportForm = document.getElementById("eneExportForm");
+      var exportSuccess = document.getElementById("eneExportSuccess");
+      var exportError = document.getElementById("eneExportError");
+      var exportToggle = document.getElementById("eneExportToggle");
+
+      exportToggle.addEventListener("click", function () {
+        exportToggle.hidden = true;
+        exportForm.hidden = false;
+      });
+
+      exportForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submitButton = document.getElementById("eneExportSubmit");
+        var prenom = document.getElementById("enePrenom").value.trim();
+        var nom = document.getElementById("eneNom").value.trim();
+        var etablissement = document.getElementById("eneEtablissement").value.trim();
+        var fonction = document.getElementById("eneFonction").value.trim();
+        var commentaire = document.getElementById("eneCommentaire").value.trim();
+        var email = document.getElementById("eneEmail").value.trim();
+
+        submitButton.disabled = true;
+        exportError.hidden = true;
+
+        Promise.resolve().then(function () {
+          return genererPdfBase64();
+        }).then(function (pdfBase64) {
+          var comp = derniereComparaison;
+          var zoneResume = comp.resultats[0].machine.marque + " " + comp.resultats[0].machine.modele +
+            " vs " + comp.resultats[1].machine.marque + " " + comp.resultats[1].machine.modele;
+          return fetch(SIMULATOR_REQUEST_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prenom: prenom,
+              nom: nom,
+              email: email,
+              etablissement: etablissement,
+              fonction: fonction,
+              commentaire: commentaire,
+              filename: "simulation-energie-irm.pdf",
+              pdfBase64: pdfBase64,
+              volume: String(Math.round(comp.patientsAn)),
+              zone: zoneResume
+            })
+          }).then(function (response) {
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            exportSuccess.hidden = false;
+            exportForm.hidden = true;
+            if (window.goatcounter && window.goatcounter.count) {
+              window.goatcounter.count({ path: "simulateur-energie-envoye", title: "Simulation énergie envoyée", event: true });
+            }
+          }).catch(function () {
+            exportError.hidden = false;
+            submitButton.disabled = false;
+          });
+        }).catch(function () {
+          exportError.hidden = false;
+          submitButton.disabled = false;
+        });
+      });
+
+      // ---- Écouteurs ----
+      document.querySelectorAll('input[name="eneActiviteMode"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+          document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour ouvré type" : "Nombre de patients par an";
+          document.getElementById("eneActivite").value = mode === "jour" ? 20 : 5000;
+          recalculer();
+        });
+      });
+      ["enePrix", "eneHeuresSemaine", "eneActivite"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", recalculer);
+      });
+      ["eneSamedi", "eneDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", recalculer);
+      });
+      selectA.addEventListener("change", recalculer);
+      selectB.addEventListener("change", recalculer);
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "index.html";
+        }
+      }
+      document.getElementById("eneClose").addEventListener("click", goBack);
+
+      recalculer();
+    })();
+  </script>
+</body>
+</html>
