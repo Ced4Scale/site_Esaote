@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-moyenne-ft" />
+  <link rel="stylesheet" href="styles.css?v=20260808-paysage" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-moyenne-ft"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-paysage"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -297,7 +297,7 @@
           var ligneDepart = classe.dates.filter(function (d) { return d.iso === sc.iso; })[0];
           var detail = calculerDetailCA(volume, ligneDepart.plein[zone].nonAmorti, ligneDepart.reduits, classe);
           var total = detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond;
-          return { label: sc.label, iso: sc.iso, detail: detail, total: total };
+          return { label: sc.label, iso: sc.iso, detail: detail, total: total, volume: volume };
         });
 
         while (thead.children.length > 1) thead.removeChild(thead.lastChild);
@@ -579,8 +579,12 @@
           svg2.appendChild(label);
           startAngle = endAngle;
         });
+        // Uniquement le forfait moyen par examen ici (pas le total) — c'est le chiffre le
+        // plus parlant à cet endroit, juste au-dessus du détail par palier (demande de
+        // Cédric du 08/08/2026).
         var caption = svgEl("text", { x: cx, y: 16, class: "simulator__axis-label", "text-anchor": "middle" });
-        caption.textContent = "Départ " + camembert.label + " — " + euros.format(camembert.total) + " (année 1)";
+        var moyenneCamembert = camembert.volume > 0 ? camembert.total / camembert.volume : 0;
+        caption.textContent = "Départ " + camembert.label + " — forfait moyen : " + euros.format(moyenneCamembert) + " / examen";
         svg2.appendChild(caption);
       }
 
@@ -753,7 +757,11 @@
           imageDataUrl("assets/logo-ced4scale.png")
         ]).then(function (images) {
         var graphePng = images[0], graphe2Png = images[1], logoPng = images[2];
-        var doc = new window.jspdf.jsPDF();
+        // Paysage plutôt que portrait : les deux graphiques tiennent côte à côte, ce qui
+        // ramène la simulation à 1-2 pages au lieu de s'étaler sur 3 (demande de Cédric,
+        // 08/08/2026). Page A4 paysage = 297 x 210 mm (contre 210 x 297 en portrait).
+        var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
+        var RIGHT_X = 282;
         var prenom = document.getElementById("simPrenom").value.trim();
         var nom = document.getElementById("simNom").value.trim();
         var email = document.getElementById("simEmail").value.trim();
@@ -771,15 +779,15 @@
         doc.setFontSize(10);
         doc.setTextColor(0);
         doc.setFont(undefined, "bold");
-        doc.text(CED4SCALE_CONTACT.nom, 195, 16, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
         doc.setFont(undefined, "normal");
         doc.setFontSize(8.5);
         doc.setTextColor(110);
-        doc.text(CED4SCALE_CONTACT.role, 195, 20, { align: "right" });
-        doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, 195, 24, { align: "right" });
-        doc.text(CED4SCALE_CONTACT.site, 195, 28, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
+        doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
         doc.setDrawColor(220);
-        doc.line(15, 33, 195, 33);
+        doc.line(15, 33, RIGHT_X, 33);
 
         var y = 44;
         doc.setTextColor(0);
@@ -807,7 +815,7 @@
         doc.text(salutation, 15, y); y += 6;
         var courtoisie = doc.splitTextToSize(
           "Merci pour votre intérêt — vous trouverez ci-dessous la simulation demandée, ainsi qu'un récapitulatif détaillé sur 7 ans.",
-          180
+          RIGHT_X - 15
         );
         doc.text(courtoisie, 15, y); y += 5 * courtoisie.length + 8;
 
@@ -816,30 +824,49 @@
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
 
-        // Un PDF fait une page de 297 mm de hauteur ; jsPDF n'ajoute jamais de page tout seul
-        // quand le contenu dépasse — sans ce garde-fou, les blocs en bas (tableau, graphe,
-        // sources) étaient tout simplement invisibles, coupés hors de la page. On vérifie donc
-        // la place disponible avant chaque bloc et on tourne la page au besoin.
-        var PAGE_BOTTOM = 272;
+        // Une page A4 paysage fait 210 mm de hauteur ; jsPDF n'ajoute jamais de page tout seul
+        // quand le contenu dépasse — sans ce garde-fou, les blocs en bas (tableau, sources)
+        // étaient tout simplement invisibles, coupés hors de la page. On vérifie donc la place
+        // disponible avant chaque bloc et on tourne la page au besoin.
+        var PAGE_BOTTOM = 195;
         function ensureSpace(needed) {
           if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
         }
 
-        var imgWidth = 180;
+        // Les deux graphiques côte à côte plutôt qu'empilés — c'est tout l'intérêt du
+        // paysage : la largeur disponible (267 mm) sert enfin à quelque chose.
+        var colGap = 12;
+        var imgWidth = (RIGHT_X - 15 - colGap) / 2;
+        var col2X = 15, col1X = 15 + imgWidth + colGap;
+        var chartsTop = y;
+        var rowHeight = 0;
+
         if (graphe2Png) {
           var imgHeight2 = (imgWidth * graphe2Png.height) / graphe2Png.width;
-          ensureSpace(imgHeight2 + 15);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
-          doc.text("Composition des recettes de l'année 1", 15, y); y += 5;
+          doc.text("Composition des recettes de l'année 1", col2X, chartsTop);
           doc.setFont(undefined, "normal");
-          doc.addImage(graphe2Png.dataUrl, "PNG", 15, y, imgWidth, imgHeight2, undefined, "MEDIUM");
-          y += imgHeight2 + 8;
+          doc.addImage(graphe2Png.dataUrl, "PNG", col2X, chartsTop + 5, imgWidth, imgHeight2, undefined, "MEDIUM");
+          rowHeight = Math.max(rowHeight, imgHeight2 + 5);
+        }
+        if (graphePng) {
+          var imgHeight1 = (imgWidth * graphePng.height) / graphePng.width;
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Trajectoire de recettes sur 7 ans", col1X, chartsTop);
+          doc.setFont(undefined, "normal");
+          doc.addImage(graphePng.dataUrl, "PNG", col1X, chartsTop + 5, imgWidth, imgHeight1, undefined, "MEDIUM");
+          rowHeight = Math.max(rowHeight, imgHeight1 + 5);
+        }
+        if (rowHeight > 0) y += rowHeight + 8;
 
-          // Tableau "Palier | montant + %", visible uniquement dans le PDF — sur la page, ces
-          // montants sont maintenant affichés directement autour du camembert (demande de
-          // Cédric du 08/08/2026), mais le PDF garde un vrai tableau, plus facile à relire.
+        // Tableau "Palier | montant + %", visible uniquement dans le PDF — sur la page, ces
+        // montants sont maintenant affichés directement autour du camembert (demande de
+        // Cédric du 08/08/2026), mais le PDF garde un vrai tableau, plus facile à relire.
+        if (graphe2Png) {
           ensureSpace(7 * (PALIERS.length + 1) + 8);
           doc.setFontSize(8);
           doc.setTextColor(0);
@@ -868,20 +895,9 @@
           });
           y += 5;
         }
-        if (graphePng) {
-          var imgHeight1 = (imgWidth * graphePng.height) / graphePng.width;
-          ensureSpace(imgHeight1 + 15);
-          doc.setFontSize(10.5);
-          doc.setTextColor(0);
-          doc.setFont(undefined, "bold");
-          doc.text("Trajectoire de recettes sur 7 ans", 15, y); y += 5;
-          doc.setFont(undefined, "normal");
-          doc.addImage(graphePng.dataUrl, "PNG", 15, y, imgWidth, imgHeight1, undefined, "MEDIUM");
-          y += imgHeight1 + 10;
-        }
 
         var theadCells = document.querySelectorAll("#simTableHead th");
-        var x0 = 15, labelWidth = 42, colWidth = 20;
+        var x0 = 15, labelWidth = 42, colWidth = 28;
         doc.setFontSize(8);
         function drawRow(label, cells, bold) {
           ensureSpace(7);
@@ -919,14 +935,14 @@
         doc.setFontSize(8);
         doc.setTextColor(140);
         var chuteTexte = document.getElementById("simChute").textContent;
-        var lignesChute = doc.splitTextToSize(chuteTexte, 180);
+        var lignesChute = doc.splitTextToSize(chuteTexte, RIGHT_X - 15);
         ensureSpace(5 * lignesChute.length + 5);
         doc.text(lignesChute, 15, y); y += 5 * lignesChute.length + 3;
         if (commentaire) {
           ensureSpace(5);
           doc.setTextColor(0);
           doc.text("Commentaire :", 15, y); y += 5;
-          var lignesCommentaire = doc.splitTextToSize(commentaire, 180);
+          var lignesCommentaire = doc.splitTextToSize(commentaire, RIGHT_X - 15);
           ensureSpace(5 * lignesCommentaire.length);
           doc.text(lignesCommentaire, 15, y); y += 5 * lignesCommentaire.length + 3;
           doc.setTextColor(140);
