@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-moyenne-gras" />
+  <link rel="stylesheet" href="styles.css?v=20260808-lien-retour" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-moyenne-gras"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-lien-retour"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -101,7 +101,7 @@
           <tbody id="simTableBody"></tbody>
         </table>
         <p class="simulator__hint" id="simChute"></p>
-        <p class="simulator__hint">Au-delà de l'activité de référence, le forfait technique de chaque examen supplémentaire est moins élevé, par tranches dégressives (voir les seuils de la classe ci-dessus) — c'est ce qui fait baisser le "forfait moyen / examen" indiqué sous chaque ligne du tableau, dès que le volume dépasse l'activité de référence.</p>
+        <p class="simulator__hint">Au-delà de l'activité de référence, le forfait technique de chaque examen supplémentaire est moins élevé, par tranches dégressives (voir les seuils de la classe ci-dessus) — c'est ce qui fait baisser le forfait moyen par examen indiqué au-dessus de chaque camembert.</p>
 
         <div class="simulator__export" id="simExport">
           <button type="button" class="btn btn--lg" id="simExportToggle">Recevoir ce tableau par e-mail</button>
@@ -315,11 +315,6 @@
           var tdLabel = document.createElement("td");
           tdLabel.innerHTML = '<span class="simulator__swatch" style="background:' + sc.color + '"></span> Départ ' + sc.label;
           tr.appendChild(tdLabel);
-          var trMoyenne = document.createElement("tr");
-          trMoyenne.className = "simulator__row-moyenne";
-          var tdLabelMoyenne = document.createElement("td");
-          tdLabelMoyenne.textContent = "→ forfait moyen / examen";
-          trMoyenne.appendChild(tdLabelMoyenne);
           var totalLigne = 0;
           var values = [];
           var cumul = [0];
@@ -336,12 +331,8 @@
             var td = document.createElement("td");
             td.textContent = euros.format(ca);
             tr.appendChild(td);
-            var tdMoyenne = document.createElement("td");
-            tdMoyenne.textContent = volume > 0 ? euros.format(ca / volume) : "—";
-            trMoyenne.appendChild(tdMoyenne);
           }
           tbody.appendChild(tr);
-          tbody.appendChild(trMoyenne);
           totaux.push({ label: sc.label, total: totalLigne });
           derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values, cumul: cumul, cumulMensuel: cumulMensuel });
         });
@@ -954,8 +945,12 @@
           doc.text(lignesCommentaire, 15, y); y += 5 * lignesCommentaire.length + 3;
           doc.setTextColor(140);
         }
-        ensureSpace(8);
+        ensureSpace(13);
         doc.text("Forfait technique uniquement (hors acte du radiologue). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
+        y += 5;
+        doc.setTextColor(40, 90, 200);
+        doc.textWithLink("Refaire cette simulation avec d'autres paramètres sur ced4scale.fr", 15, y, { url: "https://ced4scale.fr/simulateur-recettes.html" });
+        doc.setTextColor(140);
         y += 8;
 
         ensureSpace(5 + 5 * SOURCES_PDF.length);
