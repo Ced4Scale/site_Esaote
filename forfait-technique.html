@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Forfait technique IRM — synthèse maison — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260808-doc-maison" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-doc-maison"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Synthèse maison</span>
+      <strong id="fthTitre">Forfait technique IRM</strong>
+    </div>
+    <button class="document-viewer__close" id="fthClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker" id="fthKicker">Forfait technique</span>
+      <h1 id="fthH1">Forfait technique IRM</h1>
+      <p id="fthIntro"></p>
+      <p class="simulator__source" id="fthSourceLine"></p>
+    </div>
+
+    <div class="simulator__layout" style="grid-template-columns:1fr">
+      <div class="form-card">
+        <table class="stats-table" id="fthTable">
+          <thead>
+            <tr>
+              <th>Classe</th>
+              <th>Paris</th>
+              <th>Île-de-France (hors Paris)</th>
+              <th>Province</th>
+              <th>Barème dégressif (seuil 1 / seuil 2 / plafond)</th>
+            </tr>
+          </thead>
+          <tbody id="fthTableBody"></tbody>
+        </table>
+        <p class="simulator__hint" style="margin-top:1rem">Tarifs "non amorti" du forfait technique plein. Synthèse Ced4Scale, à titre indicatif — le texte officiel ci-dessus fait foi.</p>
+
+        <div class="simulator__export" id="fthExport">
+          <h3 style="margin-bottom:.6rem">Recevoir cette synthèse par e-mail</h3>
+          <form id="fthExportForm">
+            <div class="simulator__export-grid">
+              <div class="field">
+                <label for="fthPrenom">Prénom</label>
+                <input type="text" id="fthPrenom" required autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label for="fthNom">Nom</label>
+                <input type="text" id="fthNom" required autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label for="fthEtablissement">Établissement</label>
+                <input type="text" id="fthEtablissement" required placeholder="CHU, clinique, cabinet…" />
+              </div>
+              <div class="field">
+                <label for="fthFonction">Fonction</label>
+                <input type="text" id="fthFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+              </div>
+              <div class="field">
+                <label for="fthEmail">E-mail</label>
+                <input type="email" id="fthEmail" required autocomplete="email" />
+              </div>
+            </div>
+            <button type="submit" class="btn btn--lg" id="fthExportSubmit">Recevoir cette synthèse en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer cette synthèse.</p>
+          </form>
+          <div class="simulator__export-success" id="fthExportSuccess" role="status" hidden>
+            ✓ Merci&nbsp;! Vous allez recevoir cette synthèse par e-mail dans quelques instants.
+          </div>
+          <p class="simulator__export-error" id="fthExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      var seuilsEntiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+
+      var params = new URLSearchParams(window.location.search);
+      var iso = params.get("date");
+      var dateInfo = ftDateByIso(iso);
+
+      if (!dateInfo) {
+        document.querySelector("main").innerHTML = '<div class="simulator__intro"><h1>Date inconnue</h1><p>Retourne à la <a href="sources-forfaits-techniques.html">liste des dates de forfait technique</a>.</p></div>';
+        return;
+      }
+
+      document.getElementById("fthTitre").textContent = "Forfait technique au " + dateInfo.label;
+      document.getElementById("fthH1").textContent = "Forfait technique IRM — " + dateInfo.label;
+      document.getElementById("fthIntro").textContent = "Synthèse Ced4Scale des tarifs du forfait technique IRM en vigueur au " + dateInfo.label + ", par classe de puissance d'aimant.";
+      document.getElementById("fthSourceLine").innerHTML = 'Source : <a href="' + dateInfo.source + '" target="_blank" rel="noopener">' + dateInfo.sourceLabel + ' (texte officiel)</a>';
+
+      var tbody = document.getElementById("fthTableBody");
+      var CLASS_ORDER = ["le05", "mid", "t15", "sup15"];
+      var lignesParClasse = [];
+
+      CLASS_ORDER.forEach(function (key) {
+        var classe = FT_CLASSES[key];
+        var ligne = classe.dates.filter(function (d) { return d.iso === iso; })[0];
+        if (!ligne) return;
+        lignesParClasse.push({ classe: classe, ligne: ligne });
+
+        var tr = document.createElement("tr");
+        var tdClasse = document.createElement("td");
+        tdClasse.innerHTML = "<strong>" + classe.label + "</strong>";
+        tr.appendChild(tdClasse);
+
+        ["paris", "idf", "province"].forEach(function (zone) {
+          var td = document.createElement("td");
+          var val = ligne.plein[zone].nonAmorti;
+          td.textContent = val != null ? euros.format(val) : "—";
+          tr.appendChild(td);
+        });
+
+        var tdBareme = document.createElement("td");
+        tdBareme.textContent = euros.format(ligne.reduits.seuil1) + " / " + euros.format(ligne.reduits.seuil2) + " / " + euros.format(ligne.reduits.plafond);
+        tr.appendChild(tdBareme);
+
+        tbody.appendChild(tr);
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "sources-forfaits-techniques.html";
+        }
+      }
+      document.getElementById("fthClose").addEventListener("click", goBack);
+
+      // Coordonnées Ced4Scale — même information que simulateur-recettes.html et contact.html
+      // (propriétaire de cette info : ne pas dupliquer ailleurs si elle change un jour).
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+
+      function imageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      function genererPdfBase64() {
+        return imageDataUrl("assets/logo-ced4scale.png").then(function (logoPng) {
+          var doc = new window.jspdf.jsPDF();
+          var prenom = document.getElementById("fthPrenom").value.trim();
+          var nom = document.getElementById("fthNom").value.trim();
+          var email = document.getElementById("fthEmail").value.trim();
+          var etablissement = document.getElementById("fthEtablissement").value.trim();
+          var fonction = document.getElementById("fthFonction").value.trim();
+
+          var logoH = 12, logoW = logoH * 3.2;
+          doc.addImage(logoPng, "PNG", 15, 14, logoW, logoH);
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, 195, 16, { align: "right" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, 195, 20, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, 195, 24, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, 195, 28, { align: "right" });
+          doc.setDrawColor(220);
+          doc.line(15, 33, 195, 33);
+
+          var y = 44;
+          doc.setTextColor(0);
+          doc.setFontSize(16);
+          doc.text("Forfait technique IRM — synthèse au " + dateInfo.label, 15, y);
+          y += 8;
+          doc.setFontSize(10);
+          doc.setTextColor(120);
+          doc.text(new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }), 15, y);
+          y += 10;
+
+          var nomComplet = (prenom + " " + nom).trim();
+          doc.setTextColor(0);
+          doc.setFontSize(11);
+          doc.text("À l'attention de : " + (nomComplet || "—"), 15, y); y += 6;
+          if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
+          doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
+          if (email) { doc.text("E-mail : " + email, 15, y); y += 6; }
+          y += 4;
+
+          doc.setFontSize(10.5);
+          var salutation = "Bonjour" + (prenom ? " " + prenom : "") + ",";
+          doc.text(salutation, 15, y); y += 6;
+          var courtoisie = doc.splitTextToSize(
+            "Merci pour votre intérêt — vous trouverez ci-dessous la synthèse des tarifs du forfait technique IRM en vigueur au " + dateInfo.label + ", par classe de puissance d'aimant.",
+            180
+          );
+          doc.text(courtoisie, 15, y); y += 5 * courtoisie.length + 8;
+
+          lignesParClasse.forEach(function (item) {
+            doc.setFont(undefined, "bold");
+            doc.setFontSize(11);
+            doc.setTextColor(0);
+            doc.text(item.classe.label, 15, y); y += 6;
+            doc.setFont(undefined, "normal");
+            doc.setFontSize(9.5);
+            [["Paris", item.ligne.plein.paris], ["Île-de-France (hors Paris)", item.ligne.plein.idf], ["Province", item.ligne.plein.province]].forEach(function (z) {
+              var val = z[1].nonAmorti;
+              doc.text(z[0] + " : " + (val != null ? euros.format(val) : "—"), 20, y); y += 5.5;
+            });
+            doc.text("Barème dégressif : " + euros.format(item.ligne.reduits.seuil1) + " puis " + euros.format(item.ligne.reduits.seuil2) + " puis " + euros.format(item.ligne.reduits.plafond) + " (seuils : " + seuilsEntiers.format(item.classe.REF) + " / " + seuilsEntiers.format(item.classe.SEUIL1) + " / " + seuilsEntiers.format(item.classe.SEUIL2) + ")", 20, y); y += 8;
+          });
+
+          y += 2;
+          doc.setFontSize(8.5);
+          doc.setTextColor(140);
+          doc.text("Synthèse Ced4Scale, à titre indicatif — générée par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y); y += 6;
+          doc.setTextColor(40, 90, 200);
+          doc.textWithLink(dateInfo.sourceLabel + " (texte officiel)", 15, y, { url: "https://ced4scale.fr/" + dateInfo.source });
+
+          return doc.output("datauristring").split(",")[1];
+        });
+      }
+
+      // Réutilise le même déclencheur Power Automate que le simulateur de recettes
+      // ("Simulateur_Recettes_Envoi_PDF_V1") — il se contente d'envoyer par e-mail le PDF joint
+      // avec les coordonnées du demandeur, quel que soit son contenu (mêmes garde-fous
+      // d'approbation pour les domaines concurrents).
+      var REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      var exportForm = document.getElementById("fthExportForm");
+      var exportSuccess = document.getElementById("fthExportSuccess");
+      var exportError = document.getElementById("fthExportError");
+
+      exportForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submitButton = document.getElementById("fthExportSubmit");
+        var prenom = document.getElementById("fthPrenom").value.trim();
+        var nom = document.getElementById("fthNom").value.trim();
+        var etablissement = document.getElementById("fthEtablissement").value.trim();
+        var fonction = document.getElementById("fthFonction").value.trim();
+        var email = document.getElementById("fthEmail").value.trim();
+
+        submitButton.disabled = true;
+        exportError.hidden = true;
+
+        genererPdfBase64().then(function (pdfBase64) {
+          return fetch(REQUEST_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prenom: prenom,
+              nom: nom,
+              email: email,
+              etablissement: etablissement,
+              fonction: fonction,
+              commentaire: "",
+              filename: "forfait-technique-" + iso + ".pdf",
+              pdfBase64: pdfBase64,
+              volume: "",
+              zone: ""
+            })
+          }).then(function (response) {
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            exportSuccess.hidden = false;
+            exportForm.hidden = true;
+            if (window.goatcounter && window.goatcounter.count) {
+              window.goatcounter.count({ path: "forfait-technique-envoye", title: "Synthèse forfait technique envoyée", event: true });
+            }
+          }).catch(function () {
+            exportError.hidden = false;
+            submitButton.disabled = false;
+          });
+        }).catch(function () {
+          exportError.hidden = false;
+          submitButton.disabled = false;
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

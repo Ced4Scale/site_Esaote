@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sources — Forfaits techniques IRM — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260808-doc-maison" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-doc-maison"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Sources</span>
+      <strong>Forfaits techniques IRM — toutes les dates</strong>
+    </div>
+    <button class="document-viewer__close" id="srcClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Texte officiel Légifrance</span>
+      <h1>Toutes les dates de forfait technique IRM</h1>
+      <p>Chaque date correspond à un changement de tarif du forfait technique (F.T.), fixé par une décision ou un arrêté UNCAM. Clique sur une date pour ouvrir la synthèse Ced4Scale correspondante — avec, sur cette page, le lien vers le texte officiel complet.</p>
+    </div>
+
+    <div class="simulator__layout" style="grid-template-columns:1fr">
+      <div class="form-card">
+        <table class="stats-table" id="srcTable">
+          <thead>
+            <tr><th>Date d'effet</th><th>Texte officiel</th><th>Synthèse maison</th></tr>
+          </thead>
+          <tbody id="srcTableBody"></tbody>
+        </table>
+        <p class="simulator__hint" style="margin-top:1rem">Ces synthèses portent uniquement sur les tarifs IRM (hors autres actes) — le document officiel complet reste accessible via le lien "texte officiel".</p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var tbody = document.getElementById("srcTableBody");
+      FT_DATES.forEach(function (d) {
+        var tr = document.createElement("tr");
+
+        var tdDate = document.createElement("td");
+        tdDate.innerHTML = '<strong>' + d.label + '</strong>';
+        tr.appendChild(tdDate);
+
+        var tdSource = document.createElement("td");
+        var aSource = document.createElement("a");
+        aSource.href = d.source;
+        aSource.target = "_blank";
+        aSource.rel = "noopener";
+        aSource.textContent = d.sourceLabel;
+        tdSource.appendChild(aSource);
+        tr.appendChild(tdSource);
+
+        var tdDoc = document.createElement("td");
+        var aDoc = document.createElement("a");
+        aDoc.href = "forfait-technique.html?date=" + d.iso;
+        aDoc.className = "btn btn--sm";
+        aDoc.textContent = "Voir la synthèse →";
+        tdDoc.appendChild(aDoc);
+        tr.appendChild(tdDoc);
+
+        tbody.appendChild(tr);
+      });
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "simulateur-recettes.html";
+        }
+      }
+      document.getElementById("srcClose").addEventListener("click", goBack);
+    })();
+  </script>
+</body>
+</html>
