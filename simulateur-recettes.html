@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-camemberts" />
+  <link rel="stylesheet" href="styles.css?v=20260808-tableau-ft" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-camemberts"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-tableau-ft"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -806,8 +806,18 @@
         doc.text("Zone : " + zoneLabel, 15, y); y += 6;
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
 
+        // Un PDF fait une page de 297 mm de hauteur ; jsPDF n'ajoute jamais de page tout seul
+        // quand le contenu dépasse — sans ce garde-fou, les blocs en bas (tableau, graphe,
+        // sources) étaient tout simplement invisibles, coupés hors de la page. On vérifie donc
+        // la place disponible avant chaque bloc et on tourne la page au besoin.
+        var PAGE_BOTTOM = 272;
+        function ensureSpace(needed) {
+          if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
+        }
+
         var imgWidth = 180, imgHeight = (imgWidth * 300) / 640;
         if (graphe2Png) {
+          ensureSpace(imgHeight + 15);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
@@ -817,6 +827,12 @@
           y += imgHeight + 10;
         }
         if (graphePng) {
+          ensureSpace(imgHeight + 15);
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Trajectoire de recettes sur 7 ans", 15, y); y += 5;
+          doc.setFont(undefined, "normal");
           doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
           y += imgHeight + 10;
         }
@@ -825,6 +841,7 @@
         var x0 = 15, labelWidth = 42, colWidth = 20;
         doc.setFontSize(8);
         function drawRow(label, cells, bold) {
+          ensureSpace(7);
           var x = x0;
           doc.setFont(undefined, bold ? "bold" : "normal");
           doc.text(String(label), x, y);
@@ -836,6 +853,12 @@
           y += 7;
         }
         var headerCells = Array.prototype.slice.call(theadCells);
+        ensureSpace(14);
+        doc.setFontSize(10.5);
+        doc.setTextColor(0);
+        doc.setFont(undefined, "bold");
+        doc.text("Recettes par année", 15, y); y += 6;
+        doc.setFontSize(8);
         drawRow("Année", headerCells, true);
         doc.setDrawColor(200);
         doc.line(x0, y - 4, x0 + labelWidth + colWidth * headerCells.length, y - 4);
@@ -848,22 +871,28 @@
           drawRow(rowLabel, dataCells, false);
         });
 
+        ensureSpace(14);
         y += 8;
         doc.setFontSize(8);
         doc.setTextColor(140);
         var chuteTexte = document.getElementById("simChute").textContent;
         var lignesChute = doc.splitTextToSize(chuteTexte, 180);
+        ensureSpace(5 * lignesChute.length + 5);
         doc.text(lignesChute, 15, y); y += 5 * lignesChute.length + 3;
         if (commentaire) {
+          ensureSpace(5);
           doc.setTextColor(0);
           doc.text("Commentaire :", 15, y); y += 5;
           var lignesCommentaire = doc.splitTextToSize(commentaire, 180);
+          ensureSpace(5 * lignesCommentaire.length);
           doc.text(lignesCommentaire, 15, y); y += 5 * lignesCommentaire.length + 3;
           doc.setTextColor(140);
         }
+        ensureSpace(8);
         doc.text("Forfait technique uniquement (hors acte du radiologue). Généré par ced4scale.fr le " + new Date().toLocaleDateString("fr-FR") + ".", 15, y);
         y += 8;
 
+        ensureSpace(5 + 5 * SOURCES_PDF.length);
         doc.setFontSize(8);
         doc.setTextColor(0);
         doc.text("Textes officiels (extraits des tarifs IRM uniquement) :", 15, y); y += 5;

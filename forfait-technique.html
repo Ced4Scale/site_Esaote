@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-camemberts" />
+  <link rel="stylesheet" href="styles.css?v=20260808-tableau-ft" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-camemberts"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-tableau-ft"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -36,26 +36,31 @@
 
     <div class="simulator__layout" style="grid-template-columns:1fr">
       <div class="form-card">
-        <table class="stats-table" id="fthTable">
-          <thead>
-            <tr>
-              <th>Classe</th>
-              <th>Paris</th>
-              <th>Île-de-France (hors Paris)</th>
-              <th>Province</th>
-              <th>Barème dégressif (seuil 1 / seuil 2 / plafond)</th>
-            </tr>
-            <tr>
-              <th></th>
-              <th>amorti / non amorti</th>
-              <th>amorti / non amorti</th>
-              <th>amorti / non amorti</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="fthTableBody"></tbody>
-        </table>
-        <p class="simulator__hint" style="margin-top:1rem">"Amorti" : machine installée depuis plus de 7 ans. "Non amorti" : moins de 7 ans, ou classe où le texte officiel ne distingue plus les deux (uniquement un tarif "non amorti" publié — voir le texte officiel ci-dessus). Synthèse Ced4Scale, à titre indicatif — le texte officiel fait foi.</p>
+        <div style="overflow-x:auto">
+          <table class="stats-table simulator__ft-table" id="fthTable">
+            <thead>
+              <tr>
+                <th rowspan="2">Classe</th>
+                <th colspan="2">Paris</th>
+                <th colspan="2">Île-de-France (hors Paris)</th>
+                <th colspan="2">Province</th>
+                <th rowspan="2">Seuil 1</th>
+                <th rowspan="2">Seuil 2</th>
+                <th rowspan="2">Plafond</th>
+              </tr>
+              <tr>
+                <th>Amorti</th>
+                <th>Non amorti</th>
+                <th>Amorti</th>
+                <th>Non amorti</th>
+                <th>Amorti</th>
+                <th>Non amorti</th>
+              </tr>
+            </thead>
+            <tbody id="fthTableBody"></tbody>
+          </table>
+        </div>
+        <p class="simulator__hint" style="margin-top:1rem">"Amorti" : machine installée depuis plus de 7 ans. "Non amorti" : moins de 7 ans, ou classe où le texte officiel ne distingue plus les deux (uniquement un tarif "non amorti" publié — voir le texte officiel ci-dessus). "Seuil 1 / Seuil 2 / Plafond" : tarif dégressif appliqué à chaque examen au-delà de l'activité de référence de la classe (voir le tableau des seuils sur le simulateur). Synthèse Ced4Scale, à titre indicatif — le texte officiel fait foi.</p>
 
         <div class="simulator__export" id="fthExport">
           <h3 style="margin-bottom:.6rem">Recevoir cette synthèse par e-mail</h3>
@@ -129,17 +134,20 @@
         tr.appendChild(tdClasse);
 
         ["paris", "idf", "province"].forEach(function (zone) {
-          var td = document.createElement("td");
           var z = ligne.plein[zone];
-          var amortiTxt = z.amorti != null ? euros.format(z.amorti) : "—";
-          var nonAmortiTxt = z.nonAmorti != null ? euros.format(z.nonAmorti) : "—";
-          td.textContent = amortiTxt + " / " + nonAmortiTxt;
-          tr.appendChild(td);
+          var tdAmorti = document.createElement("td");
+          tdAmorti.textContent = z.amorti != null ? euros.format(z.amorti) : "—";
+          tr.appendChild(tdAmorti);
+          var tdNonAmorti = document.createElement("td");
+          tdNonAmorti.textContent = z.nonAmorti != null ? euros.format(z.nonAmorti) : "—";
+          tr.appendChild(tdNonAmorti);
         });
 
-        var tdBareme = document.createElement("td");
-        tdBareme.textContent = euros.format(ligne.reduits.seuil1) + " / " + euros.format(ligne.reduits.seuil2) + " / " + euros.format(ligne.reduits.plafond);
-        tr.appendChild(tdBareme);
+        [ligne.reduits.seuil1, ligne.reduits.seuil2, ligne.reduits.plafond].forEach(function (montant) {
+          var td = document.createElement("td");
+          td.textContent = euros.format(montant);
+          tr.appendChild(td);
+        });
 
         tbody.appendChild(tr);
       });
