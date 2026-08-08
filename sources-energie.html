@@ -36,11 +36,11 @@
       <div class="form-card">
         <h3 style="margin-bottom:.8rem">Hypothèses de temps</h3>
         <ul style="margin:0 0 1.2rem 1.2rem;font-size:.92rem;line-height:1.7;color:var(--ink-soft)">
-          <li>Durée moyenne d'un slot patient (préparation comprise) : <strong id="srcSlot"></strong> minutes.</li>
-          <li>Durée moyenne d'acquisition réelle (gradients actifs) dans ce slot : <strong id="srcAcq"></strong> minutes — le reste du temps, la machine est comptée "prête, sans patient".</li>
+          <li>Durée moyenne d'acquisition (gradients actifs) : <strong>propre à chaque machine</strong> (voir tableau ci-dessous), modifiable sur la page du simulateur — un champ plus bas prend en général plus de temps par séquence qu'un champ plus élevé. Le reste du temps où le cabinet est ouvert, la machine est comptée "prête, sans patient".</li>
           <li>52 semaines identiques par an (les jours fériés ne sont pas retirés séparément — légère surestimation pour les machines à faible consommation de veille, légère sous-estimation pour les autres).</li>
           <li>Le volume de patients saisi est réparti entre semaine / samedi / dimanche au prorata du temps d'ouverture de chaque type de jour.</li>
-          <li>Surconsommation du refroidissement du local technique (climatisation ou eau glacée), pour les IRM à aimant supraconducteur : <strong>+33 %</strong> de la consommation de la machine elle-même — un ordre de grandeur, pas une mesure au compteur. Nulle pour les IRM Esaote, qui n'ont pas de système de maintien en froid à alimenter.</li>
+          <li>Surconsommation du local technique (climatisation ou eau glacée, pour maintenir l'aimant supraconducteur au froid) : <strong>+33 %</strong> de la consommation de la machine elle-même — un ordre de grandeur, pas une mesure au compteur. Nulle pour les IRM Esaote, qui n'ont pas de système de maintien en froid à alimenter.</li>
+          <li>Climatisation de la <strong>salle d'examen</strong> (distincte du local technique) : comptée en continu, 24 h/24 — obligatoire pour toute IRM, y compris les IRM Esaote sans hélium.</li>
         </ul>
 
         <h3 style="margin-bottom:.8rem">Valeurs par machine</h3>
@@ -54,7 +54,9 @@
                 <th>À l'arrêt</th>
                 <th>Prête</th>
                 <th>En acquisition</th>
-                <th>Refroidissement local technique</th>
+                <th>Durée d'acquisition</th>
+                <th>Local technique</th>
+                <th>Climatisation salle (continu)</th>
                 <th>Confiance</th>
               </tr>
             </thead>
@@ -67,9 +69,6 @@
 
   <script>
     (function () {
-      document.getElementById("srcSlot").textContent = ENERGIE_HYPOTHESES.dureeSlotMinutes;
-      document.getElementById("srcAcq").textContent = ENERGIE_HYPOTHESES.dureeAcquisitionMinutes;
-
       var tbody = document.getElementById("srcTableBody");
       ENERGIE_MACHINES.forEach(function (m) {
         var tr = document.createElement("tr");
@@ -83,7 +82,9 @@
         td(m.eteint + " kW");
         td(m.pret + " kW");
         td(m.mesure + " kW");
-        td(m.refroidissement);
+        td(m.dureeAcquisitionMinutes + " min");
+        td(m.coeffRefroidissementLT > 0 ? "+" + Math.round(m.coeffRefroidissementLT * 100) + " % (eau glacée/air)" : "aucun");
+        td(m.climSalleKw + " kW");
         td(m.confiance);
         tbody.appendChild(tr);
       });

@@ -76,7 +76,7 @@
           <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
           <input type="number" id="eneActivite" value="20" min="0" step="1" />
         </div>
-        <p class="simulator__hint">Hypothèse de calcul : slot patient de <span id="eneDureeSlot"></span>&nbsp;min (préparation comprise), dont <span id="eneDureeAcq"></span>&nbsp;min d'acquisition réelle (gradients actifs) — le reste du temps ouvert est compté "prêt, sans patient".</p>
+        <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
         <div class="field">
@@ -84,19 +84,59 @@
           <select id="eneMachineA"></select>
         </div>
         <div class="field">
+          <label for="eneAcqA">Durée d'acquisition — Machine A (minutes)</label>
+          <input type="number" id="eneAcqA" min="1" step="1" />
+        </div>
+        <div class="field">
           <label for="eneMachineB"><span class="simulator__swatch" data-slot="1"></span> Machine B</label>
           <select id="eneMachineB"></select>
         </div>
+        <div class="field">
+          <label for="eneAcqB">Durée d'acquisition — Machine B (minutes)</label>
+          <input type="number" id="eneAcqB" min="1" step="1" />
+        </div>
+        <p class="simulator__hint">Durée pré-remplie selon la machine choisie (un champ plus bas prend en général plus de temps par séquence) — modifiable selon le protocole réellement pratiqué.</p>
         <p class="simulator__hint" id="eneRefroidissement"></p>
+
+        <h3 style="margin:1.4rem 0 .8rem">Valeurs techniques utilisées</h3>
+        <div style="overflow-x:auto">
+          <table class="stats-table simulator__table" id="eneTableTech">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
+                <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+              </tr>
+            </thead>
+            <tbody id="eneTableTechBody"></tbody>
+          </table>
+        </div>
+        <p class="simulator__hint">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
       </div>
 
       <div class="simulator__results">
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — A vs B</h3>
+          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> est ce que la machine coûte même sans un seul patient, jour et nuit. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même.</p>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
-            <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Comparaison en barres du coût énergétique annuel et du coût par patient des deux machines choisies"></svg>
+            <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
           </div>
+        </div>
+
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Le socle lui-même se répartit entre l'IRM (consommation à l'arrêt), le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
+          <table class="stats-table simulator__table" id="eneTableSocle">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
+                <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+              </tr>
+            </thead>
+            <tbody id="eneTableSocleBody"></tbody>
+          </table>
         </div>
 
         <table class="stats-table simulator__table" id="eneTable">
@@ -110,7 +150,7 @@
           <tbody id="eneTableBody"></tbody>
         </table>
         <p class="simulator__hint" id="eneEcart"></p>
-        <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche).</p>
+        <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
 
         <div class="simulator__export" id="eneExport">
           <button type="button" class="btn btn--lg" id="eneExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -156,15 +196,11 @@
   <script>
     (function () {
       var MACHINES = ENERGIE_MACHINES;
-      var HYP = ENERGIE_HYPOTHESES;
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
       var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var kwhFmt = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
       var entiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
-
-      document.getElementById("eneDureeSlot").textContent = HYP.dureeSlotMinutes;
-      document.getElementById("eneDureeAcq").textContent = HYP.dureeAcquisitionMinutes;
 
       document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
         sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
@@ -172,6 +208,8 @@
 
       var selectA = document.getElementById("eneMachineA");
       var selectB = document.getElementById("eneMachineB");
+      var acqA = document.getElementById("eneAcqA");
+      var acqB = document.getElementById("eneAcqB");
       [selectA, selectB].forEach(function (select) {
         MACHINES.forEach(function (m) {
           var opt = document.createElement("option");
@@ -186,6 +224,16 @@
       function machineParKey(key) {
         return MACHINES.filter(function (m) { return m.key === key; })[0];
       }
+
+      // Pré-remplit la durée d'acquisition avec la valeur par défaut de la machine choisie
+      // (un champ plus bas prend en général plus de temps par séquence) — modifiable ensuite.
+      function reinitialiserDureeAcq(select, input) {
+        input.value = machineParKey(select.value).dureeAcquisitionMinutes;
+      }
+      reinitialiserDureeAcq(selectA, acqA);
+      reinitialiserDureeAcq(selectB, acqB);
+      selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); recalculer(); });
 
       // ---- Calcul du profil horaire annuel d'une machine ----
       // Renvoie { heuresEteint, heuresPret, heuresMesure } cumulés sur l'année, à partir des
@@ -207,7 +255,7 @@
         ];
 
         var acc = { heuresEteint: 0, heuresPret: 0, heuresMesure: 0 };
-        var tAcqH = HYP.dureeAcquisitionMinutes / 60;
+        var tAcqH = params.dureeAcquisitionMinutes / 60;
 
         typesJour.forEach(function (t) {
           if (t.heuresOuverture <= 0) {
@@ -230,9 +278,45 @@
         return acc;
       }
 
+      var HEURES_AN = 8736; // 52 semaines x 168 h — cohérent avec profilAnnuel()
+      var TIER_COLORS = { socle: "#6b5b95", entrePatients: "#1baf7a", examens: "#eda100" };
+
+      // ---- Décomposition pédagogique en 3 couches ----
+      // Socle : coût si la machine restait éternellement à l'arrêt (ni patient, ni ouverture),
+      //         lui-même ventilé entre l'IRM, le local technique et la climatisation de la
+      //         salle d'examen (celle-ci tourne en continu, indépendamment de l'activité).
+      // Entre deux patients : coût AJOUTÉ par le fait d'être ouvert sans qu'un patient soit
+      //         sur la table (delta "prêt" − "arrêt", uniquement sur les heures réellement
+      //         ouvertes sans acquisition).
+      // Examens : coût AJOUTÉ par l'acquisition elle-même (delta "en mesure" − "arrêt", sur
+      //         les heures réellement en acquisition).
+      // Décomposition exacte : socle + entre-patients + examens = coût total réel (aucun
+      // résidu), voir démonstration dans le commit qui a introduit cette fonction.
+      function decompositionAnnuelle(machine, profil) {
+        var coeffLT = machine.coeffRefroidissementLT;
+
+        var socleIRM = HEURES_AN * machine.eteint;
+        var socleLT = socleIRM * coeffLT;
+        var socleClim = HEURES_AN * machine.climSalleKw;
+
+        var deltaPret = machine.pret - machine.eteint;
+        var entrePatientsIRM = profil.heuresPret * deltaPret;
+        var entrePatientsLT = entrePatientsIRM * coeffLT;
+
+        var deltaMesure = machine.mesure - machine.eteint;
+        var examensIRM = profil.heuresMesure * deltaMesure;
+        var examensLT = examensIRM * coeffLT;
+
+        return {
+          socle: { irm: socleIRM, lt: socleLT, clim: socleClim, total: socleIRM + socleLT + socleClim },
+          entrePatients: { irm: entrePatientsIRM, lt: entrePatientsLT, total: entrePatientsIRM + entrePatientsLT },
+          examens: { irm: examensIRM, lt: examensLT, total: examensIRM + examensLT }
+        };
+      }
+
       function kwhAnnuel(machine, profil) {
-        var kwhBrut = profil.heuresEteint * machine.eteint + profil.heuresPret * machine.pret + profil.heuresMesure * machine.mesure;
-        return kwhBrut * (1 + machine.coeffRefroidissement);
+        var d = decompositionAnnuelle(machine, profil);
+        return d.socle.total + d.entrePatients.total + d.examens.total;
       }
 
       var derniereComparaison = null;
@@ -270,15 +354,24 @@
         });
         document.getElementById("eneRefroidissement").innerHTML = refroidissementTxt.join("<br>");
 
-        var profil = profilAnnuel({
-          heuresSemaineJour: heuresSemaineJour,
-          heuresSamediJour: heuresSamediJour,
-          heuresDimancheJour: heuresDimancheJour,
-          patientsAn: patientsAn
-        });
+        var dureesAcq = [
+          Math.max(1, parseFloat(acqA.value) || machineA.dureeAcquisitionMinutes),
+          Math.max(1, parseFloat(acqB.value) || machineB.dureeAcquisitionMinutes)
+        ];
 
+        // Un profil distinct par machine : à volume de patients identique, une machine plus
+        // lente à l'acquisition passe plus de temps en état "en mesure" — c'est justement ce
+        // que cette page doit rendre visible.
         var resultats = [machineA, machineB].map(function (m, i) {
-          var kwh = kwhAnnuel(m, profil);
+          var profil = profilAnnuel({
+            heuresSemaineJour: heuresSemaineJour,
+            heuresSamediJour: heuresSamediJour,
+            heuresDimancheJour: heuresDimancheJour,
+            patientsAn: patientsAn,
+            dureeAcquisitionMinutes: dureesAcq[i]
+          });
+          var decomp = decompositionAnnuelle(m, profil);
+          var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
           var coutAnnuel = kwh * prix;
           var coutParPatient = patientsAn > 0 ? coutAnnuel / patientsAn : 0;
           return {
@@ -286,15 +379,19 @@
             color: SLOT_COLORS[i],
             machine: m,
             kwh: kwh,
+            decomp: decomp,
             coutAnnuel: coutAnnuel,
             coutParPatient: coutParPatient,
-            profil: profil
+            profil: profil,
+            prix: prix
           };
         });
         derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
 
+        remplirTableauTech([machineA, machineB]);
+        remplirTableauSocle(resultats);
         remplirTableau(resultats, patientsAn);
-        dessinerLegende(resultats);
+        dessinerLegende();
         dessinerGraphe(resultats);
 
         var ecartEl = document.getElementById("eneEcart");
@@ -312,24 +409,54 @@
         }
       }
 
+      function ligneTable(tbody, label, cells, opts) {
+        var tr = document.createElement("tr");
+        if (opts && opts.strong) tr.style.fontWeight = "700";
+        var tdLabel = document.createElement("td");
+        tdLabel.textContent = label;
+        tr.appendChild(tdLabel);
+        cells.forEach(function (c) {
+          var td = document.createElement("td");
+          td.textContent = c;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
+      // Valeurs techniques brutes utilisées dans le calcul, affichées directement sur la
+      // page (pas seulement sur sources-energie.html) — demande explicite de transparence.
+      function remplirTableauTech(machines) {
+        var tbody = document.getElementById("eneTableTechBody");
+        tbody.innerHTML = "";
+        ligneTable(tbody, "Aimant", machines.map(function (m) { return m.aimant === "permanent" ? "Permanent" : "Supraconducteur"; }));
+        ligneTable(tbody, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint + " kW"; }));
+        ligneTable(tbody, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret + " kW"; }));
+        ligneTable(tbody, "Puissance en acquisition", machines.map(function (m) { return m.mesure + " kW"; }));
+        ligneTable(tbody, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT > 0 ? "+" + Math.round(m.coeffRefroidissementLT * 100) + " %" : "—"; }));
+        ligneTable(tbody, "Climatisation salle d'examen", machines.map(function (m) { return m.climSalleKw + " kW (continu)"; }));
+      }
+
+      // Tableau dédié au détail du socle (demande explicite : "un tableau que pour ça").
+      function remplirTableauSocle(resultats) {
+        var tbody = document.getElementById("eneTableSocleBody");
+        tbody.innerHTML = "";
+        ligneTable(tbody, "IRM (consommation à l'arrêt)", resultats.map(function (r) { return euros.format(r.decomp.socle.irm * r.prix); }));
+        ligneTable(tbody, "Local technique (maintien en froid)", resultats.map(function (r) { return r.machine.coeffRefroidissementLT > 0 ? euros.format(r.decomp.socle.lt * r.prix) : "—"; }));
+        ligneTable(tbody, "Climatisation de la salle d'examen", resultats.map(function (r) { return euros.format(r.decomp.socle.clim * r.prix); }));
+        ligneTable(tbody, "Total socle (par an)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }), { strong: true });
+        ligneTable(tbody, "Total socle sur 7 ans", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix * 7); }), { strong: true });
+      }
+
       function remplirTableau(resultats, patientsAn) {
         var tbody = document.getElementById("eneTableBody");
         tbody.innerHTML = "";
-        function ligne(label, cells) {
-          var tr = document.createElement("tr");
-          var tdLabel = document.createElement("td");
-          tdLabel.textContent = label;
-          tr.appendChild(tdLabel);
-          cells.forEach(function (c) {
-            var td = document.createElement("td");
-            td.textContent = c;
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        }
+        function ligne(label, cells, opts) { ligneTable(tbody, label, cells, opts); }
         ligne("Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
+        ligne("Socle (arrêt, jour et nuit)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }));
+        ligne("Entre deux patients (ouvert, sans acquisition)", resultats.map(function (r) { return euros.format(r.decomp.entrePatients.total * r.prix); }));
+        ligne("Examens (acquisition)", resultats.map(function (r) { return euros.format(r.decomp.examens.total * r.prix); }));
+        ligne("Coût énergétique annuel", resultats.map(function (r) { return euros.format(r.coutAnnuel); }), { strong: true });
         ligne("Consommation annuelle (kWh)", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
-        ligne("Coût énergétique annuel", resultats.map(function (r) { return euros.format(r.coutAnnuel); }));
         ligne("Patients par an (commun)", resultats.map(function () { return entiers.format(patientsAn); }));
         ligne("Coût énergétique par patient", resultats.map(function (r) { return eurosCent.format(r.coutParPatient); }));
         ligne("Dont heures à l'arrêt / an", resultats.map(function (r) { return entiers.format(r.profil.heuresEteint) + " h"; }));
@@ -337,18 +464,18 @@
         ligne("Dont heures en acquisition / an", resultats.map(function (r) { return entiers.format(r.profil.heuresMesure) + " h"; }));
       }
 
-      function dessinerLegende(resultats) {
+      function dessinerLegende() {
         var legendEl = document.getElementById("eneLegend");
         legendEl.innerHTML = "";
-        resultats.forEach(function (r) {
+        [["socle", "Socle (arrêt)"], ["entrePatients", "Entre deux patients"], ["examens", "Examens"]].forEach(function (pair) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
           var key = document.createElement("span");
           key.className = "simulator__legend-key";
-          key.style.background = r.color;
+          key.style.background = TIER_COLORS[pair[0]];
           item.appendChild(key);
           var text = document.createElement("span");
-          text.textContent = r.machine.marque + " " + r.machine.modele;
+          text.textContent = pair[1];
           item.appendChild(text);
           legendEl.appendChild(item);
         });
@@ -368,46 +495,53 @@
         return niceN * pow;
       }
 
-      // Deux groupes de barres : "Coût annuel" et "Coût par patient" (échelles différentes,
-      // donc deux sous-graphes côte à côte plutôt qu'un seul axe commun trompeur).
+      // Une barre empilée par machine (A et B), 3 segments : socle / entre-patients / examens.
+      // La couleur encode la couche (pas la machine) — les deux barres sont identifiées par
+      // une étiquette A/B sous l'axe, dans la couleur de leur swatch (bleu/orange).
       function dessinerGraphe(resultats) {
         var svg = document.getElementById("eneChart");
         svg.innerHTML = "";
 
-        var groupes = [
-          { label: "Coût énergétique annuel", values: resultats.map(function (r) { return r.coutAnnuel; }), fmt: euros },
-          { label: "Coût par patient", values: resultats.map(function (r) { return r.coutParPatient; }), fmt: eurosCent }
-        ];
+        var top = 16, bottom = 40, chartH = 220;
+        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
+        var yMax = niceCeil(maxVal * 1.15);
 
-        var panelW = 300, gap = 40, top = 30, bottom = 40, chartH = 230;
-        groupes.forEach(function (g, gi) {
-          var panelX = 20 + gi * (panelW + gap);
-          var maxVal = Math.max.apply(null, g.values.concat([0.0001]));
-          var yMax = niceCeil(maxVal * 1.15);
+        for (var g = 0; g <= 4; g++) {
+          var val = (yMax * g) / 4;
+          var y = top + chartH - (chartH * val) / yMax;
+          svg.appendChild(svgEl("line", { x1: 90, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: 82, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = euros.format(val);
+          svg.appendChild(labelY);
+        }
 
-          var titre = svgEl("text", { x: panelX + panelW / 2, y: 16, class: "simulator__axis-label", "text-anchor": "middle" });
-          titre.textContent = g.label;
-          titre.style.fontWeight = "700";
-          svg.appendChild(titre);
+        var barWidth = 140, gap = 160;
+        var centers = [250, 250 + gap];
+        var tiers = ["socle", "entrePatients", "examens"];
 
-          svg.appendChild(svgEl("line", { x1: panelX, x2: panelX + panelW, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
-
-          var barGap = 40;
-          var barWidth = (panelW - barGap * 3) / 2;
-          resultats.forEach(function (r, i) {
-            var val = g.values[i];
+        resultats.forEach(function (r, i) {
+          var barX = centers[i] - barWidth / 2;
+          var yCursor = top + chartH;
+          tiers.forEach(function (tierKey) {
+            var val = r.decomp[tierKey].total * r.prix;
             var barH = yMax > 0 ? (val / yMax) * chartH : 0;
-            var barX = panelX + barGap + i * (barWidth + barGap);
-            var barY = top + chartH - barH;
-            svg.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: barH, fill: r.color, rx: 3, ry: 3 }));
-            var amountLabel = svgEl("text", { x: barX + barWidth / 2, y: barY - 6, class: "simulator__axis-label", "text-anchor": "middle" });
-            amountLabel.textContent = g.fmt.format(val);
-            svg.appendChild(amountLabel);
-            var nameLabel = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 18, class: "simulator__axis-label", "text-anchor": "middle" });
-            nameLabel.textContent = i === 0 ? "A" : "B";
-            svg.appendChild(nameLabel);
+            var barY = yCursor - barH;
+            svg.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] }));
+            yCursor = barY;
           });
+          var totalLabel = svgEl("text", { x: centers[i], y: top + chartH - (yMax > 0 ? (r.coutAnnuel / yMax) * chartH : 0) - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          totalLabel.style.fontWeight = "700";
+          totalLabel.textContent = euros.format(r.coutAnnuel);
+          svg.appendChild(totalLabel);
+
+          var nameLabel = svgEl("text", { x: centers[i], y: top + chartH + 20, class: "simulator__axis-label", "text-anchor": "middle" });
+          nameLabel.style.fontWeight = "700";
+          nameLabel.style.fill = r.color;
+          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.marque + " " + r.machine.modele;
+          svg.appendChild(nameLabel);
         });
+
+        svg.appendChild(svgEl("line", { x1: 90, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
       // ---------------------------------------------------------------------------------
@@ -543,28 +677,40 @@
             if (y + needed > 270) { doc.addPage(); y = 20; }
           }
 
-          ensureSpace(60);
-          doc.setFontSize(10.5);
-          doc.setTextColor(0);
-          doc.setFont(undefined, "bold");
-          doc.text("Détail du comparatif", 15, y); y += 7;
-          doc.setFont(undefined, "normal");
-          doc.setFontSize(9);
-          var rows = [
-            ["Aimant", rA.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"],
-            ["Consommation annuelle", kwhFmt.format(rA.kwh) + " kWh", kwhFmt.format(rB.kwh) + " kWh"],
-            ["Coût énergétique annuel", euros.format(rA.coutAnnuel), euros.format(rB.coutAnnuel)],
-            ["Coût énergétique / patient", eurosCent.format(rA.coutParPatient), eurosCent.format(rB.coutParPatient)]
-          ];
           var colX = [15, 90, 145];
-          rows.forEach(function (r) {
-            ensureSpace(7);
-            doc.text(r[0], colX[0], y);
-            doc.text(r[1], colX[1], y);
-            doc.text(r[2], colX[2], y);
-            y += 7;
-          });
-          y += 3;
+          function tableauPdf(titre, rows) {
+            ensureSpace(7 + 7 * rows.length + 5);
+            doc.setFontSize(10.5);
+            doc.setTextColor(0);
+            doc.setFont(undefined, "bold");
+            doc.text(titre, 15, y); y += 7;
+            doc.setFont(undefined, "normal");
+            doc.setFontSize(9);
+            rows.forEach(function (r) {
+              ensureSpace(7);
+              doc.text(r[0], colX[0], y);
+              doc.text(r[1], colX[1], y);
+              doc.text(r[2], colX[2], y);
+              y += 7;
+            });
+            y += 3;
+          }
+
+          tableauPdf("Décomposition en trois couches", [
+            ["Socle (arrêt, jour et nuit)", euros.format(rA.decomp.socle.total * rA.prix), euros.format(rB.decomp.socle.total * rB.prix)],
+            ["Entre deux patients", euros.format(rA.decomp.entrePatients.total * rA.prix), euros.format(rB.decomp.entrePatients.total * rB.prix)],
+            ["Examens", euros.format(rA.decomp.examens.total * rA.prix), euros.format(rB.decomp.examens.total * rB.prix)],
+            ["Coût énergétique annuel", euros.format(rA.coutAnnuel), euros.format(rB.coutAnnuel)],
+            ["Consommation annuelle", kwhFmt.format(rA.kwh) + " kWh", kwhFmt.format(rB.kwh) + " kWh"],
+            ["Coût énergétique / patient", eurosCent.format(rA.coutParPatient), eurosCent.format(rB.coutParPatient)]
+          ]);
+
+          tableauPdf("Détail du socle", [
+            ["IRM (à l'arrêt)", euros.format(rA.decomp.socle.irm * rA.prix), euros.format(rB.decomp.socle.irm * rB.prix)],
+            ["Local technique", rA.machine.coeffRefroidissementLT > 0 ? euros.format(rA.decomp.socle.lt * rA.prix) : "—", rB.machine.coeffRefroidissementLT > 0 ? euros.format(rB.decomp.socle.lt * rB.prix) : "—"],
+            ["Climatisation salle d'examen", euros.format(rA.decomp.socle.clim * rA.prix), euros.format(rB.decomp.socle.clim * rB.prix)],
+            ["Aimant", rA.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"]
+          ]);
 
           ensureSpace(14);
           doc.setTextColor(0);
@@ -667,14 +813,12 @@
           recalculer();
         });
       });
-      ["enePrix", "eneHeuresSemaine", "eneActivite"].forEach(function (id) {
+      ["enePrix", "eneHeuresSemaine", "eneActivite", "eneAcqA", "eneAcqB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       ["eneSamedi", "eneDimanche"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", recalculer);
       });
-      selectA.addEventListener("change", recalculer);
-      selectB.addEventListener("change", recalculer);
 
       function goBack() {
         if (window.history.length > 1) {
