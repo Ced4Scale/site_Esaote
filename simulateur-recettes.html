@@ -84,6 +84,13 @@
             <div class="simulator__tooltip" id="simTooltip" hidden></div>
           </div>
         </div>
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Comparaison des paliers tarifaires (1 an)</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Même code couleur qu'au-dessus. Montre le montant du forfait plein et de chaque seuil du barème dégressif, pour chaque date choisie — indépendamment de la chronologie qui suit.</p>
+          <div class="simulator__chart-wrap">
+            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Comparaison en barres du forfait plein et des seuils du barème dégressif, une couleur par date de forfait technique choisie"></svg>
+          </div>
+        </div>
         <table class="stats-table simulator__table" id="simTable">
           <thead>
             <tr id="simTableHead">
@@ -123,6 +130,15 @@
             <div class="field">
               <label for="simCommentaire">Commentaire</label>
               <textarea id="simCommentaire" placeholder="Précisions sur le contexte, le projet…" rows="3"></textarea>
+            </div>
+            <div class="field">
+              <label>Graphiques à inclure dans le PDF</label>
+              <div class="simulator__checkbox-field">
+                <label><input type="checkbox" id="simIncludeChart1" checked /> Trajectoire de recettes sur 7 ans</label>
+              </div>
+              <div class="simulator__checkbox-field">
+                <label><input type="checkbox" id="simIncludeChart2" checked /> Comparaison des paliers tarifaires sur 1 an</label>
+              </div>
             </div>
             <div class="field simulator__checkbox-field">
               <label><input type="checkbox" id="simJoindreExtraits" checked /> Joindre aussi les extraits officiels des dates choisies (synthèse maison + lien vers le texte officiel)</label>
@@ -177,7 +193,7 @@
       }
 
       var dateSelects = [0, 1].map(function (i) { return document.getElementById("simDateSel" + i); });
-      var DEFAULTS = ["2025-11-05", "2027-01-01"];
+      var DEFAULTS = ["2018-07-01", "2027-01-01"];
 
       document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
         sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
@@ -243,11 +259,13 @@
       var tbody = document.getElementById("simTableBody");
       var legendEl = document.getElementById("simLegend");
       var svg = document.getElementById("simChart");
+      var svg2 = document.getElementById("simChart2");
       var tooltipEl = document.getElementById("simTooltip");
       var SVG_NS = "http://www.w3.org/2000/svg";
 
       var derniereSerie = []; // [{ label, color, values: [7 CA] }]
       var derniereScenariosIso = []; // dates de départ choisies, pour joindre leurs extraits officiels au PDF
+      var derniereBaremes = []; // [{ label, color, plein, seuil1, seuil2, plafond }] — pour le graphe en barres (1 an)
 
       function recalculer() {
         var zone = document.getElementById("simZone").value;
@@ -262,6 +280,16 @@
           scenarios.push({ slot: slot, color: SLOT_COLORS[slot], label: ligneDepart.label, iso: ligneDepart.iso });
         });
         derniereScenariosIso = scenarios.map(function (sc) { return sc.iso; });
+        derniereBaremes = scenarios.map(function (sc) {
+          var ligneDepart = classe.dates.filter(function (d) { return d.iso === sc.iso; })[0];
+          return {
+            label: sc.label, color: sc.color,
+            plein: ligneDepart.plein[zone].nonAmorti,
+            seuil1: ligneDepart.reduits.seuil1,
+            seuil2: ligneDepart.reduits.seuil2,
+            plafond: ligneDepart.reduits.plafond
+          };
+        });
 
         while (thead.children.length > 1) thead.removeChild(thead.lastChild);
         for (var i = 0; i < 7; i++) {
@@ -319,6 +347,7 @@
         }
 
         dessinerGraphe();
+        dessinerGrapheBarres();
         dessinerLegende(scenarios);
       }
 
@@ -469,6 +498,70 @@
         });
       }
 
+      // Graphe en barres groupées : compare le montant du forfait plein et de chaque seuil du
+      // barème dégressif entre les dates choisies — pas une trajectoire, juste une photo à un
+      // instant donné (contrairement au graphe ci-dessus), donc pas de tooltip de survol ici,
+      // les valeurs sont directement écrites au-dessus de chaque barre.
+      var PAD_B = { left: 78, right: 16, top: 18, bottom: 34 };
+      var PLOT_W_B = 640 - PAD_B.left - PAD_B.right;
+      var PLOT_H_B = 300 - PAD_B.top - PAD_B.bottom;
+      var CATEGORIES_BAREME = [
+        { key: "plein", label: "Forfait plein" },
+        { key: "seuil1", label: "Seuil 1" },
+        { key: "seuil2", label: "Seuil 2" },
+        { key: "plafond", label: "Plafond" }
+      ];
+
+      function dessinerGrapheBarres() {
+        svg2.innerHTML = "";
+        if (derniereBaremes.length === 0) return;
+
+        var maxVal = 0;
+        derniereBaremes.forEach(function (b) {
+          CATEGORIES_BAREME.forEach(function (c) { if (b[c.key] > maxVal) maxVal = b[c.key]; });
+        });
+        var yMax = niceCeil(maxVal * 1.15);
+
+        function yAtB(v) { return PAD_B.top + PLOT_H_B - (PLOT_H_B * v) / yMax; }
+
+        for (var g = 0; g <= 4; g++) {
+          var val = (yMax * g) / 4;
+          var y = yAtB(val);
+          svg2.appendChild(svgEl("line", { x1: PAD_B.left, x2: 640 - PAD_B.right, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: PAD_B.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = euros.format(val);
+          svg2.appendChild(labelY);
+        }
+
+        var groupWidth = PLOT_W_B / CATEGORIES_BAREME.length;
+        var n = derniereBaremes.length;
+        var gap = 8;
+        var barWidth = (groupWidth - gap * (n + 1)) / n;
+
+        CATEGORIES_BAREME.forEach(function (cat, ci) {
+          var groupX = PAD_B.left + ci * groupWidth;
+          derniereBaremes.forEach(function (b, bi) {
+            var val = b[cat.key];
+            var barX = groupX + gap * (bi + 1) + barWidth * bi;
+            var barY = yAtB(val);
+            var barH = PAD_B.top + PLOT_H_B - barY;
+            svg2.appendChild(svgEl("rect", {
+              x: barX, y: barY, width: barWidth, height: barH, fill: b.color, rx: 3, ry: 3
+            }));
+            var label = svgEl("text", {
+              x: barX + barWidth / 2, y: barY - 5, class: "simulator__axis-label", "text-anchor": "middle"
+            });
+            label.textContent = euros.format(val);
+            svg2.appendChild(label);
+          });
+          var lx = svgEl("text", {
+            x: groupX + groupWidth / 2, y: 300 - 12, class: "simulator__axis-label", "text-anchor": "middle"
+          });
+          lx.textContent = cat.label;
+          svg2.appendChild(lx);
+        });
+      }
+
       var seuilsEntiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
       function afficherSeuils() {
         var classe = classeCourante();
@@ -505,11 +598,12 @@
          le PDF part encodé deux fois et ne s'ouvre pas (piège déjà rencontré une fois). */
       var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
 
-      // Sérialise le SVG du graphe en PNG (via un <canvas> hors écran) pour pouvoir l'insérer
-      // dans le PDF — jsPDF ne sait pas dessiner du SVG directement.
-      function graphePngDataUrl() {
+      // Sérialise un SVG de graphe en PNG (via un <canvas> hors écran) pour pouvoir l'insérer
+      // dans le PDF — jsPDF ne sait pas dessiner du SVG directement. Fonction commune aux deux
+      // graphes (trajectoire 7 ans et comparaison des paliers).
+      function svgVersPng(svgSource) {
         return new Promise(function (resolve, reject) {
-          var svgString = new XMLSerializer().serializeToString(svg);
+          var svgString = new XMLSerializer().serializeToString(svgSource);
           var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
           var url = URL.createObjectURL(svgBlob);
           var img = new Image();
@@ -529,6 +623,8 @@
           img.src = url;
         });
       }
+      function graphePngDataUrl() { return svgVersPng(svg); }
+      function graphe2PngDataUrl() { return svgVersPng(svg2); }
 
       // Charge une image locale (logo) et la renvoie en PNG base64, via un <canvas> hors écran
       // — même technique que pour le graphe, jsPDF a besoin d'une image bitmap, pas d'un chemin.
@@ -568,8 +664,14 @@
       ];
 
       function genererPdfBase64() {
-        return Promise.all([graphePngDataUrl(), imageDataUrl("assets/logo-ced4scale.png")]).then(function (images) {
-        var graphePng = images[0], logoPng = images[1];
+        var inclureChart1 = document.getElementById("simIncludeChart1").checked;
+        var inclureChart2 = document.getElementById("simIncludeChart2").checked;
+        return Promise.all([
+          inclureChart1 ? graphePngDataUrl() : Promise.resolve(null),
+          inclureChart2 ? graphe2PngDataUrl() : Promise.resolve(null),
+          imageDataUrl("assets/logo-ced4scale.png")
+        ]).then(function (images) {
+        var graphePng = images[0], graphe2Png = images[1], logoPng = images[2];
         var doc = new window.jspdf.jsPDF();
         var prenom = document.getElementById("simPrenom").value.trim();
         var nom = document.getElementById("simNom").value.trim();
@@ -634,8 +736,19 @@
         doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
 
         var imgWidth = 180, imgHeight = (imgWidth * 300) / 640;
-        doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
-        y += imgHeight + 10;
+        if (graphePng) {
+          doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
+          y += imgHeight + 10;
+        }
+        if (graphe2Png) {
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Comparaison des paliers tarifaires (1 an)", 15, y); y += 5;
+          doc.setFont(undefined, "normal");
+          doc.addImage(graphe2Png, "PNG", 15, y, imgWidth, imgHeight);
+          y += imgHeight + 10;
+        }
 
         var theadCells = document.querySelectorAll("#simTableHead th");
         var x0 = 15, labelWidth = 42, colWidth = 20;
