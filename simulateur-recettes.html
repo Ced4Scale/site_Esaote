@@ -84,6 +84,10 @@
           <div class="simulator__chart-wrap">
             <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
           </div>
+          <table class="stats-table simulator__table" id="simCamembertTable" style="margin-top:1rem">
+            <thead><tr id="simCamembertTableHead"><th>Palier</th></tr></thead>
+            <tbody id="simCamembertTableBody"></tbody>
+          </table>
         </div>
         <div class="simulator__chart-card">
           <div class="simulator__legend" id="simLegend"></div>
@@ -356,6 +360,7 @@
 
         dessinerGraphe();
         dessinerCamemberts();
+        afficherTableCamembert();
         dessinerLegende(scenarios);
         dessinerLegendeCamembert();
       }
@@ -547,20 +552,33 @@
           var fraction = part / camembert.total;
           var endAngle = startAngle + fraction * 2 * Math.PI;
           svg2.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, r, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
-          // Étiquette directe uniquement sur les parts assez grandes pour rester lisibles.
+
+          // Étiquette de %, toujours affichée : à l'intérieur de la part si elle est assez
+          // grande, sinon en dehors du camembert avec une ligne de repère fine — pour que même
+          // le plus petit palier (souvent le plafond) reste lisible.
+          var midAngle = (startAngle + endAngle) / 2;
+          var pct = Math.round(fraction * 100) + "%";
           if (fraction >= 0.08) {
-            var midAngle = (startAngle + endAngle) / 2;
             var lx = cx + r * 0.68 * Math.cos(midAngle), ly = cy + r * 0.68 * Math.sin(midAngle);
             var label = svgEl("text", { x: lx, y: ly, class: "simulator__pie-label", "text-anchor": "middle" });
-            label.textContent = Math.round(fraction * 100) + "%";
+            label.textContent = pct;
             svg2.appendChild(label);
+          } else {
+            var lx1 = cx + r * 1.0 * Math.cos(midAngle), ly1 = cy + r * 1.0 * Math.sin(midAngle);
+            var lx2 = cx + r * 1.16 * Math.cos(midAngle), ly2 = cy + r * 1.16 * Math.sin(midAngle);
+            svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.color, "stroke-width": "1.5" }));
+            var anchor = Math.cos(midAngle) >= 0 ? "start" : "end";
+            var lx3 = cx + r * 1.22 * Math.cos(midAngle), ly3 = cy + r * 1.22 * Math.sin(midAngle);
+            var outLabel = svgEl("text", { x: lx3, y: ly3 + 3, class: "simulator__axis-label", "text-anchor": anchor });
+            outLabel.textContent = pct;
+            svg2.appendChild(outLabel);
           }
           startAngle = endAngle;
         });
-        var caption = svgEl("text", { x: cx, y: cy + r + 22, class: "simulator__axis-label", "text-anchor": "middle" });
+        var caption = svgEl("text", { x: cx, y: cy + r + 30, class: "simulator__axis-label", "text-anchor": "middle" });
         caption.textContent = "Départ " + camembert.label;
         svg2.appendChild(caption);
-        var captionTotal = svgEl("text", { x: cx, y: cy + r + 36, class: "simulator__axis-label", "text-anchor": "middle" });
+        var captionTotal = svgEl("text", { x: cx, y: cy + r + 44, class: "simulator__axis-label", "text-anchor": "middle" });
         captionTotal.textContent = euros.format(camembert.total) + " (année 1)";
         svg2.appendChild(captionTotal);
       }
@@ -578,6 +596,40 @@
         derniereBaremes.forEach(function (b, i) {
           var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
           dessinerUnCamembert(centers[i], centerY, r, b);
+        });
+      }
+
+      // Tableau "Palier | montant + % pour chaque date" sous les camemberts — donne le chiffre
+      // exact de chaque part, y compris les toutes petites (le plafond, souvent invisible à
+      // l'œil), en complément du visuel.
+      var camembertThead = document.getElementById("simCamembertTableHead");
+      var camembertTbody = document.getElementById("simCamembertTableBody");
+      function afficherTableCamembert() {
+        while (camembertThead.children.length > 1) camembertThead.removeChild(camembertThead.lastChild);
+        derniereBaremes.forEach(function (b) {
+          var th = document.createElement("th");
+          th.textContent = "Départ " + b.label;
+          camembertThead.appendChild(th);
+        });
+
+        camembertTbody.innerHTML = "";
+        PALIERS.forEach(function (p) {
+          var tr = document.createElement("tr");
+          var tdLabel = document.createElement("td");
+          tdLabel.innerHTML = '<span class="simulator__swatch" style="background:' + p.color + '"></span> ' + p.label;
+          tr.appendChild(tdLabel);
+          derniereBaremes.forEach(function (b) {
+            var part = b.detail[p.key];
+            var td = document.createElement("td");
+            if (!part) {
+              td.textContent = "—";
+            } else {
+              var pct = Math.round((part / b.total) * 100);
+              td.textContent = euros.format(part) + " (" + pct + " %)";
+            }
+            tr.appendChild(td);
+          });
+          camembertTbody.appendChild(tr);
         });
       }
 
@@ -904,7 +956,9 @@
         submitButton.disabled = true;
         exportError.hidden = true;
 
-        genererPdfBase64().then(function (pdfBase64) {
+        Promise.resolve().then(function () {
+          return genererPdfBase64();
+        }).then(function (pdfBase64) {
         return fetch(SIMULATOR_REQUEST_URL, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
