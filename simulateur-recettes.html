@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260808-camembert-montants" />
+  <link rel="stylesheet" href="styles.css?v=20260808-barres-seuils" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260808-camembert-montants"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260808-barres-seuils"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -82,7 +82,7 @@
           <p class="simulator__hint" style="margin:0 0 .6rem">Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année. La taille des deux camemberts est proportionnelle au total de recettes de chacun — pour ne pas donner l'impression que les deux dates rapportent pareil.</p>
           <div class="simulator__legend" id="simLegend2"></div>
           <div class="simulator__chart-wrap">
-            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
+            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
           </div>
         </div>
         <div class="simulator__chart-card">
@@ -574,6 +574,35 @@
         svg2.appendChild(caption);
       }
 
+      // Petit graphe en barres des 4 paliers, sous chaque camembert — même montant que les
+      // étiquettes autour du camembert, mais plus facile à comparer d'un coup d'œil entre les
+      // deux dates (même échelle verticale pour les deux). BAR_TOP tient compte de la taille
+      // maximale possible d'un camembert (maxR), pas de sa taille réelle (qui varie), pour que
+      // les deux graphes en barres démarrent toujours à la même hauteur.
+      var BAR_TOP = 208, BAR_BOTTOM = 300, BAR_LABEL_Y = 318;
+      function dessinerBarresSeuils(cx, halfWidth, camembert, yMax) {
+        var barGap = 6;
+        var totalWidth = halfWidth * 2;
+        var barWidth = (totalWidth - barGap * (PALIERS.length + 1)) / PALIERS.length;
+        var barChartHeight = BAR_BOTTOM - BAR_TOP;
+        PALIERS.forEach(function (p, i) {
+          var val = camembert.detail[p.key] || 0;
+          var barX = cx - halfWidth + barGap * (i + 1) + barWidth * i;
+          var barH = yMax > 0 ? (val / yMax) * barChartHeight : 0;
+          var barY = BAR_BOTTOM - barH;
+          if (val > 0) {
+            svg2.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: barH, fill: p.color, rx: 2, ry: 2 }));
+            var amountLabel = svgEl("text", { x: barX + barWidth / 2, y: barY - 4, class: "simulator__axis-label", "text-anchor": "middle" });
+            amountLabel.textContent = euros.format(val);
+            svg2.appendChild(amountLabel);
+          }
+          var nameLabel = svgEl("text", { x: barX + barWidth / 2, y: BAR_LABEL_Y, class: "simulator__axis-label", "text-anchor": "middle" });
+          nameLabel.textContent = p.label;
+          svg2.appendChild(nameLabel);
+        });
+        svg2.appendChild(svgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
+      }
+
       function dessinerCamemberts() {
         svg2.innerHTML = "";
         if (derniereBaremes.length === 0) return;
@@ -583,10 +612,18 @@
         var n = derniereBaremes.length;
         var centerY = 114;
         var centers = n === 1 ? [320] : [170, 470];
+        var halfWidths = n === 1 ? [140] : [85, 85];
+
+        var maxPalierVal = 0;
+        derniereBaremes.forEach(function (b) {
+          PALIERS.forEach(function (p) { if ((b.detail[p.key] || 0) > maxPalierVal) maxPalierVal = b.detail[p.key]; });
+        });
+        var yMaxBarres = niceCeil(maxPalierVal * 1.15);
 
         derniereBaremes.forEach(function (b, i) {
           var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
           dessinerUnCamembert(centers[i], centerY, r, b);
+          dessinerBarresSeuils(centers[i], halfWidths[i], b, yMaxBarres);
         });
       }
 
@@ -632,6 +669,11 @@
       // graphes (trajectoire 7 ans et comparaison des paliers).
       function svgVersPng(svgSource) {
         return new Promise(function (resolve, reject) {
+          // La hauteur du viewBox varie selon le graphe (les camemberts + barres sont plus
+          // hauts que le graphe de trajectoire) — on la lit plutôt que de la figer à 300.
+          var viewBox = svgSource.viewBox.baseVal;
+          var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
+          var vbHeight = viewBox && viewBox.height ? viewBox.height : 300;
           var svgString = new XMLSerializer().serializeToString(svgSource);
           var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
           var url = URL.createObjectURL(svgBlob);
@@ -639,14 +681,14 @@
           img.onload = function () {
             var scale = 2; // export net (retina) plutôt que la taille d'affichage
             var canvas = document.createElement("canvas");
-            canvas.width = 640 * scale;
-            canvas.height = 300 * scale;
+            canvas.width = vbWidth * scale;
+            canvas.height = vbHeight * scale;
             var ctx = canvas.getContext("2d");
             ctx.fillStyle = "#fcfcfb";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
             URL.revokeObjectURL(url);
-            resolve(canvas.toDataURL("image/png"));
+            resolve({ dataUrl: canvas.toDataURL("image/png"), width: vbWidth, height: vbHeight });
           };
           img.onerror = reject;
           img.src = url;
@@ -773,16 +815,17 @@
           if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
         }
 
-        var imgWidth = 180, imgHeight = (imgWidth * 300) / 640;
+        var imgWidth = 180;
         if (graphe2Png) {
-          ensureSpace(imgHeight + 15);
+          var imgHeight2 = (imgWidth * graphe2Png.height) / graphe2Png.width;
+          ensureSpace(imgHeight2 + 15);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
           doc.text("Composition des recettes de l'année 1", 15, y); y += 5;
           doc.setFont(undefined, "normal");
-          doc.addImage(graphe2Png, "PNG", 15, y, imgWidth, imgHeight);
-          y += imgHeight + 8;
+          doc.addImage(graphe2Png.dataUrl, "PNG", 15, y, imgWidth, imgHeight2);
+          y += imgHeight2 + 8;
 
           // Tableau "Palier | montant + %", visible uniquement dans le PDF — sur la page, ces
           // montants sont maintenant affichés directement autour du camembert (demande de
@@ -816,14 +859,15 @@
           y += 5;
         }
         if (graphePng) {
-          ensureSpace(imgHeight + 15);
+          var imgHeight1 = (imgWidth * graphePng.height) / graphePng.width;
+          ensureSpace(imgHeight1 + 15);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
           doc.text("Trajectoire de recettes sur 7 ans", 15, y); y += 5;
           doc.setFont(undefined, "normal");
-          doc.addImage(graphePng, "PNG", 15, y, imgWidth, imgHeight);
-          y += imgHeight + 10;
+          doc.addImage(graphePng.dataUrl, "PNG", 15, y, imgWidth, imgHeight1);
+          y += imgHeight1 + 10;
         }
 
         var theadCells = document.querySelectorAll("#simTableHead th");
