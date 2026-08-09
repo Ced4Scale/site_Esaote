@@ -84,6 +84,10 @@
           <select id="eneMachineA"></select>
         </div>
         <div class="field">
+          <label for="eneChampA">Filtrer par gamme de champ — Machine A</label>
+          <select id="eneChampA"></select>
+        </div>
+        <div class="field">
           <label for="eneAcqA">Durée d'acquisition — Machine A (minutes)</label>
           <input type="number" id="eneAcqA" min="1" step="1" />
         </div>
@@ -92,29 +96,35 @@
           <select id="eneMachineB"></select>
         </div>
         <div class="field">
+          <label for="eneChampB">Filtrer par gamme de champ — Machine B</label>
+          <select id="eneChampB"></select>
+        </div>
+        <div class="field">
           <label for="eneAcqB">Durée d'acquisition — Machine B (minutes)</label>
           <input type="number" id="eneAcqB" min="1" step="1" />
         </div>
         <p class="simulator__hint">Durée pré-remplie selon la machine choisie (un champ plus bas prend en général plus de temps par séquence) — modifiable selon le protocole réellement pratiqué.</p>
         <p class="simulator__hint" id="eneRefroidissement"></p>
-
-        <h3 style="margin:1.4rem 0 .8rem">Valeurs techniques utilisées</h3>
-        <div style="overflow-x:auto">
-          <table class="stats-table simulator__table" id="eneTableTech">
-            <thead>
-              <tr>
-                <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableTechHeadA"></span></th>
-                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableTechHeadB"></span></th>
-              </tr>
-            </thead>
-            <tbody id="eneTableTechBody"></tbody>
-          </table>
-        </div>
-        <p class="simulator__hint">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
       </div>
 
       <div class="simulator__results">
+        <div class="simulator__chart-card" id="eneCardTech">
+          <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</p>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" id="eneTableTech">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableTechHeadA"></span></th>
+                  <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableTechHeadB"></span></th>
+                </tr>
+              </thead>
+              <tbody id="eneTableTechBody"></tbody>
+            </table>
+          </div>
+          <p class="simulator__hint" style="margin-top:.6rem">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
+        </div>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> mesure la sobriété structurelle de la machine : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
@@ -230,22 +240,62 @@
 
       var selectA = document.getElementById("eneMachineA");
       var selectB = document.getElementById("eneMachineB");
+      var champA = document.getElementById("eneChampA");
+      var champB = document.getElementById("eneChampB");
       var acqA = document.getElementById("eneAcqA");
       var acqB = document.getElementById("eneAcqB");
-      [selectA, selectB].forEach(function (select) {
-        MACHINES.forEach(function (m) {
+
+      // Filtre de gamme de champ magnétique — restreint les options du menu Machine
+      // correspondant, pour naviguer plus facilement dans une liste de 20+ IRM toutes
+      // marques mélangées.
+      var CHAMP_CATEGORIES = [
+        { key: "", label: "Toutes les gammes", test: function () { return true; } },
+        { key: "lt05", label: "< 0,5 T", test: function (t) { return t < 0.5; } },
+        { key: "mid", label: "0,5 T à 1,5 T", test: function (t) { return t >= 0.5 && t < 1.5; } },
+        { key: "t15", label: "1,5 T", test: function (t) { return t === 1.5; } },
+        { key: "t3", label: "3 T", test: function (t) { return t === 3; } },
+        { key: "t7", label: "7 T", test: function (t) { return t >= 7; } }
+      ];
+
+      [champA, champB].forEach(function (select) {
+        CHAMP_CATEGORIES.forEach(function (c) {
           var opt = document.createElement("option");
-          opt.value = m.key;
-          opt.textContent = m.marque + " " + m.modele;
+          opt.value = c.key;
+          opt.textContent = c.label;
           select.appendChild(opt);
         });
       });
-      selectA.value = "esaote-g-scan";
-      selectB.value = "siemens-altea";
 
       function machineParKey(key) {
         return MACHINES.filter(function (m) { return m.key === key; })[0];
       }
+
+      // Repeuple un menu Machine avec seulement les machines de la catégorie de champ
+      // choisie ; conserve la sélection en cours si elle reste valide, sinon retombe sur
+      // la première machine de la catégorie (ou la valeur par défaut si "Toutes les gammes").
+      function repeuplerMachineSelect(machineSelect, champSelect, valeurParDefaut) {
+        var categorie = CHAMP_CATEGORIES.filter(function (c) { return c.key === champSelect.value; })[0];
+        var previous = machineSelect.value;
+        var machinesFiltrees = MACHINES.filter(function (m) { return categorie.test(m.champT); });
+        machineSelect.innerHTML = "";
+        machinesFiltrees.forEach(function (m) {
+          var opt = document.createElement("option");
+          opt.value = m.key;
+          opt.textContent = m.nomCourt;
+          machineSelect.appendChild(opt);
+        });
+        var previousEncoreValide = machinesFiltrees.some(function (m) { return m.key === previous; });
+        if (previousEncoreValide) {
+          machineSelect.value = previous;
+        } else if (valeurParDefaut && machinesFiltrees.some(function (m) { return m.key === valeurParDefaut; })) {
+          machineSelect.value = valeurParDefaut;
+        } else if (machinesFiltrees.length) {
+          machineSelect.value = machinesFiltrees[0].key;
+        }
+      }
+
+      repeuplerMachineSelect(selectA, champA, "esaote-g-scan");
+      repeuplerMachineSelect(selectB, champB, "siemens-altea");
 
       // Pré-remplit la durée d'acquisition avec la valeur par défaut de la machine choisie
       // (un champ plus bas prend en général plus de temps par séquence) — modifiable ensuite.
@@ -256,6 +306,16 @@
       reinitialiserDureeAcq(selectB, acqB);
       selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); recalculer(); });
       selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); recalculer(); });
+      champA.addEventListener("change", function () {
+        repeuplerMachineSelect(selectA, champA);
+        reinitialiserDureeAcq(selectA, acqA);
+        recalculer();
+      });
+      champB.addEventListener("change", function () {
+        repeuplerMachineSelect(selectB, champB);
+        reinitialiserDureeAcq(selectB, acqB);
+        recalculer();
+      });
 
       // ---- Calcul du profil horaire annuel d'une machine ----
       // Renvoie { heuresEteint, heuresPret, heuresMesure } cumulés sur l'année, à partir des
@@ -372,7 +432,7 @@
 
         var refroidissementTxt = [];
         [["A", machineA], ["B", machineB]].forEach(function (pair) {
-          refroidissementTxt.push(pair[0] + " — " + pair[1].marque + " " + pair[1].modele + " : refroidissement " + pair[1].refroidissement + ".");
+          refroidissementTxt.push(pair[0] + " — " + pair[1].nomCourt + " : refroidissement " + pair[1].refroidissement + ".");
         });
         document.getElementById("eneRefroidissement").innerHTML = refroidissementTxt.join("<br>");
 
@@ -410,15 +470,35 @@
         });
         derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
 
-        var nomA = machineA.marque + " " + machineA.modele;
-        var nomB = machineB.marque + " " + machineB.modele;
-        ["eneTableTechHeadA", "eneTableSocleHeadA", "eneTableHeadA"].forEach(function (id) {
+        var nomA = machineA.nomCourt;
+        var nomB = machineB.nomCourt;
+        ["eneTableSocleHeadA", "eneTableHeadA"].forEach(function (id) {
           document.getElementById(id).textContent = nomA;
         });
-        ["eneTableTechHeadB", "eneTableSocleHeadB", "eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
+        ["eneTableSocleHeadB", "eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
           document.getElementById(id).textContent = nomB;
         });
         document.getElementById("eneTableCo2HeadA").textContent = nomA;
+
+        // Dans le tableau "Valeurs techniques utilisées" uniquement : le nom de la machine
+        // devient un lien vers sa source officielle (EPD) quand elle existe.
+        function remplirHeadTech(id, machine) {
+          var el = document.getElementById(id);
+          el.innerHTML = "";
+          if (machine.sourceUrl) {
+            var a = document.createElement("a");
+            a.href = machine.sourceUrl;
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.title = "Voir la source officielle (EPD)";
+            a.textContent = machine.nomCourt;
+            el.appendChild(a);
+          } else {
+            el.textContent = machine.nomCourt;
+          }
+        }
+        remplirHeadTech("eneTableTechHeadA", machineA);
+        remplirHeadTech("eneTableTechHeadB", machineB);
 
         remplirTableauTech([machineA, machineB]);
         remplirTableauSocle(resultats);
@@ -437,8 +517,8 @@
         if (ecartAbs < 1) {
           ecartEl.innerHTML = "<strong>Coût énergétique quasiment identique entre les deux machines choisies.</strong>";
         } else {
-          ecartEl.innerHTML = "<strong>" + moinsCher.machine.marque + " " + moinsCher.machine.modele + " coûte " + euros.format(ecartAbs) +
-            " de moins par an en énergie que " + plusCher.machine.marque + " " + plusCher.machine.modele +
+          ecartEl.innerHTML = "<strong>" + moinsCher.machine.nomCourt + " coûte " + euros.format(ecartAbs) +
+            " de moins par an en énergie que " + plusCher.machine.nomCourt +
             " (soit −" + pct + " %)</strong>, à horaires et activité identiques.";
         }
 
@@ -449,8 +529,8 @@
         var ecartKg = Math.round(Math.abs(diffKwh) * CO2_G_PAR_KWH_FRANCE / 1000);
         if (ecartKg >= 1) {
           ecartCo2El.innerHTML = "Soit " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an avec " +
-            moinsEmetteur.machine.marque + " " + moinsEmetteur.machine.modele + " plutôt que " +
-            plusEmetteur.machine.marque + " " + plusEmetteur.machine.modele + " (mix électrique français, ADEME).";
+            moinsEmetteur.machine.nomCourt + " plutôt que " +
+            plusEmetteur.machine.nomCourt + " (mix électrique français, ADEME).";
         }
       }
 
@@ -613,7 +693,7 @@
           var nameLabel = svgEl("text", { x: centers[i], y: top + chartH + 20, class: "simulator__axis-label", "text-anchor": "middle" });
           nameLabel.style.fontWeight = "700";
           nameLabel.style.fill = r.color;
-          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.marque + " " + r.machine.modele;
+          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           svg.appendChild(nameLabel);
         });
 
@@ -739,8 +819,8 @@
           var comp = derniereComparaison;
           var rA = comp.resultats[0], rB = comp.resultats[1];
           doc.setFontSize(11);
-          doc.text("Machine A : " + rA.machine.marque + " " + rA.machine.modele, 15, y); y += 6;
-          doc.text("Machine B : " + rB.machine.marque + " " + rB.machine.modele, 15, y); y += 6;
+          doc.text("Machine A : " + rA.machine.nomCourt, 15, y); y += 6;
+          doc.text("Machine B : " + rB.machine.nomCourt, 15, y); y += 6;
           doc.text("Coût du kWh : " + eurosCent.format(comp.prix), 15, y); y += 6;
           doc.text("Patients simulés : " + entiers.format(comp.patientsAn) + " / an", 15, y); y += 10;
 
@@ -771,6 +851,15 @@
             });
             y += 3;
           }
+
+          tableauPdf("Valeurs techniques utilisées", [
+            ["Aimant", rA.machine.aimant === "permanent" ? "Permanent" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent" : "Supraconducteur"],
+            ["Puissance à l'arrêt", rA.machine.eteint + " kW", rB.machine.eteint + " kW"],
+            ["Puissance prête (sans acquisition)", rA.machine.pret + " kW", rB.machine.pret + " kW"],
+            ["Puissance en acquisition", rA.machine.mesure + " kW", rB.machine.mesure + " kW"],
+            ["Surcoût local technique", rA.machine.coeffRefroidissementLT > 0 ? "+" + Math.round(rA.machine.coeffRefroidissementLT * 100) + " %" : "—", rB.machine.coeffRefroidissementLT > 0 ? "+" + Math.round(rB.machine.coeffRefroidissementLT * 100) + " %" : "—"],
+            ["Climatisation salle d'examen", rA.machine.climSalleKw + " kW (continu)", rB.machine.climSalleKw + " kW (continu)"]
+          ]);
 
           tableauPdf("Décomposition en trois couches", [
             ["Socle (arrêt, jour et nuit)", euros.format(rA.decomp.socle.total * rA.prix), euros.format(rB.decomp.socle.total * rB.prix)],
@@ -865,8 +954,8 @@
           return genererPdfBase64();
         }).then(function (pdfBase64) {
           var comp = derniereComparaison;
-          var zoneResume = comp.resultats[0].machine.marque + " " + comp.resultats[0].machine.modele +
-            " vs " + comp.resultats[1].machine.marque + " " + comp.resultats[1].machine.modele;
+          var zoneResume = comp.resultats[0].machine.nomCourt +
+            " vs " + comp.resultats[1].machine.nomCourt;
           return fetch(SIMULATOR_REQUEST_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },

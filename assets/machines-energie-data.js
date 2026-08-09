@@ -34,6 +34,8 @@ var ENERGIE_MACHINES = [
   // ---------- Esaote — aimant permanent, pas de maintien en froid cryogénique ----------
   {
     key: "esaote-o-scan",
+    nomCourt: "Esaote O-scan",
+    champT: 0.31,
     marque: "Esaote",
     modele: "O-scan",
     aimant: "permanent",
@@ -48,6 +50,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "esaote-s-scan",
+    nomCourt: "Esaote S-scan Open",
+    champT: 0.25,
     marque: "Esaote",
     modele: "S-scan Open",
     aimant: "permanent",
@@ -62,6 +66,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "esaote-g-scan",
+    nomCourt: "Esaote G-scan Brio",
+    champT: 0.25,
     marque: "Esaote",
     modele: "G-scan Brio",
     aimant: "permanent",
@@ -76,6 +82,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "esaote-magnifico",
+    nomCourt: "Esaote Magnifico Open",
+    champT: 0.4,
     marque: "Esaote",
     modele: "Magnifico Open",
     aimant: "permanent",
@@ -92,6 +100,8 @@ var ENERGIE_MACHINES = [
   // ---------- Siemens — aimant supraconducteur, refroidissement à eau glacée ----------
   {
     key: "siemens-sempra",
+    nomCourt: "Siemens Sempra",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Sempra (1,5 T)",
     aimant: "supraconducteur",
@@ -102,10 +112,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.4 kW / Ready for measurement 7.4 kW / Typical examination 10.8 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.4 kW / Ready for measurement 7.4 kW / Typical examination 10.8 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000003940534/9e2d0cef2ef9/mri_magnetom-sempra_epd_1800000003940534.pdf"
   },
   {
     key: "siemens-altea",
+    nomCourt: "Siemens Altea",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Altea (1,5 T, gradients standard XJ)",
     aimant: "supraconducteur",
@@ -116,10 +129,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (standard) ou air (option) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.2 kW / Scan 20.2 kW (gradients XJ) ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.2 kW / Scan 20.2 kW (gradients XJ) ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000006213748/c80772f647cc/Siemens-Healthineers-MRI_MAGNETOM_Altea_EPD_Brochure_1800000006213748.pdf"
   },
   {
     key: "siemens-sola-xj",
+    nomCourt: "Siemens Sola XJ",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Sola (1,5 T, gradients standard XJ)",
     aimant: "supraconducteur",
@@ -130,10 +146,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (standard) ou air (option) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.2 kW / Scan 20.2 kW (gradients XJ) ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.2 kW / Scan 20.2 kW (gradients XJ) ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/97042c1a7955e256/722da1605d27/SH-MR_MAGNETOM_Sola_EPD_flyer.pdf"
   },
   {
     key: "siemens-sola-xq",
+    nomCourt: "Siemens Sola XQ",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Sola (1,5 T, gradients hypergradient XQ)",
     aimant: "supraconducteur",
@@ -144,10 +163,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (standard) ou air (option) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.7 kW / Scan 22.7 kW (gradients hypergradient XQ) » — la variante hypergradient consomme davantage à l'acquisition (gradients plus puissants), mais pas à l'arrêt. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.7 kW / Scan 22.7 kW (gradients hypergradient XQ) » — la variante hypergradient consomme davantage à l'acquisition (gradients plus puissants), mais pas à l'arrêt. Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/97042c1a7955e256/722da1605d27/SH-MR_MAGNETOM_Sola_EPD_flyer.pdf"
   },
   {
     key: "siemens-vida",
+    nomCourt: "Siemens Vida XQ",
+    champT: 3,
     marque: "Siemens",
     modele: "MAGNETOM Vida (3 T, gradients hypergradient XQ)",
     aimant: "supraconducteur",
@@ -158,10 +180,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 23.1 kW (gradients XQ) », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 23.1 kW (gradients XQ) », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000004342358/18d55d7bdd91/magnetom-vida_environmental-product-declaration_2017-10_1800000004342358.pdf"
   },
   {
     key: "siemens-vida-xt",
+    nomCourt: "Siemens Vida XT",
+    champT: 3,
     marque: "Siemens",
     modele: "MAGNETOM Vida (3 T, gradients hypergradient XT)",
     aimant: "supraconducteur",
@@ -172,10 +197,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 27.4 kW (gradients hypergradient XT, la variante la plus puissante) », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 27.4 kW (gradients hypergradient XT, la variante la plus puissante) », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000004342358/18d55d7bdd91/magnetom-vida_environmental-product-declaration_2017-10_1800000004342358.pdf"
   },
   {
     key: "siemens-skyra-2012",
+    nomCourt: "Siemens Skyra",
+    champT: 3,
     marque: "Siemens",
     modele: "MAGNETOM Skyra (3 T, génération 2012, ancien modèle)",
     aimant: "supraconducteur",
@@ -186,10 +214,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "CONFIRMÉ par la Déclaration Environnementale de Produit (EPD) officielle Siemens de 2012 : « charge de base 13,9 kW / charge pleine 20,7 kW ». Cette génération, antérieure aux technologies Eco Power actuelles, n'avait pas de véritable mode basse consommation à l'arrêt. Ajouté à titre de comparaison \"ancien vs récent\" en 3T : le même segment Siemens 3T est passé de 13,9 kW à l'arrêt (2012) à 4,3 kW (Vida, génération 2017+), soit une division par plus de 3 en cinq ans."
+    confiance: "CONFIRMÉ par la Déclaration Environnementale de Produit (EPD) officielle Siemens de 2012 : « charge de base 13,9 kW / charge pleine 20,7 kW ». Cette génération, antérieure aux technologies Eco Power actuelles, n'avait pas de véritable mode basse consommation à l'arrêt. Ajouté à titre de comparaison \"ancien vs récent\" en 3T : le même segment Siemens 3T est passé de 13,9 kW à l'arrêt (2012) à 4,3 kW (Vida, génération 2017+), soit une division par plus de 3 en cinq ans.",
+  sourceUrl: "https://medfau.com/wp-content/uploads/2017/12/20120112_MAGNETOM_Skyra_Environmental_Product_Declaration_final_100088623_3.pdf"
   },
   {
     key: "siemens-amira",
+    nomCourt: "Siemens Amira",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Amira (1,5 T, entrée de gamme)",
     aimant: "supraconducteur",
@@ -200,10 +231,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.4 kW / System ready to measure 8.7 kW / Scan 13.1 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.4 kW / System ready to measure 8.7 kW / Scan 13.1 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000006724994/ae4d0e8fe099/siemens-healthineers_mri_magnetom-amira-biomatrix-epd_1800000006724994.pdf"
   },
   {
     key: "siemens-prisma",
+    nomCourt: "Siemens Prisma",
+    champT: 3,
     marque: "Siemens",
     modele: "MAGNETOM Prisma (3 T, recherche)",
     aimant: "supraconducteur",
@@ -214,10 +248,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "eau glacée (standard, air en option) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.8 kW / System ready to measure 10.8 kW / Scan 22.4 kW ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.8 kW / System ready to measure 10.8 kW / Scan 22.4 kW ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000001114614/8cb1fac3d98d/siemens-healthineers-Magnetom_Prisma_EnvironmentalProductDeclaration.pdf"
   },
   {
     key: "siemens-terra",
+    nomCourt: "Siemens Terra",
+    champT: 7,
     marque: "Siemens",
     modele: "MAGNETOM Terra (7 T, ultra-haut champ)",
     aimant: "supraconducteur",
@@ -228,10 +265,13 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 9.8 kW / System ready to measure 17.5 kW / Scan 25.7 kW », refroidissement à eau confirmé. Un champ aussi élevé (7T, usage recherche) consomme nettement plus au repos que les 1,5T/3T cliniques — cohérent avec un aimant plus gros à maintenir au froid. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 9.8 kW / System ready to measure 17.5 kW / Scan 25.7 kW », refroidissement à eau confirmé. Un champ aussi élevé (7T, usage recherche) consomme nettement plus au repos que les 1,5T/3T cliniques — cohérent avec un aimant plus gros à maintenir au froid. Surcoût local technique et climatisation salle restent des estimations Ced4Scale.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000005657782/1c76ab0dcbcc/siemens-healthineers_mri_magnetom-terra_epd-brochure_1800000005657782.pdf"
   },
   {
     key: "siemens-avanto-2011",
+    nomCourt: "Siemens Avanto",
+    champT: 1.5,
     marque: "Siemens",
     modele: "MAGNETOM Avanto (1,5 T, génération 2011, ancien modèle)",
     aimant: "supraconducteur",
@@ -242,12 +282,15 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "CONFIRMÉ par la Déclaration Environnementale de Produit (EPD) officielle Siemens de 2011 : « charge de base ≤ 20 kW / charge pleine 30 kW ». Cette génération, antérieure aux technologies Eco Power actuelles, n'avait pas de véritable mode basse consommation à l'arrêt — la machine restait proche de sa charge de base même hors examen, jour et nuit. Ajouté à titre de comparaison \"ancien vs récent\" : le même segment 1,5T Siemens est passé de 20 kW à l'arrêt (2011) à 4,3-4,4 kW (Sola/Amira, générations 2018+), soit une division par 4-5 en une quinzaine d'années — mais reste très supérieur à un aimant permanent Esaote, à toute époque."
+    confiance: "CONFIRMÉ par la Déclaration Environnementale de Produit (EPD) officielle Siemens de 2011 : « charge de base ≤ 20 kW / charge pleine 30 kW ». Cette génération, antérieure aux technologies Eco Power actuelles, n'avait pas de véritable mode basse consommation à l'arrêt — la machine restait proche de sa charge de base même hors examen, jour et nuit. Ajouté à titre de comparaison \"ancien vs récent\" : le même segment 1,5T Siemens est passé de 20 kW à l'arrêt (2011) à 4,3-4,4 kW (Sola/Amira, générations 2018+), soit une division par 4-5 en une quinzaine d'années — mais reste très supérieur à un aimant permanent Esaote, à toute époque.",
+  sourceUrl: "https://cdn0.scrvt.com/39b415fb07de4d9656c7b516d8e2d907/1800000000183609/e9f6a64b9f9a/MRI-MAGNETOM-Avanto-EPD_MAGNETOM_Avanto_Espree_20111010_1800000000183609.pdf"
   },
 
   // ---------- GE HealthCare — aimant supraconducteur ----------
   {
     key: "ge-explorer",
+    nomCourt: "GE Explorer",
+    champT: 1.5,
     marque: "GE HealthCare",
     modele: "Signa Explorer (1,5 T)",
     aimant: "supraconducteur",
@@ -262,6 +305,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "ge-pioneer",
+    nomCourt: "GE Pioneer",
+    champT: 3,
     marque: "GE HealthCare",
     modele: "Signa Pioneer (3 T)",
     aimant: "supraconducteur",
@@ -278,6 +323,8 @@ var ENERGIE_MACHINES = [
   // ---------- Philips — aimant supraconducteur, refroidissement à air ----------
   {
     key: "philips-ambition-s",
+    nomCourt: "Philips Ambition S",
+    champT: 1.5,
     marque: "Philips",
     modele: "Ingenia Ambition S (1,5 T)",
     aimant: "supraconducteur",
@@ -292,6 +339,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "philips-elition-x",
+    nomCourt: "Philips Elition X",
+    champT: 3,
     marque: "Philips",
     modele: "Ingenia Elition X (3 T)",
     aimant: "supraconducteur",
@@ -308,6 +357,8 @@ var ENERGIE_MACHINES = [
   // ---------- Canon Medical — aimant supraconducteur ----------
   {
     key: "canon-elan",
+    nomCourt: "Canon Elan",
+    champT: 1.5,
     marque: "Canon Medical",
     modele: "Vantage Elan (1,5 T)",
     aimant: "supraconducteur",
@@ -322,6 +373,8 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "canon-orian",
+    nomCourt: "Canon Orian",
+    champT: 1.5,
     marque: "Canon Medical",
     modele: "Vantage Orian (1,5 T)",
     aimant: "supraconducteur",
