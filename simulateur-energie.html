@@ -130,7 +130,7 @@
           <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> mesure la sobriété structurelle de la machine : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
-            <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
+            <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
           </div>
         </div>
 
@@ -658,21 +658,25 @@
         var svg = document.getElementById("eneChart");
         svg.innerHTML = "";
 
-        var top = 16, bottom = 40, chartH = 220;
+        // Échelle adaptée aux données : le plafond du graphe suit le plus grand des deux
+        // totaux (+15% de marge), jamais une valeur fixe — un écart de génération/technologie
+        // se voit donc toujours à l'échelle réelle, quels que soient les montants en jeu.
+        var top = 20, chartH = 320;
         var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
         var yMax = niceCeil(maxVal * 1.15);
 
-        for (var g = 0; g <= 4; g++) {
-          var val = (yMax * g) / 4;
+        for (var g = 0; g <= 5; g++) {
+          var val = (yMax * g) / 5;
           var y = top + chartH - (chartH * val) / yMax;
-          svg.appendChild(svgEl("line", { x1: 90, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
-          var labelY = svgEl("text", { x: 82, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: 87, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.style.fontSize = "11px";
           labelY.textContent = euros.format(val);
           svg.appendChild(labelY);
         }
 
-        var barWidth = 140, gap = 160;
-        var centers = [250, 250 + gap];
+        var barWidth = 190, gap = 250;
+        var centers = [225, 225 + gap];
         var tiers = ["socle", "entrePatients", "examens"];
 
         resultats.forEach(function (r, i) {
@@ -683,21 +687,34 @@
             var barH = yMax > 0 ? (val / yMax) * chartH : 0;
             var barY = yCursor - barH;
             svg.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] }));
+            // Montant affiché dans le segment lui-même quand il est assez grand pour
+            // l'accueillir sans déborder ; sinon laissé au tableau détaillé plutôt que de
+            // surcharger un trait trop fin (cas fréquent pour un aimant permanent).
+            if (barH >= 18) {
+              var segLabel = svgEl("text", { x: centers[i], y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "middle" });
+              segLabel.style.fontSize = "11px";
+              segLabel.style.fontWeight = "700";
+              segLabel.style.fill = "#fff";
+              segLabel.textContent = euros.format(val);
+              svg.appendChild(segLabel);
+            }
             yCursor = barY;
           });
-          var totalLabel = svgEl("text", { x: centers[i], y: top + chartH - (yMax > 0 ? (r.coutAnnuel / yMax) * chartH : 0) - 8, class: "simulator__axis-label", "text-anchor": "middle" });
-          totalLabel.style.fontWeight = "700";
+          var totalLabel = svgEl("text", { x: centers[i], y: top + chartH - (yMax > 0 ? (r.coutAnnuel / yMax) * chartH : 0) - 10, class: "simulator__axis-label", "text-anchor": "middle" });
+          totalLabel.style.fontSize = "14px";
+          totalLabel.style.fontWeight = "800";
           totalLabel.textContent = euros.format(r.coutAnnuel);
           svg.appendChild(totalLabel);
 
-          var nameLabel = svgEl("text", { x: centers[i], y: top + chartH + 20, class: "simulator__axis-label", "text-anchor": "middle" });
+          var nameLabel = svgEl("text", { x: centers[i], y: top + chartH + 26, class: "simulator__axis-label", "text-anchor": "middle" });
+          nameLabel.style.fontSize = "13px";
           nameLabel.style.fontWeight = "700";
           nameLabel.style.fill = r.color;
           nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           svg.appendChild(nameLabel);
         });
 
-        svg.appendChild(svgEl("line", { x1: 90, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+        svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
       // ---------------------------------------------------------------------------------
