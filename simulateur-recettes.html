@@ -684,6 +684,29 @@
       // Sérialise un SVG de graphe en PNG (via un <canvas> hors écran) pour pouvoir l'insérer
       // dans le PDF — jsPDF ne sait pas dessiner du SVG directement. Fonction commune aux deux
       // graphes (trajectoire 7 ans et comparaison des paliers).
+      // Un SVG exporté en image autonome (Blob + <img>) n'a plus accès à la feuille de style
+      // externe du site — les tailles de texte définies par classe CSS (styles.css) sont donc
+      // ignorées et remplacées par la taille par défaut du navigateur, plus grosse (bug trouvé
+      // le 09/08/2026 : changer les tailles dans styles.css n'avait aucun effet sur le PDF).
+      // On copie donc le style réellement calculé de chaque élément directement dans l'attribut
+      // "style" d'une copie du SVG, avant de le sérialiser.
+      function figerLesStyles(svgSource) {
+        var clone = svgSource.cloneNode(true);
+        var liveEls = svgSource.querySelectorAll("*");
+        var cloneEls = clone.querySelectorAll("*");
+        for (var i = 0; i < liveEls.length; i++) {
+          var cs = getComputedStyle(liveEls[i]);
+          cloneEls[i].style.fontSize = cs.fontSize;
+          cloneEls[i].style.fontFamily = cs.fontFamily;
+          cloneEls[i].style.fontWeight = cs.fontWeight;
+          cloneEls[i].style.fill = cs.fill;
+          cloneEls[i].style.stroke = cs.stroke;
+          cloneEls[i].style.strokeWidth = cs.strokeWidth;
+          cloneEls[i].style.opacity = cs.opacity;
+        }
+        return clone;
+      }
+
       function svgVersPng(svgSource) {
         return new Promise(function (resolve, reject) {
           // La hauteur du viewBox varie selon le graphe (les camemberts + barres sont plus
@@ -691,7 +714,7 @@
           var viewBox = svgSource.viewBox.baseVal;
           var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
           var vbHeight = viewBox && viewBox.height ? viewBox.height : 300;
-          var svgString = new XMLSerializer().serializeToString(svgSource);
+          var svgString = new XMLSerializer().serializeToString(figerLesStyles(svgSource));
           var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
           var url = URL.createObjectURL(svgBlob);
           var img = new Image();
@@ -1025,44 +1048,37 @@
         doc.setDrawColor(220);
         doc.line(15, y, extraitRightX, y); y += 10;
 
-        // Tableau "forfait plein" : mêmes en-têtes groupés (zone > amorti/non amorti) que la
-        // page de synthèse par date du site (forfait-technique.html), plutôt que du texte brut
-        // (demande de Cédric, 09/08/2026).
-        doc.setFontSize(10.5);
-        doc.setTextColor(0);
-        doc.setFont(undefined, "bold");
-        doc.text("Forfait technique plein", 15, y); y += 7;
-
-        var pleinX0 = 15, pleinColWidth = 38;
+        // Tableau "forfait plein" : deux tableaux séparés (non amorti / amorti) plutôt qu'un
+        // seul tableau à colonnes groupées, plus simple à lire (demande de Cédric, 09/08/2026).
         var zones = [["Paris", ligne.plein.paris], ["Île-de-France (hors Paris)", ligne.plein.idf], ["Province", ligne.plein.province]];
-        doc.setFontSize(8);
-        doc.setFont(undefined, "bold");
-        var zx = pleinX0 + 30;
-        zones.forEach(function (z) {
-          doc.text(z[0], zx + pleinColWidth / 2, y, { align: "center" });
-          zx += pleinColWidth;
-        });
-        y += 5;
-        zx = pleinX0 + 30;
-        zones.forEach(function () {
-          doc.text("Amorti", zx + pleinColWidth * 0.25, y, { align: "center" });
-          doc.text("Non amorti", zx + pleinColWidth * 0.75, y, { align: "center" });
-          zx += pleinColWidth;
-        });
-        y += 5;
-        doc.setDrawColor(200);
-        doc.line(pleinX0, y - 3, zx, y - 3);
-        doc.setFont(undefined, "normal");
-        zx = pleinX0 + 30;
-        doc.text("Forfait plein", pleinX0, y);
-        zones.forEach(function (z) {
-          var amortiTxt = z[1].amorti != null ? euros.format(z[1].amorti) : "—";
-          var nonAmortiTxt = z[1].nonAmorti != null ? euros.format(z[1].nonAmorti) : "—";
-          doc.text(amortiTxt, zx + pleinColWidth * 0.25, y, { align: "center" });
-          doc.text(nonAmortiTxt, zx + pleinColWidth * 0.75, y, { align: "center" });
-          zx += pleinColWidth;
-        });
-        y += 12;
+        var pleinColWidth = 38;
+
+        function tablePlein(titre, cle, x0) {
+          var ty = y;
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(titre, x0, ty); ty += 7;
+          doc.setFontSize(8);
+          var zx = x0;
+          zones.forEach(function (z) { doc.text(z[0], zx, ty); zx += pleinColWidth; });
+          ty += 5;
+          doc.setDrawColor(200);
+          doc.line(x0, ty - 3, zx, ty - 3);
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(11);
+          zx = x0;
+          zones.forEach(function (z) {
+            var val = z[1][cle];
+            doc.text(val != null ? euros.format(val) : "—", zx, ty + 4);
+            zx += pleinColWidth;
+          });
+          return ty + 4;
+        }
+
+        var yAfterNonAmorti = tablePlein("Forfait plein — non amorti", "nonAmorti", 15);
+        var yAfterAmorti = tablePlein("Forfait plein — amorti", "amorti", 15 + pleinColWidth * 3 + 15);
+        y = Math.max(yAfterNonAmorti, yAfterAmorti) + 10;
 
         // Tableau "forfaits réduits" (barème dégressif) : valeurs nationales, pas de zone.
         doc.setFontSize(10.5);
