@@ -347,7 +347,7 @@
           var chute = meilleur.total - pire.total;
           var pourcentage = meilleur.total > 0 ? Math.round((chute / meilleur.total) * 100) : 0;
           chuteEl.innerHTML = "<strong>Chute sur 7 ans entre un départ au " + meilleur.label + " et un départ au " + pire.label +
-            " : −" + euros.format(chute) + " (soit −" + pourcentage + " %)</strong> à machine, volume et zone strictement identiques.";
+            " : -" + euros.format(chute) + " (soit -" + pourcentage + " %)</strong> à machine, volume et zone strictement identiques.";
         } else if (totaux.length === 1) {
           chuteEl.textContent = "Choisis une 2ᵉ date pour voir l'écart entre elles.";
         } else {
@@ -378,7 +378,7 @@
       }
 
       // Géométrie du graphe (viewBox 640x300).
-      var PAD = { left: 78, right: 16, top: 18, bottom: 28 };
+      var PAD = { left: 92, right: 16, top: 18, bottom: 28 };
       var PLOT_W = 640 - PAD.left - PAD.right;
       var PLOT_H = 300 - PAD.top - PAD.bottom;
 
@@ -509,10 +509,10 @@
       // éviter toute confusion. Taille des camemberts proportionnelle au total de chacun (pas
       // deux camemberts de même taille qui donneraient l'impression d'un même total).
       var PALIERS = [
-        { key: "plein", label: "Forfait plein", color: SLOT_COLORS[0] },
-        { key: "seuil1", label: "Seuil 1", color: SLOT_COLORS[1] },
-        { key: "seuil2", label: "Seuil 2", color: SLOT_COLORS[2] },
-        { key: "plafond", label: "Plafond", color: SLOT_COLORS[3] }
+        { key: "plein", label: "Forfait plein", shortLabel: "Plein", color: SLOT_COLORS[0] },
+        { key: "seuil1", label: "Seuil 1", shortLabel: "S1", color: SLOT_COLORS[1] },
+        { key: "seuil2", label: "Seuil 2", shortLabel: "S2", color: SLOT_COLORS[2] },
+        { key: "plafond", label: "Plafond", shortLabel: "Plaf.", color: SLOT_COLORS[3] }
       ];
 
       function dessinerLegendeCamembert() {
@@ -572,10 +572,14 @@
         // Uniquement le forfait moyen par examen ici (pas le total) — c'est le chiffre le
         // plus parlant à cet endroit, juste au-dessus du détail par palier (demande de
         // Cédric du 08/08/2026).
-        var caption = svgEl("text", { x: cx, y: 17, class: "simulator__axis-label", "text-anchor": "middle" });
+        // Texte volontairement court (juste la date et le forfait moyen) : la version plus
+        // longue ("Départ ... — forfait moyen : ...") débordait sur la légende du camembert
+        // voisin dès que les deux dates étaient affichées côte à côte (signalé par Cédric,
+        // 09/08/2026, sur un export PDF réel).
+        var caption = svgEl("text", { x: cx, y: 17, class: "simulator__pie-caption", "text-anchor": "middle" });
         var moyenneCamembert = camembert.volume > 0 ? camembert.total / camembert.volume : 0;
         var prefixSpan = svgEl("tspan", {});
-        prefixSpan.textContent = "Départ " + camembert.label + " — forfait moyen : ";
+        prefixSpan.textContent = camembert.label + " : ";
         caption.appendChild(prefixSpan);
         var montantSpan = svgEl("tspan", { class: "simulator__pie-caption-montant" });
         montantSpan.textContent = euros.format(moyenneCamembert);
@@ -593,7 +597,11 @@
       // les deux graphes en barres démarrent toujours à la même hauteur.
       var BAR_TOP = 208, BAR_BOTTOM = 300, BAR_LABEL_Y = 318;
       function dessinerBarresSeuils(cx, halfWidth, camembert, yMax) {
-        var barGap = 12;
+        // Noms de palier abrégés, sans montant au-dessus de la barre (le montant exact est
+        // déjà donné par l'étiquette du camembert au-dessus et par le tableau du PDF) — les
+        // 4 barres sont trop étroites pour caser un montant complet sans chevauchement,
+        // même en petite police (signalé par Cédric le 09/08/2026 sur un export PDF réel).
+        var barGap = 16;
         var totalWidth = halfWidth * 2;
         var barWidth = (totalWidth - barGap * (PALIERS.length + 1)) / PALIERS.length;
         var barChartHeight = BAR_BOTTOM - BAR_TOP;
@@ -604,12 +612,9 @@
           var barY = BAR_BOTTOM - barH;
           if (val > 0) {
             svg2.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: barH, fill: p.color, rx: 2, ry: 2 }));
-            var amountLabel = svgEl("text", { x: barX + barWidth / 2, y: barY - 4, class: "simulator__axis-label", "text-anchor": "middle" });
-            amountLabel.textContent = euros.format(val);
-            svg2.appendChild(amountLabel);
           }
-          var nameLabel = svgEl("text", { x: barX + barWidth / 2, y: BAR_LABEL_Y, class: "simulator__axis-label", "text-anchor": "middle" });
-          nameLabel.textContent = p.label;
+          var nameLabel = svgEl("text", { x: barX + barWidth / 2, y: BAR_LABEL_Y, class: "simulator__bar-label", "text-anchor": "middle" });
+          nameLabel.textContent = p.shortLabel;
           svg2.appendChild(nameLabel);
         });
         svg2.appendChild(svgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
@@ -760,6 +765,23 @@
         // 08/08/2026). Page A4 paysage = 297 x 210 mm (contre 210 x 297 en portrait).
         var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
         var RIGHT_X = 282;
+
+        // Les nombres formatés par Intl.NumberFormat("fr-FR", ...) utilisent une espace fine
+        // insécable (U+202F) comme séparateur de milliers — le police par défaut de jsPDF ne la
+        // connaît pas et affiche autre chose à la place (des "/" à la place des espaces, repéré
+        // par Cédric le 09/08/2026 sur un export réel). On la remplace par une espace normale
+        // uniquement dans le PDF ; l'affichage à l'écran n'est pas concerné.
+        var _origDocText = doc.text.bind(doc);
+        doc.text = function (text, x, y, opts) {
+          function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ") : t; }
+          text = Array.isArray(text) ? text.map(clean) : clean(text);
+          return _origDocText(text, x, y, opts);
+        };
+        var _origDocTextWithLink = doc.textWithLink.bind(doc);
+        doc.textWithLink = function (text, x, y, opts) {
+          if (typeof text === "string") text = text.replace(/[  ]/g, " ");
+          return _origDocTextWithLink(text, x, y, opts);
+        };
         var prenom = document.getElementById("simPrenom").value.trim();
         var nom = document.getElementById("simNom").value.trim();
         var email = document.getElementById("simEmail").value.trim();
@@ -787,40 +809,37 @@
         doc.setDrawColor(220);
         doc.line(15, 33, RIGHT_X, 33);
 
-        var y = 44;
+        // Bloc "informations du visiteur" compact, en petit, en haut à gauche — pour laisser
+        // le maximum de place aux graphiques juste en dessous (demande de Cédric, 09/08/2026,
+        // après avoir vu une première version où ce bloc en gros texte prenait toute la moitié
+        // supérieure de la page).
+        var y = 40;
         doc.setTextColor(0);
-        doc.setFontSize(16);
+        doc.setFontSize(14);
+        doc.setFont(undefined, "bold");
         doc.text("Simulation de recettes IRM selon les arrêtés", 15, y);
-        y += 8;
-        doc.setFontSize(10);
-        doc.setTextColor(120);
-        doc.text("Évolution du forfait technique sur 7 ans", 15, y);
         y += 6;
-        doc.text(new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }), 15, y);
-        y += 10;
+        doc.setFont(undefined, "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(120);
+        doc.text(
+          "Évolution du forfait technique sur 7 ans · " + new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+          15, y
+        );
+        y += 5;
 
         var nomComplet = (prenom + " " + nom).trim();
-        doc.setTextColor(0);
-        doc.setFontSize(11);
-        doc.text("À l'attention de : " + (nomComplet || "—"), 15, y); y += 6;
-        if (fonction) { doc.text("Fonction : " + fonction, 15, y); y += 6; }
-        doc.text("Établissement : " + (etablissement || "—"), 15, y); y += 6;
-        if (email) { doc.text("E-mail : " + email, 15, y); y += 6; }
-        y += 4;
-
-        doc.setFontSize(10.5);
-        var salutation = "Bonjour" + (prenom ? " " + prenom : "") + ",";
-        doc.text(salutation, 15, y); y += 6;
-        var courtoisie = doc.splitTextToSize(
-          "Merci pour votre intérêt — vous trouverez ci-dessous la simulation demandée, ainsi qu'un récapitulatif détaillé sur 7 ans.",
-          RIGHT_X - 15
+        var qualite = [fonction, etablissement].filter(Boolean).join(", ");
+        doc.text(
+          "Pour " + (nomComplet || "—") + (qualite ? " (" + qualite + ")" : "") + (email ? " — " + email : ""),
+          15, y
         );
-        doc.text(courtoisie, 15, y); y += 5 * courtoisie.length + 8;
+        y += 6;
 
-        doc.setFontSize(11);
-        doc.text("Machine : " + machineLabel, 15, y); y += 6;
-        doc.text("Zone : " + zoneLabel, 15, y); y += 6;
-        doc.text("Volume simulé : " + volume + " examens / an", 15, y); y += 10;
+        doc.setFontSize(9.5);
+        doc.setTextColor(0);
+        doc.text("Machine : " + machineLabel + "   ·   Zone : " + zoneLabel + "   ·   Volume : " + volume + " examens / an", 15, y);
+        y += 8;
 
         // Une page A4 paysage fait 210 mm de hauteur ; jsPDF n'ajoute jamais de page tout seul
         // quand le contenu dépasse — sans ce garde-fou, les blocs en bas (tableau, sources)
@@ -831,32 +850,36 @@
           if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
         }
 
-        // Les deux graphiques côte à côte plutôt qu'empilés — c'est tout l'intérêt du
-        // paysage : la largeur disponible (267 mm) sert enfin à quelque chose.
+        // Les deux graphiques côte à côte plutôt qu'empilés. Le camembert (2 parts + barres)
+        // a besoin de plus de largeur ; la trajectoire, déjà reprise en détail dans le
+        // tableau "Recettes par année" juste après, est volontairement réduite (demande de
+        // Cédric du 09/08/2026 : elle prenait trop de place pour ce qu'elle apporte en plus).
         var colGap = 12;
-        var imgWidth = (RIGHT_X - 15 - colGap) / 2;
-        var col2X = 15, col1X = 15 + imgWidth + colGap;
+        var availableWidth = RIGHT_X - 15 - colGap;
+        var imgWidth2 = availableWidth * 0.58;
+        var imgWidth1 = availableWidth * 0.42;
+        var col2X = 15, col1X = 15 + imgWidth2 + colGap;
         var chartsTop = y;
         var rowHeight = 0;
 
         if (graphe2Png) {
-          var imgHeight2 = (imgWidth * graphe2Png.height) / graphe2Png.width;
+          var imgHeight2 = (imgWidth2 * graphe2Png.height) / graphe2Png.width;
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
           doc.text("Composition des recettes de l'année 1", col2X, chartsTop);
           doc.setFont(undefined, "normal");
-          doc.addImage(graphe2Png.dataUrl, "PNG", col2X, chartsTop + 5, imgWidth, imgHeight2, undefined, "MEDIUM");
+          doc.addImage(graphe2Png.dataUrl, "PNG", col2X, chartsTop + 5, imgWidth2, imgHeight2, undefined, "MEDIUM");
           rowHeight = Math.max(rowHeight, imgHeight2 + 5);
         }
         if (graphePng) {
-          var imgHeight1 = (imgWidth * graphePng.height) / graphePng.width;
+          var imgHeight1 = (imgWidth1 * graphePng.height) / graphePng.width;
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
           doc.text("Trajectoire de recettes sur 7 ans", col1X, chartsTop);
           doc.setFont(undefined, "normal");
-          doc.addImage(graphePng.dataUrl, "PNG", col1X, chartsTop + 5, imgWidth, imgHeight1, undefined, "MEDIUM");
+          doc.addImage(graphePng.dataUrl, "PNG", col1X, chartsTop + 5, imgWidth1, imgHeight1, undefined, "MEDIUM");
           rowHeight = Math.max(rowHeight, imgHeight1 + 5);
         }
         if (rowHeight > 0) y += rowHeight + 8;
@@ -894,7 +917,11 @@
           y += 5;
         }
 
-        var theadCells = document.querySelectorAll("#simTableHead th");
+        // Le premier <th> du tableau HTML ("Année :") est le titre de la colonne des
+        // libellés ("Départ ..."), pas une colonne d'années — à exclure ici, sinon les 7
+        // colonnes de données se décalent d'une case par rapport aux en-têtes (repéré par
+        // Cédric le 09/08/2026 sur un export réel : "Année 7" sans valeur en dessous).
+        var theadCells = Array.prototype.slice.call(document.querySelectorAll("#simTableHead th")).slice(1);
         var x0 = 15, labelWidth = 42, colWidth = 28;
         doc.setFontSize(8);
         function drawRow(label, cells, bold) {
@@ -986,6 +1013,7 @@
 
         doc.addPage();
         var y = 20;
+        var extraitRightX = 282; // page paysage (297 mm) : mêmes marges que le reste du PDF.
         doc.setFontSize(14);
         doc.setTextColor(0);
         doc.setFont(undefined, "bold");
@@ -995,29 +1023,77 @@
         doc.setTextColor(110);
         doc.text("Classe : " + classe.label, 15, y); y += 6;
         doc.setDrawColor(220);
-        doc.line(15, y, 195, y); y += 8;
+        doc.line(15, y, extraitRightX, y); y += 10;
 
+        // Tableau "forfait plein" : mêmes en-têtes groupés (zone > amorti/non amorti) que la
+        // page de synthèse par date du site (forfait-technique.html), plutôt que du texte brut
+        // (demande de Cédric, 09/08/2026).
         doc.setFontSize(10.5);
         doc.setTextColor(0);
         doc.setFont(undefined, "bold");
-        doc.text("Forfait technique plein (amorti / non amorti)", 15, y); y += 6;
+        doc.text("Forfait technique plein", 15, y); y += 7;
+
+        var pleinX0 = 15, pleinColWidth = 38;
+        var zones = [["Paris", ligne.plein.paris], ["Île-de-France (hors Paris)", ligne.plein.idf], ["Province", ligne.plein.province]];
+        doc.setFontSize(8);
+        doc.setFont(undefined, "bold");
+        var zx = pleinX0 + 30;
+        zones.forEach(function (z) {
+          doc.text(z[0], zx + pleinColWidth / 2, y, { align: "center" });
+          zx += pleinColWidth;
+        });
+        y += 5;
+        zx = pleinX0 + 30;
+        zones.forEach(function () {
+          doc.text("Amorti", zx + pleinColWidth * 0.25, y, { align: "center" });
+          doc.text("Non amorti", zx + pleinColWidth * 0.75, y, { align: "center" });
+          zx += pleinColWidth;
+        });
+        y += 5;
+        doc.setDrawColor(200);
+        doc.line(pleinX0, y - 3, zx, y - 3);
         doc.setFont(undefined, "normal");
-        doc.setFontSize(9.5);
-        [["Paris", ligne.plein.paris], ["Île-de-France (hors Paris)", ligne.plein.idf], ["Province", ligne.plein.province]].forEach(function (z) {
+        zx = pleinX0 + 30;
+        doc.text("Forfait plein", pleinX0, y);
+        zones.forEach(function (z) {
           var amortiTxt = z[1].amorti != null ? euros.format(z[1].amorti) : "—";
           var nonAmortiTxt = z[1].nonAmorti != null ? euros.format(z[1].nonAmorti) : "—";
-          doc.text(z[0] + " : amorti " + amortiTxt + " / non amorti " + nonAmortiTxt, 20, y); y += 5.5;
+          doc.text(amortiTxt, zx + pleinColWidth * 0.25, y, { align: "center" });
+          doc.text(nonAmortiTxt, zx + pleinColWidth * 0.75, y, { align: "center" });
+          zx += pleinColWidth;
         });
-        y += 3;
+        y += 12;
 
-        doc.setFont(undefined, "bold");
+        // Tableau "forfaits réduits" (barème dégressif) : valeurs nationales, pas de zone.
         doc.setFontSize(10.5);
-        doc.text("Forfaits réduits (barème dégressif)", 15, y); y += 6;
+        doc.setFont(undefined, "bold");
+        doc.text("Forfaits réduits (barème dégressif)", 15, y); y += 7;
+
+        var reduitsX0 = 15, reduitsColWidth = 55;
+        var tranches = [
+          { label: "Seuil 1", sousLabel: "de " + seuilsEntiers.format(classe.REF) + " à " + seuilsEntiers.format(classe.SEUIL1) + " examens/an", montant: ligne.reduits.seuil1 },
+          { label: "Seuil 2", sousLabel: "de " + seuilsEntiers.format(classe.SEUIL1) + " à " + seuilsEntiers.format(classe.SEUIL2) + " examens/an", montant: ligne.reduits.seuil2 },
+          { label: "Plafond", sousLabel: "au-delà de " + seuilsEntiers.format(classe.SEUIL2) + " examens/an", montant: ligne.reduits.plafond }
+        ];
+        doc.setFontSize(8);
+        doc.setFont(undefined, "bold");
+        var rx = reduitsX0;
+        tranches.forEach(function (t) { doc.text(t.label, rx, y); rx += reduitsColWidth; });
+        y += 5;
+        doc.setDrawColor(200);
+        doc.line(reduitsX0, y - 3, rx, y - 3);
         doc.setFont(undefined, "normal");
-        doc.setFontSize(9.5);
-        doc.text("Au-delà de l'activité de référence (" + seuilsEntiers.format(classe.REF) + " examens/an) : " + euros.format(ligne.reduits.seuil1) + " jusqu'à " + seuilsEntiers.format(classe.SEUIL1), 20, y); y += 5.5;
-        doc.text("Au-delà de " + seuilsEntiers.format(classe.SEUIL1) + " examens/an : " + euros.format(ligne.reduits.seuil2) + " jusqu'à " + seuilsEntiers.format(classe.SEUIL2), 20, y); y += 5.5;
-        doc.text("Au-delà de " + seuilsEntiers.format(classe.SEUIL2) + " examens/an : " + euros.format(ligne.reduits.plafond), 20, y); y += 8;
+        rx = reduitsX0;
+        tranches.forEach(function (t) {
+          doc.setFontSize(11);
+          doc.setTextColor(0);
+          doc.text(euros.format(t.montant), rx, y + 5);
+          doc.setFontSize(7.5);
+          doc.setTextColor(130);
+          doc.text(t.sousLabel, rx, y + 10);
+          rx += reduitsColWidth;
+        });
+        y += 16;
 
         doc.setFontSize(8.5);
         doc.setTextColor(140);
