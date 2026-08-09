@@ -102,7 +102,7 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.4 kW / Ready for measurement 7.4 kW / Typical examination 10.8 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
   },
   {
     key: "siemens-altea",
@@ -277,6 +277,42 @@ var ENERGIE_MACHINES = [
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
     confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+  }
+];
+
+// Facteur d'émission de l'électricité française — pour convertir le coût énergétique en
+// empreinte carbone (volet RSE). Source : ADEME, Base Carbone, mix électrique moyen France
+// (~56,6 g CO2e/kWh en 2023, le mix français est peu carboné grâce au nucléaire — l'argument
+// carbone est donc plus modeste en France que dans le reste de l'Europe, l'argument coût reste
+// entier). Valeur arrondie, à réviser si l'ADEME publie une mise à jour du facteur.
+var CO2_G_PAR_KWH_FRANCE = 56.6;
+
+// Études indépendantes ayant mesuré ou recoupé la consommation électrique d'IRM, utilisées
+// pour étayer le volet RSE de ce simulateur (citées dans le PDF envoyé et sur
+// sources-energie.html). Aucune n'est la source des valeurs par machine ci-dessus (voir champ
+// "confiance" de chaque machine) — elles servent à montrer que l'approche par états de
+// consommation (arrêt/prêt/mesure) et le poids du refroidissement sont documentés
+// indépendamment, pas une invention Ced4Scale.
+var ENERGIE_ETUDES = [
+  {
+    label: "Heye et al., « The Energy Consumption of Radiology », Radiology (RSNA), 2020",
+    resume: "Étude de référence la plus citée du domaine : 19,9 kWh/examen en moyenne, consommation quotidienne passée de 226 à 165 kWh entre 2011 et 2017 (-30%), 25 à 33% d'économie possible en passant du mode veille au mode économie d'énergie.",
+    url: "https://pubs.rsna.org/doi/10.1148/radiol.2020192084"
+  },
+  {
+    label: "Woolen et al., « Ecodesign and Operational Strategies to Reduce the Carbon Footprint of MRI for Energy Cost Savings », Radiology, 2023",
+    resume: "Quatre IRM réelles de trois fabricants différents, équipées de compteurs de puissance pendant 39 jours : 72 à 91% de l'énergie consommée est \"non productive\" (hors examen).",
+    url: "https://pubs.rsna.org/doi/full/10.1148/radiol.230441"
+  },
+  {
+    label: "Roletto et al., « Energy performance of MRI systems: on-site validation and comparison with manufacturer declarations », European Radiology Experimental, 2026",
+    resume: "Mesure sur site de deux IRM Siemens réelles (Aera/Sola), comparée aux déclarations officielles du fabricant : le mode veille représente 32% de la consommation totale, à cause du maintien en froid continu.",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12770147/"
+  },
+  {
+    label: "Vosshenrich, Merkle, Heye, « The carbon footprint of modern imaging », Current Opinion in Urology, 2025",
+    resume: "Revue de synthèse : consommation de veille continue de 7 à 9 kW, et le refroidissement ajoute environ 45% de consommation en plus — un facteur souvent oublié dans les bilans carbone.",
+    url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12517713/"
   }
 ];
 

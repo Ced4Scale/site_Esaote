@@ -44,7 +44,7 @@
         </ul>
 
         <h3 style="margin-bottom:.8rem">Valeurs par machine</h3>
-        <p class="simulator__hint" style="margin-bottom:1rem">Toutes les valeurs ci-dessous sont des <strong>estimations Ced4Scale</strong>, construites à partir de recoupements techniques disponibles. Aucune n'est une donnée officiellement publiée et garantie par le fabricant — un lien vers une source officielle sera ajouté ici dès qu'elle sera confirmée. En attendant, considérez ces chiffres comme des ordres de grandeur pour comparer deux technologies, pas comme un engagement contractuel.</p>
+        <p class="simulator__hint" style="margin-bottom:1rem">Plusieurs modèles Siemens (voir la colonne "Confiance") sont désormais <strong>confirmés par la Déclaration Environnementale de Produit (EPD) officielle du fabricant</strong>, une fiche publique mesurée selon la méthodologie sectorielle COCIR. Les autres valeurs restent des <strong>estimations Ced4Scale</strong>, construites à partir de recoupements techniques disponibles — à considérer comme des ordres de grandeur pour comparer deux technologies, pas comme un engagement contractuel, tant qu'elles ne sont pas confirmées.</p>
         <div style="overflow-x:auto">
           <table class="stats-table" id="srcTable">
             <thead>
@@ -63,6 +63,13 @@
             <tbody id="srcTableBody"></tbody>
           </table>
         </div>
+
+        <h3 style="margin:1.6rem 0 .8rem">Études indépendantes</h3>
+        <p class="simulator__hint" style="margin-bottom:1rem">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur.</p>
+        <ul id="srcEtudesListe" style="margin:0 0 0 1.2rem;font-size:.9rem;line-height:1.65;color:var(--ink-soft)"></ul>
+
+        <h3 style="margin:1.6rem 0 .8rem">Empreinte carbone</h3>
+        <p class="simulator__hint">Conversion kWh → CO₂ à partir du facteur d'émission moyen de l'électricité française, source ADEME (Base Carbone) : <strong id="srcCo2Facteur"></strong> g CO₂e/kWh. Le mix électrique français, largement nucléaire, est nettement moins carboné que la moyenne européenne — l'argument carbone est donc plus modeste en France que dans le reste de l'Europe, l'argument coût reste entier.</p>
       </div>
     </div>
   </main>
@@ -87,6 +94,24 @@
         td(m.climSalleKw + " kW");
         td(m.confiance);
         tbody.appendChild(tr);
+      });
+
+      document.getElementById("srcCo2Facteur").textContent = CO2_G_PAR_KWH_FRANCE;
+      var ulEtudes = document.getElementById("srcEtudesListe");
+      ENERGIE_ETUDES.forEach(function (e) {
+        var li = document.createElement("li");
+        li.style.marginBottom = ".5rem";
+        var a = document.createElement("a");
+        a.href = e.url;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.style.fontWeight = "700";
+        a.textContent = e.label;
+        li.appendChild(a);
+        var p = document.createElement("div");
+        p.textContent = e.resume;
+        li.appendChild(p);
+        ulEtudes.appendChild(li);
       });
 
       function goBack() {

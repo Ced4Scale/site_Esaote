@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulateur de coût énergétique IRM — Ced4Scale</title>
+  <title>Simulateur d'impact énergétique et RSE IRM — Ced4Scale</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" href="assets/logo-ced4scale.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -20,18 +20,18 @@
       <img src="assets/logo-esaote.svg" alt="Esaote" />
     </a>
     <div class="document-viewer__title">
-      <span>Outil de simulation</span>
-      <strong>Coût énergétique IRM</strong>
+      <span>Volet RSE</span>
+      <strong>Impact énergétique IRM</strong>
     </div>
     <button class="document-viewer__close" id="eneClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
   </header>
 
   <main class="simulator">
     <div class="simulator__intro">
-      <span class="kicker">Consommation électrique — comparateur à 2 machines</span>
-      <h1>Simulateur de coût énergétique IRM</h1>
-      <p>Compare le <strong>coût énergétique annuel</strong> et le <strong>coût énergétique par patient</strong> de deux IRM, selon vos horaires d'ouverture et votre activité. Distingue trois états de consommation (arrêt / prêt / en acquisition) — l'écart entre un aimant permanent (Esaote) et un aimant supraconducteur (maintien en froid permanent, y compris fermé) vient surtout de là.</p>
-      <p class="simulator__source">Valeurs estimées par Ced4Scale à partir de sources techniques disponibles — <a href="sources-energie.html">détail des hypothèses</a>. Un lien vers les sources officielles est joint à chaque simulation reçue par e-mail dès qu'elles seront confirmées auprès des fabricants.</p>
+      <span class="kicker">Volet RSE — sobriété énergétique et empreinte carbone</span>
+      <h1>Simulateur d'impact énergétique et RSE de l'IRM</h1>
+      <p>Compare le <strong>coût énergétique</strong>, le <strong>coût par patient</strong> et l'<strong>empreinte carbone</strong> de deux IRM, selon vos horaires d'ouverture et votre activité — un indicateur directement mobilisable dans une grille d'achat responsable ou un dossier RSE d'appel d'offres. Distingue trois états de consommation (arrêt / prêt / en acquisition) : l'écart entre un aimant permanent (Esaote) et un aimant supraconducteur (maintien en froid permanent, y compris à l'arrêt) relève d'une <strong>sobriété structurelle</strong> — un choix de technologie, pas seulement une pratique d'utilisation.</p>
+      <p class="simulator__source">Valeurs estimées par Ced4Scale à partir de sources techniques disponibles, dont plusieurs confirmées par les déclarations environnementales officielles des fabricants — <a href="sources-energie.html">détail des hypothèses, sources et études indépendantes</a>. Les sources sont jointes à chaque simulation reçue par e-mail.</p>
     </div>
 
     <div class="simulator__layout">
@@ -104,8 +104,8 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
-                <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableTechHeadA"></span></th>
+                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableTechHeadB"></span></th>
               </tr>
             </thead>
             <tbody id="eneTableTechBody"></tbody>
@@ -117,7 +117,7 @@
       <div class="simulator__results">
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> est ce que la machine coûte même sans un seul patient, jour et nuit. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> mesure la sobriété structurelle de la machine : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
@@ -131,8 +131,8 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
-                <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableSocleHeadA"></span></th>
+                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableSocleHeadB"></span></th>
               </tr>
             </thead>
             <tbody id="eneTableSocleBody"></tbody>
@@ -143,14 +143,36 @@
           <thead>
             <tr>
               <th></th>
-              <th><span class="simulator__swatch" data-slot="0"></span> Machine A</th>
-              <th><span class="simulator__swatch" data-slot="1"></span> Machine B</th>
+              <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableHeadA"></span></th>
+              <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableHeadB"></span></th>
             </tr>
           </thead>
           <tbody id="eneTableBody"></tbody>
         </table>
         <p class="simulator__hint" id="eneEcart"></p>
+        <p class="simulator__hint" id="eneEcartCo2"></p>
         <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
+
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Empreinte carbone (mix électrique français)</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</p>
+          <table class="stats-table simulator__table" id="eneTableCo2">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableCo2HeadA"></span></th>
+                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableCo2HeadB"></span></th>
+              </tr>
+            </thead>
+            <tbody id="eneTableCo2Body"></tbody>
+          </table>
+        </div>
+
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Ce que disent les études indépendantes</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</p>
+          <ul id="eneEtudesListe" style="margin:0 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
+        </div>
 
         <div class="simulator__export" id="eneExport">
           <button type="button" class="btn btn--lg" id="eneExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -388,9 +410,21 @@
         });
         derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
 
+        var nomA = machineA.marque + " " + machineA.modele;
+        var nomB = machineB.marque + " " + machineB.modele;
+        ["eneTableTechHeadA", "eneTableSocleHeadA", "eneTableHeadA"].forEach(function (id) {
+          document.getElementById(id).textContent = nomA;
+        });
+        ["eneTableTechHeadB", "eneTableSocleHeadB", "eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
+          document.getElementById(id).textContent = nomB;
+        });
+        document.getElementById("eneTableCo2HeadA").textContent = nomA;
+
         remplirTableauTech([machineA, machineB]);
         remplirTableauSocle(resultats);
         remplirTableau(resultats, patientsAn);
+        remplirTableauCo2(resultats);
+        remplirEtudesListe();
         dessinerLegende();
         dessinerGraphe(resultats);
 
@@ -406,6 +440,17 @@
           ecartEl.innerHTML = "<strong>" + moinsCher.machine.marque + " " + moinsCher.machine.modele + " coûte " + euros.format(ecartAbs) +
             " de moins par an en énergie que " + plusCher.machine.marque + " " + plusCher.machine.modele +
             " (soit −" + pct + " %)</strong>, à horaires et activité identiques.";
+        }
+
+        var ecartCo2El = document.getElementById("eneEcartCo2");
+        var diffKwh = resultats[0].kwh - resultats[1].kwh;
+        var plusEmetteur = diffKwh > 0 ? resultats[0] : resultats[1];
+        var moinsEmetteur = diffKwh > 0 ? resultats[1] : resultats[0];
+        var ecartKg = Math.round(Math.abs(diffKwh) * CO2_G_PAR_KWH_FRANCE / 1000);
+        if (ecartKg >= 1) {
+          ecartCo2El.innerHTML = "Soit " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an avec " +
+            moinsEmetteur.machine.marque + " " + moinsEmetteur.machine.modele + " plutôt que " +
+            plusEmetteur.machine.marque + " " + plusEmetteur.machine.modele + " (mix électrique français, ADEME).";
         }
       }
 
@@ -436,6 +481,37 @@
         ligneTable(tbody, "Climatisation salle d'examen", machines.map(function (m) { return m.climSalleKw + " kW (continu)"; }));
       }
 
+      // Conversion kWh -> kg CO2 (volet RSE), à partir du facteur d'émission de l'électricité
+      // française (voir ENERGIE_HYPOTHESES... non, voir CO2_G_PAR_KWH_FRANCE dans le fichier de
+      // données partagé). kgFmt réutilise le même format que les kWh (pas de décimale).
+      function remplirTableauCo2(resultats) {
+        var tbody = document.getElementById("eneTableCo2Body");
+        tbody.innerHTML = "";
+        ligneTable(tbody, "Consommation annuelle", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
+        ligneTable(tbody, "Émissions de CO₂ associées", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg CO₂/an"; }), { strong: true });
+        ligneTable(tbody, "Sur 7 ans", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg CO₂"; }));
+      }
+
+      function remplirEtudesListe() {
+        var ul = document.getElementById("eneEtudesListe");
+        if (ul.children.length) return; // statique, ne dépend pas des paramètres, rempli une fois
+        ENERGIE_ETUDES.forEach(function (e) {
+          var li = document.createElement("li");
+          li.style.marginBottom = ".5rem";
+          var a = document.createElement("a");
+          a.href = e.url;
+          a.target = "_blank";
+          a.rel = "noopener";
+          a.style.fontWeight = "700";
+          a.textContent = e.label;
+          li.appendChild(a);
+          var p = document.createElement("div");
+          p.textContent = e.resume;
+          li.appendChild(p);
+          ul.appendChild(li);
+        });
+      }
+
       // Tableau dédié au détail du socle (demande explicite : "un tableau que pour ça").
       function remplirTableauSocle(resultats) {
         var tbody = document.getElementById("eneTableSocleBody");
@@ -453,7 +529,7 @@
         function ligne(label, cells, opts) { ligneTable(tbody, label, cells, opts); }
         ligne("Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
         ligne("Socle (arrêt, jour et nuit)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }));
-        ligne("Entre deux patients (ouvert, sans acquisition)", resultats.map(function (r) { return euros.format(r.decomp.entrePatients.total * r.prix); }));
+        ligne("Entre deux patients (ready to scan)", resultats.map(function (r) { return euros.format(r.decomp.entrePatients.total * r.prix); }));
         ligne("Examens (acquisition)", resultats.map(function (r) { return euros.format(r.decomp.examens.total * r.prix); }));
         ligne("Coût énergétique annuel", resultats.map(function (r) { return euros.format(r.coutAnnuel); }), { strong: true });
         ligne("Consommation annuelle (kWh)", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
@@ -712,6 +788,11 @@
             ["Aimant", rA.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"]
           ]);
 
+          tableauPdf("Empreinte carbone (mix électrique français, ADEME)", [
+            ["Émissions de CO₂ / an", kwhFmt.format(rA.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg", kwhFmt.format(rB.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg"],
+            ["Sur 7 ans", kwhFmt.format(rA.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg", kwhFmt.format(rB.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg"]
+          ]);
+
           ensureSpace(14);
           doc.setTextColor(0);
           doc.setFontSize(10);
@@ -738,6 +819,20 @@
           doc.textWithLink("Refaire cette simulation avec d'autres paramètres sur ced4scale.fr", 15, y, { url: "https://ced4scale.fr/simulateur-energie.html" });
           y += 6;
           doc.textWithLink("Voir le détail des hypothèses et sources", 15, y, { url: "https://ced4scale.fr/sources-energie.html" });
+          y += 10;
+
+          ensureSpace(6 + 10 * ENERGIE_ETUDES.length);
+          doc.setFontSize(8);
+          doc.setTextColor(0);
+          doc.text("Études indépendantes sur la consommation énergétique des IRM :", 15, y); y += 5;
+          ENERGIE_ETUDES.forEach(function (e) {
+            ensureSpace(10);
+            doc.setTextColor(40, 90, 200);
+            doc.textWithLink(e.label, 15, y, { url: e.url }); y += 4;
+            doc.setTextColor(140);
+            var lignesResume = doc.splitTextToSize(e.resume, RIGHT_X - 15);
+            doc.text(lignesResume, 15, y); y += 4 * lignesResume.length + 3;
+          });
 
           return doc.output("datauristring").split(",")[1];
         });
