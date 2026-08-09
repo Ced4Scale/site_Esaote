@@ -132,6 +132,62 @@ var ENERGIE_MACHINES = [
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
     confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 23.1 kW », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
   },
+  {
+    key: "siemens-amira",
+    marque: "Siemens",
+    modele: "MAGNETOM Amira (1,5 T, entrée de gamme)",
+    aimant: "supraconducteur",
+    eteint: 4.4,
+    pret: 8.7,
+    mesure: 13.1,
+    dureeAcquisitionMinutes: 12,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 2.5,
+    refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.4 kW / System ready to measure 8.7 kW / Scan 13.1 kW », refroidissement à eau confirmé. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+  },
+  {
+    key: "siemens-prisma",
+    marque: "Siemens",
+    modele: "MAGNETOM Prisma (3 T, recherche)",
+    aimant: "supraconducteur",
+    eteint: 4.8,
+    pret: 10.8,
+    mesure: 22.4,
+    dureeAcquisitionMinutes: 10,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 3.2,
+    refroidissement: "eau glacée (standard, air en option) + climatisation de la salle d'examen",
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers, mesurée selon la méthodologie sectorielle COCIR : « System off 4.8 kW / System ready to measure 10.8 kW / Scan 22.4 kW ». Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+  },
+  {
+    key: "siemens-terra",
+    marque: "Siemens",
+    modele: "MAGNETOM Terra (7 T, ultra-haut champ)",
+    aimant: "supraconducteur",
+    eteint: 9.8,
+    pret: 17.5,
+    mesure: 25.7,
+    dureeAcquisitionMinutes: 10,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 3.5,
+    refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 9.8 kW / System ready to measure 17.5 kW / Scan 25.7 kW », refroidissement à eau confirmé. Un champ aussi élevé (7T, usage recherche) consomme nettement plus au repos que les 1,5T/3T cliniques — cohérent avec un aimant plus gros à maintenir au froid. Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
+  },
+  {
+    key: "siemens-avanto-2011",
+    marque: "Siemens",
+    modele: "MAGNETOM Avanto (1,5 T, génération 2011, ancien modèle)",
+    aimant: "supraconducteur",
+    eteint: 20,
+    pret: 20,
+    mesure: 30,
+    dureeAcquisitionMinutes: 15,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 2.5,
+    refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
+    confiance: "CONFIRMÉ par la Déclaration Environnementale de Produit (EPD) officielle Siemens de 2011 : « charge de base ≤ 20 kW / charge pleine 30 kW ». Cette génération, antérieure aux technologies Eco Power actuelles, n'avait pas de véritable mode basse consommation à l'arrêt — la machine restait proche de sa charge de base même hors examen, jour et nuit. Ajouté à titre de comparaison \"ancien vs récent\" : le même segment 1,5T Siemens est passé de 20 kW à l'arrêt (2011) à 4,3-4,4 kW (Sola/Amira, générations 2018+), soit une division par 4-5 en une quinzaine d'années — mais reste très supérieur à un aimant permanent Esaote, à toute époque."
+  },
 
   // ---------- GE HealthCare — aimant supraconducteur ----------
   {
@@ -173,10 +229,10 @@ var ENERGIE_MACHINES = [
     pret: 7.7,
     mesure: 14.5,
     dureeAcquisitionMinutes: 12,
-    coeffRefroidissementLT: 0.33,
+    coeffRefroidissementLT: 0.45,
     climSalleKw: 2.5,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle."
   },
   {
     key: "philips-elition-x",
@@ -187,10 +243,10 @@ var ENERGIE_MACHINES = [
     pret: 13.0,
     mesure: 22.8,
     dureeAcquisitionMinutes: 10,
-    coeffRefroidissementLT: 0.33,
+    coeffRefroidissementLT: 0.45,
     climSalleKw: 3.2,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle."
   },
 
   // ---------- Canon Medical — aimant supraconducteur ----------
