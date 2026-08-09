@@ -115,8 +115,8 @@ var ENERGIE_MACHINES = [
     dureeAcquisitionMinutes: 12,
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
-    refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    refroidissement: "eau glacée ou air selon configuration (chiller/échangeur en local technique) + climatisation de la salle d'examen",
+    confiance: "Valeurs identiques à celles publiées par Siemens dans la Déclaration Environnementale de Produit (EPD) officielle du MAGNETOM Sola, plateforme 1,5T de même génération : « System off 4.3 kW / System ready to measure 8.2 kW / Scan 20.2 kW » (source publique Siemens Healthineers, 2021). Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
   },
   {
     key: "siemens-vida",
@@ -130,7 +130,7 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Puissance IRM CONFIRMÉE par la Déclaration Environnementale de Produit (EPD) officielle Siemens Healthineers : « System off 4.3 kW / System ready to measure 8.4 kW / Scan 23.1 kW », refroidissement à eau confirmé (2017). Surcoût local technique et climatisation salle restent des estimations Ced4Scale."
   },
 
   // ---------- GE HealthCare — aimant supraconducteur ----------
