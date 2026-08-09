@@ -422,6 +422,16 @@ var ENERGIE_ETUDES = [
     label: "Vosshenrich, Merkle, Heye, « The carbon footprint of modern imaging », Current Opinion in Urology, 2025",
     resume: "Revue de synthèse : consommation de veille continue de 7 à 9 kW, et le refroidissement ajoute environ 45% de consommation en plus — un facteur souvent oublié dans les bilans carbone.",
     url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC12517713/"
+  },
+  {
+    label: "Carver et al., « Measuring the Environmental Impact of MRI and CT: A Life Cycle Assessment », Journal of the American College of Radiology, 2026",
+    resume: "Étude américaine (Vanderbilt University Medical Center, 800 lits, Sud-Est des États-Unis) : l'IRM de cet établissement génère 221 tonnes de CO2 équivalent par an, dont 58% viennent directement de la consommation électrique.",
+    url: "https://pubmed.ncbi.nlm.nih.gov/41052702/"
+  },
+  {
+    label: "Scherer et al., « Energy Conservation in MRI: Sequence Selection and Operational Strategies », Academic Radiology, 2026",
+    resume: "Étude américaine récente : le système de santé américain représente environ 9,8% des émissions de gaz à effet de serre du pays, l'imagerie (dont l'IRM) y contribuant fortement — propose le choix de séquences comme levier d'économie encore peu exploité.",
+    url: "https://www.academicradiology.org/article/S1076-6332(26)00424-1/fulltext"
   }
 ];
 
