@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260809-fix-cache" />
+  <link rel="stylesheet" href="styles.css?v=20260809-scale-fix" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/machines-energie-data.js?v=20260809-fix-cache"></script>
+  <script src="assets/machines-energie-data.js?v=20260809-scale-fix"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -645,11 +645,19 @@
         Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
         return el;
       }
+      // Arrondi "joli" du plafond d'axe, avec des paliers plus resserrés que le classique
+      // 1/2/5/10 — sinon un écart de 5 à 10x entre deux séries (fréquent quand on compare un
+      // aimant permanent à un aimant supraconducteur) saute directement à 10x, laissant près
+      // de la moitié du graphe vide au-dessus des barres.
       function niceCeil(value) {
         if (value <= 0) return 100;
         var pow = Math.pow(10, Math.floor(Math.log10(value)));
         var n = value / pow;
-        var niceN = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+        var paliers = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+        var niceN = 10;
+        for (var i = 0; i < paliers.length; i++) {
+          if (n <= paliers[i]) { niceN = paliers[i]; break; }
+        }
         return niceN * pow;
       }
 
