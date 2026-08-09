@@ -41,6 +41,10 @@
           <input type="text" id="documentGateNom" required autocomplete="family-name" />
         </label>
         <label>
+          <span>Fonction</span>
+          <input type="text" id="documentGateFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+        </label>
+        <label>
           <span>E-mail</span>
           <input type="email" id="documentGateEmail" required autocomplete="email" />
         </label>
@@ -239,6 +243,7 @@
       var gateIntro = document.getElementById("documentGateIntro");
       var gatePrenom = document.getElementById("documentGatePrenom");
       var gateNom = document.getElementById("documentGateNom");
+      var gateFonction = document.getElementById("documentGateFonction");
       var gateEmail = document.getElementById("documentGateEmail");
       var gatePersonalNudge = document.getElementById("documentGatePersonalNudge");
       var gateNudgeEdit = document.getElementById("documentGateNudgeEdit");
@@ -352,6 +357,7 @@
           var prenom = gatePrenom.value.trim();
           var nom = gateNom.value.trim();
           var name = (prenom + " " + nom).trim();
+          var fonction = gateFonction.value.trim();
           var email = gateEmail.value.trim();
           var phone = isRestricted ? gatePhone.value.trim() : "";
           var submitButton = gateForm.querySelector('button[type="submit"]');
@@ -377,6 +383,7 @@
               body: JSON.stringify({
                 name: name,
                 prenom: prenom,
+                fonction: fonction,
                 email: email,
                 phone: phone,
                 doc: docKey,
@@ -393,6 +400,7 @@
             var subject = "Demande de document — " + doc.title;
             var body = "Document demandé : " + doc.title + " (" + docKey + ")\n" +
               "Nom du demandeur : " + name + "\n" +
+              (fonction ? "Fonction du demandeur : " + fonction + "\n" : "") +
               "E-mail du demandeur : " + email + "\n" +
               (phone ? "Téléphone du demandeur : " + phone + "\n" : "") +
               "\nEnvoyé automatiquement depuis ced4scale.fr (flux d'envoi pas encore branché).";
