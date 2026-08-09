@@ -101,8 +101,12 @@
 
   <script>
     (function () {
-      var euros = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
-      var seuilsEntiers = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 });
+      // Locale allemande plutôt que française : elle donne un point comme séparateur de
+      // milliers ("5.200 €") au lieu d'une espace fine insécable que la police par défaut de
+      // jsPDF ne reconnaît pas et affiche comme un "/" — même correctif que sur les autres
+      // pages (demande de Cédric, 09/08/2026 : "5/200 au lieu de 5.200").
+      var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 
       var params = new URLSearchParams(window.location.search);
       var iso = params.get("date");
@@ -190,6 +194,20 @@
       function genererPdfBase64() {
         return imageDataUrl("assets/logo-ced4scale.png").then(function (logoPng) {
           var doc = new window.jspdf.jsPDF();
+          // Filet de sécurité : neutralise toute espace fine/insécable restante avant qu'elle
+          // n'atteigne jsPDF (même piège que sur simulateur-recettes.html — voir la mémoire du
+          // site pour le détail).
+          var _origDocText = doc.text.bind(doc);
+          doc.text = function (text, x, y, opts) {
+            function clean(t) { return typeof t === "string" ? t.replace(/[\xa0 ]/g, " ") : t; }
+            text = Array.isArray(text) ? text.map(clean) : clean(text);
+            return _origDocText(text, x, y, opts);
+          };
+          var _origDocTextWithLink = doc.textWithLink.bind(doc);
+          doc.textWithLink = function (text, x, y, opts) {
+            if (typeof text === "string") text = text.replace(/[\xa0 ]/g, " ");
+            return _origDocTextWithLink(text, x, y, opts);
+          };
           var prenom = document.getElementById("fthPrenom").value.trim();
           var nom = document.getElementById("fthNom").value.trim();
           var email = document.getElementById("fthEmail").value.trim();

@@ -74,7 +74,7 @@
         </div>
         <div class="field">
           <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
-          <input type="number" id="eneActivite" value="20" min="0" step="1" />
+          <input type="number" id="eneActivite" value="40" min="0" step="1" />
         </div>
         <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
 
@@ -127,7 +127,8 @@
         </div>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong> mesure la sobriété structurelle de la machine : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem"><strong>Définition (Ced4Scale) — talon de consommation :</strong> le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. C'est un plancher théorique, pas un scénario réel : au-delà, les coûts réels s'ajoutent au prorata de l'activité (nombre de patients dans la plage d'ouverture) — c'est ce que mesurent les couches "Entre deux patients" et "Examens".</p>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
@@ -146,7 +147,7 @@
 
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Le socle lui-même se répartit entre l'IRM (consommation à l'arrêt), le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
           <table class="stats-table simulator__table" id="eneTableSocle">
             <thead>
               <tr>
@@ -583,7 +584,7 @@
         tbody.innerHTML = "";
         ligneTable(tbody, "Consommation annuelle", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
         ligneTable(tbody, "Émissions de CO₂ associées", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg CO₂/an"; }), { strong: true });
-        ligneTable(tbody, "Équivalent en arbres (une année d'absorption)", resultats.map(function (r) { return kwhFmt.format(Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN)) + " arbres"; }));
+        ligneTable(tbody, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return kwhFmt.format(Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN)) + " arbres"; }));
         ligneTable(tbody, "Sur 7 ans", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg CO₂"; }));
       }
 
@@ -611,7 +612,7 @@
       function remplirTableauSocle(resultats) {
         var tbody = document.getElementById("eneTableSocleBody");
         tbody.innerHTML = "";
-        ligneTable(tbody, "IRM (consommation à l'arrêt)", resultats.map(function (r) { return euros.format(r.decomp.socle.irm * r.prix); }));
+        ligneTable(tbody, "IRM (talon de consommation)", resultats.map(function (r) { return euros.format(r.decomp.socle.irm * r.prix); }));
         ligneTable(tbody, "Local technique (maintien en froid)", resultats.map(function (r) { return r.machine.coeffRefroidissementLT > 0 ? euros.format(r.decomp.socle.lt * r.prix) : "—"; }));
         ligneTable(tbody, "Climatisation de la salle d'examen", resultats.map(function (r) { return euros.format(r.decomp.socle.clim * r.prix); }));
         ligneTable(tbody, "Total socle (par an)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }), { strong: true });
@@ -710,10 +711,8 @@
             var barH = yMax > 0 ? (val / yMax) * chartH : 0;
             var barY = yCursor - barH;
             var rectSegment = svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] });
-            if (tierKey === "socle") {
-              rectSegment.style.cursor = "pointer";
-              rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
-            }
+            rectSegment.style.cursor = "pointer";
+            rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
             svg.appendChild(rectSegment);
             // Montant affiché dans le segment lui-même quand il est assez grand pour
             // l'accueillir sans déborder ; sinon laissé au tableau détaillé plutôt que de
@@ -745,15 +744,17 @@
         svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
-      // ---- Détail du socle, à la demande : clic sur le segment "socle" d'une des deux
-      // barres -> un camembert par machine (IRM / local technique / climatisation), pour
-      // ne pas alourdir le graphe principal alors que la plupart des visiteurs n'ont pas
-      // besoin de ce niveau de détail en permanence.
-      var COMPOSANT_SOCLE_COLORS = { irm: "#2a78d6", lt: "#eb6834", clim: "#1baf7a" };
-      var COMPOSANTS_SOCLE = [
-        { key: "irm", label: "IRM (à l'arrêt)" },
-        { key: "lt", label: "Local technique" },
-        { key: "clim", label: "Climatisation salle" }
+      // ---- Détail à 5 parts, à la demande : clic sur un segment de barre -> un camembert
+      // par machine (entre deux patients / examens / IRM / local technique / climatisation),
+      // pour ne pas alourdir le graphe principal en continu. Les 5 parts sont mutuellement
+      // exclusives et somment exactement au coût annuel total (le socle est déplié en ses 3
+      // composantes, les deux autres couches restent entières).
+      var COMPOSANTS_5 = [
+        { key: "entrePatients", label: "Entre deux patients", color: "#1baf7a" },
+        { key: "examens", label: "Examens", color: "#eda100" },
+        { key: "irm", label: "IRM (talon de consommation)", color: "#2a78d6" },
+        { key: "lt", label: "Local technique", color: "#eb6834" },
+        { key: "clim", label: "Climatisation salle", color: "#6b5b95" }
       ];
 
       function toggleSocleDetail(resultats) {
@@ -765,12 +766,12 @@
       function dessinerLegendeSocleDetail() {
         var legendEl = document.getElementById("eneLegendSocleDetail");
         legendEl.innerHTML = "";
-        COMPOSANTS_SOCLE.forEach(function (c) {
+        COMPOSANTS_5.forEach(function (c) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
           var key = document.createElement("span");
           key.className = "simulator__legend-key";
-          key.style.background = COMPOSANT_SOCLE_COLORS[c.key];
+          key.style.background = c.color;
           item.appendChild(key);
           var text = document.createElement("span");
           text.textContent = c.label;
@@ -781,17 +782,23 @@
 
       function dessinerCamembertSocle(resultats) {
         document.getElementById("eneSocleDetailHint").textContent =
-          "Un camembert par machine — la taille est proportionnelle au socle de chacune, pour ne pas donner l'impression d'un même total.";
+          "Un camembert par machine, 5 parts qui somment exactement au coût annuel total — la taille est proportionnelle à ce total, pour ne pas donner l'impression d'un même montant.";
         dessinerLegendeSocleDetail();
         var svg2 = document.getElementById("eneChartSocleDetail");
         svg2.innerHTML = "";
 
         var camemberts = resultats.map(function (r) {
-          var d = r.decomp.socle;
+          var d = r.decomp;
           return {
             label: (r === resultats[0] ? "A — " : "B — ") + r.machine.nomCourt,
-            total: d.total * r.prix,
-            parts: { irm: d.irm * r.prix, lt: d.lt * r.prix, clim: d.clim * r.prix }
+            total: r.coutAnnuel,
+            parts: {
+              entrePatients: d.entrePatients.total * r.prix,
+              examens: d.examens.total * r.prix,
+              irm: d.socle.irm * r.prix,
+              lt: d.socle.lt * r.prix,
+              clim: d.socle.clim * r.prix
+            }
           };
         });
 
@@ -802,17 +809,17 @@
         camemberts.forEach(function (cam, i) {
           var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(cam.total / maxTotal)) : maxR;
           var startAngle = -Math.PI / 2;
-          COMPOSANTS_SOCLE.forEach(function (c) {
+          COMPOSANTS_5.forEach(function (c) {
             var part = cam.parts[c.key];
             if (!part || part <= 0) return;
             var fraction = part / cam.total;
             var endAngle = startAngle + fraction * 2 * Math.PI;
-            svg2.appendChild(svgEl("path", { d: pieSlicePathSocle(centers[i], centerY, r, startAngle, endAngle), fill: COMPOSANT_SOCLE_COLORS[c.key], stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            svg2.appendChild(svgEl("path", { d: pieSlicePathSocle(centers[i], centerY, r, startAngle, endAngle), fill: c.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
 
             var midAngle = (startAngle + endAngle) / 2;
             var lx1 = centers[i] + r * 1.02 * Math.cos(midAngle), ly1 = centerY + r * 1.02 * Math.sin(midAngle);
             var lx2 = centers[i] + r * 1.2 * Math.cos(midAngle), ly2 = centerY + r * 1.2 * Math.sin(midAngle);
-            svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: COMPOSANT_SOCLE_COLORS[c.key], "stroke-width": "1.5" }));
+            svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: c.color, "stroke-width": "1.5" }));
             var cosA = Math.cos(midAngle);
             var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
             var lx3 = centers[i] + r * 1.28 * Math.cos(midAngle), ly3 = centerY + r * 1.28 * Math.sin(midAngle);
@@ -834,7 +841,7 @@
           var caption = svgEl("text", { x: centers[i], y: 26, class: "simulator__axis-label", "text-anchor": "middle" });
           caption.style.fontSize = "12px";
           caption.style.fontWeight = "700";
-          caption.textContent = cam.label + " — socle : " + euros.format(cam.total) + " / an";
+          caption.textContent = cam.label + " — total : " + euros.format(cam.total) + " / an";
           svg2.appendChild(caption);
         });
       }
@@ -913,6 +920,20 @@
           var chartPng = images[0], logoPng = images[1];
           var doc = new window.jspdf.jsPDF({ orientation: "portrait" });
           var RIGHT_X = 195;
+          // Filet de sécurité : neutralise toute espace fine/insécable restante avant qu'elle
+          // n'atteigne jsPDF (même piège que sur simulateur-recettes.html — voir la mémoire du
+          // site pour le détail).
+          var _origDocText = doc.text.bind(doc);
+          doc.text = function (text, x, y, opts) {
+            function clean(t) { return typeof t === "string" ? t.replace(/[\xa0 ]/g, " ") : t; }
+            text = Array.isArray(text) ? text.map(clean) : clean(text);
+            return _origDocText(text, x, y, opts);
+          };
+          var _origDocTextWithLink = doc.textWithLink.bind(doc);
+          doc.textWithLink = function (text, x, y, opts) {
+            if (typeof text === "string") text = text.replace(/[\xa0 ]/g, " ");
+            return _origDocTextWithLink(text, x, y, opts);
+          };
           var prenom = document.getElementById("enePrenom").value.trim();
           var nom = document.getElementById("eneNom").value.trim();
           var email = document.getElementById("eneEmail").value.trim();
@@ -1007,6 +1028,21 @@
             ["Climatisation salle d'examen", rA.machine.climSalleKw + " kW (continu)", rB.machine.climSalleKw + " kW (continu)"]
           ]);
 
+          ensureSpace(20);
+          doc.setFontSize(8.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Définition (Ced4Scale) — talon de consommation :", 15, y); y += 4.5;
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(90);
+          var ligneTalon = doc.splitTextToSize(
+            "le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. Au-delà de ce plancher théorique, les coûts réels s'ajoutent au prorata de l'activité.",
+            RIGHT_X - 15
+          );
+          ensureSpace(4.5 * ligneTalon.length + 5);
+          doc.text(ligneTalon, 15, y); y += 4.5 * ligneTalon.length + 6;
+          doc.setTextColor(0);
+
           tableauPdf("Décomposition en trois couches", [
             ["Socle (arrêt, jour et nuit)", euros.format(rA.decomp.socle.total * rA.prix), euros.format(rB.decomp.socle.total * rB.prix)],
             ["Entre deux patients", euros.format(rA.decomp.entrePatients.total * rA.prix), euros.format(rB.decomp.entrePatients.total * rB.prix)],
@@ -1017,7 +1053,7 @@
           ]);
 
           tableauPdf("Détail du socle", [
-            ["IRM (à l'arrêt)", euros.format(rA.decomp.socle.irm * rA.prix), euros.format(rB.decomp.socle.irm * rB.prix)],
+            ["IRM (talon de consommation)", euros.format(rA.decomp.socle.irm * rA.prix), euros.format(rB.decomp.socle.irm * rB.prix)],
             ["Local technique", rA.machine.coeffRefroidissementLT > 0 ? euros.format(rA.decomp.socle.lt * rA.prix) : "—", rB.machine.coeffRefroidissementLT > 0 ? euros.format(rB.decomp.socle.lt * rB.prix) : "—"],
             ["Climatisation salle d'examen", euros.format(rA.decomp.socle.clim * rA.prix), euros.format(rB.decomp.socle.clim * rB.prix)],
             ["Aimant", rA.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"]
@@ -1147,7 +1183,7 @@
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
           document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour ouvré type" : "Nombre de patients par an";
-          document.getElementById("eneActivite").value = mode === "jour" ? 20 : 5000;
+          document.getElementById("eneActivite").value = mode === "jour" ? 40 : 6000;
           recalculer();
         });
       });
