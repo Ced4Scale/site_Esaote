@@ -66,10 +66,10 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "esaote-g-scan",
-    nomCourt: "Esaote G-scan Brio",
+    nomCourt: "Esaote G-scan",
     champT: 0.25,
     marque: "Esaote",
-    modele: "G-scan Brio",
+    modele: "G-scan",
     aimant: "permanent",
     eteint: 0.15,
     pret: 0.6,
@@ -301,7 +301,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/en-us/products/magnetic-resonance-imaging/1-5t-mri-scanners/signa-explorer-mri-scanner"
   },
   {
     key: "ge-voyager",
@@ -317,7 +318,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/en-us/products/magnetic-resonance-imaging/1-5t-mri-scanners/signa-voyager-wide-bore-mri-scanner"
   },
   {
     key: "ge-sigma-prime",
@@ -333,7 +335,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/products/goldseal-refurbished-systems/goldseal-magnetic-resonance/optima-mr450w-with-gem"
   },
   {
     key: "ge-pioneer",
@@ -349,7 +352,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/products/magnetic-resonance-imaging/3-0t/signa-pioneer"
   },
   {
     key: "ge-artist",
@@ -365,7 +369,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 3.2,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/products/magnetic-resonance-imaging/1-5t-mri-scanners/signa-artist-wide-bore-mri-scanner"
   },
   {
     key: "ge-optima-mr450w",
@@ -381,7 +386,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://www.gehealthcare.com/products/goldseal-refurbished-systems/goldseal-magnetic-resonance/optima-mr450w-with-gem"
   },
 
   // ---------- Philips — aimant supraconducteur, refroidissement à air ----------
@@ -399,7 +405,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.45,
     climSalleKw: 2.5,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle.",
+  sourceUrl: "https://www.usa.philips.com/healthcare/product/HC781359/ingenia-ambition-excel-in-your-daily-mr-services-helium-free"
   },
   {
     key: "philips-ambition-x",
@@ -415,7 +422,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.45,
     climSalleKw: 2.5,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée)."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée).",
+  sourceUrl: "https://www.usa.philips.com/healthcare/product/HC781356/ingenia-ambition-excel-in-your-daily-mr-services-helium-free"
   },
   {
     key: "philips-mr7700",
@@ -431,7 +439,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.45,
     climSalleKw: 3.2,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée)."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée).",
+  sourceUrl: "https://www.usa.philips.com/healthcare/product/HCNMRF429/mr-7700"
   },
   {
     key: "philips-elition-x",
@@ -447,7 +456,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.45,
     climSalleKw: 3.2,
     refroidissement: "air (pas de circuit d'eau glacée) + climatisation de la salle d'examen",
-    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle."
+    confiance: "Puissance IRM : estimation Ced4Scale, à confirmer avec le fabricant. Surcoût local technique fixé à 45 % (borne haute documentée dans la littérature) plutôt que 33 % (mesure sur un système à eau glacée) : un refroidissement à air a en général un moins bon rendement qu'un circuit à eau glacée pour évacuer la même chaleur — hypothèse physique raisonnable, pas une mesure directe sur ce modèle.",
+  sourceUrl: "https://www.usa.philips.com/healthcare/product/HC781358/ingenia-elition-30t-x"
   },
 
   // ---------- Canon Medical — aimant supraconducteur ----------
@@ -465,7 +475,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://us.medical.canon/products/magnetic-resonance/vantage-elan-15t/"
   },
   {
     key: "canon-orian",
@@ -481,7 +492,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://us.medical.canon/products/magnetic-resonance/vantage-orian-15t/"
   },
   {
     key: "canon-orian-hyp",
@@ -497,7 +509,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "local technique (eau glacée ou air selon configuration, à confirmer) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant.",
+  sourceUrl: "https://us.medical.canon/products/magnetic-resonance/vantage-orian-15t/"
   },
   {
     key: "siemens-aera",
@@ -513,7 +526,8 @@ var ENERGIE_MACHINES = [
     coeffRefroidissementLT: 0.33,
     climSalleKw: 2.5,
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
-    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant. Modèle utilisé dans l'étude indépendante Roletto et al. (European Radiology Experimental, 2026, voir « Ce que disent les études indépendantes ») comme référence de l'ancienne génération 1,5T, avant l'arrivée d'Eco Power Mode."
+    confiance: "Estimation Ced4Scale, à confirmer avec le fabricant. Modèle utilisé dans l'étude indépendante Roletto et al. (European Radiology Experimental, 2026, voir « Ce que disent les études indépendantes ») comme référence de l'ancienne génération 1,5T, avant l'arrivée d'Eco Power Mode.",
+  sourceUrl: "https://www.siemens-healthineers.com/en-us/magnetic-resonance-imaging/1-5t-mri-scanner/magnetom-aera"
   }
 ];
 
@@ -523,6 +537,13 @@ var ENERGIE_MACHINES = [
 // carbone est donc plus modeste en France que dans le reste de l'Europe, l'argument coût reste
 // entier). Valeur arrondie, à réviser si l'ADEME publie une mise à jour du facteur.
 var CO2_G_PAR_KWH_FRANCE = 56.6;
+
+// Capacité d'absorption moyenne d'un arbre adulte, en kg de CO2 par an — pour rendre
+// l'empreinte carbone plus concrète ("équivalent à X arbres pendant un an"). 25 kg/an est la
+// valeur la plus généralement citée (moyenne toutes essences ; un chêne adulte absorbe
+// typiquement 20 à 30 kg/an). Ordre de grandeur pédagogique, pas une mesure de compensation
+// carbone certifiée — la capacité réelle varie fortement selon l'essence, l'âge et le climat.
+var ARBRE_KG_CO2_PAR_AN = 25;
 
 // Études indépendantes ayant mesuré ou recoupé la consommation électrique d'IRM, utilisées
 // pour étayer le volet RSE de ce simulateur (citées dans le PDF envoyé et sur

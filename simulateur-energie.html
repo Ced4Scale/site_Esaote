@@ -9,10 +9,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260809-scale-fix" />
+  <link rel="stylesheet" href="styles.css?v=20260809-v3" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/machines-energie-data.js?v=20260809-scale-fix"></script>
+  <script src="assets/machines-energie-data.js?v=20260809-v3"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -131,6 +131,16 @@
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
+          </div>
+          <p class="simulator__hint" style="margin-top:.4rem">Cliquez sur le socle (couleur violette) d'une barre pour voir sa composition en détail.</p>
+        </div>
+
+        <div class="simulator__chart-card" id="eneCardSocleDetail" hidden>
+          <h3 style="margin-bottom:.6rem">Composition du socle</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem" id="eneSocleDetailHint"></p>
+          <div class="simulator__legend" id="eneLegendSocleDetail"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="eneChartSocleDetail" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du socle en IRM, local technique et climatisation, pour la machine choisie"></svg>
           </div>
         </div>
 
@@ -509,6 +519,7 @@
         remplirEtudesListe();
         dessinerLegende();
         dessinerGraphe(resultats);
+        if (!document.getElementById("eneCardSocleDetail").hidden) dessinerCamembertSocle(resultats);
 
         var ecartEl = document.getElementById("eneEcart");
         var diff = resultats[0].coutAnnuel - resultats[1].coutAnnuel;
@@ -519,9 +530,10 @@
         if (ecartAbs < 1) {
           ecartEl.innerHTML = "<strong>Coût énergétique quasiment identique entre les deux machines choisies.</strong>";
         } else {
-          ecartEl.innerHTML = "<strong>" + moinsCher.machine.nomCourt + " coûte " + euros.format(ecartAbs) +
-            " de moins par an en énergie que " + plusCher.machine.nomCourt +
-            " (soit −" + pct + " %)</strong>, à horaires et activité identiques.";
+          var ecartMensuel = euros.format(ecartAbs / 12);
+          ecartEl.innerHTML = "À horaires et activité identiques, <strong style=\"color:var(--red)\">" +
+            moinsCher.machine.nomCourt + " coûte " + euros.format(ecartAbs) + " de moins par an (soit " + ecartMensuel +
+            " par mois) en énergie que " + plusCher.machine.nomCourt + " — une économie de " + pct + " %.</strong>";
         }
 
         var ecartCo2El = document.getElementById("eneEcartCo2");
@@ -571,6 +583,7 @@
         tbody.innerHTML = "";
         ligneTable(tbody, "Consommation annuelle", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
         ligneTable(tbody, "Émissions de CO₂ associées", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg CO₂/an"; }), { strong: true });
+        ligneTable(tbody, "Équivalent en arbres (une année d'absorption)", resultats.map(function (r) { return kwhFmt.format(Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN)) + " arbres"; }));
         ligneTable(tbody, "Sur 7 ans", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg CO₂"; }));
       }
 
@@ -696,7 +709,12 @@
             var val = r.decomp[tierKey].total * r.prix;
             var barH = yMax > 0 ? (val / yMax) * chartH : 0;
             var barY = yCursor - barH;
-            svg.appendChild(svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] }));
+            var rectSegment = svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] });
+            if (tierKey === "socle") {
+              rectSegment.style.cursor = "pointer";
+              rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
+            }
+            svg.appendChild(rectSegment);
             // Montant affiché dans le segment lui-même quand il est assez grand pour
             // l'accueillir sans déborder ; sinon laissé au tableau détaillé plutôt que de
             // surcharger un trait trop fin (cas fréquent pour un aimant permanent).
@@ -725,6 +743,107 @@
         });
 
         svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+      }
+
+      // ---- Détail du socle, à la demande : clic sur le segment "socle" d'une des deux
+      // barres -> un camembert par machine (IRM / local technique / climatisation), pour
+      // ne pas alourdir le graphe principal alors que la plupart des visiteurs n'ont pas
+      // besoin de ce niveau de détail en permanence.
+      var COMPOSANT_SOCLE_COLORS = { irm: "#2a78d6", lt: "#eb6834", clim: "#1baf7a" };
+      var COMPOSANTS_SOCLE = [
+        { key: "irm", label: "IRM (à l'arrêt)" },
+        { key: "lt", label: "Local technique" },
+        { key: "clim", label: "Climatisation salle" }
+      ];
+
+      function toggleSocleDetail(resultats) {
+        var card = document.getElementById("eneCardSocleDetail");
+        card.hidden = !card.hidden;
+        if (!card.hidden) dessinerCamembertSocle(resultats);
+      }
+
+      function dessinerLegendeSocleDetail() {
+        var legendEl = document.getElementById("eneLegendSocleDetail");
+        legendEl.innerHTML = "";
+        COMPOSANTS_SOCLE.forEach(function (c) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = COMPOSANT_SOCLE_COLORS[c.key];
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = c.label;
+          item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
+
+      function dessinerCamembertSocle(resultats) {
+        document.getElementById("eneSocleDetailHint").textContent =
+          "Un camembert par machine — la taille est proportionnelle au socle de chacune, pour ne pas donner l'impression d'un même total.";
+        dessinerLegendeSocleDetail();
+        var svg2 = document.getElementById("eneChartSocleDetail");
+        svg2.innerHTML = "";
+
+        var camemberts = resultats.map(function (r) {
+          var d = r.decomp.socle;
+          return {
+            label: (r === resultats[0] ? "A — " : "B — ") + r.machine.nomCourt,
+            total: d.total * r.prix,
+            parts: { irm: d.irm * r.prix, lt: d.lt * r.prix, clim: d.clim * r.prix }
+          };
+        });
+
+        var maxTotal = Math.max.apply(null, camemberts.map(function (c) { return c.total; }).concat([0.0001]));
+        var maxR = 55, centerY = 120;
+        var centers = [170, 470];
+
+        camemberts.forEach(function (cam, i) {
+          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(cam.total / maxTotal)) : maxR;
+          var startAngle = -Math.PI / 2;
+          COMPOSANTS_SOCLE.forEach(function (c) {
+            var part = cam.parts[c.key];
+            if (!part || part <= 0) return;
+            var fraction = part / cam.total;
+            var endAngle = startAngle + fraction * 2 * Math.PI;
+            svg2.appendChild(svgEl("path", { d: pieSlicePathSocle(centers[i], centerY, r, startAngle, endAngle), fill: COMPOSANT_SOCLE_COLORS[c.key], stroke: "#fcfcfb", "stroke-width": "1.5" }));
+
+            var midAngle = (startAngle + endAngle) / 2;
+            var lx1 = centers[i] + r * 1.02 * Math.cos(midAngle), ly1 = centerY + r * 1.02 * Math.sin(midAngle);
+            var lx2 = centers[i] + r * 1.2 * Math.cos(midAngle), ly2 = centerY + r * 1.2 * Math.sin(midAngle);
+            svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: COMPOSANT_SOCLE_COLORS[c.key], "stroke-width": "1.5" }));
+            var cosA = Math.cos(midAngle);
+            var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+            var lx3 = centers[i] + r * 1.28 * Math.cos(midAngle), ly3 = centerY + r * 1.28 * Math.sin(midAngle);
+            var pct = Math.round(fraction * 100);
+            var label = svgEl("text", { x: lx3, y: ly3, class: "simulator__axis-label", "text-anchor": anchor });
+            label.style.fontSize = "10px";
+            label.style.fontWeight = "700";
+            var lineMontant = svgEl("tspan", { x: lx3, dy: "0" });
+            lineMontant.textContent = euros.format(part);
+            label.appendChild(lineMontant);
+            var linePct = svgEl("tspan", { x: lx3, dy: "11" });
+            linePct.style.fontWeight = "400";
+            linePct.textContent = pct + " %";
+            label.appendChild(linePct);
+            svg2.appendChild(label);
+            startAngle = endAngle;
+          });
+
+          var caption = svgEl("text", { x: centers[i], y: 26, class: "simulator__axis-label", "text-anchor": "middle" });
+          caption.style.fontSize = "12px";
+          caption.style.fontWeight = "700";
+          caption.textContent = cam.label + " — socle : " + euros.format(cam.total) + " / an";
+          svg2.appendChild(caption);
+        });
+      }
+
+      function pieSlicePathSocle(cx, cy, r, startAngle, endAngle) {
+        var largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+        var x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+        var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+        return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
       }
 
       // ---------------------------------------------------------------------------------
