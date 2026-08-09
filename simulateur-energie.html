@@ -179,9 +179,11 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Ce que disent les études indépendantes</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</p>
-          <ul id="eneEtudesListe" style="margin:0 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
+          <h3 class="simulator__collapse-toggle" id="eneEtudesToggle" style="margin-bottom:.6rem;cursor:pointer">Ce que disent les études indépendantes <span aria-hidden="true">▾</span></h3>
+          <div id="eneEtudesBody" hidden>
+            <p class="simulator__hint" style="margin:0 0 .6rem">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</p>
+            <ul id="eneEtudesListe" style="margin:0 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
+          </div>
         </div>
 
         <div class="simulator__export" id="eneExport">
@@ -943,6 +945,14 @@
           return doc.output("datauristring").split(",")[1];
         });
       }
+
+      var etudesToggle = document.getElementById("eneEtudesToggle");
+      var etudesBody = document.getElementById("eneEtudesBody");
+      etudesToggle.addEventListener("click", function () {
+        var ouvert = !etudesBody.hidden;
+        etudesBody.hidden = ouvert;
+        etudesToggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
+      });
 
       var exportForm = document.getElementById("eneExportForm");
       var exportSuccess = document.getElementById("eneExportSuccess");

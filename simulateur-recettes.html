@@ -88,7 +88,7 @@
         <div class="simulator__chart-card">
           <div class="simulator__legend" id="simLegend"></div>
           <div class="simulator__chart-wrap">
-            <svg id="simChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Courbes de chiffre d'affaires sur 7 ans, une par date de forfait technique choisie"></svg>
+            <svg id="simChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Courbes de chiffre d'affaires sur 7 ans, une par date de forfait technique choisie"></svg>
             <div class="simulator__tooltip" id="simTooltip" hidden></div>
           </div>
         </div>
@@ -377,16 +377,22 @@
         });
       }
 
-      // Géométrie du graphe (viewBox 640x300).
+      // Géométrie du graphe (viewBox 640 x VIEWBOX_H) — hauteur augmentée le 09/08/2026
+      // (320 au lieu de 300) pour un graphe plus grand, demande de Cédric.
+      var VIEWBOX_H = 320;
       var PAD = { left: 92, right: 16, top: 18, bottom: 28 };
       var PLOT_W = 640 - PAD.left - PAD.right;
-      var PLOT_H = 300 - PAD.top - PAD.bottom;
+      var PLOT_H = VIEWBOX_H - PAD.top - PAD.bottom;
 
+      // Paliers plus fins qu'un simple 1/2/5/10 : l'échelle colle mieux aux données réelles
+      // (moins d'espace vide en haut du graphe), demande de Cédric du 09/08/2026 ("adapter les
+      // échelles en rapport avec les données").
+      var NICE_STEPS = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
       function niceCeil(value) {
         if (value <= 0) return 100000;
         var pow = Math.pow(10, Math.floor(Math.log10(value)));
         var n = value / pow;
-        var niceN = n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10;
+        var niceN = NICE_STEPS.filter(function (s) { return s >= n; })[0] || 10;
         return niceN * pow;
       }
 
@@ -407,7 +413,7 @@
 
         var maxVal = 0;
         derniereSerie.forEach(function (s) { s.cumulMensuel.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
-        var yMax = niceCeil(maxVal * 1.08);
+        var yMax = niceCeil(maxVal * 1.03);
 
         function xAt(i) { return PAD.left + (PLOT_W * i) / NB_MOIS; }
         function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * v) / yMax; }
@@ -425,7 +431,7 @@
         // Axe X : Départ (0 €) puis Année 1..7 (un repère tous les 12 mois) — la courbe, elle,
         // avance mois par mois (voir cumulMensuel).
         for (var an = 0; an <= 7; an++) {
-          var lx = svgEl("text", { x: xAt(an * 12), y: 300 - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          var lx = svgEl("text", { x: xAt(an * 12), y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
           lx.textContent = an === 0 ? "Départ" : "A" + an;
           svg.appendChild(lx);
         }
@@ -635,7 +641,7 @@
         derniereBaremes.forEach(function (b) {
           PALIERS.forEach(function (p) { if ((b.detail[p.key] || 0) > maxPalierVal) maxPalierVal = b.detail[p.key]; });
         });
-        var yMaxBarres = niceCeil(maxPalierVal * 1.15);
+        var yMaxBarres = niceCeil(maxPalierVal * 1.06);
 
         derniereBaremes.forEach(function (b, i) {
           var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
