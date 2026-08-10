@@ -56,6 +56,23 @@ var FT_CLASSES = {
       { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { nonAmorti: 183.45 }, idf: { nonAmorti: 181.72 }, province: { nonAmorti: 181.29 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
       { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { nonAmorti: 178.15 }, idf: { nonAmorti: 176.47 }, province: { nonAmorti: 176.05 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
     ]
+  },
+  /* Scanner (CT) — pas de distinction Paris/IDF/Province dans le texte officiel ("toutes
+     classes"), même valeur répétée dans les 3 zones pour ne pas changer la forme des
+     données ni le code qui les lit (recettePatient()). Seuil de référence (6 700
+     forfaits/an) confirmé par un document pédagogique du CERF (Collège des Enseignants de
+     Radiologie de France), pas écrit explicitement dans les arrêtés eux-mêmes. */
+  ct: {
+    label: "Scanner (CT)", REF: 6700, SEUIL1: 11000, SEUIL2: 13000,
+    dates: [
+      { iso: "2018-07-01", label: "1er juil. 2018", plein: { paris: { amorti: 69.38, nonAmorti: 93.53 }, idf: { amorti: 69.38, nonAmorti: 93.53 }, province: { amorti: 69.38, nonAmorti: 93.53 } }, reduits: { seuil1: 54.68, seuil2: 41.88, plafond: 29.63 } },
+      { iso: "2019-01-01", label: "1er janv. 2019", plein: { paris: { amorti: 68.88, nonAmorti: 93.03 }, idf: { amorti: 68.88, nonAmorti: 93.03 }, province: { amorti: 68.88, nonAmorti: 93.03 } }, reduits: { seuil1: 55.66, seuil2: 47.74, plafond: 32.00 } },
+      { iso: "2024-03-01", label: "1er mars 2024", plein: { paris: { amorti: 75.54, nonAmorti: 99.69 }, idf: { amorti: 75.54, nonAmorti: 99.69 }, province: { amorti: 75.54, nonAmorti: 99.69 } }, reduits: { seuil1: 60.00, seuil2: 52.08, plafond: 36.34 } },
+      { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { amorti: 72.52, nonAmorti: 91.71 }, idf: { amorti: 72.52, nonAmorti: 91.71 }, province: { amorti: 72.52, nonAmorti: 91.71 } }, reduits: { seuil1: 51.00, seuil2: 44.27, plafond: 30.89 } },
+      { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { amorti: 72.52, nonAmorti: 91.71 }, idf: { amorti: 72.52, nonAmorti: 91.71 }, province: { amorti: 72.52, nonAmorti: 91.71 } }, reduits: { seuil1: 60.00, seuil2: 52.08, plafond: 36.34 } },
+      { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { amorti: 71.76, nonAmorti: 89.72 }, idf: { amorti: 71.76, nonAmorti: 89.72 }, province: { amorti: 71.76, nonAmorti: 89.72 } }, reduits: { seuil1: 60.00, seuil2: 52.08, plafond: 36.34 } },
+      { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 71.01, nonAmorti: 87.13 }, idf: { amorti: 71.01, nonAmorti: 87.13 }, province: { amorti: 71.01, nonAmorti: 87.13 } }, reduits: { seuil1: 60.00, seuil2: 52.08, plafond: 36.34 } }
+    ]
   }
 };
 

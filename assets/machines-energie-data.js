@@ -528,6 +528,43 @@ var ENERGIE_MACHINES = [
     refroidissement: "eau glacée (chiller dédié en local technique) + climatisation de la salle d'examen",
     confiance: "Estimation Ced4Scale, à confirmer avec le fabricant. Modèle utilisé dans l'étude indépendante Roletto et al. (European Radiology Experimental, 2026, voir « Ce que disent les études indépendantes ») comme référence de l'ancienne génération 1,5T, avant l'arrivée d'Eco Power Mode.",
   sourceUrl: "https://www.siemens-healthineers.com/en-us/magnetic-resonance-imaging/1-5t-mri-scanner/magnetom-aera"
+  },
+  // ---------- Scanners (CT) — pas d'aimant, comparés à une IRM Esaote sur le simulateur de
+  // point mort. type:"ct" identifie ces machines pour le calcul de recette (barème scanner,
+  // pas de distinction Paris/IDF/Province) et pour le filtre "gamme" du simulateur. ----------
+  {
+    key: "siemens-goall",
+    nomCourt: "Siemens SOMATOM go.All",
+    type: "ct",
+    champT: null,
+    marque: "Siemens",
+    modele: "SOMATOM go.All (scanner CT)",
+    aimant: "ct",
+    eteint: 2.7,
+    pret: 2.7,
+    mesure: 62,
+    dureeAcquisitionMinutes: 4,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 3.5,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
+    confiance: "Puissance électrique officielle Siemens (guide de contraintes d'implantation \"Contraintes d'implantation SOMATOM_go.All_FR.pdf\") : veille ≤ 3 kVA, puissance nominale en fonctionnement 69,2 kVA — converties en kW avec un facteur de puissance estimé à 0,9. Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
+  },
+  {
+    key: "siemens-gotop",
+    nomCourt: "Siemens SOMATOM go.Top",
+    type: "ct",
+    champT: null,
+    marque: "Siemens",
+    modele: "SOMATOM go.Top (scanner CT)",
+    aimant: "ct",
+    eteint: 2.7,
+    pret: 2.7,
+    mesure: 62,
+    dureeAcquisitionMinutes: 4,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 3.5,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
+    confiance: "Puissance électrique officielle Siemens (guide de contraintes d'implantation \"SOMATOM_go.Top_FR.pdf\") : veille ≤ 3 kVA, puissance nominale en fonctionnement 69,2 kVA — converties en kW avec un facteur de puissance estimé à 0,9. Même plateforme électrique que le go.All (variante cardiologie). Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
   }
 ];
 
