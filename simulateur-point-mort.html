@@ -103,6 +103,7 @@
           <label for="pmLoyerA">Loyer de l'IRM, SAV inclus (€ / mois)</label>
           <input type="number" id="pmLoyerA" value="5700" min="0" step="50" />
         </div>
+        <p class="simulator__hint" id="pmLoyerHintA"></p>
         <div class="field">
           <label for="pmMermA">Nombre de MERM en poste</label>
           <input type="number" id="pmMermA" value="1" min="0" step="1" />
@@ -121,6 +122,7 @@
           <label for="pmLoyerB">Loyer de l'IRM, SAV inclus (€ / mois)</label>
           <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
         </div>
+        <p class="simulator__hint" id="pmLoyerHintB"></p>
         <div class="field">
           <label for="pmMermB">Nombre de MERM en poste</label>
           <input type="number" id="pmMermB" value="2" min="0" step="1" />
@@ -288,10 +290,32 @@
       reinitialiserMerm(selectA, mermA);
       reinitialiserMerm(selectB, mermB);
 
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); recalculer(); });
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); recalculer(); });
+      // Loyer de base par machine (SAV inclus) — fichier propriétaire de cette page, pas
+      // partagé avec ENERGIE_MACHINES (ce sont des loyers commerciaux, pas des données
+      // techniques). Valeurs communiquées par Cédric le 10/08/2026 ; les autres machines
+      // n'ont pas encore de valeur de référence — 15 000 € est un repli neutre à ajuster,
+      // pas un vrai loyer connu (signalé par le point d'interrogation ci-dessous).
+      var LOYERS_BASE = {
+        "esaote-o-scan": 12000,
+        "siemens-altea": 24000,
+        "siemens-sola-xq": 25500
+      };
+      var LOYER_REPLI = 15000;
+      function loyerParDefaut(machine) { return LOYERS_BASE[machine.key] != null ? LOYERS_BASE[machine.key] : LOYER_REPLI; }
+      function reinitialiserLoyer(select, input, hintEl) {
+        var machine = machineParKey(select.value);
+        var connu = LOYERS_BASE[machine.key] != null;
+        input.value = loyerParDefaut(machine);
+        hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
+      }
+      var loyerHintA = document.getElementById("pmLoyerHintA"), loyerHintB = document.getElementById("pmLoyerHintB");
+      reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA);
+      reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB);
+
+      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); recalculer(); });
+      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); recalculer(); });
       [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
       // ---- Recette par patient (tarif plein, hors barème dégressif) ----
