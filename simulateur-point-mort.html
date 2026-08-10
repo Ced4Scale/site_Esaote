@@ -90,7 +90,7 @@
         </div>
         <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="0"></span> Machine A</h3>
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">Machine A</span></h3>
         <div class="field">
           <label for="pmChampA">Filtrer par gamme de champ</label>
           <select id="pmChampA"></select>
@@ -114,7 +114,7 @@
         </div>
         <p class="simulator__hint" id="pmMembreHintA"></p>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="1"></span> Machine B</h3>
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Machine B</span></h3>
         <div class="field">
           <label for="pmChampB">Filtrer par gamme de champ</label>
           <select id="pmChampB"></select>
@@ -144,8 +144,8 @@
           <thead>
             <tr>
               <th></th>
-              <th><span class="simulator__swatch" data-slot="0"></span> <span id="pmTableHeadA"></span></th>
-              <th><span class="simulator__swatch" data-slot="1"></span> <span id="pmTableHeadB"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="0" id="pmTableHeadA"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="1" id="pmTableHeadB"></span></th>
             </tr>
           </thead>
           <tbody id="pmTableBody"></tbody>
@@ -212,8 +212,8 @@
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 
-      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
-        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
+        sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
       });
 
       // ---- Classe de forfait technique dérivée du champ magnétique (même seuils que le
@@ -333,31 +333,16 @@
       reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA);
       reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB);
 
-      var membreA = document.getElementById("pmMembreA"), membreB = document.getElementById("pmMembreB");
-      var membreHintA = document.getElementById("pmMembreHintA"), membreHintB = document.getElementById("pmMembreHintB");
-      reinitialiserMembre(selectA, membreA, membreHintA);
-      reinitialiserMembre(selectB, membreB, membreHintB);
-
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
-      [mermA, mermB, membreA, membreB].forEach(function (input) { input.addEventListener("input", recalculer); });
-
-      // ---- Recette par patient (tarif plein, hors barème dégressif) ----
-      function recettePatient(machine, dateIso, zone, amortiKey) {
-        var classe = FT_CLASSES[classKeyFromChampT(machine.champT)];
-        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
-        var plein = ligne.plein[zone];
-        return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
-      }
-
       // ---- Acte intellectuel du radiologue (tarif conventionné secteur 1, fixe — pas de
       // barème dégressif comme pour le forfait technique) : 55 € pour un examen "membre"
       // (genou, poignet, sacro-iliaque…), 69 € pour les autres régions (rachis, cérébral,
       // abdomen, sein…). Confirmé sur le forum assurés d'ameli.fr le 10/08/2026. À n'ajouter
       // à la recette que si l'exploitant de la machine perçoit aussi cet acte (radiologue
       // associé) — précisé par Cédric le 10/08/2026.
+      // Déclarées avant leur premier usage (reinitialiserMembre, appelée juste en dessous
+      // pour l'initialisation) : un bug d'ordre d'exécution plaçait ce bloc plus bas dans le
+      // fichier, ce qui faisait planter la page au chargement ("Cannot read properties of
+      // undefined (reading 'indexOf')") — corrigé le 10/08/2026.
       var TARIF_ACTE_MEMBRE = 55;
       var TARIF_ACTE_AUTRE = 69;
       // L'O-scan est un aimant dédié aux extrémités : il ne peut physiquement pas faire
@@ -379,6 +364,25 @@
           input.disabled = false;
           hintEl.textContent = "Estimation par défaut (30 %), à ajuster selon le recrutement réel — pas de source officielle sur ce partage.";
         }
+      }
+
+      var membreA = document.getElementById("pmMembreA"), membreB = document.getElementById("pmMembreB");
+      var membreHintA = document.getElementById("pmMembreHintA"), membreHintB = document.getElementById("pmMembreHintB");
+      reinitialiserMembre(selectA, membreA, membreHintA);
+      reinitialiserMembre(selectB, membreB, membreHintB);
+
+      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      [mermA, mermB, membreA, membreB].forEach(function (input) { input.addEventListener("input", recalculer); });
+
+      // ---- Recette par patient (tarif plein, hors barème dégressif) ----
+      function recettePatient(machine, dateIso, zone, amortiKey) {
+        var classe = FT_CLASSES[classKeyFromChampT(machine.champT)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
       }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
@@ -549,11 +553,9 @@
         resultats.forEach(function (r) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
-          var key = document.createElement("span");
-          key.className = "simulator__legend-key";
-          key.style.background = r.color;
-          item.appendChild(key);
           var text = document.createElement("span");
+          text.style.color = r.color;
+          text.style.fontWeight = "700";
           text.textContent = r.machine.nomCourt;
           item.appendChild(text);
           legendEl.appendChild(item);
@@ -670,8 +672,8 @@
 
           var lignes = series.map(function (s) {
             var v = resultatMensuel(s.r, patientsJour, joursParMois);
-            return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.r.color + '"></span>' +
-              '<strong>' + euros.format(v) + '</strong> — ' + s.r.machine.nomCourt + '</div>';
+            return '<div class="simulator__tooltip-row">' +
+              '<strong>' + euros.format(v) + '</strong> — <span style="color:' + s.r.color + ';font-weight:700">' + s.r.machine.nomCourt + '</span></div>';
           }).join("");
           tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + patientsFmt.format(patientsJour) + ' patients/jour</div>' + lignes;
           tooltipEl.hidden = false;

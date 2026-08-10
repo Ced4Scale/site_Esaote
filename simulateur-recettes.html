@@ -57,11 +57,11 @@
 
         <h3 style="margin:1.4rem 0 1.2rem">Dates de forfait technique à comparer</h3>
         <div class="field">
-          <label for="simDateSel0"><span class="simulator__swatch" data-slot="0"></span> Date 1</label>
+          <label for="simDateSel0"><span class="simulator__swatch-text" data-slot="0">Date 1</span></label>
           <select id="simDateSel0"></select>
         </div>
         <div class="field">
-          <label for="simDateSel1"><span class="simulator__swatch" data-slot="1"></span> Date 2</label>
+          <label for="simDateSel1"><span class="simulator__swatch-text" data-slot="1">Date 2</span></label>
           <select id="simDateSel1"></select>
         </div>
 
@@ -196,8 +196,8 @@
       var dateSelects = [0, 1].map(function (i) { return document.getElementById("simDateSel" + i); });
       var DEFAULTS = ["2018-07-01", "2027-01-01"];
 
-      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
-        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
+        sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
       });
 
       function remplirSelectsDates() {
@@ -313,7 +313,7 @@
         scenarios.forEach(function (sc) {
           var tr = document.createElement("tr");
           var tdLabel = document.createElement("td");
-          tdLabel.innerHTML = '<span class="simulator__swatch" style="background:' + sc.color + '"></span> Départ ' + sc.label;
+          tdLabel.innerHTML = '<span style="color:' + sc.color + ';font-weight:700">Départ ' + sc.label + '</span>';
           tr.appendChild(tdLabel);
           var totalLigne = 0;
           var values = [];
@@ -366,11 +366,9 @@
         scenarios.forEach(function (sc) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
-          var key = document.createElement("span");
-          key.className = "simulator__legend-key";
-          key.style.background = sc.color;
-          item.appendChild(key);
           var text = document.createElement("span");
+          text.style.color = sc.color;
+          text.style.fontWeight = "700";
           text.textContent = "Départ " + sc.label;
           item.appendChild(text);
           legendEl.appendChild(item);
@@ -491,8 +489,8 @@
 
           var titre = i === 0 ? "Départ" : "Mois " + i + " (année " + (Math.ceil(i / 12)) + ")";
           var lignes = derniereSerie.map(function (s) {
-            return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.color + '"></span>' +
-              '<strong>' + euros.format(s.cumulMensuel[i]) + '</strong> — Départ ' + s.label + '</div>';
+            return '<div class="simulator__tooltip-row">' +
+              '<strong>' + euros.format(s.cumulMensuel[i]) + '</strong> — <span style="color:' + s.color + ';font-weight:700">Départ ' + s.label + '</span></div>';
           }).join("");
           if (derniereSerie.length === 2) {
             var ecart = derniereSerie[0].cumulMensuel[i] - derniereSerie[1].cumulMensuel[i];

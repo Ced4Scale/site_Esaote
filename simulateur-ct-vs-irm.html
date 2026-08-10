@@ -90,7 +90,7 @@
         </div>
         <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="0"></span> IRM Esaote</h3>
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span></h3>
         <div class="field">
           <label for="cvMachineA">Modèle</label>
           <select id="cvMachineA"></select>
@@ -105,7 +105,7 @@
           <input type="number" id="cvMermA" value="1" min="0" step="1" />
         </div>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="1"></span> Scanner (CT)</h3>
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span></h3>
         <div class="field">
           <label for="cvMachineB">Modèle</label>
           <select id="cvMachineB"></select>
@@ -126,8 +126,8 @@
           <thead>
             <tr>
               <th></th>
-              <th><span class="simulator__swatch" data-slot="0"></span> <span id="cvTableHeadA"></span></th>
-              <th><span class="simulator__swatch" data-slot="1"></span> <span id="cvTableHeadB"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="0" id="cvTableHeadA"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="1" id="cvTableHeadB"></span></th>
             </tr>
           </thead>
           <tbody id="cvTableBody"></tbody>
@@ -153,8 +153,8 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> <span id="cvSyntheseHeadA"></span></th>
-                <th><span class="simulator__swatch" data-slot="1"></span> <span id="cvSyntheseHeadB"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="cvSyntheseHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="cvSyntheseHeadB"></span></th>
                 <th>Écart</th>
               </tr>
             </thead>
@@ -211,8 +211,8 @@
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 
-      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
-        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
+        sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
       });
 
       // ---- Classe de forfait technique dérivée de la machine : IRM Esaote -> classe "≤ 0,5 T"
@@ -521,11 +521,9 @@
         resultats.forEach(function (r) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
-          var key = document.createElement("span");
-          key.className = "simulator__legend-key";
-          key.style.background = r.color;
-          item.appendChild(key);
           var text = document.createElement("span");
+          text.style.color = r.color;
+          text.style.fontWeight = "700";
           text.textContent = r.machine.nomCourt;
           item.appendChild(text);
           legendEl.appendChild(item);
