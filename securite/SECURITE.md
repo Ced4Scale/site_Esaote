@@ -128,6 +128,76 @@ devant le site, gratuit dans sa version de base) mais représente un changement
 d'infrastructure, pas une simple correction — à envisager seulement si un besoin précis
 se présente.
 
+### 🟢 Corrigé le 10/08/2026 : intégrité des scripts chargés depuis un CDN externe (SRI)
+
+**Ce qui a été trouvé** : le site charge jsPDF (génération des PDF envoyés par e-mail)
+depuis `cdnjs.cloudflare.com`, sans aucune vérification d'intégrité. Si ce CDN était un
+jour compromis (ou le fichier remplacé), un navigateur aurait exécuté silencieusement un
+script malveillant à la place — potentiellement capable de lire les formulaires
+(nom, e-mail) avant leur envoi.
+
+**Corrigé** : ajout de l'attribut `integrity` (hash SHA-512) et `crossorigin="anonymous"`
+sur la balise `<script>` de jsPDF, sur les 4 pages qui le chargent
+(`simulateur-recettes.html`, `simulateur-energie.html`, `forfait-technique.html`,
+`simulateur-point-mort.html`). Le hash a été **recalculé indépendamment** en
+téléchargeant le fichier réellement servi et en comparant son empreinte SHA-512 à celle
+publiée par cdnjs, avant application — pas une simple copie aveugle. Avec cet attribut,
+le navigateur du visiteur **refuse de charger le script** si son contenu ne correspond
+plus exactement à ce hash, quelle qu'en soit la raison.
+
+**Reste à surveiller** : si la version de jsPDF change un jour (actuellement 2.5.1), le
+hash `integrity` devra être mis à jour en même temps — sinon le script sera bloqué et les
+simulateurs cesseront de fonctionner. Toujours vérifier `https://api.cdnjs.com/libraries/jspdf/<version>`
+pour le nouveau hash officiel avant de changer la version.
+
+Google Fonts (`fonts.googleapis.com`/`fonts.gstatic.com`) et les lecteurs vidéo intégrés
+(Vimeo, YouTube) ne sont **pas concernés** par ce type de protection : ce sont des
+services dynamiques (Google Fonts) ou des `<iframe>` isolées par le navigateur (vidéos),
+pour lesquels SRI ne s'applique pas de la même façon — risque jugé faible dans les deux
+cas (fournisseurs majeurs, contenu non exécuté dans le contexte du site).
+
+### 🟡 Trouvé le 10/08/2026 : protection anti-usurpation d'e-mail incomplète sur `ced4scale.fr`
+
+Vérification de la configuration DNS du domaine (pas seulement le site web — la
+sécurité du domaine dans son ensemble, pertinente pour un consultant qui échange par
+e-mail avec des hôpitaux et cliniques) :
+
+| Protection | État | Ce que ça veut dire |
+|---|---|---|
+| **SPF** | ✅ Configuré (`v=spf1 include:spf.protection.outlook.com -all`) | Seuls les serveurs Microsoft 365 sont autorisés à envoyer un e-mail "de la part de" `ced4scale.fr` — correctement restrictif (`-all` = rejet strict de tout le reste). |
+| **DKIM** | ❌ Absent (aucun enregistrement `selector1._domainkey`/`selector2._domainkey`) | La signature cryptographique qui prouve qu'un e-mail n'a pas été modifié en chemin n'est pas activée. |
+| **DMARC** | ❌ Absent (`_dmarc.ced4scale.fr` n'existe pas) | Aucune règle ne dit aux serveurs de messagerie qui reçoivent un e-mail "de `ced4scale.fr`" quoi faire s'il échoue les vérifications SPF/DKIM (le rejeter, le mettre en spam, ou l'accepter quand même) — et aucun rapport n'est envoyé à Cédric en cas de tentative d'usurpation.
+
+**Pourquoi c'est pertinent** : un domaine sans DKIM/DMARC reste plus facilement
+imitable par un e-mail de phishing (ex. quelqu'un qui écrit à un hôpital en se faisant
+passer pour `cedric.goillot@ced4scale.fr` avec un domaine visuellement proche). Le SPF
+seul aide déjà beaucoup, mais DMARC est ce qui permet d'être alerté si ça arrive.
+
+**Pourquoi ce n'a pas pu être corrigé directement** : ces deux protections se
+configurent en ajoutant des enregistrements DNS chez l'hébergeur du nom de domaine
+(probablement **OVH**, d'après les serveurs DNS observés) — accès auquel Claude Code n'a
+pas été donné dans cette session, contrairement au tenant Microsoft 365.
+
+**Action pour Cédric** :
+1. Dans **Microsoft 365 admin center** → Paramètres → Domaines → `ced4scale.fr` →
+   activer DKIM. Microsoft 365 génère alors 2 enregistrements CNAME à créer chez
+   l'hébergeur DNS.
+2. Chez l'hébergeur DNS (OVH probablement) : ajouter les 2 CNAME DKIM fournis par
+   Microsoft, plus un enregistrement TXT `_dmarc.ced4scale.fr` du type
+   `v=DMARC1; p=quarantine; rua=mailto:cedric.goillot@ced4scale.fr` (commencer par
+   `p=quarantine`, pas `p=reject`, pour ne pas risquer de bloquer ses propres e-mails
+   par erreur au début — durcir vers `p=reject` après quelques semaines sans problème).
+
+**Si Cédric donne l'accès DNS (ou les identifiants OVH) à une future session**, cette
+partie peut être terminée sans lui — à proposer la prochaine fois que ce sujet revient.
+
+### 🟢 Vérifié le 10/08/2026 : pas de risque de prise de contrôle de sous-domaine
+
+Le domaine `ced4scale.fr` pointe (enregistrements A) directement vers les adresses IP
+officielles de GitHub Pages (`185.199.108-111.153`) — configuration correcte, sans le
+risque classique de "subdomain takeover" (qui touche plutôt un enregistrement CNAME
+pointant vers un compte GitHub Pages qui n'existe plus).
+
 ## Check-list pour une revue de sécurité future
 
 À refaire à intervalle régulier (ex. une fois par trimestre, ou après tout ajout de
@@ -167,3 +237,8 @@ formulaire/nouvelle intégration externe) :
   GoatCounter.
 - Décider si la proposition de relais Power Automate pour les statistiques (plutôt que
   d'exposer directement un nouveau jeton) doit être construite.
+- **Activer DKIM** (Microsoft 365 admin center → Domaines → `ced4scale.fr`) et **ajouter
+  un enregistrement DMARC** chez l'hébergeur DNS (OVH probablement) — voir section
+  détaillée plus haut. Rappel demandé explicitement par Cédric le 10/08/2026 pour le
+  point GoatCounter ci-dessus ; ce point DKIM/DMARC découvert dans la foulée mérite le
+  même rappel.
