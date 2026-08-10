@@ -146,6 +146,23 @@
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
 
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Résultat détaillé à votre activité</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
+          <table class="stats-table simulator__table simulator__table--compare3" id="cvSyntheseTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch" data-slot="0"></span> <span id="cvSyntheseHeadA"></span></th>
+                <th><span class="simulator__swatch" data-slot="1"></span> <span id="cvSyntheseHeadB"></span></th>
+                <th>Écart</th>
+              </tr>
+            </thead>
+            <tbody id="cvSyntheseBody"></tbody>
+          </table>
+          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 69 € pour une IRM, 25,27 € pour un scanner mono-région (thorax ou abdomen-pelvis) — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
+        </div>
+
         <div class="simulator__export" id="cvExport">
           <button type="button" class="btn btn--lg" id="cvExportToggle">Recevoir ce comparatif par e-mail</button>
           <form id="cvExportForm" hidden>
@@ -284,10 +301,15 @@
 
       // ---- Recette de l'acte intellectuel du radiologue, par patient — c'est ce poste qui
       // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
-      // le forfait technique seul sous-estime l'écart réel de rentabilité. Valeurs reprises du
-      // fichier Excel personnel de Cédric ("ESAOTE FT juin 26.xlsx", onglet "Bas Champs vs CT") —
-      // à confirmer avec la nomenclature CCAM en vigueur, pas un tarif officiel vérifié ici.
-      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 33 : 55; }
+      // le forfait technique seul sous-estime l'écart réel de rentabilité. Tarifs CCAM secteur 1
+      // usuels (base de remboursement, hors majorations) : 69€ pour une IRM standard, 25,27€
+      // pour un scanner mono-région (thorax ou abdomen-pelvis) — vérifiés sur ameli.fr le
+      // 10/08/2026 (remplace une estimation antérieure moins précise, 55€/33€, tirée du fichier
+      // Excel personnel de Cédric). Nuance MSK : un arthroscanner d'un membre (plus proche de
+      // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
+      // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
+      // sous le tableau récapitulatif).
+      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 25.27 : 69; }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
       // à l'ouverture), ramené à un coût FIXE mensuel + un coût VARIABLE par patient, pour que
@@ -431,8 +453,66 @@
           ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         }
 
+        dessinerSynthese(resultats, configs, params);
+
         dessinerLegende(resultats);
         dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
+      }
+
+      // ---- Tableau récapitulatif par patient / par an / sur 7 ans, avec écart — même structure
+      // que l'onglet Excel personnel de Cédric ("Bas Champs vs CT") : recette forfait technique,
+      // recette acte intellectuel, loyer, électricité et RH ramenés au patient (annualisés puis
+      // divisés par le nombre de patients/an de "Votre activité"), puis résultat net décliné sur
+      // 3 horizons. Écart = IRM Esaote (slot 0) moins scanner (slot 1).
+      function dessinerSynthese(resultats, configs, params) {
+        var patientsAnnuels = Math.max(params.activitePatientsJour * params.joursParMois * 12, 0.0001);
+
+        var lignes = resultats.map(function (r, i) {
+          var loyerParPatient = (configs[i].loyer * 12) / patientsAnnuels;
+          var elecParPatient = (r.elecFixe * 12) / patientsAnnuels + r.elecVariable;
+          var rhParPatient = (r.rh * 12) / patientsAnnuels;
+          var resultatParPatient = r.recette + r.acte - loyerParPatient - elecParPatient - rhParPatient;
+          return {
+            recette: r.recette, acte: r.acte, loyerParPatient: loyerParPatient,
+            elecParPatient: elecParPatient, rhParPatient: rhParPatient,
+            resultatParPatient: resultatParPatient,
+            resultatAn: resultatParPatient * patientsAnnuels,
+            resultat7ans: resultatParPatient * patientsAnnuels * 7
+          };
+        });
+
+        document.getElementById("cvSyntheseHeadA").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvSyntheseHeadB").textContent = resultats[1].machine.nomCourt;
+        document.getElementById("cvSyntheseSousTitre").textContent =
+          "Sur la base de votre activité renseignée plus haut : " + patientsFmt.format(patientsAnnuels) + " patients/an.";
+
+        var tbody = document.getElementById("cvSyntheseBody");
+        tbody.innerHTML = "";
+        // fmt formate les 2 colonnes de valeurs (peut préfixer un "-" pour un poste de charge) ;
+        // l'écart (dernière colonne) affiche toujours la vraie différence signée A - B, jamais
+        // reformatée en négatif — sinon un écart positif s'afficherait avec un "-" trompeur.
+        // signeEcart : +1 pour une ligne de recette (écart positif = avantage IRM), -1 pour une
+        // ligne de charge (valA/valB sont des montants positifs affichés avec un "-" ; l'écart
+        // doit malgré tout suivre la même convention "positif = avantage IRM", donc on inverse).
+        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold) {
+          var tr = document.createElement("tr");
+          var ecart = signeEcart * (valA - valB);
+          [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte) {
+            var td = document.createElement("td");
+            td.textContent = texte;
+            if (bold) td.style.fontWeight = "700";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+        ligne("Recette forfait technique / patient", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
+        ligne("Recette acte intellectuel / patient", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
+        ligne("Loyer, SAV inclus / patient", lignes[0].loyerParPatient, lignes[1].loyerParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
+        ligne("Électricité / patient", lignes[0].elecParPatient, lignes[1].elecParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
+        ligne("Personnel MERM / patient", lignes[0].rhParPatient, lignes[1].rhParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
+        ligne("Résultat / patient", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
+        ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true);
+        ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
       }
 
       function dessinerLegende(resultats) {

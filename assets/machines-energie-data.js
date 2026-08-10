@@ -565,6 +565,66 @@ var ENERGIE_MACHINES = [
     climSalleKw: 3.5,
     refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
     confiance: "Puissance électrique officielle Siemens (guide de contraintes d'implantation \"SOMATOM_go.Top_FR.pdf\") : veille ≤ 3 kVA, puissance nominale en fonctionnement 69,2 kVA — converties en kW avec un facteur de puissance estimé à 0,9. Même plateforme électrique que le go.All (variante cardiologie). Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
+  },
+  /* GE, Philips, Canon — demandé par Cédric le 10/08/2026 pour élargir le volet énergétique du
+     scanner. Confiance nettement plus faible que Siemens ci-dessus : aucun guide d'implantation
+     officiel trouvé dans les archives locales de Cédric pour ces marques (contrairement à
+     Siemens, ex-employeur de Cédric) — valeurs reconstituées à partir de documents officiels
+     trouvés sur le web (fiches techniques constructeur, un vrai Technical Reference Guide
+     Philips), avec une hypothèse de veille/prêt commune (~4% de la puissance en fonctionnement,
+     calibrée sur le ratio observé chez Siemens) faute de valeur de veille publiée pour ces
+     modèles. À confirmer avec chaque fabricant avant tout usage commercial. */
+  {
+    key: "ge-revolution",
+    nomCourt: "GE Revolution",
+    type: "ct",
+    champT: null,
+    marque: "GE HealthCare",
+    modele: "Revolution (gamme CT, configuration standard)",
+    aimant: "ct",
+    eteint: 3.6,
+    pret: 3.6,
+    mesure: 90,
+    dureeAcquisitionMinutes: 4,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 4.5,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
+    confiance: "Aucun guide d'implantation officiel GE trouvé en accès libre (sites GE bloqués aux robots). Puissance en fonctionnement estimée à partir d'une alimentation dédiée de 93,75 à 125 kVA mentionnée dans la documentation de site (gamme Revolution Ascend Elite), convertie en kW avec un facteur de puissance de 0,9 — cette plage inclut une marge de dimensionnement, pas la consommation réelle mesurée. Veille et climatisation de salle estimées par extrapolation depuis Siemens. À confirmer avec GE HealthCare."
+  },
+  {
+    key: "philips-incisive-ct",
+    nomCourt: "Philips Incisive",
+    type: "ct",
+    champT: null,
+    marque: "Philips",
+    modele: "Incisive CT",
+    aimant: "ct",
+    eteint: 2.9,
+    pret: 2.9,
+    mesure: 72,
+    dureeAcquisitionMinutes: 4,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 3.7,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
+    confiance: "Puissance officielle Philips (Technical Reference Guide Incisive CT, documents.philips.com) : capacité de raccordement 115 kVA, puissance électrique continue du générateur 72 kW (jusqu'à 80 kW en pointe 4s selon configuration). Veille et climatisation de salle estimées par extrapolation depuis Siemens (pas de valeur de veille publiée dans ce document). À confirmer avec Philips.",
+    sourceUrl: "https://www.documents.philips.com/assets/Technical%20Reference%20Guide/20230817/a73be7afa7384293bfd2b0610036bb13.pdf"
+  },
+  {
+    key: "canon-aquilion-prime-sp",
+    nomCourt: "Canon Aquilion Prime SP",
+    type: "ct",
+    champT: null,
+    marque: "Canon Medical",
+    modele: "Aquilion Prime SP",
+    aimant: "ct",
+    eteint: 3.1,
+    pret: 3.1,
+    mesure: 76.5,
+    dureeAcquisitionMinutes: 4,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 4.0,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
+    confiance: "Aucun guide d'implantation officiel Canon Medical trouvé en accès libre. Puissance en fonctionnement estimée à partir d'une fiche technique constructeur citant \"jusqu'à 85 kVA\" pour ce modèle, convertie en kW avec un facteur de puissance de 0,9. Veille et climatisation de salle estimées par extrapolation depuis Siemens. À confirmer avec Canon Medical Systems."
   }
 ];
 
