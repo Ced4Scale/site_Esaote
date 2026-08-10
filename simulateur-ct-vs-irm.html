@@ -135,6 +135,21 @@
         <p class="simulator__hint" id="cvEcart"></p>
 
         <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Seuils du barème dégressif</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Au-delà de la 1ʳᵉ tranche, le tarif du forfait technique baisse par palier selon le nombre d'examens/an — les seuils ne sont pas les mêmes pour une IRM et pour un scanner.</p>
+          <table class="stats-table simulator__table simulator__table--compare2" id="cvSeuilsTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch-text" data-slot="0">IRM Esaote (≤ 0,5 T)</span></th>
+                <th><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span></th>
+              </tr>
+            </thead>
+            <tbody id="cvSeuilsBody"></tbody>
+          </table>
+        </div>
+
+        <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
           <div class="simulator__legend" id="cvLegend"></div>
@@ -253,6 +268,41 @@
       });
       selectA.value = "esaote-g-scan";
       selectB.value = "siemens-gotop";
+
+      // ---- Seuils du barème dégressif — fixes pour cette page (machine A toujours classée
+      // "le05", machine B toujours "ct", quel que soit le modèle choisi), donc calculés une
+      // seule fois au chargement plutôt que dans recalculer().
+      (function afficherSeuils() {
+        var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+        function tranches(classe) {
+          return [
+            { debut: 1, fin: classe.REF },
+            { debut: classe.REF + 1, fin: classe.SEUIL1 },
+            { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2 },
+            { debut: classe.SEUIL2 + 1, fin: null }
+          ];
+        }
+        var trIrm = tranches(FT_CLASSES.le05), trCt = tranches(FT_CLASSES.ct);
+        var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
+        var tbody = document.getElementById("cvSeuilsBody");
+        labels.forEach(function (label, i) {
+          function plage(t) {
+            return t.fin != null
+              ? "de " + seuilsEntiers.format(t.debut) + " à " + seuilsEntiers.format(t.fin)
+              : "au-delà de " + seuilsEntiers.format(t.debut - 1);
+          }
+          var tr = document.createElement("tr");
+          var tdLabel = document.createElement("td");
+          tdLabel.innerHTML = "<strong>" + label + "</strong>";
+          tr.appendChild(tdLabel);
+          [trIrm[i], trCt[i]].forEach(function (t) {
+            var td = document.createElement("td");
+            td.textContent = plage(t) + " examens/an";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      })();
 
       // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
       // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
