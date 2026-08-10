@@ -69,7 +69,25 @@
           <label for="pmJours">Jours d'ouverture par mois</label>
           <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
         </div>
+        <div class="field">
+          <label for="pmCoutMerm">Coût mensuel d'un MERM, chargé (€)</label>
+          <input type="number" id="pmCoutMerm" value="3200" min="0" step="50" />
+        </div>
         <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
+        <div class="field">
+          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="pmActiviteMode" value="jour" checked /> Patients par jour</label>
+            <label><input type="radio" name="pmActiviteMode" value="an" /> Patients par an</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="pmActivite" id="pmActiviteLabel">Nombre de patients par jour</label>
+          <input type="number" id="pmActivite" value="5" min="0" step="0.5" />
+        </div>
+        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
 
         <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="0"></span> Machine A</h3>
         <div class="field">
@@ -81,16 +99,12 @@
           <select id="pmMachineA"></select>
         </div>
         <div class="field">
-          <label for="pmLoyerA">Loyer / financement de l'IRM (€ / mois)</label>
-          <input type="number" id="pmLoyerA" value="4500" min="0" step="50" />
+          <label for="pmLoyerA">Loyer de l'IRM, SAV inclus (€ / mois)</label>
+          <input type="number" id="pmLoyerA" value="5700" min="0" step="50" />
         </div>
         <div class="field">
-          <label for="pmSavA">Contrat SAV / maintenance (€ / mois)</label>
-          <input type="number" id="pmSavA" value="1200" min="0" step="50" />
-        </div>
-        <div class="field">
-          <label for="pmRhA">Coût du personnel MERM (€ / mois)</label>
-          <input type="number" id="pmRhA" value="3200" min="0" step="50" />
+          <label for="pmMermA">Nombre de MERM en poste</label>
+          <input type="number" id="pmMermA" value="1" min="0" step="1" />
         </div>
 
         <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="1"></span> Machine B</h3>
@@ -103,16 +117,12 @@
           <select id="pmMachineB"></select>
         </div>
         <div class="field">
-          <label for="pmLoyerB">Loyer / financement de l'IRM (€ / mois)</label>
-          <input type="number" id="pmLoyerB" value="9000" min="0" step="50" />
+          <label for="pmLoyerB">Loyer de l'IRM, SAV inclus (€ / mois)</label>
+          <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
         </div>
         <div class="field">
-          <label for="pmSavB">Contrat SAV / maintenance (€ / mois)</label>
-          <input type="number" id="pmSavB" value="2500" min="0" step="50" />
-        </div>
-        <div class="field">
-          <label for="pmRhB">Coût du personnel MERM (€ / mois)</label>
-          <input type="number" id="pmRhB" value="3200" min="0" step="50" />
+          <label for="pmMermB">Nombre de MERM en poste</label>
+          <input type="number" id="pmMermB" value="2" min="0" step="1" />
         </div>
       </div>
 
@@ -139,7 +149,7 @@
           </div>
         </div>
 
-        <p class="simulator__hint">Hypothèses : électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local.</p>
+        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local.</p>
 
         <div class="simulator__export" id="pmExport">
           <button type="button" class="btn btn--lg" id="pmExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -267,10 +277,21 @@
       repeuplerMachineSelect(selectB, champB, "siemens-altea");
       if (!selectB.value) repeuplerMachineSelect(selectB, champB);
 
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); recalculer(); });
-      selectA.addEventListener("change", recalculer);
-      selectB.addEventListener("change", recalculer);
+      // Nombre de MERM par défaut selon le type d'aimant : un aimant permanent (IRM ouverte
+      // Esaote) se manipule seul, un aimant supraconducteur (IRM tunnel) demande en général
+      // 2 MERM en poste (installation/désinstallation du patient, sécurité) — précisé par
+      // Cédric le 09/08/2026. Reste modifiable ensuite.
+      function mermParDefaut(machine) { return machine.aimant === "permanent" ? 1 : 2; }
+      function reinitialiserMerm(select, input) { input.value = mermParDefaut(machineParKey(select.value)); }
+      var mermA = document.getElementById("pmMermA"), mermB = document.getElementById("pmMermB");
+      reinitialiserMerm(selectA, mermA);
+      reinitialiserMerm(selectB, mermB);
+
+      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); recalculer(); });
+      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); recalculer(); });
+      [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
       // ---- Recette par patient (tarif plein, hors barème dégressif) ----
       function recettePatient(machine, dateIso, zone, amortiKey) {
@@ -302,12 +323,13 @@
       function calculerMachine(m, params) {
         var recette = recettePatient(m.machine, params.dateIso, params.zone, params.amortiKey);
         var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
-        var chargesFixesMensuelles = m.loyer + m.sav + m.rh + elec.fixeMensuel;
+        var rh = m.nombreMerm * params.coutMermMensuel;
+        var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
         var margeParPatient = recette - elec.variablePatient;
         var pointMortMois = margeParPatient > 0 ? chargesFixesMensuelles / margeParPatient : Infinity;
         var pointMortJour = pointMortMois / params.joursParMois;
         return {
-          machine: m.machine, recette: recette, elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
+          machine: m.machine, recette: recette, rh: rh, elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
           chargesFixesMensuelles: chargesFixesMensuelles, margeParPatient: margeParPatient,
           pointMortMois: pointMortMois, pointMortJour: pointMortJour
         };
@@ -316,6 +338,23 @@
       function resultatMensuel(res, patientsJour, joursParMois) {
         return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
       }
+
+      // Convertit la saisie "Votre activité" (jour ou an) en patients/jour, seule unité
+      // utilisée par les calculs et le graphique.
+      function activitePatientsJour(joursParMois) {
+        var mode = document.querySelector('input[name="pmActiviteMode"]:checked').value;
+        var valeur = Math.max(0, parseFloat(document.getElementById("pmActivite").value) || 0);
+        return mode === "jour" ? valeur : valeur / (joursParMois * 12);
+      }
+
+      document.querySelectorAll('input[name="pmActiviteMode"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          var mode = document.querySelector('input[name="pmActiviteMode"]:checked').value;
+          document.getElementById("pmActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
+          document.getElementById("pmActivite").value = mode === "jour" ? 5 : 1200;
+          recalculer();
+        });
+      });
 
       var derniers = null;
 
@@ -326,12 +365,14 @@
           amortiKey: document.querySelector('input[name="pmAmorti"]:checked').value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("pmKwh").value) || 0),
           heuresParJour: Math.max(0, parseFloat(document.getElementById("pmHeures").value) || 0),
-          joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1)
+          joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1),
+          coutMermMensuel: Math.max(0, parseFloat(document.getElementById("pmCoutMerm").value) || 0)
         };
+        params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, sav: +document.getElementById("pmSavA").value || 0, rh: +document.getElementById("pmRhA").value || 0 },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, sav: +document.getElementById("pmSavB").value || 0, rh: +document.getElementById("pmRhB").value || 0 }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0) }
         ];
 
         var resultats = configs.map(function (c) {
@@ -362,9 +403,10 @@
           tbody.appendChild(tr);
         }
         ligne("Recette FT / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
-        ligne("Loyer / financement", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
-        ligne("Contrat SAV", resultats.map(function (r, i) { return euros.format(configs[i].sav) + " / mois"; }));
-        ligne("Personnel MERM", resultats.map(function (r, i) { return euros.format(configs[i].rh) + " / mois"; }));
+        ligne("Loyer de l'IRM, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
+        ligne("Personnel MERM", resultats.map(function (r, i) {
+          return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
+        }));
         ligne("Électricité (part fixe)", resultats.map(function (r) { return euros.format(r.elecFixe) + " / mois"; }));
         ligne("Charges fixes totales", resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles) + " / mois"; }), true);
         ligne("Marge par patient", resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
@@ -374,6 +416,10 @@
         ligne("soit par mois", resultats.map(function (r) {
           return isFinite(r.pointMortMois) ? patientsFmt.format(r.pointMortMois) + " patients / mois" : "—";
         }));
+        ligne("Résultat mensuel à votre activité (" + patientsFmt.format(params.activitePatientsJour) + " patients/jour)", resultats.map(function (r) {
+          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+          return (res >= 0 ? "+" : "") + euros.format(res) + " / mois";
+        }), true);
 
         var ecartEl = document.getElementById("pmEcart");
         if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
@@ -388,7 +434,7 @@
         }
 
         dessinerLegende(resultats);
-        dessinerGraphe(resultats, params.joursParMois);
+        dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
       }
 
       function dessinerLegende(resultats) {
@@ -431,11 +477,12 @@
       var PLOT_W = 640 - PAD.left - PAD.right;
       var PLOT_H = VIEWBOX_H - PAD.top - PAD.bottom;
 
-      function dessinerGraphe(resultats, joursParMois) {
+      function dessinerGraphe(resultats, joursParMois, activitePatientsJour) {
         svg.innerHTML = "";
 
         var pointsMorts = resultats.filter(function (r) { return isFinite(r.pointMortJour); }).map(function (r) { return r.pointMortJour; });
-        var xMax = niceCeil((pointsMorts.length ? Math.max.apply(null, pointsMorts) : 20) * 1.6);
+        var repereMax = Math.max(pointsMorts.length ? Math.max.apply(null, pointsMorts) : 0, activitePatientsJour || 0);
+        var xMax = niceCeil((repereMax || 20) * 1.6);
         var NB_PAS = 40;
 
         var series = resultats.map(function (r) {
@@ -466,6 +513,16 @@
         // Ligne zéro plus marquée : c'est elle qui matérialise le point mort.
         svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
 
+        // Repère vertical pointillé sur l'activité renseignée par le visiteur — permet de voir
+        // d'un coup d'œil si son volume réel est au-dessus ou en dessous du point mort.
+        if (activitePatientsJour != null && activitePatientsJour > 0 && activitePatientsJour <= xMax) {
+          var xAct = xAt(activitePatientsJour);
+          svg.appendChild(svgEl("line", { x1: xAct, x2: xAct, y1: PAD.top, y2: PAD.top + PLOT_H, stroke: "#8a8578", "stroke-width": "1.2", "stroke-dasharray": "4,3" }));
+          var labelAct = svgEl("text", { x: xAct, y: PAD.top - 4, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelAct.textContent = "Votre activité";
+          svg.appendChild(labelAct);
+        }
+
         for (var p = 0; p <= 4; p++) {
           var xv = (xMax * p) / 4;
           var lx = svgEl("text", { x: xAt(xv), y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
@@ -484,6 +541,10 @@
             var cx = xAt(s.r.pointMortJour), cy = yAt(0);
             svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 6, fill: "#fcfcfb" }));
             svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 4, fill: s.r.color }));
+          }
+          if (activitePatientsJour != null && activitePatientsJour <= xMax) {
+            var cxAct = xAt(activitePatientsJour), cyAct = yAt(resultatMensuel(s.r, activitePatientsJour, joursParMois));
+            svg.appendChild(svgEl("circle", { cx: cxAct, cy: cyAct, r: 5, fill: "#fcfcfb", stroke: s.r.color, "stroke-width": "2" }));
           }
         });
 
@@ -516,7 +577,7 @@
         });
       }
 
-      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmLoyerA", "pmSavA", "pmRhA", "pmLoyerB", "pmSavB", "pmRhB"].forEach(function (id) {
+      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmCoutMerm", "pmLoyerA", "pmLoyerB", "pmActivite"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       dateSelect.addEventListener("change", recalculer);
