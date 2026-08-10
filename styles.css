@@ -546,6 +546,20 @@ ul { margin: 0; padding: 0; list-style: none; }
 .stats-table td:first-child { color: var(--ink-soft); font-weight: 700; }
 .stats-table td:last-child { width: 40%; }
 
+/* Tableaux "libellé + machine A + machine B" (point mort, énergie, comparateur CT/IRM) :
+   largeurs explicites en table-layout:fixed, pour que les 2 colonnes de machine fassent
+   TOUJOURS exactement la même largeur — demande de Cédric (10/08/2026), tous simulateurs.
+   Un simple "dernière colonne à 40%" (règle générale ci-dessus) ne suffit pas : la colonne
+   du libellé grignotait une largeur variable selon son propre contenu, ce qui rendait la
+   colonne du milieu (machine A) tantôt plus étroite, tantôt plus large que la dernière
+   (machine B). Avec des largeurs fixes sur les 3 colonnes, le texte qui ne rentre pas passe
+   à la ligne (aucun risque de débordement, contrairement à une astuce "width:1%" qui ne se
+   base que sur la 1re ligne du tableau et casse dès qu'un libellé plus long apparaît plus
+   bas, comme "Résultat mensuel à votre activité (...)"). */
+.simulator__table--compare2 { table-layout: fixed; }
+.simulator__table.simulator__table--compare2 th:first-child, .simulator__table.simulator__table--compare2 td:first-child { width: 36%; white-space: normal; }
+.simulator__table--compare2 th:not(:first-child), .simulator__table--compare2 td:not(:first-child) { width: 32%; }
+
 .stats-timeline__head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: .3rem; }
 .stats-timeline__head input[type="date"] {
   border: 1px solid var(--line-2); border-radius: 8px; padding: .4em .6em; font: inherit; font-weight: 700; color: var(--ink);
