@@ -214,6 +214,32 @@ Mettre à jour progressivement le site vitrine Esaote Medical France, notamment 
 
 - Nouvelle page outil `simulateur-recettes.html` (non indexée) : simulateur du forfait technique IRM versé par l'assurance maladie, pour les 4 IRM Esaote en classe "≤ 0,5 T" (O-scan, S-scan, G-scan, Magnifico — tarif identique pour les 4 ; I-Genius exclu, usage per-opératoire hors de cette grille). Basé sur l'arrêté du 20 juin 2024 modifié (Légifrance, art. 6). Entrées : date de mise en service (calcule automatiquement le statut amorti/non amorti — bascule au 31 décembre de l'année des 7 ans), zone géographique, nombre d'examens/an. Sortie : chiffre d'affaires annuel calculé pour chacune des 4 dates de la réforme (05/11/2025, 01/01/2026, 01/07/2026, 01/01/2027) avec barème dégressif par tranches (référence 3 500, seuils 8 000 et 11 000). Chiffres croisés avec le simulateur Excel personnel de Cédric (`OneDrive/Pro/Esaote/Suivi-Financier/ESAOTE FT juin 26.xlsx`, onglet "FT amortis et non amortis") — concordance exacte vérifiée sur plusieurs cas (Paris/Province, amorti/non amorti). Pensé pour être utilisé en direct pendant un appel Teams avec un prospect ; V1 volontairement limitée au chiffre d'affaires brut (pas l'acte du radiologue, pas les charges) — loyer/électricité/RH à ajouter dans une V2 si besoin, sur le même principe que l'onglet Excel de Cédric qui va plus loin (calcul d'un résultat net).
 
+### 2026-08-10 — 4 simulateurs, page d'accueil dédiée
+
+- Ajout du simulateur `simulateur-point-mort.html` (comparaison IRM vs IRM ou une IRM
+  seule au choix, loyer/MERM/électricité, acte intellectuel du radiologue moyenné selon
+  la part d'examens « membre » de chaque machine) et `simulateur-ct-vs-irm.html`
+  (comparaison dédiée IRM Esaote vs scanner, avec un tableau récapitulatif par
+  patient/an/7 ans et une colonne écart).
+- Tarif du forfait technique scanner ajouté à `assets/forfaits-techniques-data.js`, lu
+  directement dans les mêmes textes officiels que l'IRM (2018 à 2027).
+- Recette de l'acte intellectuel du radiologue vérifiée sur ameli.fr : 69 € pour une IRM,
+  25,27 € pour un scanner mono-région (retenu comme référence, pas l'arthroscanner MSK
+  malgré un tarif plus proche de l'activité réelle — décision explicite de Cédric).
+- Consommation électrique de scanners ajoutée à `assets/machines-energie-data.js`
+  (Siemens SOMATOM go.All/go.Top, sourcés officiellement ; GE Revolution, Philips
+  Incisive, Canon Aquilion Prime SP, confiance plus faible, pas de guide d'implantation
+  officiel trouvé en accès libre pour ces 3 marques).
+- **Nouvelle page `simulateurs.html`** : remplace les liens individuels sous l'argument
+  "Coût faible" de `index.html` par un seul lien vers une page qui présente les 4
+  simulateurs (une carte, un titre, une phrase par outil). Décision de Cédric après avoir
+  écarté l'idée de fusionner les 4 outils en un seul (trop de champs conditionnels pour un
+  usage en direct pendant un appel prospect).
+- **Détail technique complet de cette session dans la mémoire Claude Code**
+  (`~/.claude/projects/-Users-Cedric/memory/site-web/etat-des-lieux.md` et `pieges.md`)
+  — propriétaire des chiffres exacts, formules et sources ; ce fichier reste le résumé
+  lisible côté dépôt.
+
 - Remplacer ou affiner les textes commerciaux.
 - Vérifier les coordonnées définitives.
 - Corriger le README.
