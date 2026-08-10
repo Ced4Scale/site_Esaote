@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulateur de point mort IRM — Ced4Scale</title>
+  <title>Simulateur de point mort — IRM et scanner — Ced4Scale</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" href="assets/logo-ced4scale.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260809-point-mort" />
+  <link rel="stylesheet" href="styles.css?v=20260810-ct" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="assets/forfaits-techniques-data.js?v=20260809-point-mort"></script>
-  <script src="assets/machines-energie-data.js?v=20260809-point-mort"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260810-ct"></script>
+  <script src="assets/machines-energie-data.js?v=20260810-ct"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -22,7 +22,7 @@
     </a>
     <div class="document-viewer__title">
       <span>Outil de simulation</span>
-      <strong>Point mort IRM</strong>
+      <strong>Point mort — IRM et scanner</strong>
     </div>
     <button class="document-viewer__close" id="pmClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
   </header>
@@ -30,9 +30,9 @@
   <main class="simulator">
     <div class="simulator__intro">
       <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
-      <h1>Simulateur de point mort IRM</h1>
-      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes du forfait technique couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.</p>
-      <p class="simulator__source">Recette par patient : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>.</p>
+      <h1>Simulateur de point mort — IRM et scanner</h1>
+      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes du forfait technique couvrent les charges fixes propres à la machine : <strong>loyer (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux machines pour voir laquelle atteint son seuil de rentabilité avec le moins de patients — deux IRM Esaote, ou une IRM Esaote face à un scanner (choisir la gamme "Scanner (CT)" dans le filtre d'une des deux machines).</p>
+      <p class="simulator__source">Recette par patient : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a> (IRM) et le texte officiel du forfait technique scanner (même décision, même dates de réforme). Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a> ; pour le scanner, puissance électrique officielle Siemens (SOMATOM go.All/go.Top), voir <a href="sources-energie.html">sources</a>.</p>
     </div>
 
     <div class="simulator__layout">
@@ -209,8 +209,11 @@
       // ---- Classe de forfait technique dérivée du champ magnétique (même seuils que le
       // filtre "gamme de champ" du simulateur énergie) — évite de dupliquer une seconde liste
       // de machines : une même machine (ENERGIE_MACHINES) sert ici à la fois pour l'électricité
-      // et pour trouver sa classe de recette FT.
-      function classKeyFromChampT(t) {
+      // et pour trouver sa classe de recette FT. Les scanners (type:"ct", pas d'aimant) ont
+      // leur propre classe FT_CLASSES.ct, reconnue par machine.type plutôt que par champT.
+      function classKeyFromMachine(machine) {
+        if (machine.type === "ct") return "ct";
+        var t = machine.champT;
         if (t < 0.5) return "le05";
         if (t < 1.5) return "mid";
         if (t === 1.5) return "t15";
@@ -230,11 +233,12 @@
 
       var CHAMP_CATEGORIES = [
         { key: "", label: "Toutes les gammes", test: function () { return true; } },
-        { key: "lt05", label: "< 0,5 T", test: function (t) { return t < 0.5; } },
-        { key: "mid", label: "0,5 T à 1,5 T", test: function (t) { return t >= 0.5 && t < 1.5; } },
-        { key: "t15", label: "1,5 T", test: function (t) { return t === 1.5; } },
-        { key: "t3", label: "3 T", test: function (t) { return t === 3; } },
-        { key: "t7", label: "7 T", test: function (t) { return t >= 7; } }
+        { key: "lt05", label: "< 0,5 T", test: function (m) { return m.type !== "ct" && m.champT < 0.5; } },
+        { key: "mid", label: "0,5 T à 1,5 T", test: function (m) { return m.type !== "ct" && m.champT >= 0.5 && m.champT < 1.5; } },
+        { key: "t15", label: "1,5 T", test: function (m) { return m.type !== "ct" && m.champT === 1.5; } },
+        { key: "t3", label: "3 T", test: function (m) { return m.type !== "ct" && m.champT === 3; } },
+        { key: "t7", label: "7 T", test: function (m) { return m.type !== "ct" && m.champT >= 7; } },
+        { key: "ct", label: "Scanner (CT)", test: function (m) { return m.type === "ct"; } }
       ];
 
       var selectA = document.getElementById("pmMachineA"), champA = document.getElementById("pmChampA");
@@ -256,7 +260,7 @@
       function repeuplerMachineSelect(machineSelect, champSelect, valeurParDefaut) {
         var categorie = CHAMP_CATEGORIES.filter(function (c) { return c.key === champSelect.value; })[0];
         var previous = machineSelect.value;
-        var machinesFiltrees = MACHINES.filter(function (m) { return categorie.test(m.champT); });
+        var machinesFiltrees = MACHINES.filter(function (m) { return categorie.test(m); });
         machineSelect.innerHTML = "";
         machinesFiltrees.forEach(function (m) {
           var opt = document.createElement("option");
@@ -276,8 +280,8 @@
 
       champA.value = "lt05";
       repeuplerMachineSelect(selectA, champA, "esaote-g-scan");
-      champB.value = "t15";
-      repeuplerMachineSelect(selectB, champB, "siemens-altea");
+      champB.value = "ct";
+      repeuplerMachineSelect(selectB, champB, "siemens-gotop");
       if (!selectB.value) repeuplerMachineSelect(selectB, champB);
 
       // Nombre de MERM par défaut selon le type d'aimant : un aimant permanent (IRM ouverte
@@ -297,8 +301,15 @@
       // pas un vrai loyer connu (signalé par le point d'interrogation ci-dessous).
       var LOYERS_BASE = {
         "esaote-o-scan": 12000,
+        "esaote-s-scan": 14000,
+        "esaote-g-scan": 16000,
+        "esaote-magnifico": 16000,
         "siemens-altea": 24000,
-        "siemens-sola-xq": 25500
+        "siemens-sola-xj": 25500,
+        "siemens-sola-xq": 26500,
+        "siemens-prisma": 32000,
+        "siemens-aera": 23000,
+        "ge-optima-mr450w": 25000
       };
       var LOYER_REPLI = 15000;
       function loyerParDefaut(machine) { return LOYERS_BASE[machine.key] != null ? LOYERS_BASE[machine.key] : LOYER_REPLI; }
@@ -320,7 +331,7 @@
 
       // ---- Recette par patient (tarif plein, hors barème dégressif) ----
       function recettePatient(machine, dateIso, zone, amortiKey) {
-        var classe = FT_CLASSES[classKeyFromChampT(machine.champT)];
+        var classe = FT_CLASSES[classKeyFromMachine(machine)];
         var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
         var plein = ligne.plein[zone];
         return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
