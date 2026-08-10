@@ -2,7 +2,8 @@
 
 > Document vivant — à relire et compléter à chaque revue de sécurité. Ne pas dupliquer
 > son contenu ailleurs : ce fichier est le propriétaire unique de l'état de sécurité du
-> site. Dernière revue : **10/08/2026**.
+> site. Dernière revue : **10/08/2026** (2 passes le même jour — la seconde va plus loin
+> qu'une simple revue du site : jsPDF/CDN et sécurité e-mail du domaine).
 
 ## Contexte technique du site
 

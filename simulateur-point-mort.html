@@ -217,7 +217,9 @@
         return "sup15";
       }
 
-      var MACHINES = ENERGIE_MACHINES;
+      // Simulateur IRM uniquement — les scanners (type:"ct", champT null) sont exclus ici et
+      // comparés à une IRM Esaote sur le simulateur dédié simulateur-ct-vs-irm.html.
+      var MACHINES = ENERGIE_MACHINES.filter(function (m) { return m.type !== "ct"; });
 
       var dateSelect = document.getElementById("pmDate");
       FT_CLASSES.le05.dates.forEach(function (d) {
