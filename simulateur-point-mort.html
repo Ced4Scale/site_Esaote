@@ -31,8 +31,8 @@
     <div class="simulator__intro">
       <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
       <h1>Simulateur de point mort IRM</h1>
-      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes du forfait technique couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.</p>
-      <p class="simulator__source">Recette par patient : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>.</p>
+      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes (forfait technique + acte intellectuel du radiologue) couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.</p>
+      <p class="simulator__source">Forfait technique : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>. Acte intellectuel du radiologue : tarifs conventionnés secteur 1 (55&nbsp;€ pour un membre, 69&nbsp;€ pour les autres régions), confirmés sur le forum assurés d'ameli.fr — à n'ajouter que si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple).</p>
     </div>
 
     <div class="simulator__layout">
@@ -108,6 +108,11 @@
           <label for="pmMermA">Nombre de MERM en poste</label>
           <input type="number" id="pmMermA" value="1" min="0" step="1" />
         </div>
+        <div class="field">
+          <label for="pmMembreA">Part des examens « membre » (genou, poignet, sacro-iliaque…)</label>
+          <input type="number" id="pmMembreA" value="30" min="0" max="100" step="5" />
+        </div>
+        <p class="simulator__hint" id="pmMembreHintA"></p>
 
         <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="1"></span> Machine B</h3>
         <div class="field">
@@ -127,6 +132,11 @@
           <label for="pmMermB">Nombre de MERM en poste</label>
           <input type="number" id="pmMermB" value="2" min="0" step="1" />
         </div>
+        <div class="field">
+          <label for="pmMembreB">Part des examens « membre » (genou, poignet, sacro-iliaque…)</label>
+          <input type="number" id="pmMembreB" value="30" min="0" max="100" step="5" />
+        </div>
+        <p class="simulator__hint" id="pmMembreHintB"></p>
       </div>
 
       <div class="simulator__results">
@@ -152,7 +162,7 @@
           </div>
         </div>
 
-        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local.</p>
+        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</p>
 
         <div class="simulator__export" id="pmExport">
           <button type="button" class="btn btn--lg" id="pmExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -323,11 +333,16 @@
       reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA);
       reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB);
 
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); recalculer(); });
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); recalculer(); });
-      [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
+      var membreA = document.getElementById("pmMembreA"), membreB = document.getElementById("pmMembreB");
+      var membreHintA = document.getElementById("pmMembreHintA"), membreHintB = document.getElementById("pmMembreHintB");
+      reinitialiserMembre(selectA, membreA, membreHintA);
+      reinitialiserMembre(selectB, membreB, membreHintB);
+
+      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      [mermA, mermB, membreA, membreB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
       // ---- Recette par patient (tarif plein, hors barème dégressif) ----
       function recettePatient(machine, dateIso, zone, amortiKey) {
@@ -335,6 +350,35 @@
         var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
         var plein = ligne.plein[zone];
         return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+      }
+
+      // ---- Acte intellectuel du radiologue (tarif conventionné secteur 1, fixe — pas de
+      // barème dégressif comme pour le forfait technique) : 55 € pour un examen "membre"
+      // (genou, poignet, sacro-iliaque…), 69 € pour les autres régions (rachis, cérébral,
+      // abdomen, sein…). Confirmé sur le forum assurés d'ameli.fr le 10/08/2026. À n'ajouter
+      // à la recette que si l'exploitant de la machine perçoit aussi cet acte (radiologue
+      // associé) — précisé par Cédric le 10/08/2026.
+      var TARIF_ACTE_MEMBRE = 55;
+      var TARIF_ACTE_AUTRE = 69;
+      // L'O-scan est un aimant dédié aux extrémités : il ne peut physiquement pas faire
+      // d'IRM rachis/cérébrale/abdominale, donc 100 % de ses actes sont au tarif "membre".
+      var MACHINES_MEMBRE_UNIQUEMENT = ["esaote-o-scan"];
+      function acteIntellectuelMoyen(pctMembre) {
+        var p = Math.max(0, Math.min(100, pctMembre)) / 100;
+        return p * TARIF_ACTE_MEMBRE + (1 - p) * TARIF_ACTE_AUTRE;
+      }
+      function reinitialiserMembre(select, input, hintEl) {
+        var machine = machineParKey(select.value);
+        var membreUniquement = MACHINES_MEMBRE_UNIQUEMENT.indexOf(machine.key) !== -1;
+        if (membreUniquement) {
+          input.value = 100;
+          input.disabled = true;
+          hintEl.textContent = machine.nomCourt + " est dédié aux membres — 100 % des actes au tarif « membre » (55 €).";
+        } else {
+          if (input.disabled) input.value = 30;
+          input.disabled = false;
+          hintEl.textContent = "Estimation par défaut (30 %), à ajuster selon le recrutement réel — pas de source officielle sur ce partage.";
+        }
       }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
@@ -357,7 +401,9 @@
       }
 
       function calculerMachine(m, params) {
-        var recette = recettePatient(m.machine, params.dateIso, params.zone, params.amortiKey);
+        var recetteFt = recettePatient(m.machine, params.dateIso, params.zone, params.amortiKey);
+        var acte = acteIntellectuelMoyen(m.pctMembre);
+        var recette = recetteFt + acte;
         var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
         var rh = m.nombreMerm * params.coutMermMensuel;
         var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
@@ -365,7 +411,8 @@
         var pointMortMois = margeParPatient > 0 ? chargesFixesMensuelles / margeParPatient : Infinity;
         var pointMortJour = pointMortMois / params.joursParMois;
         return {
-          machine: m.machine, recette: recette, rh: rh, elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
+          machine: m.machine, recetteFt: recetteFt, acte: acte, recette: recette, rh: rh,
+          elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
           chargesFixesMensuelles: chargesFixesMensuelles, margeParPatient: margeParPatient,
           pointMortMois: pointMortMois, pointMortJour: pointMortJour
         };
@@ -426,8 +473,8 @@
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) }
         ];
 
         var resultats = configs.map(function (c) {
@@ -457,7 +504,11 @@
           });
           tbody.appendChild(tr);
         }
-        ligne("Recette FT / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
+        ligne("Recette FT / patient", resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
+        ligne("Acte intellectuel radiologue (moyen)", resultats.map(function (r, i) {
+          return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)";
+        }));
+        ligne("Recette totale / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
         ligne("Loyer de l'IRM, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
         ligne("Personnel MERM", resultats.map(function (r, i) {
           return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
@@ -789,7 +840,9 @@
           doc.setDrawColor(200);
           doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
           derniers.resultats.forEach(function () {});
-          drawRow("Recette FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }));
+          drawRow("Recette FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
+          drawRow("Acte intellectuel (moyen)", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
+          drawRow("Recette totale / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
           drawRow("Charges fixes / mois", derniers.resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles); }));
           drawRow("Marge / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
           drawRow("Point mort", derniers.resultats.map(function (r) {
