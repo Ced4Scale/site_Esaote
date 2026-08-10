@@ -31,7 +31,7 @@
     <div class="simulator__intro">
       <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
       <h1>Simulateur de point mort IRM</h1>
-      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes du forfait technique couvrent les charges fixes propres à la machine : <strong>loyer/financement de l'IRM</strong>, <strong>contrat SAV</strong>, <strong>coût du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.</p>
+      <p>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes du forfait technique couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.</p>
       <p class="simulator__source">Recette par patient : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>.</p>
     </div>
 
@@ -70,9 +70,10 @@
           <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
         </div>
         <div class="field">
-          <label for="pmCoutMerm">Coût mensuel d'un MERM, chargé (€)</label>
-          <input type="number" id="pmCoutMerm" value="3200" min="0" step="50" />
+          <label for="pmNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
+          <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
         </div>
+        <p class="simulator__hint" id="pmCoutMermCalcule"></p>
         <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
 
         <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
@@ -339,6 +340,21 @@
         return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
       }
 
+      // ---- Coût réel employeur d'un MERM à partir du salaire net avant impôt ----
+      // Un MERM est en général non-cadre (précisé par Cédric, 09/08/2026). Deux étapes,
+      // taux moyens du secteur privé français (varient un peu selon la convention
+      // collective — cliniques privées, FEHAP — et les allègements de charges sur les bas
+      // salaires, mais l'écart reste faible pour un MERM) :
+      //   1. Net avant impôt -> brut : le net avant impôt représente ~78 % du brut pour un
+      //      non-cadre (cotisations salariales ~22 %).
+      //   2. Brut -> coût réel employeur : l'employeur ajoute ~42 % de charges patronales.
+      var TAUX_NET_VERS_BRUT_NON_CADRE = 0.78;
+      var TAUX_CHARGES_PATRONALES_NON_CADRE = 1.42;
+      function coutMermDepuisNet(netAvantIR) {
+        var brut = netAvantIR / TAUX_NET_VERS_BRUT_NON_CADRE;
+        return brut * TAUX_CHARGES_PATRONALES_NON_CADRE;
+      }
+
       // Convertit la saisie "Votre activité" (jour ou an) en patients/jour, seule unité
       // utilisée par les calculs et le graphique.
       function activitePatientsJour(joursParMois) {
@@ -365,9 +381,13 @@
           amortiKey: document.querySelector('input[name="pmAmorti"]:checked').value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("pmKwh").value) || 0),
           heuresParJour: Math.max(0, parseFloat(document.getElementById("pmHeures").value) || 0),
-          joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1),
-          coutMermMensuel: Math.max(0, parseFloat(document.getElementById("pmCoutMerm").value) || 0)
+          joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1)
         };
+        var netMerm = Math.max(0, parseFloat(document.getElementById("pmNetMerm").value) || 0);
+        params.coutMermMensuel = coutMermDepuisNet(netMerm);
+        document.getElementById("pmCoutMermCalcule").innerHTML =
+          "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
+          "(charges salariales et patronales incluses, hypothèse non-cadre).";
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
@@ -577,7 +597,7 @@
         });
       }
 
-      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmCoutMerm", "pmLoyerA", "pmLoyerB", "pmActivite"].forEach(function (id) {
+      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       dateSelect.addEventListener("change", recalculer);
