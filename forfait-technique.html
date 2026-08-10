@@ -44,9 +44,9 @@
                 <th colspan="2">Paris</th>
                 <th colspan="2">Île-de-France (hors Paris)</th>
                 <th colspan="2">Province</th>
-                <th rowspan="2">Seuil 1</th>
-                <th rowspan="2">Seuil 2</th>
-                <th rowspan="2">Plafond</th>
+                <th rowspan="2">2ᵉ tranche</th>
+                <th rowspan="2">3ᵉ tranche</th>
+                <th rowspan="2">Au-delà</th>
               </tr>
               <tr>
                 <th>Amorti</th>
@@ -60,7 +60,7 @@
             <tbody id="fthTableBody"></tbody>
           </table>
         </div>
-        <p class="simulator__hint" style="margin-top:1rem">"Amorti" : machine installée depuis plus de 7 ans. "Non amorti" : moins de 7 ans, ou classe où le texte officiel ne distingue plus les deux (uniquement un tarif "non amorti" publié — voir le texte officiel ci-dessus). "Seuil 1 / Seuil 2 / Plafond" : tarif dégressif appliqué à chaque examen au-delà de l'activité de référence de la classe (voir le tableau des seuils sur le simulateur). Synthèse Ced4Scale, à titre indicatif — le texte officiel fait foi.</p>
+        <p class="simulator__hint" style="margin-top:1rem">"Amorti" : machine installée depuis plus de 7 ans. "Non amorti" : moins de 7 ans, ou classe où le texte officiel ne distingue plus les deux (uniquement un tarif "non amorti" publié — voir le texte officiel ci-dessus). Chaque tarif dégressif est indiqué avec la tranche d'examens/an à laquelle il s'applique — ces bornes ne dépendent pas de la zone ni du statut amorti. Synthèse Ced4Scale, à titre indicatif — le texte officiel fait foi.</p>
 
         <div class="simulator__export" id="fthExport">
           <h3 style="margin-bottom:.6rem">Recevoir cette synthèse par e-mail</h3>
@@ -134,7 +134,8 @@
 
         var tr = document.createElement("tr");
         var tdClasse = document.createElement("td");
-        tdClasse.innerHTML = "<strong>" + classe.label + "</strong>";
+        tdClasse.innerHTML = "<strong>" + classe.label + "</strong>" +
+          '<br><span style="font-size:.72rem;font-weight:400;color:var(--ink-soft)">de 1 à ' + seuilsEntiers.format(classe.REF) + " examens/an</span>";
         tr.appendChild(tdClasse);
 
         ["paris", "idf", "province"].forEach(function (zone) {
@@ -147,9 +148,21 @@
           tr.appendChild(tdNonAmorti);
         });
 
-        [ligne.reduits.seuil1, ligne.reduits.seuil2, ligne.reduits.plafond].forEach(function (montant) {
+        // Tranches dégressives : la plage réelle (en nombre d'examens/an) varie selon la
+        // classe (REF/SEUIL1/SEUIL2 ne sont pas les mêmes pour l'IRM ≤0,5T ou le scanner) —
+        // affichée directement dans la cellule plutôt qu'un en-tête générique "Seuil 1",
+        // pour rester lisible sans avoir à aller chercher la définition ailleurs.
+        [
+          { debut: classe.REF + 1, fin: classe.SEUIL1, montant: ligne.reduits.seuil1 },
+          { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2, montant: ligne.reduits.seuil2 },
+          { debut: classe.SEUIL2 + 1, fin: null, montant: ligne.reduits.plafond }
+        ].forEach(function (tranche) {
           var td = document.createElement("td");
-          td.textContent = euros.format(montant);
+          var plage = tranche.fin != null
+            ? "de " + seuilsEntiers.format(tranche.debut) + " à " + seuilsEntiers.format(tranche.fin)
+            : "au-delà de " + seuilsEntiers.format(tranche.debut - 1);
+          td.innerHTML = '<span style="display:block;font-size:.72rem;color:var(--ink-soft)">' + plage + '</span>' +
+            '<strong>' + euros.format(tranche.montant) + '</strong>';
           tr.appendChild(td);
         });
 
