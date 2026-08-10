@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260810-colwidth" />
+  <link rel="stylesheet" href="styles.css?v=20260810-mobile-fix" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-ctvsirm"></script>
@@ -176,6 +176,50 @@
             <tbody id="cvSyntheseBody"></tbody>
           </table>
           <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 69 € pour une IRM, 25,27 € pour un scanner mono-région (thorax ou abdomen-pelvis) — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
+        </div>
+
+        <div class="simulator__chart-card" id="cvRecap">
+          <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
+
+          <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
+          <table class="stats-table simulator__table simulator__table--compare2" id="cvRecapEquipTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="cvRecapEquipHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="cvRecapEquipHeadB"></span></th>
+              </tr>
+            </thead>
+            <tbody id="cvRecapEquipBody"></tbody>
+          </table>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Forfait technique et acte intellectuel — valeurs calculées</h4>
+          <table class="stats-table simulator__table simulator__table--compare2" id="cvRecapRecettesTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="cvRecapRecettesHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="cvRecapRecettesHeadB"></span></th>
+              </tr>
+            </thead>
+            <tbody id="cvRecapRecettesBody"></tbody>
+          </table>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Paramètres saisis avant de lancer la simulation</h4>
+          <table class="stats-table simulator__table" id="cvRecapParamsCommunsTable">
+            <tbody id="cvRecapParamsCommunsBody"></tbody>
+          </table>
+          <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem" id="cvRecapParamsTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="cvRecapParamsHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="cvRecapParamsHeadB"></span></th>
+              </tr>
+            </thead>
+            <tbody id="cvRecapParamsBody"></tbody>
+          </table>
         </div>
 
         <div class="simulator__export" id="cvExport">
@@ -450,7 +494,7 @@
           r.color = SLOT_COLORS[c.slot];
           return r;
         });
-        derniers = { resultats: resultats, params: params };
+        derniers = { resultats: resultats, params: params, configs: configs };
 
         document.getElementById("cvTableHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("cvTableHeadB").textContent = resultats[1].machine.nomCourt;
@@ -504,6 +548,7 @@
         }
 
         dessinerSynthese(resultats, configs, params);
+        dessinerRecap(resultats, configs, params);
 
         dessinerLegende(resultats);
         dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
@@ -563,6 +608,98 @@
         ligne("Résultat / patient", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
         ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true);
         ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
+      }
+
+      // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : reprendre en un seul
+      // endroit les données techniques des équipements, les valeurs calculées (FT + acte
+      // intellectuel) et les paramètres saisis, pour qu'on comprenne le résultat sans avoir à
+      // tout recalculer soi-même. Repris à l'identique dans le PDF envoyé.
+      var ZONE_LABELS = { paris: "Paris", idf: "Île-de-France (hors Paris)", province: "Province" };
+      function recapDonnees(resultats, configs, params) {
+        var dateLabel = dateSelect.options[dateSelect.selectedIndex].textContent;
+        var amortiLabel = params.amortiKey === "amorti" ? "Amorties (> 7 ans)" : "Non amorties";
+        var modeActivite = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var activiteBrute = document.getElementById("cvActivite").value;
+
+        var equip = [
+          { label: "Champ / type", valeurs: resultats.map(function (r) { return r.machine.type === "ct" ? "Scanner (CT)" : "IRM aimant permanent"; }) },
+          { label: "Puissance à l'arrêt", valeurs: resultats.map(function (r) { return r.machine.eteint.toFixed(2) + " kW"; }) },
+          { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
+          { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
+          { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
+          { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
+          { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
+        ];
+
+        var recettes = [
+          { label: "Date de forfait technique", valeurs: [dateLabel, dateLabel] },
+          { label: "Zone géographique", valeurs: [ZONE_LABELS[params.zone], ZONE_LABELS[params.zone]] },
+          { label: "Statut amorti", valeurs: [amortiLabel, amortiLabel] },
+          { label: "Recette forfait technique / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) },
+          { label: "Recette acte intellectuel / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.acte); }) },
+          { label: "Recette totale / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette + r.acte); }) }
+        ];
+
+        var paramsCommuns = [
+          ["Coût du kWh", eurosCent.format(params.prixKwh)],
+          ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
+          ["Jours d'ouverture par mois", params.joursParMois + " jours"],
+          ["Salaire MERM net avant impôt", euros.format(+document.getElementById("cvNetMerm").value || 0) + " / mois"],
+          ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
+        ];
+
+        var paramsMachines = [
+          { label: "Loyer, SAV inclus", valeurs: configs.map(function (c) { return euros.format(c.loyer) + " / mois"; }) },
+          { label: "Nombre de MERM en poste", valeurs: configs.map(function (c) { return String(c.nombreMerm); }) }
+        ];
+
+        return { equip: equip, recettes: recettes, paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
+      }
+
+      function remplirTableau2Col(tbodyId, lignes) {
+        var tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = "";
+        lignes.forEach(function (l) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + l.label + "</strong>";
+          tr.appendChild(td0);
+          l.valeurs.forEach(function (v) {
+            var td = document.createElement("td");
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      function dessinerRecap(resultats, configs, params) {
+        var d = recapDonnees(resultats, configs, params);
+
+        document.getElementById("cvRecapEquipHeadA").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvRecapEquipHeadB").textContent = resultats[1].machine.nomCourt;
+        remplirTableau2Col("cvRecapEquipBody", d.equip);
+
+        document.getElementById("cvRecapRecettesHeadA").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvRecapRecettesHeadB").textContent = resultats[1].machine.nomCourt;
+        remplirTableau2Col("cvRecapRecettesBody", d.recettes);
+
+        var tbodyCommuns = document.getElementById("cvRecapParamsCommunsBody");
+        tbodyCommuns.innerHTML = "";
+        d.paramsCommuns.forEach(function (pair) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>";
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = pair[1];
+          tr.appendChild(td1);
+          tbodyCommuns.appendChild(tr);
+        });
+
+        document.getElementById("cvRecapParamsHeadA").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvRecapParamsHeadB").textContent = resultats[1].machine.nomCourt;
+        remplirTableau2Col("cvRecapParamsBody", d.paramsMachines);
       }
 
       function dessinerLegende(resultats) {
@@ -862,6 +999,47 @@
           drawRow("Point mort", derniers.resultats.map(function (r) {
             return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./jour" : "jamais atteint";
           }), true);
+
+          // ---- Page 2 : récapitulatif complet (équipements, FT + acte, paramètres saisis) ----
+          doc.addPage();
+          var d = recapDonnees(derniers.resultats, derniers.configs, derniers.params);
+          var py = 18, px0 = 15, plabelW = 65, pcolW = 55;
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Récapitulatif de la simulation", px0, py); py += 8;
+
+          function drawSectionTitle(titre) {
+            doc.setFontSize(10.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(titre, px0, py); py += 6;
+          }
+          function drawRecapRow(label, valeurs, bold) {
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.setTextColor(bold ? 0 : 60);
+            var x = px0;
+            doc.text(String(label), x, py);
+            x += plabelW;
+            valeurs.forEach(function (v) { doc.text(String(v), x, py); x += pcolW; });
+            py += 5.5;
+          }
+
+          drawSectionTitle("Équipements — valeurs utilisées dans le calcul");
+          drawRecapRow("", [derniers.resultats[0].machine.nomCourt, derniers.resultats[1].machine.nomCourt], true);
+          d.equip.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+          py += 3;
+
+          drawSectionTitle("Forfait technique et acte intellectuel — valeurs calculées");
+          drawRecapRow("", [derniers.resultats[0].machine.nomCourt, derniers.resultats[1].machine.nomCourt], true);
+          d.recettes.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+          py += 3;
+
+          drawSectionTitle("Paramètres saisis avant de lancer la simulation");
+          d.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
+          drawRecapRow("", [derniers.resultats[0].machine.nomCourt, derniers.resultats[1].machine.nomCourt], true);
+          d.paramsMachines.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
 
           return doc.output("datauristring").split(",")[1];
         });
