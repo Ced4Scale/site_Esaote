@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur IRM Esaote / Scanner — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260810-ctvsirm" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260810-ctvsirm"></script>
+  <script src="assets/machines-energie-data.js?v=20260810-ctvsirm"></script>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>IRM Esaote / Scanner</strong>
+    </div>
+    <button class="document-viewer__close" id="cvClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
+      <h1>Simulateur IRM Esaote / Scanner</h1>
+      <p>Compare la rentabilité d'une <strong>IRM ouverte Esaote</strong> à celle d'un <strong>scanner (CT)</strong> : recette du forfait technique, <strong>recette de l'acte intellectuel du radiologue</strong> (différente entre les deux modalités — c'est souvent elle qui creuse l'écart), loyer (SAV inclus), coût réel du personnel MERM et électricité — hors location des m² du local. Un outil séparé du <a href="simulateur-point-mort.html">comparateur IRM vs IRM</a>, parce que la recette de l'acte intellectuel change tout entre un scanner et une IRM.</p>
+      <p class="simulator__source">Recette du forfait technique : texte officiel (même décision, mêmes dates de réforme pour l'IRM et le scanner). Recette de l'acte intellectuel : estimation Cédric, à confirmer avec la nomenclature CCAM en vigueur. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a> — pour le scanner, puissance électrique officielle Siemens (SOMATOM go.All/go.Top), voir <a href="sources-energie.html">sources</a>.</p>
+    </div>
+
+    <div class="simulator__layout">
+      <div class="form-card simulator__form">
+        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
+        <div class="field">
+          <label for="cvDate">Date de forfait technique</label>
+          <select id="cvDate"></select>
+        </div>
+        <div class="field">
+          <label for="cvZone">Zone géographique</label>
+          <select id="cvZone">
+            <option value="province">Province</option>
+            <option value="idf">Île-de-France (hors Paris)</option>
+            <option value="paris">Paris</option>
+          </select>
+        </div>
+        <div class="field">
+          <label><mark class="simulator__highlight">Machines amorties ou non ?</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="cvAmorti" value="nonAmorti" checked /> Non amorties</label>
+            <label><input type="radio" name="cvAmorti" value="amorti" /> Amorties (&gt; 7 ans)</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cvKwh">Coût du kWh (€, TTC)</label>
+          <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
+        </div>
+        <div class="field">
+          <label for="cvHeures">Amplitude d'ouverture par jour (heures)</label>
+          <input type="number" id="cvHeures" value="8" min="1" max="24" step="0.5" />
+        </div>
+        <div class="field">
+          <label for="cvJours">Jours d'ouverture par mois</label>
+          <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
+        </div>
+        <div class="field">
+          <label for="cvNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
+          <input type="number" id="cvNetMerm" value="1800" min="0" step="50" />
+        </div>
+        <p class="simulator__hint" id="cvCoutMermCalcule"></p>
+        <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette du forfait technique reste donc le tarif plein.</p>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
+        <div class="field">
+          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
+            <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="cvActivite" id="cvActiviteLabel">Nombre de patients par jour</label>
+          <input type="number" id="cvActivite" value="5" min="0" step="0.5" />
+        </div>
+        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
+
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="0"></span> IRM Esaote</h3>
+        <div class="field">
+          <label for="cvMachineA">Modèle</label>
+          <select id="cvMachineA"></select>
+        </div>
+        <div class="field">
+          <label for="cvLoyerA">Loyer de l'IRM, SAV inclus (€ / mois)</label>
+          <input type="number" id="cvLoyerA" value="12000" min="0" step="50" />
+        </div>
+        <p class="simulator__hint" id="cvLoyerHintA"></p>
+        <div class="field">
+          <label for="cvMermA">Nombre de MERM en poste</label>
+          <input type="number" id="cvMermA" value="1" min="0" step="1" />
+        </div>
+
+        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch" data-slot="1"></span> Scanner (CT)</h3>
+        <div class="field">
+          <label for="cvMachineB">Modèle</label>
+          <select id="cvMachineB"></select>
+        </div>
+        <div class="field">
+          <label for="cvLoyerB">Loyer du scanner, SAV inclus (€ / mois)</label>
+          <input type="number" id="cvLoyerB" value="12000" min="0" step="50" />
+        </div>
+        <p class="simulator__hint" id="cvLoyerHintB"></p>
+        <div class="field">
+          <label for="cvMermB">Nombre de MERM en poste</label>
+          <input type="number" id="cvMermB" value="2" min="0" step="1" />
+        </div>
+      </div>
+
+      <div class="simulator__results">
+        <table class="stats-table simulator__table" id="cvTable">
+          <thead>
+            <tr>
+              <th></th>
+              <th><span class="simulator__swatch" data-slot="0"></span> <span id="cvTableHeadA"></span></th>
+              <th><span class="simulator__swatch" data-slot="1"></span> <span id="cvTableHeadB"></span></th>
+            </tr>
+          </thead>
+          <tbody id="cvTableBody"></tbody>
+        </table>
+        <p class="simulator__hint" id="cvEcart"></p>
+
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
+          <div class="simulator__legend" id="cvLegend"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
+            <div class="simulator__tooltip" id="cvTooltip" hidden></div>
+          </div>
+        </div>
+
+        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
+
+        <div class="simulator__export" id="cvExport">
+          <button type="button" class="btn btn--lg" id="cvExportToggle">Recevoir ce comparatif par e-mail</button>
+          <form id="cvExportForm" hidden>
+            <div class="simulator__export-grid">
+              <div class="field">
+                <label for="cvPrenom">Prénom</label>
+                <input type="text" id="cvPrenom" required autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label for="cvNom">Nom</label>
+                <input type="text" id="cvNom" required autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label for="cvEtablissement">Établissement</label>
+                <input type="text" id="cvEtablissement" required placeholder="CHU, clinique, cabinet…" />
+              </div>
+              <div class="field">
+                <label for="cvFonction">Fonction</label>
+                <input type="text" id="cvFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+              </div>
+              <div class="field">
+                <label for="cvEmail">E-mail</label>
+                <input type="email" id="cvEmail" required autocomplete="email" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="cvCommentaire">Commentaire</label>
+              <textarea id="cvCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn--lg" id="cvExportSubmit">Recevoir ma simulation en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+          </form>
+          <div class="simulator__export-success" id="cvExportSuccess" role="status" hidden>
+            ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+          </div>
+          <p class="simulator__export-error" id="cvExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+      var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
+
+      document.querySelectorAll(".simulator__swatch").forEach(function (sw) {
+        sw.style.background = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+
+      // ---- Classe de forfait technique dérivée de la machine : IRM Esaote -> classe "≤ 0,5 T"
+      // (le05), scanner -> classe FT_CLASSES.ct. Contrairement au comparateur IRM vs IRM, ce
+      // simulateur n'a que ces deux familles possibles (pas de filtre de gamme à proposer).
+      function classKeyFromMachine(machine) {
+        return machine.type === "ct" ? "ct" : "le05";
+      }
+
+      var MACHINES_IRM = ENERGIE_MACHINES.filter(function (m) { return m.marque === "Esaote"; });
+      var MACHINES_CT = ENERGIE_MACHINES.filter(function (m) { return m.type === "ct"; });
+
+      function machineParKey(key) {
+        return ENERGIE_MACHINES.filter(function (m) { return m.key === key; })[0];
+      }
+
+      var dateSelect = document.getElementById("cvDate");
+      FT_CLASSES.le05.dates.forEach(function (d) {
+        var opt = document.createElement("option");
+        opt.value = d.iso;
+        opt.textContent = d.label;
+        dateSelect.appendChild(opt);
+      });
+      dateSelect.value = "2027-01-01";
+
+      var selectA = document.getElementById("cvMachineA"), selectB = document.getElementById("cvMachineB");
+      MACHINES_IRM.forEach(function (m) {
+        var opt = document.createElement("option");
+        opt.value = m.key;
+        opt.textContent = m.nomCourt;
+        selectA.appendChild(opt);
+      });
+      MACHINES_CT.forEach(function (m) {
+        var opt = document.createElement("option");
+        opt.value = m.key;
+        opt.textContent = m.nomCourt;
+        selectB.appendChild(opt);
+      });
+      selectA.value = "esaote-g-scan";
+      selectB.value = "siemens-gotop";
+
+      // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
+      // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
+      // (précisé par Cédric le 10/08/2026) — 2 par défaut ici, modifiable ensuite.
+      function mermParDefaut(machine) { return machine.type === "ct" ? 2 : 1; }
+      function reinitialiserMerm(select, input) { input.value = mermParDefaut(machineParKey(select.value)); }
+      var mermA = document.getElementById("cvMermA"), mermB = document.getElementById("cvMermB");
+      reinitialiserMerm(selectA, mermA);
+      reinitialiserMerm(selectB, mermB);
+
+      // Loyer de base par machine (SAV inclus, moyenné sur 7 ans) — communiqué par Cédric le
+      // 10/08/2026 pour les scanners Siemens go.All/go.Top ; réutilise les mêmes valeurs IRM
+      // Esaote que le comparateur IRM vs IRM (fichier propriétaire de cette page, ce sont des
+      // loyers commerciaux, pas des données techniques partagées via ENERGIE_MACHINES).
+      var LOYERS_BASE = {
+        "esaote-o-scan": 12000,
+        "esaote-s-scan": 14000,
+        "esaote-g-scan": 16000,
+        "esaote-magnifico": 16000,
+        "siemens-goall": 10500,
+        "siemens-gotop": 12000
+      };
+      var LOYER_REPLI = 15000;
+      function loyerParDefaut(machine) { return LOYERS_BASE[machine.key] != null ? LOYERS_BASE[machine.key] : LOYER_REPLI; }
+      function reinitialiserLoyer(select, input, hintEl) {
+        var machine = machineParKey(select.value);
+        var connu = LOYERS_BASE[machine.key] != null;
+        input.value = loyerParDefaut(machine);
+        hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
+      }
+      var loyerHintA = document.getElementById("cvLoyerHintA"), loyerHintB = document.getElementById("cvLoyerHintB");
+      reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA);
+      reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB);
+
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB); recalculer(); });
+      [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
+
+      // ---- Recette du forfait technique (tarif plein, hors barème dégressif) ----
+      function recetteFT(machine, dateIso, zone, amortiKey) {
+        var classe = FT_CLASSES[classKeyFromMachine(machine)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+      }
+
+      // ---- Recette de l'acte intellectuel du radiologue, par patient — c'est ce poste qui
+      // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
+      // le forfait technique seul sous-estime l'écart réel de rentabilité. Valeurs reprises du
+      // fichier Excel personnel de Cédric ("ESAOTE FT juin 26.xlsx", onglet "Bas Champs vs CT") —
+      // à confirmer avec la nomenclature CCAM en vigueur, pas un tarif officiel vérifié ici.
+      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 33 : 55; }
+
+      // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
+      // à l'ouverture), ramené à un coût FIXE mensuel + un coût VARIABLE par patient, pour que
+      // le point mort reste une simple division (charges fixes / marge par patient).
+      function electriciteMensuelle(machine, heuresParJour, joursParMois, prixKwh) {
+        var coeffLT = machine.coeffRefroidissementLT;
+        var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
+        var socleMensuel = puissanceSocle * 24 * 30 * prixKwh;
+
+        var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
+        var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
+
+        var deltaMesure = (machine.mesure - machine.eteint) * (1 + coeffLT);
+        var coutVariablePatient = deltaMesure * (machine.dureeAcquisitionMinutes / 60) * prixKwh;
+
+        return { fixeMensuel: socleMensuel + entrePatientsMensuel, variablePatient: coutVariablePatient };
+      }
+
+      function calculerMachine(m, params) {
+        var recette = recetteFT(m.machine, params.dateIso, params.zone, params.amortiKey);
+        var acte = acteIntellectuelPatient(m.machine);
+        var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
+        var rh = m.nombreMerm * params.coutMermMensuel;
+        var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
+        var margeParPatient = recette + acte - elec.variablePatient;
+        var pointMortMois = margeParPatient > 0 ? chargesFixesMensuelles / margeParPatient : Infinity;
+        var pointMortJour = pointMortMois / params.joursParMois;
+        return {
+          machine: m.machine, recette: recette, acte: acte, rh: rh, elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
+          chargesFixesMensuelles: chargesFixesMensuelles, margeParPatient: margeParPatient,
+          pointMortMois: pointMortMois, pointMortJour: pointMortJour
+        };
+      }
+
+      function resultatMensuel(res, patientsJour, joursParMois) {
+        return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
+      }
+
+      // ---- Coût réel employeur d'un MERM à partir du salaire net avant impôt ----
+      var TAUX_NET_VERS_BRUT_NON_CADRE = 0.78;
+      var TAUX_CHARGES_PATRONALES_NON_CADRE = 1.42;
+      function coutMermDepuisNet(netAvantIR) {
+        var brut = netAvantIR / TAUX_NET_VERS_BRUT_NON_CADRE;
+        return brut * TAUX_CHARGES_PATRONALES_NON_CADRE;
+      }
+
+      function activitePatientsJour(joursParMois) {
+        var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var valeur = Math.max(0, parseFloat(document.getElementById("cvActivite").value) || 0);
+        return mode === "jour" ? valeur : valeur / (joursParMois * 12);
+      }
+
+      document.querySelectorAll('input[name="cvActiviteMode"]').forEach(function (radio) {
+        radio.addEventListener("change", function () {
+          var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+          document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
+          document.getElementById("cvActivite").value = mode === "jour" ? 5 : 1200;
+          recalculer();
+        });
+      });
+
+      var derniers = null;
+
+      function recalculer() {
+        var params = {
+          dateIso: dateSelect.value,
+          zone: document.getElementById("cvZone").value,
+          amortiKey: document.querySelector('input[name="cvAmorti"]:checked').value,
+          prixKwh: Math.max(0, parseFloat(document.getElementById("cvKwh").value) || 0),
+          heuresParJour: Math.max(0, parseFloat(document.getElementById("cvHeures").value) || 0),
+          joursParMois: Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1)
+        };
+        var netMerm = Math.max(0, parseFloat(document.getElementById("cvNetMerm").value) || 0);
+        params.coutMermMensuel = coutMermDepuisNet(netMerm);
+        document.getElementById("cvCoutMermCalcule").innerHTML =
+          "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
+          "(charges salariales et patronales incluses, hypothèse non-cadre).";
+        params.activitePatientsJour = activitePatientsJour(params.joursParMois);
+
+        var configs = [
+          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("cvLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("cvLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0) }
+        ];
+
+        var resultats = configs.map(function (c) {
+          var r = calculerMachine(c, params);
+          r.slot = c.slot;
+          r.color = SLOT_COLORS[c.slot];
+          return r;
+        });
+        derniers = { resultats: resultats, params: params };
+
+        document.getElementById("cvTableHeadA").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvTableHeadB").textContent = resultats[1].machine.nomCourt;
+
+        var tbody = document.getElementById("cvTableBody");
+        tbody.innerHTML = "";
+        function ligne(label, cells, bold) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.textContent = label;
+          if (bold) td0.style.fontWeight = "700";
+          tr.appendChild(td0);
+          cells.forEach(function (c) {
+            var td = document.createElement("td");
+            td.textContent = c;
+            if (bold) td.style.fontWeight = "700";
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        }
+        ligne("Recette forfait technique / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
+        ligne("Recette acte intellectuel / patient", resultats.map(function (r) { return eurosCent.format(r.acte); }));
+        ligne("Loyer, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
+        ligne("Personnel MERM", resultats.map(function (r, i) {
+          return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
+        }));
+        ligne("Électricité (part fixe)", resultats.map(function (r) { return euros.format(r.elecFixe) + " / mois"; }));
+        ligne("Charges fixes totales", resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles) + " / mois"; }), true);
+        ligne("Marge par patient (FT + acte - élec. variable)", resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
+        ligne("Point mort", resultats.map(function (r) {
+          return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " patients / jour" : "jamais atteint";
+        }), true);
+        ligne("soit par mois", resultats.map(function (r) {
+          return isFinite(r.pointMortMois) ? patientsFmt.format(r.pointMortMois) + " patients / mois" : "—";
+        }));
+        ligne("Résultat mensuel à votre activité (" + patientsFmt.format(params.activitePatientsJour) + " patients/jour)", resultats.map(function (r) {
+          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+          return (res >= 0 ? "+" : "") + euros.format(res) + " / mois";
+        }), true);
+
+        var ecartEl = document.getElementById("cvEcart");
+        if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
+          var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
+          var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
+          var ecart = pire.pointMortJour - meilleur.pointMortJour;
+          ecartEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
+            patientsFmt.format(ecart) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
+            " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour).";
+        } else {
+          ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+        }
+
+        dessinerLegende(resultats);
+        dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
+      }
+
+      function dessinerLegende(resultats) {
+        var legendEl = document.getElementById("cvLegend");
+        legendEl.innerHTML = "";
+        resultats.forEach(function (r) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = r.color;
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = r.machine.nomCourt;
+          item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
+
+      var svg = document.getElementById("cvChart");
+      var tooltipEl = document.getElementById("cvTooltip");
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      function svgEl(tag, attrs) {
+        var el = document.createElementNS(SVG_NS, tag);
+        Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+        return el;
+      }
+
+      var NICE_STEPS = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+      function niceCeil(value) {
+        if (value <= 0) return 1000;
+        var pow = Math.pow(10, Math.floor(Math.log10(value)));
+        var n = value / pow;
+        var niceN = NICE_STEPS.filter(function (s) { return s >= n; })[0] || 10;
+        return niceN * pow;
+      }
+
+      var PAD = { left: 92, right: 16, top: 18, bottom: 28 };
+      var VIEWBOX_H = 320;
+      var PLOT_W = 640 - PAD.left - PAD.right;
+      var PLOT_H = VIEWBOX_H - PAD.top - PAD.bottom;
+
+      function dessinerGraphe(resultats, joursParMois, activitePatientsJour) {
+        svg.innerHTML = "";
+
+        var pointsMorts = resultats.filter(function (r) { return isFinite(r.pointMortJour); }).map(function (r) { return r.pointMortJour; });
+        var repereMax = Math.max(pointsMorts.length ? Math.max.apply(null, pointsMorts) : 0, activitePatientsJour || 0);
+        var xMax = niceCeil((repereMax || 20) * 1.6);
+        var NB_PAS = 40;
+
+        var series = resultats.map(function (r) {
+          var pts = [];
+          for (var i = 0; i <= NB_PAS; i++) {
+            var patientsJour = (xMax * i) / NB_PAS;
+            pts.push(resultatMensuel(r, patientsJour, joursParMois));
+          }
+          return { r: r, pts: pts };
+        });
+
+        var yMin = 0, yMax = 0;
+        series.forEach(function (s) { s.pts.forEach(function (v) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }); });
+        var yAbsMax = niceCeil(Math.max(Math.abs(yMin), Math.abs(yMax)) * 1.05);
+        yMin = -yAbsMax; yMax = yAbsMax;
+
+        function xAt(patientsJour) { return PAD.left + (PLOT_W * patientsJour) / xMax; }
+        function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * (v - yMin)) / (yMax - yMin); }
+
+        for (var g = 0; g <= 4; g++) {
+          var val = yMin + ((yMax - yMin) * g) / 4;
+          var y = yAt(val);
+          svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: PAD.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = euros.format(val);
+          svg.appendChild(labelY);
+        }
+        svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
+
+        if (activitePatientsJour != null && activitePatientsJour > 0 && activitePatientsJour <= xMax) {
+          var xAct = xAt(activitePatientsJour);
+          svg.appendChild(svgEl("line", { x1: xAct, x2: xAct, y1: PAD.top, y2: PAD.top + PLOT_H, stroke: "#8a8578", "stroke-width": "1.2", "stroke-dasharray": "4,3" }));
+          var labelAct = svgEl("text", { x: xAct, y: PAD.top - 4, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelAct.textContent = "Votre activité";
+          svg.appendChild(labelAct);
+        }
+
+        for (var p = 0; p <= 4; p++) {
+          var xv = (xMax * p) / 4;
+          var lx = svgEl("text", { x: xAt(xv), y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          lx.textContent = patientsFmt.format(xv);
+          svg.appendChild(lx);
+        }
+
+        series.forEach(function (s) {
+          var points = s.pts.map(function (v, i) { return xAt((xMax * i) / NB_PAS) + "," + yAt(v); }).join(" ");
+          svg.appendChild(svgEl("polyline", {
+            points: points, fill: "none", stroke: s.r.color, "stroke-width": "2",
+            "stroke-linejoin": "round", "stroke-linecap": "round"
+          }));
+          if (isFinite(s.r.pointMortJour) && s.r.pointMortJour <= xMax) {
+            var cx = xAt(s.r.pointMortJour), cy = yAt(0);
+            svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 6, fill: "#fcfcfb" }));
+            svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 4, fill: s.r.color }));
+          }
+          if (activitePatientsJour != null && activitePatientsJour <= xMax) {
+            var cxAct = xAt(activitePatientsJour), cyAct = yAt(resultatMensuel(s.r, activitePatientsJour, joursParMois));
+            svg.appendChild(svgEl("circle", { cx: cxAct, cy: cyAct, r: 5, fill: "#fcfcfb", stroke: s.r.color, "stroke-width": "2" }));
+          }
+        });
+
+        var crosshair = svgEl("line", { x1: 0, x2: 0, y1: PAD.top, y2: PAD.top + PLOT_H, class: "simulator__crosshair", visibility: "hidden" });
+        svg.appendChild(crosshair);
+        var hitArea = svgEl("rect", { x: PAD.left, y: PAD.top, width: PLOT_W, height: PLOT_H, fill: "transparent" });
+        svg.appendChild(hitArea);
+
+        function survol(evt) {
+          var rect = svg.getBoundingClientRect();
+          var scaleX = 640 / rect.width;
+          var xViewBox = (evt.clientX - rect.left) * scaleX;
+          var patientsJour = Math.max(0, Math.min(xMax, ((xViewBox - PAD.left) / PLOT_W) * xMax));
+          crosshair.setAttribute("x1", xAt(patientsJour));
+          crosshair.setAttribute("x2", xAt(patientsJour));
+          crosshair.setAttribute("visibility", "visible");
+
+          var lignes = series.map(function (s) {
+            var v = resultatMensuel(s.r, patientsJour, joursParMois);
+            return '<div class="simulator__tooltip-row"><span class="simulator__legend-key" style="background:' + s.r.color + '"></span>' +
+              '<strong>' + euros.format(v) + '</strong> — ' + s.r.machine.nomCourt + '</div>';
+          }).join("");
+          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + patientsFmt.format(patientsJour) + ' patients/jour</div>' + lignes;
+          tooltipEl.hidden = false;
+        }
+        hitArea.addEventListener("pointermove", survol);
+        hitArea.addEventListener("pointerleave", function () {
+          crosshair.setAttribute("visibility", "hidden");
+          tooltipEl.hidden = true;
+        });
+      }
+
+      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", recalculer);
+      });
+      dateSelect.addEventListener("change", recalculer);
+      document.querySelectorAll('input[name="cvAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
+
+      recalculer();
+
+      document.getElementById("cvClose").addEventListener("click", function () {
+        if (document.referrer) history.back(); else window.location.href = "index.html";
+      });
+
+      /* Réutilise le même flux Power Automate générique que les autres simulateurs
+         ("Simulateur_Recettes_Envoi_PDF_V1") — il se contente d'envoyer par e-mail le PDF joint
+         avec les coordonnées du demandeur, aucun nouveau flux nécessaire pour ce simulateur. */
+      var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      function figerLesStyles(svgSource) {
+        var clone = svgSource.cloneNode(true);
+        var liveEls = svgSource.querySelectorAll("*");
+        var cloneEls = clone.querySelectorAll("*");
+        for (var i = 0; i < liveEls.length; i++) {
+          var cs = getComputedStyle(liveEls[i]);
+          cloneEls[i].style.fontSize = cs.fontSize;
+          cloneEls[i].style.fontFamily = cs.fontFamily;
+          cloneEls[i].style.fontWeight = cs.fontWeight;
+          cloneEls[i].style.fill = cs.fill;
+          cloneEls[i].style.stroke = cs.stroke;
+          cloneEls[i].style.strokeWidth = cs.strokeWidth;
+          cloneEls[i].style.opacity = cs.opacity;
+        }
+        return clone;
+      }
+
+      function svgVersPng(svgSource) {
+        return new Promise(function (resolve, reject) {
+          var viewBox = svgSource.viewBox.baseVal;
+          var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
+          var vbHeight = viewBox && viewBox.height ? viewBox.height : 320;
+          var svgString = new XMLSerializer().serializeToString(figerLesStyles(svgSource));
+          var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+          var url = URL.createObjectURL(svgBlob);
+          var img = new Image();
+          img.onload = function () {
+            var scale = 2;
+            var canvas = document.createElement("canvas");
+            canvas.width = vbWidth * scale;
+            canvas.height = vbHeight * scale;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fcfcfb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve({ dataUrl: canvas.toDataURL("image/png"), width: vbWidth, height: vbHeight });
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      function imageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+
+      function genererPdfBase64() {
+        return Promise.all([svgVersPng(svg), imageDataUrl("assets/logo-ced4scale.png")]).then(function (images) {
+          var graphePng = images[0], logoPng = images[1];
+          var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
+          var RIGHT_X = 282;
+
+          var _origDocText = doc.text.bind(doc);
+          doc.text = function (text, x, y, opts) {
+            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-") : t; }
+            text = Array.isArray(text) ? text.map(clean) : clean(text);
+            return _origDocText(text, x, y, opts);
+          };
+
+          var prenom = document.getElementById("cvPrenom").value.trim();
+          var nom = document.getElementById("cvNom").value.trim();
+          var email = document.getElementById("cvEmail").value.trim();
+          var etablissement = document.getElementById("cvEtablissement").value.trim();
+          var fonction = document.getElementById("cvFonction").value.trim();
+
+          var logoH = 12, logoW = logoH * 3.2;
+          doc.addImage(logoPng, "PNG", 15, 14, logoW, logoH, undefined, "MEDIUM");
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
+          doc.setDrawColor(220);
+          doc.line(15, 33, RIGHT_X, 33);
+
+          var y = 40;
+          doc.setTextColor(0);
+          doc.setFontSize(14);
+          doc.setFont(undefined, "bold");
+          doc.text("Simulation IRM Esaote / Scanner", 15, y);
+          y += 6;
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(120);
+          doc.text(
+            "Nombre de patients/jour pour couvrir les charges fixes · " + new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+            15, y
+          );
+          y += 5;
+          var nomComplet = (prenom + " " + nom).trim();
+          var qualite = [fonction, etablissement].filter(Boolean).join(", ");
+          doc.text("Pour " + (nomComplet || "—") + (qualite ? " (" + qualite + ")" : "") + (email ? " — " + email : ""), 15, y);
+          y += 8;
+
+          var imgWidth = RIGHT_X - 15;
+          var imgHeight = (imgWidth * graphePng.height) / graphePng.width;
+          doc.addImage(graphePng.dataUrl, "PNG", 15, y, imgWidth, imgHeight, undefined, "MEDIUM");
+          y += imgHeight + 8;
+
+          doc.setFontSize(8);
+          var x0 = 15, labelWidth = 55, colWidth = 55;
+          function drawRow(label, cells, bold) {
+            var x = x0;
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.text(String(label), x, y);
+            x += labelWidth;
+            cells.forEach(function (c) { doc.text(String(c), x, y); x += colWidth; });
+            y += 6.5;
+          }
+          var headA = derniers.resultats[0].machine.nomCourt, headB = derniers.resultats[1].machine.nomCourt;
+          drawRow("", [headA, headB], true);
+          doc.setDrawColor(200);
+          doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
+          drawRow("Recette forfait technique / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }));
+          drawRow("Recette acte intellectuel / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
+          drawRow("Charges fixes / mois", derniers.resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles); }));
+          drawRow("Marge / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
+          drawRow("Point mort", derniers.resultats.map(function (r) {
+            return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./jour" : "jamais atteint";
+          }), true);
+
+          return doc.output("datauristring").split(",")[1];
+        });
+      }
+
+      var exportToggle = document.getElementById("cvExportToggle");
+      var exportForm = document.getElementById("cvExportForm");
+      var exportSubmit = document.getElementById("cvExportSubmit");
+      var exportSuccess = document.getElementById("cvExportSuccess");
+      var exportError = document.getElementById("cvExportError");
+
+      exportToggle.addEventListener("click", function () {
+        exportForm.hidden = !exportForm.hidden;
+      });
+
+      exportForm.addEventListener("submit", function (evt) {
+        evt.preventDefault();
+        exportError.hidden = true;
+        exportSubmit.disabled = true;
+        exportSubmit.textContent = "Génération en cours…";
+
+        Promise.resolve().then(genererPdfBase64).then(function (pdfBase64) {
+          var payload = {
+            prenom: document.getElementById("cvPrenom").value.trim(),
+            nom: document.getElementById("cvNom").value.trim(),
+            email: document.getElementById("cvEmail").value.trim(),
+            etablissement: document.getElementById("cvEtablissement").value.trim(),
+            fonction: document.getElementById("cvFonction").value.trim(),
+            commentaire: document.getElementById("cvCommentaire").value.trim(),
+            filename: "simulation-irm-esaote-scanner.pdf",
+            pdfBase64: pdfBase64
+          };
+          return fetch(SIMULATOR_REQUEST_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }).then(function (response) {
+          if (!response || !response.ok) throw new Error("Envoi échoué");
+          exportForm.hidden = true;
+          exportSuccess.hidden = false;
+        }).catch(function () {
+          exportError.hidden = false;
+        }).then(function () {
+          exportSubmit.disabled = false;
+          exportSubmit.textContent = "Recevoir ma simulation en PDF";
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
