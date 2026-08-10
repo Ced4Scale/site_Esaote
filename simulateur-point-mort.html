@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260810-colwidth" />
+  <link rel="stylesheet" href="styles.css?v=20260810-1ou2" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
@@ -90,6 +90,14 @@
         </div>
         <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
 
+        <div class="field">
+          <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="pmNbMachines" value="2" checked /> Comparer deux IRM</label>
+            <label><input type="radio" name="pmNbMachines" value="1" /> Une seule IRM</label>
+          </div>
+        </div>
+
         <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">Machine A</span></h3>
         <div class="field">
           <label for="pmChampA">Filtrer par gamme de champ</label>
@@ -114,29 +122,31 @@
         </div>
         <p class="simulator__hint" id="pmMembreHintA"></p>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Machine B</span></h3>
-        <div class="field">
-          <label for="pmChampB">Filtrer par gamme de champ</label>
-          <select id="pmChampB"></select>
+        <div id="pmMachineBSection">
+          <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Machine B</span></h3>
+          <div class="field">
+            <label for="pmChampB">Filtrer par gamme de champ</label>
+            <select id="pmChampB"></select>
+          </div>
+          <div class="field">
+            <label for="pmMachineB">Choix du champ / machine</label>
+            <select id="pmMachineB"></select>
+          </div>
+          <div class="field">
+            <label for="pmLoyerB">Loyer de l'IRM, SAV inclus (€ / mois)</label>
+            <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
+          </div>
+          <p class="simulator__hint" id="pmLoyerHintB"></p>
+          <div class="field">
+            <label for="pmMermB">Nombre de MERM en poste</label>
+            <input type="number" id="pmMermB" value="2" min="0" step="1" />
+          </div>
+          <div class="field">
+            <label for="pmMembreB">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
+            <input type="number" id="pmMembreB" value="30" min="0" max="100" step="5" />
+          </div>
+          <p class="simulator__hint" id="pmMembreHintB"></p>
         </div>
-        <div class="field">
-          <label for="pmMachineB">Choix du champ / machine</label>
-          <select id="pmMachineB"></select>
-        </div>
-        <div class="field">
-          <label for="pmLoyerB">Loyer de l'IRM, SAV inclus (€ / mois)</label>
-          <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="pmLoyerHintB"></p>
-        <div class="field">
-          <label for="pmMermB">Nombre de MERM en poste</label>
-          <input type="number" id="pmMermB" value="2" min="0" step="1" />
-        </div>
-        <div class="field">
-          <label for="pmMembreB">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
-          <input type="number" id="pmMembreB" value="30" min="0" max="100" step="5" />
-        </div>
-        <p class="simulator__hint" id="pmMembreHintB"></p>
       </div>
 
       <div class="simulator__results">
@@ -145,7 +155,7 @@
             <tr>
               <th></th>
               <th><span class="simulator__swatch-text" data-slot="0" id="pmTableHeadA"></span></th>
-              <th><span class="simulator__swatch-text" data-slot="1" id="pmTableHeadB"></span></th>
+              <th id="pmTableHeadBTh"><span class="simulator__swatch-text" data-slot="1" id="pmTableHeadB"></span></th>
             </tr>
           </thead>
           <tbody id="pmTableBody"></tbody>
@@ -157,7 +167,7 @@
           <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
           <div class="simulator__legend" id="pmLegend"></div>
           <div class="simulator__chart-wrap">
-            <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel des deux machines selon le nombre de patients par jour, avec le point mort de chacune"></svg>
+            <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel selon le nombre de patients par jour, avec le point mort de chaque machine"></svg>
             <div class="simulator__tooltip" id="pmTooltip" hidden></div>
           </div>
         </div>
@@ -449,6 +459,26 @@
         return mode === "jour" ? valeur : valeur / (joursParMois * 12);
       }
 
+      // ---- Une IRM seule ou deux à comparer — demandé par Cédric le 10/08/2026. Le tableau,
+      // le graphique et le PDF sont déjà génériques (bâtis à partir du tableau `resultats`,
+      // quelle que soit sa longueur) ; seuls la section "Machine B" et l'en-tête de tableau
+      // correspondant doivent être masqués, et les classes de largeur de colonnes adaptées.
+      var machineBSection = document.getElementById("pmMachineBSection");
+      var tableHeadBTh = document.getElementById("pmTableHeadBTh");
+      var pmTableEl = document.getElementById("pmTable");
+      function nbMachines() { return +document.querySelector('input[name="pmNbMachines"]:checked').value; }
+      function appliquerNbMachines() {
+        var single = nbMachines() === 1;
+        machineBSection.hidden = single;
+        tableHeadBTh.hidden = single;
+        pmTableEl.classList.toggle("simulator__table--compare2", !single);
+        pmTableEl.classList.toggle("simulator__table--compare1", single);
+      }
+      appliquerNbMachines();
+      document.querySelectorAll('input[name="pmNbMachines"]').forEach(function (radio) {
+        radio.addEventListener("change", function () { appliquerNbMachines(); recalculer(); });
+      });
+
       document.querySelectorAll('input[name="pmActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="pmActiviteMode"]:checked').value;
@@ -477,9 +507,11 @@
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) }
         ];
+        if (nbMachines() === 2) {
+          configs.push({ slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) });
+        }
 
         var resultats = configs.map(function (c) {
           var r = calculerMachine(c, params);
@@ -490,7 +522,7 @@
         derniers = { resultats: resultats, params: params };
 
         document.getElementById("pmTableHeadA").textContent = resultats[0].machine.nomCourt;
-        document.getElementById("pmTableHeadB").textContent = resultats[1].machine.nomCourt;
+        document.getElementById("pmTableHeadB").textContent = resultats[1] ? resultats[1].machine.nomCourt : "";
 
         var tbody = document.getElementById("pmTableBody");
         tbody.innerHTML = "";
@@ -532,7 +564,12 @@
         }), true);
 
         var ecartEl = document.getElementById("pmEcart");
-        if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
+        if (resultats.length === 1) {
+          var seule = resultats[0];
+          ecartEl.innerHTML = isFinite(seule.pointMortJour)
+            ? "<strong>" + seule.machine.nomCourt + " atteint son point mort à " + patientsFmt.format(seule.pointMortJour) + " patients/jour</strong> (soit " + patientsFmt.format(seule.pointMortMois) + " patients/mois)."
+            : "Avec ces charges, " + seule.machine.nomCourt + " n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+        } else if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
           var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
           var ecart = pire.pointMortJour - meilleur.pointMortJour;
@@ -837,11 +874,9 @@
             cells.forEach(function (c) { doc.text(String(c), x, y); x += colWidth; });
             y += 6.5;
           }
-          var headA = derniers.resultats[0].machine.nomCourt, headB = derniers.resultats[1].machine.nomCourt;
-          drawRow("", [headA, headB], true);
+          drawRow("", derniers.resultats.map(function (r) { return r.machine.nomCourt; }), true);
           doc.setDrawColor(200);
-          doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
-          derniers.resultats.forEach(function () {});
+          doc.line(x0, y - 4, x0 + labelWidth + colWidth * derniers.resultats.length, y - 4);
           drawRow("Recette FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
           drawRow("Acte intellectuel (moyen)", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
           drawRow("Recette totale / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
