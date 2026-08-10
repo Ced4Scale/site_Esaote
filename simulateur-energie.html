@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=20260810-colwidth" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="assets/machines-energie-data.js?v=20260810-sri"></script>
+  <script src="assets/machines-energie-data.js?v=20260810-colwidth"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -80,7 +80,7 @@
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
         <div class="field">
-          <label for="eneMachineA"><span class="simulator__swatch" data-slot="0"></span> Machine A</label>
+          <label for="eneMachineA"><span class="simulator__swatch-text" data-slot="0">Machine A</span></label>
           <select id="eneMachineA"></select>
         </div>
         <div class="field">
@@ -92,7 +92,7 @@
           <input type="number" id="eneAcqA" min="1" step="1" />
         </div>
         <div class="field">
-          <label for="eneMachineB"><span class="simulator__swatch" data-slot="1"></span> Machine B</label>
+          <label for="eneMachineB"><span class="simulator__swatch-text" data-slot="1">Machine B</span></label>
           <select id="eneMachineB"></select>
         </div>
         <div class="field">
@@ -116,8 +116,8 @@
               <thead>
                 <tr>
                   <th></th>
-                  <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableTechHeadA"></span></th>
-                  <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableTechHeadB"></span></th>
+                  <th><span class="simulator__swatch-text" data-slot="0" id="eneTableTechHeadA"></span></th>
+                  <th><span class="simulator__swatch-text" data-slot="1" id="eneTableTechHeadB"></span></th>
                 </tr>
               </thead>
               <tbody id="eneTableTechBody"></tbody>
@@ -141,7 +141,7 @@
           <p class="simulator__hint" style="margin:0 0 .6rem" id="eneSocleDetailHint"></p>
           <div class="simulator__legend" id="eneLegendSocleDetail"></div>
           <div class="simulator__chart-wrap">
-            <svg id="eneChartSocleDetail" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du socle en IRM, local technique et climatisation, pour la machine choisie"></svg>
+            <svg id="eneChartSocleDetail" class="simulator__chart" viewBox="0 0 640 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du socle en IRM, local technique et climatisation, pour la machine choisie"></svg>
           </div>
         </div>
 
@@ -152,8 +152,8 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableSocleHeadA"></span></th>
-                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableSocleHeadB"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="eneTableSocleHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="eneTableSocleHeadB"></span></th>
               </tr>
             </thead>
             <tbody id="eneTableSocleBody"></tbody>
@@ -164,8 +164,8 @@
           <thead>
             <tr>
               <th></th>
-              <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableHeadA"></span></th>
-              <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableHeadB"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
+              <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
             </tr>
           </thead>
           <tbody id="eneTableBody"></tbody>
@@ -181,8 +181,8 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch" data-slot="0"></span> <span id="eneTableCo2HeadA"></span></th>
-                <th><span class="simulator__swatch" data-slot="1"></span> <span id="eneTableCo2HeadB"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="eneTableCo2HeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="eneTableCo2HeadB"></span></th>
               </tr>
             </thead>
             <tbody id="eneTableCo2Body"></tbody>
@@ -782,7 +782,7 @@
 
       function dessinerCamembertSocle(resultats) {
         document.getElementById("eneSocleDetailHint").textContent =
-          "Un camembert par machine, 5 parts qui somment exactement au coût annuel total — la taille est proportionnelle à ce total, pour ne pas donner l'impression d'un même montant.";
+          "Un camembert par machine, 5 parts qui somment exactement au coût annuel total de chacune — les deux camemberts sont ici à la même échelle (même rayon), pour comparer directement la composition sans que la taille elle-même serve d'indice.";
         dessinerLegendeSocleDetail();
         var svg2 = document.getElementById("eneChartSocleDetail");
         svg2.innerHTML = "";
@@ -802,12 +802,16 @@
           };
         });
 
-        var maxTotal = Math.max.apply(null, camemberts.map(function (c) { return c.total; }).concat([0.0001]));
-        var maxR = 55, centerY = 120;
+        // Même rayon (le plus grand possible dans l'espace disponible) pour les deux
+        // camemberts — demande explicite de Cédric (10/08/2026) : contrairement au
+        // camembert "composition des recettes" du simulateur de recettes IRM (taille
+        // proportionnelle au total, décision documentée là-bas), ici on privilégie la
+        // lisibilité de la composition plutôt que l'indice visuel de taille.
+        var maxR = 80, centerY = 145;
         var centers = [170, 470];
 
         camemberts.forEach(function (cam, i) {
-          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(cam.total / maxTotal)) : maxR;
+          var r = maxR;
           var startAngle = -Math.PI / 2;
           COMPOSANTS_5.forEach(function (c) {
             var part = cam.parts[c.key];
