@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260811-suffix-in-box" />
+  <link rel="stylesheet" href="styles.css?v=20260811-machine-box" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js?v=20260811-nosomatom"></script>
@@ -84,34 +84,40 @@
         <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
-        <div class="field">
-          <label for="eneMachineA"><span class="simulator__swatch-text" data-slot="0">Machine A</span></label>
-          <select id="eneMachineA"></select>
-        </div>
-        <div class="field">
-          <label for="eneChampA">Filtrer par gamme de champ</label>
-          <select id="eneChampA"></select>
-        </div>
-        <div class="field">
-          <label for="eneAcqA">Durée d'acquisition</label>
-          <div class="simulator__field-suffix">
-            <input type="number" id="eneAcqA" min="1" step="1" />
-            <span>minutes</span>
+        <div class="simulator__machine-box" data-slot="0">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
+          <div class="field">
+            <label for="eneMachineA">Choix du champ / machine</label>
+            <select id="eneMachineA"></select>
+          </div>
+          <div class="field">
+            <label for="eneChampA">Filtrer par gamme de champ</label>
+            <select id="eneChampA"></select>
+          </div>
+          <div class="field">
+            <label for="eneAcqA">Durée d'acquisition</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneAcqA" min="1" step="1" />
+              <span>minutes</span>
+            </div>
           </div>
         </div>
-        <div class="field">
-          <label for="eneMachineB"><span class="simulator__swatch-text" data-slot="1">Machine B</span></label>
-          <select id="eneMachineB"></select>
-        </div>
-        <div class="field">
-          <label for="eneChampB">Filtrer par gamme de champ</label>
-          <select id="eneChampB"></select>
-        </div>
-        <div class="field">
-          <label for="eneAcqB">Durée d'acquisition</label>
-          <div class="simulator__field-suffix">
-            <input type="number" id="eneAcqB" min="1" step="1" />
-            <span>minutes</span>
+        <div class="simulator__machine-box" data-slot="1">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
+          <div class="field">
+            <label for="eneMachineB">Choix du champ / machine</label>
+            <select id="eneMachineB"></select>
+          </div>
+          <div class="field">
+            <label for="eneChampB">Filtrer par gamme de champ</label>
+            <select id="eneChampB"></select>
+          </div>
+          <div class="field">
+            <label for="eneAcqB">Durée d'acquisition</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneAcqB" min="1" step="1" />
+              <span>minutes</span>
+            </div>
           </div>
         </div>
         <p class="simulator__hint" id="eneRefroidissement"></p>
@@ -282,6 +288,18 @@
     (function () {
       var MACHINES = ENERGIE_MACHINES;
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      // Version éclaircie de la couleur d'un slot (mélange avec du blanc) — utilisée pour le
+      // nom d'une machine cité dans une phrase (moins agressif que la couleur pleine, réservée
+      // aux en-têtes/étiquettes) tout en gardant l'association visuelle A/B — demande de
+      // Cédric le 11/08/2026.
+      function eclaircir(hex, part) {
+        var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+        r = Math.round(r + (255 - r) * part);
+        g = Math.round(g + (255 - g) * part);
+        b = Math.round(b + (255 - b) * part);
+        return "rgb(" + r + "," + g + "," + b + ")";
+      }
+      var SLOT_COLORS_CLAIR = SLOT_COLORS.map(function (c) { return eclaircir(c, 0.3); });
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var kwhFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
@@ -289,6 +307,9 @@
 
       document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
         sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+      document.querySelectorAll(".simulator__machine-box").forEach(function (box) {
+        box.style.borderLeftColor = SLOT_COLORS[+box.getAttribute("data-slot")];
       });
 
       var selectA = document.getElementById("eneMachineA");
@@ -484,8 +505,8 @@
         var machineB = machineParKey(selectB.value);
 
         var refroidissementTxt = [];
-        [["A", machineA], ["B", machineB]].forEach(function (pair) {
-          refroidissementTxt.push(pair[0] + " — " + pair[1].nomCourt + " : refroidissement " + pair[1].refroidissement + ".");
+        [["A", machineA], ["B", machineB]].forEach(function (pair, i) {
+          refroidissementTxt.push(pair[0] + " — <strong style=\"color:" + SLOT_COLORS_CLAIR[i] + "\">" + pair[1].nomCourt + "</strong> : refroidissement " + pair[1].refroidissement + ".");
         });
         document.getElementById("eneRefroidissement").innerHTML = refroidissementTxt.join("<br>");
 
@@ -588,12 +609,12 @@
         } else {
           var ecartMensuel = euros.format(ecartAbs / 12);
           ecartEl.innerHTML = euros.format(ecartAbs) + " / an <span style=\"opacity:.85;font-weight:700\">(-" + pct + " %)</span>";
-          var sousTexte = "Économisés avec " + moinsCher.machine.nomCourt + " plutôt que " + plusCher.machine.nomCourt +
+          var sousTexte = "Économisés avec <strong style=\"color:" + SLOT_COLORS_CLAIR[moinsCher.slot] + "\">" + moinsCher.machine.nomCourt + "</strong> plutôt que <strong style=\"color:" + SLOT_COLORS_CLAIR[plusCher.slot] + "\">" + plusCher.machine.nomCourt + "</strong>" +
             " (" + ecartMensuel + " / mois), à horaires et activité identiques.";
           if (ecartKg >= 1) {
             sousTexte += " Soit aussi " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an (mix électrique français, ADEME).";
           }
-          ecartCo2El.textContent = sousTexte;
+          ecartCo2El.innerHTML = sousTexte;
         }
       }
 
