@@ -33,6 +33,7 @@
       <h1>Simulateur IRM Esaote / Scanner</h1>
       <p>Compare la rentabilité d'une <strong>IRM ouverte Esaote</strong> à celle d'un <strong>scanner (CT)</strong> : recette du forfait technique, <strong>recette de l'acte intellectuel du radiologue</strong> (différente entre les deux modalités — c'est souvent elle qui creuse l'écart), loyer (SAV inclus), coût réel du personnel MERM et électricité — hors location des m² du local. Un outil séparé du <a href="simulateur-point-mort.html">comparateur IRM vs IRM</a>, parce que la recette de l'acte intellectuel change tout entre un scanner et une IRM.</p>
       <p class="simulator__source">Recette du forfait technique : texte officiel (même décision, mêmes dates de réforme pour l'IRM et le scanner). Recette de l'acte intellectuel : estimation Cédric, à confirmer avec la nomenclature CCAM en vigueur. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a> — pour le scanner, puissance électrique officielle Siemens (SOMATOM go.All/go.Top), voir <a href="sources-energie.html">sources</a>.</p>
+      <div class="simulator__hero-result" id="cvHeroResult" hidden></div>
     </div>
 
     <div class="simulator__layout">
@@ -127,19 +128,24 @@
       </div>
 
       <div class="simulator__results">
-        <div style="overflow-x:auto">
-          <table class="stats-table simulator__table simulator__table--compare2" id="cvTable">
-          <thead>
-            <tr>
-              <th></th>
-              <th><span class="simulator__swatch-text" data-slot="0" id="cvTableHeadA"></span></th>
-              <th><span class="simulator__swatch-text" data-slot="1" id="cvTableHeadB"></span></th>
-            </tr>
-          </thead>
-          <tbody id="cvTableBody"></tbody>
-        </table>
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Résultat à votre activité</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table simulator__table--compare3" id="cvSyntheseTable">
+            <thead>
+              <tr>
+                <th></th>
+                <th><span class="simulator__swatch-text" data-slot="0" id="cvSyntheseHeadA"></span></th>
+                <th><span class="simulator__swatch-text" data-slot="1" id="cvSyntheseHeadB"></span></th>
+                <th>Écart</th>
+              </tr>
+            </thead>
+            <tbody id="cvSyntheseBody"></tbody>
+          </table>
+          </div>
+          <p class="simulator__hint">Écart = IRM Esaote moins scanner (positif = avantage IRM). Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), et pour le scanner 25,27 € pour un examen mono-région (thorax ou abdomen-pelvis) ou 50,54 € pour un examen multi-région (ex. TAP), pondérés selon la part saisie plus haut — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
         </div>
-        <p class="simulator__hint" id="cvEcart"></p>
 
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Seuils du barème dégressif</h3>
@@ -149,7 +155,7 @@
             <thead>
               <tr>
                 <th></th>
-                <th><span class="simulator__swatch-text" data-slot="0">IRM Esaote (≤ 0,5 T)</span></th>
+                <th><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span></th>
                 <th><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span></th>
               </tr>
             </thead>
@@ -170,27 +176,8 @@
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
 
-        <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Résultat détaillé à votre activité / patient</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
-          <div style="overflow-x:auto">
-            <table class="stats-table simulator__table simulator__table--compare3" id="cvSyntheseTable">
-            <thead>
-              <tr>
-                <th></th>
-                <th><span class="simulator__swatch-text" data-slot="0" id="cvSyntheseHeadA"></span></th>
-                <th><span class="simulator__swatch-text" data-slot="1" id="cvSyntheseHeadB"></span></th>
-                <th>Écart par patient</th>
-              </tr>
-            </thead>
-            <tbody id="cvSyntheseBody"></tbody>
-          </table>
-          </div>
-          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), et pour le scanner 25,27 € pour un examen mono-région (thorax ou abdomen-pelvis) ou 50,54 € pour un examen multi-région (ex. TAP), pondérés selon la part saisie plus haut — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
-        </div>
-
-        <div class="simulator__chart-card" id="cvRecap">
-          <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
+          <summary>Voir le récapitulatif détaillé de la simulation</summary>
           <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
@@ -239,7 +226,7 @@
             <tbody id="cvRecapParamsBody"></tbody>
           </table>
           </div>
-        </div>
+        </details>
 
         <div class="simulator__export" id="cvExport">
           <button type="button" class="btn btn--lg" id="cvExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -538,55 +525,17 @@
         });
         derniers = { resultats: resultats, params: params, configs: configs };
 
-        document.getElementById("cvTableHeadA").textContent = resultats[0].machine.nomCourt;
-        document.getElementById("cvTableHeadB").textContent = resultats[1].machine.nomCourt;
-
-        var tbody = document.getElementById("cvTableBody");
-        tbody.innerHTML = "";
-        function ligne(label, cells, bold) {
-          var tr = document.createElement("tr");
-          var td0 = document.createElement("td");
-          td0.textContent = label;
-          if (bold) td0.style.fontWeight = "700";
-          tr.appendChild(td0);
-          cells.forEach(function (c) {
-            var td = document.createElement("td");
-            td.textContent = c;
-            if (bold) td.style.fontWeight = "700";
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        }
-        ligne("Recette moyenne du FT / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
-        ligne("Recette moyenne acte intellectuel / patient", resultats.map(function (r) { return eurosCent.format(r.acte); }));
-        ligne("Loyer, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
-        ligne("Personnel MERM", resultats.map(function (r, i) {
-          return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
-        }));
-        ligne("Électricité (part fixe)", resultats.map(function (r) { return euros.format(r.elecFixe) + " / mois"; }));
-        ligne("Charges fixes totales", resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles) + " / mois"; }), true);
-        ligne("Marge par patient (FT + acte - élec. variable)", resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
-        ligne("Point mort", resultats.map(function (r) {
-          return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " patients / jour" : "jamais atteint";
-        }), true);
-        ligne("soit par mois", resultats.map(function (r) {
-          return isFinite(r.pointMortMois) ? patientsFmt.format(r.pointMortMois) + " patients / mois" : "—";
-        }));
-        ligne("Résultat mensuel à votre activité (" + patientsFmt.format(params.activitePatientsJour) + " patients/jour)", resultats.map(function (r) {
-          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
-          return (res >= 0 ? "+" : "") + euros.format(res) + " / mois";
-        }), true);
-
-        var ecartEl = document.getElementById("cvEcart");
+        var heroEl = document.getElementById("cvHeroResult");
+        heroEl.hidden = false;
         if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
           var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
-          var ecart = pire.pointMortJour - meilleur.pointMortJour;
-          ecartEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
-            patientsFmt.format(ecart) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
+          var ecartPm = pire.pointMortJour - meilleur.pointMortJour;
+          heroEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
+            patientsFmt.format(ecartPm) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
             " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour).";
         } else {
-          ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+          heroEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         }
 
         dessinerSynthese(resultats, configs, params);
@@ -642,6 +591,21 @@
           });
           tbody.appendChild(tr);
         }
+        // Point mort : plus bas = meilleur (comme une charge), d'où l'écart inversé (B - A).
+        var pmA = resultats[0].pointMortJour, pmB = resultats[1].pointMortJour;
+        function fmtPatientsJour(v) { return isFinite(v) ? patientsFmt.format(v) + " patients/jour" : "jamais atteint"; }
+        var trPm = document.createElement("tr");
+        trPm.style.fontWeight = "700";
+        var ecartPmTexte = (isFinite(pmA) && isFinite(pmB))
+          ? ((pmB - pmA >= 0 ? "+" : "") + patientsFmt.format(pmB - pmA) + " patients/jour")
+          : "—";
+        ["Point mort (seuil de rentabilité)", fmtPatientsJour(pmA), fmtPatientsJour(pmB), ecartPmTexte].forEach(function (texte) {
+          var td = document.createElement("td");
+          td.textContent = texte;
+          trPm.appendChild(td);
+        });
+        tbody.appendChild(trPm);
+
         ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
         ligne("Recette moyenne acte intellectuel", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
         ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
