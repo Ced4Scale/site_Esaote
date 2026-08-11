@@ -13,7 +13,7 @@
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
-  <script src="assets/machines-energie-data.js?v=20260811-nosomatom"></script>
+  <script src="assets/machines-energie-data.js?v=20260811-ct-power-fix"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -123,6 +123,7 @@
             <input type="number" id="pmActivite" value="20" min="0" step="0.5" />
           </div>
           <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
+          <p class="simulator__warning" id="pmCapaciteWarning" hidden></p>
         </div>
 
         <h3 class="simulator__collapse-toggle" id="pmHypothesesToggle" style="margin:1.4rem 0 1.2rem;cursor:pointer">Hypothèses de calcul <span aria-hidden="true">▾</span></h3>
@@ -530,6 +531,24 @@
         return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
       }
 
+      // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
+      // machine = amplitude d'ouverture (en minutes) / durée d'un examen. Non bloquant — juste
+      // un avertissement, l'activité reste un simple repère (voir plus haut).
+      function verifierCapacite(resultats, heuresParJour, activitePatientsJour, warningEl, champsAAlerter) {
+        var depassements = resultats.filter(function (r) {
+          r.capaciteJour = (heuresParJour * 60) / r.machine.dureeAcquisitionMinutes;
+          return activitePatientsJour > r.capaciteJour;
+        });
+        (champsAAlerter || []).forEach(function (champ) { champ.classList.toggle("simulator__field-alert", depassements.length > 0); });
+        if (!depassements.length) { warningEl.hidden = true; return; }
+        warningEl.hidden = false;
+        warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
+          depassements.map(function (r) {
+            return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
+              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min/examen sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
+          }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
+      }
+
       // ---- Coût réel employeur d'un MERM à partir du salaire net avant impôt ----
       // Un MERM est en général non-cadre (précisé par Cédric, 09/08/2026). Deux étapes,
       // taux moyens du secteur privé français (varient un peu selon la convention
@@ -630,6 +649,9 @@
           return r;
         });
         derniers = { resultats: resultats, params: params, configs: configs };
+
+        verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("pmCapaciteWarning"),
+          [document.getElementById("pmActivite"), document.getElementById("pmHeures")]);
 
         document.getElementById("pmTableHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("pmTableHeadB").textContent = resultats[1] ? resultats[1].machine.nomCourt : "";

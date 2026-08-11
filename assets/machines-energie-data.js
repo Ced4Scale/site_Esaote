@@ -563,13 +563,13 @@ var ENERGIE_MACHINES = [
     modele: "go.All (scanner CT)",
     aimant: "ct",
     eteint: 2.7,
-    pret: 2.7,
-    mesure: 62,
+    pret: 9.0,
+    mesure: 103.5,
     dureeAcquisitionMinutes: 4,
     coeffRefroidissementLT: 0,
     climSalleKw: 3.5,
     refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
-    confiance: "Puissance électrique officielle Siemens (guide de contraintes d'implantation \"Contraintes d'implantation SOMATOM_go.All_FR.pdf\") : veille ≤ 3 kVA, puissance nominale en fonctionnement 69,2 kVA — converties en kW avec un facteur de puissance estimé à 0,9. Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
+    confiance: "Corrigé le 11/08/2026 : la fiche technique officielle Siemens (datasheet go.All, recoupée avec le guide de planification) donne 3 paliers distincts — veille ≤3 kVA, charge de base (\"full load\", gantry prêt hors exposition) ≤10 kVA, puissance maximale en fonctionnement ≤115 kVA — remplace l'ancienne valeur unique \"69,2 kVA\" qui mélangeait veille et fonctionnement (source non retrouvée, probablement une confusion avec un autre modèle). Converties en kW avec un facteur de puissance estimé à 0,9. Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
   },
   {
     key: "siemens-gotop",
@@ -580,13 +580,13 @@ var ENERGIE_MACHINES = [
     modele: "go.Top (scanner CT)",
     aimant: "ct",
     eteint: 2.7,
-    pret: 2.7,
-    mesure: 62,
+    pret: 9.0,
+    mesure: 103.5,
     dureeAcquisitionMinutes: 4,
     coeffRefroidissementLT: 0,
     climSalleKw: 3.5,
     refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
-    confiance: "Puissance électrique officielle Siemens (guide de contraintes d'implantation \"SOMATOM_go.Top_FR.pdf\") : veille ≤ 3 kVA, puissance nominale en fonctionnement 69,2 kVA — converties en kW avec un facteur de puissance estimé à 0,9. Même plateforme électrique que le go.All (variante cardiologie). Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
+    confiance: "Corrigé le 11/08/2026 : la fiche technique officielle Siemens (datasheet go.Top) donne veille ≤3 kVA et puissance maximale en fonctionnement ≤115 kVA (pas 69,2 kVA comme précédemment indiqué) ; palier intermédiaire \"full load\" ≤10 kVA repris du go.Top, même plateforme électrique (confirmé par Siemens pour le go.All, non vérifié séparément pour le go.Top). Converties en kW avec un facteur de puissance estimé à 0,9. Climatisation de salle estimée (ordre de grandeur). À confirmer avec Siemens."
   },
   /* GE, Philips, Canon — demandé par Cédric le 10/08/2026 pour élargir le volet énergétique du
      scanner. Confiance nettement plus faible que Siemens ci-dessus : aucun guide d'implantation
