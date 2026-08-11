@@ -71,6 +71,13 @@
             </div>
           </div>
           <div class="field">
+            <label for="pmInstallA">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmInstallA" value="15" min="0" step="1" />
+              <span>min</span>
+            </div>
+          </div>
+          <div class="field">
             <label for="pmMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmMembreA" value="25" min="0" max="100" step="5" />
@@ -103,6 +110,13 @@
             <input type="number" id="pmMermB" value="2" min="0" step="1" />
           </div>
           <div class="field">
+            <label for="pmInstallB">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmInstallB" value="15" min="0" step="1" />
+              <span>min</span>
+            </div>
+          </div>
+          <div class="field">
             <label for="pmMembreB">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
             <input type="number" id="pmMembreB" value="25" min="0" max="100" step="5" />
           </div>
@@ -123,7 +137,7 @@
             <input type="number" id="pmActivite" value="15" min="0" step="0.5" />
           </div>
           <p class="simulator__hint" id="pmActiviteEquivalent"></p>
-          <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
+          <p class="simulator__hint" id="pmResultatActivite"></p>
           <p class="simulator__warning" id="pmCapaciteWarning" hidden></p>
         </div>
 
@@ -408,6 +422,14 @@
       reinitialiserMerm(selectA, mermA);
       reinitialiserMerm(selectB, mermB);
 
+      // Temps d'installation du patient : pré-rempli depuis assets/machines-energie-data.js
+      // (tempsInstallationMinutes), mais éditable — demandé par Cédric le 11/08/2026, le
+      // chiffre par machine reste une estimation à ajuster selon le retour terrain.
+      function reinitialiserInstall(select, input) { input.value = machineParKey(select.value).tempsInstallationMinutes; }
+      var installA = document.getElementById("pmInstallA"), installB = document.getElementById("pmInstallB");
+      reinitialiserInstall(selectA, installA);
+      reinitialiserInstall(selectB, installB);
+
       // Loyer de base par machine (SAV inclus) — fichier propriétaire de cette page, pas
       // partagé avec ENERGIE_MACHINES (ce sont des loyers commerciaux, pas des données
       // techniques). Valeurs communiquées par Cédric le 10/08/2026 ; les autres machines
@@ -477,10 +499,10 @@
       reinitialiserMembre(selectA, membreA, membreHintA);
       reinitialiserMembre(selectB, membreB, membreHintB);
 
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
       [mermA, mermB, membreA, membreB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
       // ---- Recette par patient (tarif plein, hors barème dégressif) ----
@@ -539,7 +561,7 @@
       // juste un avertissement, l'activité reste un simple repère (voir plus haut).
       function verifierCapacite(resultats, heuresParJour, activitePatientsJour, warningEl, champsAAlerter) {
         var depassements = resultats.filter(function (r) {
-          var dureeCreneau = r.machine.dureeAcquisitionMinutes + r.machine.tempsInstallationMinutes;
+          var dureeCreneau = r.machine.dureeAcquisitionMinutes + r.tempsInstallation;
           r.capaciteJour = (heuresParJour * 60) / dureeCreneau;
           return activitePatientsJour > r.capaciteJour;
         });
@@ -549,7 +571,7 @@
         warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
           depassements.map(function (r) {
             return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
-              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min d'acquisition + " + r.machine.tempsInstallationMinutes + " min d'installation par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
+              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min d'acquisition + " + r.tempsInstallation + " min d'installation par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
           }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
       }
 
@@ -651,22 +673,29 @@
           : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour.";
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("pmLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("pmLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)), tempsInstallation: Math.max(0, +installA.value || 0) }
         ];
         if (nbMachines() === 2) {
-          configs.push({ slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("pmLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) });
+          configs.push({ slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("pmLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)), tempsInstallation: Math.max(0, +installB.value || 0) });
         }
 
         var resultats = configs.map(function (c) {
           var r = calculerMachine(c, params);
           r.slot = c.slot;
           r.color = SLOT_COLORS[c.slot];
+          r.tempsInstallation = c.tempsInstallation;
           return r;
         });
         derniers = { resultats: resultats, params: params, configs: configs };
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("pmCapaciteWarning"),
           [document.getElementById("pmActivite"), document.getElementById("pmHeures")]);
+
+        document.getElementById("pmResultatActivite").innerHTML = "Résultat mensuel à cette activité : " +
+          resultats.map(function (r) {
+            var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+            return "<strong>" + r.machine.nomCourt + "</strong> " + (res >= 0 ? "+" : "") + euros.format(res);
+          }).join(" · ") + ".";
 
         document.getElementById("pmTableHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("pmTableHeadB").textContent = resultats[1] ? resultats[1].machine.nomCourt : "";
@@ -751,7 +780,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
-          { label: "Temps d'installation du patient", valeurs: resultats.map(function (r) { return r.machine.tempsInstallationMinutes + " min"; }) },
+          { label: "Temps d'installation du patient", valeurs: resultats.map(function (r) { return r.tempsInstallation + " min"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
         ];
@@ -972,7 +1001,7 @@
         });
       }
 
-      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite"].forEach(function (id) {
+      ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite", "pmInstallA", "pmInstallB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       ["pmNetMerm", "pmLoyerA", "pmLoyerB"].forEach(function (id) {

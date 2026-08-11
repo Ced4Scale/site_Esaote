@@ -108,7 +108,7 @@
             </div>
           </div>
           <p class="simulator__hint" id="cvActiviteEquivalent"></p>
-          <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
+          <p class="simulator__hint" id="cvResultatActivite"></p>
           <p class="simulator__warning" id="cvCapaciteWarning" hidden></p>
         </div>
 
@@ -133,6 +133,13 @@
               <span>MERM</span>
             </div>
           </div>
+          <div class="field">
+            <label for="cvInstallA">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvInstallA" value="15" min="0" step="1" />
+              <span>min</span>
+            </div>
+          </div>
         </div>
 
         <div class="simulator__machine-box" data-slot="1">
@@ -154,6 +161,13 @@
             <div class="simulator__field-suffix">
               <input type="number" id="cvMermB" value="2" min="0" step="1" />
               <span>MERM</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cvInstallB">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvInstallB" value="10" min="0" step="1" />
+              <span>min</span>
             </div>
           </div>
           <div class="field">
@@ -429,6 +443,14 @@
       reinitialiserMerm(selectA, mermA);
       reinitialiserMerm(selectB, mermB);
 
+      // Temps d'installation du patient : pré-rempli depuis assets/machines-energie-data.js
+      // (tempsInstallationMinutes), mais éditable — demandé par Cédric le 11/08/2026, le
+      // chiffre par machine reste une estimation à ajuster selon le retour terrain.
+      function reinitialiserInstall(select, input) { input.value = machineParKey(select.value).tempsInstallationMinutes; }
+      var installA = document.getElementById("cvInstallA"), installB = document.getElementById("cvInstallB");
+      reinitialiserInstall(selectA, installA);
+      reinitialiserInstall(selectB, installB);
+
       // Loyer de base par machine (SAV inclus, moyenné sur 7 ans) — communiqué par Cédric le
       // 10/08/2026 pour les scanners Siemens go.All/go.Top ; réutilise les mêmes valeurs IRM
       // Esaote que le comparateur IRM vs IRM (fichier propriétaire de cette page, ce sont des
@@ -453,8 +475,8 @@
       reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA);
       reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB);
 
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB); recalculer(); });
       [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
       // ---- Recette du forfait technique (tarif plein, hors barème dégressif) ----
@@ -533,7 +555,7 @@
       // juste un avertissement, l'activité reste un simple repère (voir plus haut).
       function verifierCapacite(resultats, heuresParJour, activitePatientsJour, warningEl, champsAAlerter) {
         var depassements = resultats.filter(function (r) {
-          var dureeCreneau = r.machine.dureeAcquisitionMinutes + r.machine.tempsInstallationMinutes;
+          var dureeCreneau = r.machine.dureeAcquisitionMinutes + r.tempsInstallation;
           r.capaciteJour = (heuresParJour * 60) / dureeCreneau;
           return activitePatientsJour > r.capaciteJour;
         });
@@ -543,7 +565,7 @@
         warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
           depassements.map(function (r) {
             return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
-              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min d'acquisition + " + r.machine.tempsInstallationMinutes + " min d'installation par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
+              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min d'acquisition + " + r.tempsInstallation + " min d'installation par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
           }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
       }
 
@@ -601,20 +623,27 @@
           : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour.";
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: Math.max(0, +installA.value || 0) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: Math.max(0, +installB.value || 0) }
         ];
 
         var resultats = configs.map(function (c) {
           var r = calculerMachine(c, params);
           r.slot = c.slot;
           r.color = SLOT_COLORS[c.slot];
+          r.tempsInstallation = c.tempsInstallation;
           return r;
         });
         derniers = { resultats: resultats, params: params, configs: configs };
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("cvCapaciteWarning"),
           [document.getElementById("cvActivite"), document.getElementById("cvHeures")]);
+
+        document.getElementById("cvResultatActivite").innerHTML = "Résultat mensuel à cette activité : " +
+          resultats.map(function (r) {
+            var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+            return "<strong>" + r.machine.nomCourt + "</strong> " + (res >= 0 ? "+" : "") + euros.format(res);
+          }).join(" · ") + ".";
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
 
@@ -728,6 +757,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
+          { label: "Temps d'installation du patient", valeurs: resultats.map(function (r) { return r.tempsInstallation + " min"; }) },
           { label: "Temps d'installation du patient", valeurs: resultats.map(function (r) { return r.machine.tempsInstallationMinutes + " min"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
@@ -938,7 +968,7 @@
         });
       }
 
-      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB"].forEach(function (id) {
+      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {

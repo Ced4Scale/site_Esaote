@@ -86,7 +86,7 @@
           </div>
           <div class="field">
             <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour</label>
-            <input type="number" id="eneActivite" value="20" min="0" step="1" />
+            <input type="number" id="eneActivite" value="18" min="0" step="1" />
           </div>
           <p class="simulator__hint" id="eneActiviteEquivalent"></p>
           <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
@@ -111,6 +111,13 @@
               <span>minutes</span>
             </div>
           </div>
+          <div class="field">
+            <label for="eneInstallA">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneInstallA" min="0" step="1" />
+              <span>minutes</span>
+            </div>
+          </div>
         </div>
         <div class="simulator__machine-box" data-slot="1">
           <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
@@ -126,6 +133,13 @@
             <label for="eneAcqB">Durée d'acquisition</label>
             <div class="simulator__field-suffix">
               <input type="number" id="eneAcqB" min="1" step="1" />
+              <span>minutes</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="eneInstallB">Temps d'installation du patient</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneInstallB" min="0" step="1" />
               <span>minutes</span>
             </div>
           </div>
@@ -386,18 +400,28 @@
       function reinitialiserDureeAcq(select, input) {
         input.value = machineParKey(select.value).dureeAcquisitionMinutes;
       }
+      // Même principe pour le temps d'installation du patient (demandé par Cédric le
+      // 11/08/2026) — pré-rempli depuis assets/machines-energie-data.js, éditable ensuite.
+      function reinitialiserInstall(select, input) {
+        input.value = machineParKey(select.value).tempsInstallationMinutes;
+      }
+      var installA = document.getElementById("eneInstallA"), installB = document.getElementById("eneInstallB");
       reinitialiserDureeAcq(selectA, acqA);
       reinitialiserDureeAcq(selectB, acqB);
-      selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); recalculer(); });
+      reinitialiserInstall(selectA, installA);
+      reinitialiserInstall(selectB, installB);
+      selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); reinitialiserInstall(selectA, installA); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); reinitialiserInstall(selectB, installB); recalculer(); });
       champA.addEventListener("change", function () {
         repeuplerMachineSelect(selectA, champA);
         reinitialiserDureeAcq(selectA, acqA);
+        reinitialiserInstall(selectA, installA);
         recalculer();
       });
       champB.addEventListener("change", function () {
         repeuplerMachineSelect(selectB, champB);
         reinitialiserDureeAcq(selectB, acqB);
+        reinitialiserInstall(selectB, installB);
         recalculer();
       });
 
@@ -544,6 +568,10 @@
           Math.max(1, parseFloat(acqA.value) || machineA.dureeAcquisitionMinutes),
           Math.max(1, parseFloat(acqB.value) || machineB.dureeAcquisitionMinutes)
         ];
+        var dureesInstall = [
+          Math.max(0, parseFloat(installA.value) || 0),
+          Math.max(0, parseFloat(installB.value) || 0)
+        ];
 
         // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
         // machine = amplitude d'ouverture en semaine (en minutes) / durée RÉELLE d'un créneau
@@ -553,10 +581,10 @@
         (function verifierCapacite() {
           var capaciteWarningEl = document.getElementById("eneCapaciteWarning");
           var depassements = [];
-          [["A", machineA, dureesAcq[0]], ["B", machineB, dureesAcq[1]]].forEach(function (t) {
-            var dureeCreneau = t[2] + t[1].tempsInstallationMinutes;
+          [["A", machineA, dureesAcq[0], dureesInstall[0]], ["B", machineB, dureesAcq[1], dureesInstall[1]]].forEach(function (t) {
+            var dureeCreneau = t[2] + t[3];
             var capaciteJour = (heuresSemaineJour * 60) / dureeCreneau;
-            if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeAcq: t[2] });
+            if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeAcq: t[2], dureeInstall: t[3] });
           });
           [document.getElementById("eneActivite"), document.getElementById("eneHeuresSemaine")].forEach(function (champ) {
             champ.classList.toggle("simulator__field-alert", depassements.length > 0);
@@ -566,7 +594,7 @@
           capaciteWarningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
             depassements.map(function (d) {
               return "<strong>" + d.machine.nomCourt + "</strong> (machine " + d.label + ") ne peut faire que " + entiers.format(d.capaciteJour) +
-                " patients/jour ouvré au maximum (" + d.dureeAcq + " min d'acquisition + " + d.machine.tempsInstallationMinutes + " min d'installation par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
+                " patients/jour ouvré au maximum (" + d.dureeAcq + " min d'acquisition + " + d.dureeInstall + " min d'installation par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
             }).join(" ; ") + " — activité saisie : ≈ " + entiers.format(equivalentJour) + " patients/jour ouvré. Réduis l'activité ou augmente l'amplitude d'ouverture.";
         })();
 
@@ -635,7 +663,7 @@
         remplirTableauCo2(resultats);
         remplirTableauParamsSaisis(machineA, machineB, {
           prix: prix, heuresSemaineJour: heuresSemaineJour, heuresSamediJour: heuresSamediJour,
-          heuresDimancheJour: heuresDimancheJour, dureesAcq: dureesAcq
+          heuresDimancheJour: heuresDimancheJour, dureesAcq: dureesAcq, dureesInstall: dureesInstall
         });
         remplirEtudesListe();
         dessinerLegende();
@@ -721,7 +749,7 @@
         ];
         var paramsMachines = [
           { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] },
-          { label: "Temps d'installation du patient", valeurs: [machineA.tempsInstallationMinutes + " min", machineB.tempsInstallationMinutes + " min"] }
+          { label: "Temps d'installation du patient", valeurs: [p.dureesInstall[0] + " min", p.dureesInstall[1] + " min"] }
         ];
         derniersParamsSaisis = { paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
 
@@ -1419,7 +1447,7 @@
           recalculer();
         });
       });
-      ["enePrix", "eneHeuresSemaine", "eneActivite", "eneAcqA", "eneAcqB"].forEach(function (id) {
+      ["enePrix", "eneHeuresSemaine", "eneActivite", "eneAcqA", "eneAcqB", "eneInstallA", "eneInstallB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       // "heure" au singulier, "heures" au pluriel dès que le nombre saisi dépasse 1 —
