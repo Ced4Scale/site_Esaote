@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260811-machine-box" />
+  <link rel="stylesheet" href="styles.css?v=20260811-field-groups" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js?v=20260811-nosomatom"></script>
@@ -41,47 +41,54 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
-        <div class="field">
-          <label for="enePrix">Coût du kWh (€, TTC)</label>
-          <input type="number" id="enePrix" value="0.20" min="0" step="0.01" />
-        </div>
-
-        <h3 style="margin:1.4rem 0 1.2rem">Horaires d'ouverture aux patients</h3>
-        <div class="field">
-          <label for="eneHeuresSemaine">Amplitude par jour, du lundi au vendredi (heures)</label>
-          <input type="number" id="eneHeuresSemaine" value="10" min="0" max="24" step="0.5" />
-        </div>
-        <div class="field">
-          <label for="eneSamedi">Samedi</label>
-          <select id="eneSamedi">
-            <option value="0">Fermé</option>
-            <option value="4">Ouvert le matin (4h)</option>
-            <option value="8">Ouvert toute la journée (8h)</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="eneDimanche">Dimanche</label>
-          <select id="eneDimanche">
-            <option value="0" selected>Fermé</option>
-            <option value="4">Ouvert le matin (4h)</option>
-            <option value="8">Ouvert toute la journée (8h)</option>
-          </select>
-        </div>
-
-        <h3 style="margin:1.4rem 0 1.2rem">Activité</h3>
-        <div class="field">
-          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré type</label>
-            <label><input type="radio" name="eneActiviteMode" value="an" /> Patients par an</label>
+        <div class="simulator__field-group">
+          <h3 style="margin:0 0 1.2rem">Paramètres communs</h3>
+          <div class="field">
+            <label for="enePrix">Coût du kWh (€, TTC)</label>
+            <input type="number" id="enePrix" value="0.20" min="0" step="0.01" />
           </div>
         </div>
-        <div class="field">
-          <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
-          <input type="number" id="eneActivite" value="40" min="0" step="1" />
+
+        <div class="simulator__field-group">
+          <h3 style="margin:0 0 1.2rem">Horaires d'ouverture aux patients</h3>
+          <div class="field">
+            <label for="eneHeuresSemaine">Amplitude par jour, du lundi au vendredi</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneHeuresSemaine" value="10" min="0" max="24" step="0.5" />
+              <span>heures</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="eneSamedi">Samedi</label>
+            <select id="eneSamedi">
+              <option value="0">Fermé</option>
+              <option value="4">Ouvert le matin (4h)</option>
+              <option value="8">Ouvert toute la journée (8h)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="eneDimanche">Dimanche</label>
+            <select id="eneDimanche">
+              <option value="0" selected>Fermé</option>
+              <option value="4">Ouvert le matin (4h)</option>
+              <option value="8">Ouvert toute la journée (8h)</option>
+            </select>
+          </div>
+
+          <h3 style="margin:1.4rem 0 1.2rem">Activité</h3>
+          <div class="field">
+            <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré type</label>
+              <label><input type="radio" name="eneActiviteMode" value="an" /> Patients par an</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
+            <input type="number" id="eneActivite" value="40" min="0" step="1" />
+          </div>
+          <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
         </div>
-        <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
         <div class="simulator__machine-box" data-slot="0">
