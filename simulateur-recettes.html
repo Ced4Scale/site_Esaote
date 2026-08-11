@@ -897,12 +897,27 @@
 
 
       var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      // Montant du FT par seuil : dépend de la date choisie (le barème dégressif change à
+      // chaque réforme), donc affiché une fois par date sélectionnée (couleur = même slot que
+      // ses courbes/camemberts), sous les seuils en nombre d'examens de la classe elle-même
+      // (ceux-là ne dépendent pas de la date).
       function afficherSeuils() {
         var classe = classeCourante();
-        document.getElementById("simSeuils").innerHTML =
-          "<strong>Seuils de cette classe</strong> — activité de référence : " + seuilsEntiers.format(classe.REF) +
+        var html = "<strong>Seuils de cette classe</strong> — activité de référence : " + seuilsEntiers.format(classe.REF) +
           " · seuil 1 : " + seuilsEntiers.format(classe.SEUIL1) +
-          " · seuil 2 : " + seuilsEntiers.format(classe.SEUIL2);
+          " · seuil 2 : " + seuilsEntiers.format(classe.SEUIL2) + " examens/an";
+        var lignesMontants = dateSelects.map(function (select, i) {
+          if (!select.value) return null;
+          var ligne = classe.dates.filter(function (d) { return d.iso === select.value; })[0];
+          if (!ligne) return null;
+          return "<span style=\"color:" + SLOT_COLORS[i] + "\">" + ligne.label + "</span> : seuil 1 " +
+            euros.format(ligne.reduits.seuil1) + " · seuil 2 " + euros.format(ligne.reduits.seuil2) +
+            " · plafond " + euros.format(ligne.reduits.plafond);
+        }).filter(Boolean);
+        if (lignesMontants.length) {
+          html += "<br><strong>Montant du forfait technique par seuil</strong> — " + lignesMontants.join(" &nbsp;·&nbsp; ");
+        }
+        document.getElementById("simSeuils").innerHTML = html;
       }
 
       remplirSelectsDates();
@@ -911,7 +926,7 @@
       ["simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
-      dateSelects.forEach(function (select) { select.addEventListener("change", recalculer); });
+      dateSelects.forEach(function (select) { select.addEventListener("change", function () { afficherSeuils(); recalculer(); }); });
       document.querySelectorAll('input[name="simRejoue"]').forEach(function (radio) {
         radio.addEventListener("change", recalculer);
       });

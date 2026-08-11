@@ -574,8 +574,8 @@
           });
           tbody.appendChild(tr);
         }
-        ligne("Recette FT / patient", resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
-        ligne("Acte intellectuel radiologue (moyen)", resultats.map(function (r, i) {
+        ligne("Recette moyenne du FT / patient", resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
+        ligne("Recette moyenne acte intellectuel / patient", resultats.map(function (r, i) {
           return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)";
         }));
         ligne("Recette totale / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
@@ -645,8 +645,8 @@
           { label: "Date de forfait technique", valeurs: resultats.map(function () { return dateLabel; }) },
           { label: "Zone géographique", valeurs: resultats.map(function () { return ZONE_LABELS[params.zone]; }) },
           { label: "Statut amorti", valeurs: resultats.map(function () { return amortiLabel; }) },
-          { label: "Recette forfait technique / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recetteFt); }) },
-          { label: "Recette acte intellectuel / patient", valeurs: resultats.map(function (r, i) { return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)"; }) },
+          { label: "Recette moyenne du FT / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recetteFt); }) },
+          { label: "Recette moyenne acte intellectuel / patient", valeurs: resultats.map(function (r, i) { return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)"; }) },
           { label: "Recette totale / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) }
         ];
 
@@ -1000,7 +1000,7 @@
           y += imgHeight + 8;
 
           doc.setFontSize(8);
-          var x0 = 15, labelWidth = 48, colWidth = 60;
+          var x0 = 15, labelWidth = 65, colWidth = 60;
           function drawRow(label, cells, bold) {
             var x = x0;
             doc.setFont(undefined, bold ? "bold" : "normal");
@@ -1012,8 +1012,8 @@
           drawRow("", derniers.resultats.map(function (r) { return r.machine.nomCourt; }), true);
           doc.setDrawColor(200);
           doc.line(x0, y - 4, x0 + labelWidth + colWidth * derniers.resultats.length, y - 4);
-          drawRow("Recette FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
-          drawRow("Acte intellectuel (moyen)", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
+          drawRow("Recette moyenne du FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
+          drawRow("Recette moyenne acte intellectuel / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
           drawRow("Recette totale / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
           drawRow("Charges fixes / mois", derniers.resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles); }));
           drawRow("Marge / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));

@@ -546,8 +546,8 @@
           });
           tbody.appendChild(tr);
         }
-        ligne("Recette forfait technique / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
-        ligne("Recette acte intellectuel / patient", resultats.map(function (r) { return eurosCent.format(r.acte); }));
+        ligne("Recette moyenne du FT / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }));
+        ligne("Recette moyenne acte intellectuel / patient", resultats.map(function (r) { return eurosCent.format(r.acte); }));
         ligne("Loyer, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
         ligne("Personnel MERM", resultats.map(function (r, i) {
           return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
@@ -631,8 +631,8 @@
           });
           tbody.appendChild(tr);
         }
-        ligne("Recette forfait technique / patient", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
-        ligne("Recette acte intellectuel / patient", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
+        ligne("Recette moyenne du FT / patient", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
+        ligne("Recette moyenne acte intellectuel / patient", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
         ligne("Loyer, SAV inclus / patient", lignes[0].loyerParPatient, lignes[1].loyerParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
         ligne("Électricité / patient", lignes[0].elecParPatient, lignes[1].elecParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
         ligne("Personnel MERM / patient", lignes[0].rhParPatient, lignes[1].rhParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
@@ -666,8 +666,8 @@
           { label: "Date de forfait technique", valeurs: [dateLabel, dateLabel] },
           { label: "Zone géographique", valeurs: [ZONE_LABELS[params.zone], ZONE_LABELS[params.zone]] },
           { label: "Statut amorti", valeurs: [amortiLabel, amortiLabel] },
-          { label: "Recette forfait technique / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) },
-          { label: "Recette acte intellectuel / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.acte); }) },
+          { label: "Recette moyenne du FT / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) },
+          { label: "Recette moyenne acte intellectuel / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.acte); }) },
           { label: "Recette totale / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette + r.acte); }) }
         ];
 
@@ -1010,7 +1010,7 @@
           y += imgHeight + 8;
 
           doc.setFontSize(8);
-          var x0 = 15, labelWidth = 55, colWidth = 55;
+          var x0 = 15, labelWidth = 65, colWidth = 55;
           function drawRow(label, cells, bold) {
             var x = x0;
             doc.setFont(undefined, bold ? "bold" : "normal");
@@ -1023,8 +1023,8 @@
           drawRow("", [headA, headB], true);
           doc.setDrawColor(200);
           doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
-          drawRow("Recette forfait technique / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }));
-          drawRow("Recette acte intellectuel / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
+          drawRow("Recette moyenne du FT / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }));
+          drawRow("Recette moyenne acte intellectuel / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.acte); }));
           drawRow("Charges fixes / mois", derniers.resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles); }));
           drawRow("Marge / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
           drawRow("Point mort", derniers.resultats.map(function (r) {
