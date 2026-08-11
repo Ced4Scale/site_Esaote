@@ -425,7 +425,7 @@
             tbody.appendChild(trReel);
           }
 
-          totaux.push({ label: sc.label, total: totalLigne });
+          totaux.push({ label: sc.label, total: totalLigne, color: sc.color });
           derniereSerie.push({
             label: "Départ " + sc.label, color: sc.color,
             values: values, cumul: cumul, cumulMensuel: cumulMensuel,
@@ -442,8 +442,9 @@
           });
           var chute = meilleur.total - pire.total;
           var pourcentage = meilleur.total > 0 ? Math.round((chute / meilleur.total) * 100) : 0;
-          chuteEl.innerHTML = "<strong>Chute sur 7 ans entre un départ au " + meilleur.label + " et un départ au " + pire.label +
-            " : -" + euros.format(chute) + " (soit -" + pourcentage + " %)</strong> à machine, volume et zone strictement identiques.";
+          chuteEl.innerHTML = "<strong>Chute sur 7 ans entre un départ au <span style=\"color:" + meilleur.color + "\">" + meilleur.label +
+            "</span> et un départ au <span style=\"color:" + pire.color + "\">" + pire.label +
+            "</span> : -" + euros.format(chute) + " (soit -" + pourcentage + " %)</strong> à machine, volume et zone strictement identiques.";
         } else if (totaux.length === 1) {
           chuteEl.textContent = "Choisis une 2ᵉ date pour voir l'écart entre elles.";
         } else {
