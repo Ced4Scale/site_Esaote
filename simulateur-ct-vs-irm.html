@@ -75,12 +75,15 @@
           </div>
           <div class="field">
             <label for="cvJours">Jours d'ouverture par mois</label>
-            <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
+              <span>jours</span>
+            </div>
           </div>
           <div class="field">
             <label for="cvNetMerm">Salaire MERM net avant impôt</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvNetMerm" value="1800" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="cvNetMerm" value="1.800" />
               <span>€ / mois</span>
             </div>
           </div>
@@ -99,7 +102,10 @@
           </div>
           <div class="field">
             <label for="cvActivite" id="cvActiviteLabel">Nombre de patients par jour</label>
-            <input type="number" id="cvActivite" value="5" min="0" step="0.5" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvActivite" value="30" min="0" step="0.5" />
+              <span>patients</span>
+            </div>
           </div>
           <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
         </div>
@@ -113,14 +119,17 @@
           <div class="field">
             <label for="cvLoyerA">Loyer de l'IRM, SAV inclus</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvLoyerA" value="12000" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="cvLoyerA" value="12.000" />
               <span>€ / mois</span>
             </div>
           </div>
           <p class="simulator__hint" id="cvLoyerHintA"></p>
           <div class="field">
             <label for="cvMermA">Nombre de MERM en poste</label>
-            <input type="number" id="cvMermA" value="1" min="0" step="1" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvMermA" value="1" min="0" step="1" />
+              <span>MERM</span>
+            </div>
           </div>
         </div>
 
@@ -133,18 +142,24 @@
           <div class="field">
             <label for="cvLoyerB">Loyer du scanner, SAV inclus</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvLoyerB" value="12000" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="cvLoyerB" value="12.000" />
               <span>€ / mois</span>
             </div>
           </div>
           <p class="simulator__hint" id="cvLoyerHintB"></p>
           <div class="field">
             <label for="cvMermB">Nombre de MERM en poste</label>
-            <input type="number" id="cvMermB" value="2" min="0" step="1" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvMermB" value="2" min="0" step="1" />
+              <span>MERM</span>
+            </div>
           </div>
           <div class="field">
             <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
-            <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
           </div>
           <p class="simulator__hint">Estimation par défaut (16 %), d'après la répartition nationale des examens scanner par indication (rapport SFPM n°39, 2020 — TAP 11 % + corps entier 5 %) — à ajuster selon le recrutement réel.</p>
         </div>
@@ -171,7 +186,7 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Seuils du barème dégressif</h3>
+          <h3 style="margin-bottom:.6rem">Seuils du barème dégressif, par examen</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Au-delà de la 1ʳᵉ tranche, le tarif du forfait technique baisse par palier selon le nombre d'examens/an — les seuils ne sont pas les mêmes pour une IRM et pour un scanner.</p>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvSeuilsTable">
@@ -295,6 +310,19 @@
   <script>
     (function () {
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      // Séparateur de milliers dans les cases à 4-5 chiffres (loyer, salaire) — demande de
+      // Cédric le 11/08/2026. Champ texte (pas number, qui n'accepte aucune mise en forme) :
+      // reformaté au moment de quitter le champ (blur), pas à chaque frappe, pour ne pas faire
+      // sauter le curseur pendant la saisie. valeurMilliers() nettoie les points avant de lire
+      // la valeur, que le champ soit déjà formaté ou pas encore.
+      var milliersFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      function formaterMilliers(input) {
+        var brut = String(input.value).replace(/[^\d]/g, "");
+        input.value = brut ? milliersFmt.format(parseInt(brut, 10)) : "";
+      }
+      function valeurMilliers(input) {
+        return parseInt(String(input.value).replace(/[^\d]/g, ""), 10) || 0;
+      }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
@@ -382,7 +410,7 @@
           tr.appendChild(tdLabel);
           [trIrm[i], trCt[i]].forEach(function (t) {
             var td = document.createElement("td");
-            td.innerHTML = plage(t) + "<br><strong>" + eurosCent.format(t.montant) + "</strong> / examen";
+            td.innerHTML = plage(t) + "<br><strong>" + eurosCent.format(t.montant) + "</strong>";
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -416,7 +444,7 @@
       function reinitialiserLoyer(select, input, hintEl) {
         var machine = machineParKey(select.value);
         var connu = LOYERS_BASE[machine.key] != null;
-        input.value = loyerParDefaut(machine);
+        input.value = milliersFmt.format(loyerParDefaut(machine));
         hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
       }
       var loyerHintA = document.getElementById("cvLoyerHintA"), loyerHintB = document.getElementById("cvLoyerHintB");
@@ -514,7 +542,7 @@
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
           document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
-          document.getElementById("cvActivite").value = mode === "jour" ? 5 : 1200;
+          document.getElementById("cvActivite").value = mode === "jour" ? 30 : 7200;
           recalculer();
         });
       });
@@ -531,7 +559,7 @@
           heuresParJour: Math.max(0, parseFloat(document.getElementById("cvHeures").value) || 0),
           joursParMois: Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1)
         };
-        var netMerm = Math.max(0, parseFloat(document.getElementById("cvNetMerm").value) || 0);
+        var netMerm = valeurMilliers(document.getElementById("cvNetMerm"));
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
         document.getElementById("cvCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
@@ -539,8 +567,8 @@
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("cvLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("cvLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)) }
         ];
 
         var resultats = configs.map(function (c) {
@@ -551,20 +579,23 @@
         });
         derniers = { resultats: resultats, params: params, configs: configs };
 
+        var lignesSynthese = dessinerSynthese(resultats, configs, params);
+
         var heroEl = document.getElementById("cvHeroResult");
         heroEl.hidden = false;
         if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
           var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
           var ecartPm = pire.pointMortJour - meilleur.pointMortJour;
+          var ecart7ans = lignesSynthese[meilleur.slot].resultat7ans - lignesSynthese[pire.slot].resultat7ans;
           heroEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
             patientsFmt.format(ecartPm) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
-            " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour).";
+            " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour)." +
+            " Soit <strong>" + euros.format(ecart7ans) + " de résultat en plus sur 7 ans</strong>, à votre activité renseignée plus bas.";
         } else {
           heroEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         }
 
-        dessinerSynthese(resultats, configs, params);
         dessinerRecap(resultats, configs, params);
 
         dessinerLegende(resultats);
@@ -640,6 +671,7 @@
         ligne("Résultat", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
         ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true);
         ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
+        return lignes;
       }
 
       // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : reprendre en un seul
@@ -676,7 +708,7 @@
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
           ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
-          ["Salaire MERM net avant impôt", euros.format(+document.getElementById("cvNetMerm").value || 0) + " / mois"],
+          ["Salaire MERM net avant impôt", euros.format(valeurMilliers(document.getElementById("cvNetMerm"))) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
         ];
 
@@ -870,6 +902,10 @@
 
       ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
+        var input = document.getElementById(id);
+        input.addEventListener("blur", function () { formaterMilliers(input); });
       });
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="cvAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });

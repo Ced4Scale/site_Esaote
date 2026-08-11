@@ -58,18 +58,24 @@
           <div class="field">
             <label for="pmLoyerA">Loyer de l'IRM, SAV inclus</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmLoyerA" value="5700" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="pmLoyerA" value="5.700" />
               <span>€ / mois</span>
             </div>
           </div>
           <p class="simulator__hint" id="pmLoyerHintA"></p>
           <div class="field">
             <label for="pmMermA">Nombre de MERM en poste</label>
-            <input type="number" id="pmMermA" value="1" min="0" step="1" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmMermA" value="1" min="0" step="1" />
+              <span>MERM</span>
+            </div>
           </div>
           <div class="field">
             <label for="pmMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
-            <input type="number" id="pmMembreA" value="25" min="0" max="100" step="5" />
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmMembreA" value="25" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
           </div>
           <p class="simulator__hint" id="pmMembreHintA"></p>
         </div>
@@ -87,7 +93,7 @@
           <div class="field">
             <label for="pmLoyerB">Loyer de l'IRM, SAV inclus</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="pmLoyerB" value="11.500" />
               <span>€ / mois</span>
             </div>
           </div>
@@ -162,7 +168,7 @@
           <div class="field">
             <label for="pmNetMerm">Salaire MERM net avant impôt</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
+              <input type="text" inputmode="numeric" id="pmNetMerm" value="1.800" />
               <span>€ / mois</span>
             </div>
           </div>
@@ -290,6 +296,19 @@
         return "rgb(" + r + "," + g + "," + b + ")";
       }
       var SLOT_COLORS_CLAIR = SLOT_COLORS.map(function (c) { return eclaircir(c, 0.3); });
+      // Séparateur de milliers dans les cases à 4-5 chiffres (loyer, salaire) — demande de
+      // Cédric le 11/08/2026. Champ texte (pas number, qui n'accepte aucune mise en forme) :
+      // reformaté au moment de quitter le champ (blur), pas à chaque frappe, pour ne pas faire
+      // sauter le curseur pendant la saisie. valeurMilliers() nettoie les points avant de lire
+      // la valeur, que le champ soit déjà formaté ou pas encore.
+      var milliersFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      function formaterMilliers(input) {
+        var brut = String(input.value).replace(/[^\d]/g, "");
+        input.value = brut ? milliersFmt.format(parseInt(brut, 10)) : "";
+      }
+      function valeurMilliers(input) {
+        return parseInt(String(input.value).replace(/[^\d]/g, ""), 10) || 0;
+      }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
@@ -411,7 +430,7 @@
       function reinitialiserLoyer(select, input, hintEl) {
         var machine = machineParKey(select.value);
         var connu = LOYERS_BASE[machine.key] != null;
-        input.value = loyerParDefaut(machine);
+        input.value = milliersFmt.format(loyerParDefaut(machine));
         hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
       }
       var loyerHintA = document.getElementById("pmLoyerHintA"), loyerHintB = document.getElementById("pmLoyerHintB");
@@ -590,7 +609,7 @@
           heuresParJour: Math.max(0, parseFloat(document.getElementById("pmHeures").value) || 0),
           joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1)
         };
-        var netMerm = Math.max(0, parseFloat(document.getElementById("pmNetMerm").value) || 0);
+        var netMerm = valeurMilliers(document.getElementById("pmNetMerm"));
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
         document.getElementById("pmCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
@@ -598,10 +617,10 @@
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("pmLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("pmLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)) }
         ];
         if (nbMachines() === 2) {
-          configs.push({ slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("pmLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) });
+          configs.push({ slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("pmLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)) });
         }
 
         var resultats = configs.map(function (c) {
@@ -712,7 +731,7 @@
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
           ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
-          ["Salaire MERM net avant impôt", euros.format(+document.getElementById("pmNetMerm").value || 0) + " / mois"],
+          ["Salaire MERM net avant impôt", euros.format(valeurMilliers(document.getElementById("pmNetMerm"))) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
         ];
 
@@ -917,6 +936,10 @@
 
       ["pmZone", "pmKwh", "pmHeures", "pmJours", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      ["pmNetMerm", "pmLoyerA", "pmLoyerB"].forEach(function (id) {
+        var input = document.getElementById(id);
+        input.addEventListener("blur", function () { formaterMilliers(input); });
       });
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="pmAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
