@@ -103,10 +103,11 @@
           <div class="field">
             <label for="cvActivite" id="cvActiviteLabel">Nombre de patients par jour</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvActivite" value="25" min="0" step="0.5" />
+              <input type="number" id="cvActivite" value="15" min="0" step="0.5" />
               <span>patients</span>
             </div>
           </div>
+          <p class="simulator__hint" id="cvActiviteEquivalent"></p>
           <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
           <p class="simulator__warning" id="cvCapaciteWarning" hidden></p>
         </div>
@@ -526,11 +527,14 @@
       }
 
       // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
-      // machine = amplitude d'ouverture (en minutes) / durée d'un examen. Non bloquant — juste
-      // un avertissement, l'activité reste un simple repère (voir plus haut).
+      // machine = amplitude d'ouverture (en minutes) / durée RÉELLE d'un créneau patient
+      // (temps d'installation + durée d'acquisition — l'installation seule ne consomme pas
+      // d'électricité en plus mais prend bien de la place dans le planning). Non bloquant —
+      // juste un avertissement, l'activité reste un simple repère (voir plus haut).
       function verifierCapacite(resultats, heuresParJour, activitePatientsJour, warningEl, champsAAlerter) {
         var depassements = resultats.filter(function (r) {
-          r.capaciteJour = (heuresParJour * 60) / r.machine.dureeAcquisitionMinutes;
+          var dureeCreneau = r.machine.dureeAcquisitionMinutes + r.machine.tempsInstallationMinutes;
+          r.capaciteJour = (heuresParJour * 60) / dureeCreneau;
           return activitePatientsJour > r.capaciteJour;
         });
         (champsAAlerter || []).forEach(function (champ) { champ.classList.toggle("simulator__field-alert", depassements.length > 0); });
@@ -539,7 +543,7 @@
         warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
           depassements.map(function (r) {
             return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
-              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min/examen sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
+              " patients/jour au maximum (" + r.machine.dureeAcquisitionMinutes + " min d'acquisition + " + r.machine.tempsInstallationMinutes + " min d'installation par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
           }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
       }
 
@@ -560,8 +564,15 @@
       document.querySelectorAll('input[name="cvActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+          var joursParMois = Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1);
+          var activiteInput = document.getElementById("cvActivite");
+          var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
           document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
-          document.getElementById("cvActivite").value = mode === "jour" ? 25 : 6000;
+          // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
+          // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
+          activiteInput.value = mode === "jour"
+            ? Math.round((ancienne / (joursParMois * 12)) * 10) / 10
+            : Math.round(ancienne * joursParMois * 12);
           recalculer();
         });
       });
@@ -584,6 +595,10 @@
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
+        var modeActiviteCourant = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        document.getElementById("cvActiviteEquivalent").textContent = modeActiviteCourant === "jour"
+          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + " patients/an."
+          : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour.";
 
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0) },
@@ -713,6 +728,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
+          { label: "Temps d'installation du patient", valeurs: resultats.map(function (r) { return r.machine.tempsInstallationMinutes + " min"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
         ];

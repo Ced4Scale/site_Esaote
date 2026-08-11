@@ -86,9 +86,11 @@
           </div>
           <div class="field">
             <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour</label>
-            <input type="number" id="eneActivite" value="40" min="0" step="1" />
+            <input type="number" id="eneActivite" value="20" min="0" step="1" />
           </div>
+          <p class="simulator__hint" id="eneActiviteEquivalent"></p>
           <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
+          <p class="simulator__warning" id="eneCapaciteWarning" hidden></p>
         </div>
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
@@ -502,12 +504,32 @@
         return valeur;
       }
 
+      // ---- Convertit la valeur du champ "activité" d'un mode à l'autre (jour ouvré <-> an),
+      // pour la bascule ci-dessous — mêmes hypothèses que activiteAnnuelle() (taux horaire
+      // uniforme, samedi/dimanche au prorata de leurs heures d'ouverture).
+      function convertirActivite(ancienneValeur, ancienModeEtaitJour, heuresSemaineJour, heuresSamediJour, heuresDimancheJour) {
+        if (ancienModeEtaitJour) {
+          var tauxHoraire = heuresSemaineJour > 0 ? ancienneValeur / heuresSemaineJour : 0;
+          var patientsSemaineTotale = ancienneValeur * 5 + tauxHoraire * heuresSamediJour + tauxHoraire * heuresDimancheJour;
+          return patientsSemaineTotale * 52;
+        }
+        if (heuresSemaineJour <= 0) return 0;
+        var facteur = 5 + (heuresSamediJour + heuresDimancheJour) / heuresSemaineJour;
+        return facteur > 0 ? (ancienneValeur / 52) / facteur : 0;
+      }
+
       function recalculer() {
         var prix = Math.max(0, parseFloat(document.getElementById("enePrix").value) || 0);
         var heuresSemaineJour = Math.max(0, Math.min(24, parseFloat(document.getElementById("eneHeuresSemaine").value) || 0));
         var heuresSamediJour = parseFloat(document.getElementById("eneSamedi").value) || 0;
         var heuresDimancheJour = parseFloat(document.getElementById("eneDimanche").value) || 0;
         var patientsAn = activiteAnnuelle();
+
+        var modeActiviteCourant = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var equivalentJour = convertirActivite(patientsAn, false, heuresSemaineJour, heuresSamediJour, heuresDimancheJour);
+        document.getElementById("eneActiviteEquivalent").textContent = modeActiviteCourant === "jour"
+          ? "≈ " + entiers.format(patientsAn) + " patients/an."
+          : "≈ " + entiers.format(equivalentJour) + " patients/jour ouvré.";
 
         var machineA = machineParKey(selectA.value);
         var machineB = machineParKey(selectB.value);
@@ -522,6 +544,31 @@
           Math.max(1, parseFloat(acqA.value) || machineA.dureeAcquisitionMinutes),
           Math.max(1, parseFloat(acqB.value) || machineB.dureeAcquisitionMinutes)
         ];
+
+        // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
+        // machine = amplitude d'ouverture en semaine (en minutes) / durée RÉELLE d'un créneau
+        // patient (temps d'installation + durée d'acquisition saisie, éditable ci-dessus —
+        // l'installation seule ne consomme pas d'électricité en plus mais prend bien de la
+        // place dans le planning). Non bloquant — juste un avertissement.
+        (function verifierCapacite() {
+          var capaciteWarningEl = document.getElementById("eneCapaciteWarning");
+          var depassements = [];
+          [["A", machineA, dureesAcq[0]], ["B", machineB, dureesAcq[1]]].forEach(function (t) {
+            var dureeCreneau = t[2] + t[1].tempsInstallationMinutes;
+            var capaciteJour = (heuresSemaineJour * 60) / dureeCreneau;
+            if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeAcq: t[2] });
+          });
+          [document.getElementById("eneActivite"), document.getElementById("eneHeuresSemaine")].forEach(function (champ) {
+            champ.classList.toggle("simulator__field-alert", depassements.length > 0);
+          });
+          if (!depassements.length) { capaciteWarningEl.hidden = true; return; }
+          capaciteWarningEl.hidden = false;
+          capaciteWarningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
+            depassements.map(function (d) {
+              return "<strong>" + d.machine.nomCourt + "</strong> (machine " + d.label + ") ne peut faire que " + entiers.format(d.capaciteJour) +
+                " patients/jour ouvré au maximum (" + d.dureeAcq + " min d'acquisition + " + d.machine.tempsInstallationMinutes + " min d'installation par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
+            }).join(" ; ") + " — activité saisie : ≈ " + entiers.format(equivalentJour) + " patients/jour ouvré. Réduis l'activité ou augmente l'amplitude d'ouverture.";
+        })();
 
         // Un profil distinct par machine : à volume de patients identique, une machine plus
         // lente à l'acquisition passe plus de temps en état "en mesure" — c'est justement ce
@@ -673,7 +720,8 @@
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour ouvré" : " patients/an")]
         ];
         var paramsMachines = [
-          { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] }
+          { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] },
+          { label: "Temps d'installation du patient", valeurs: [machineA.tempsInstallationMinutes + " min", machineB.tempsInstallationMinutes + " min"] }
         ];
         derniersParamsSaisis = { paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
 
@@ -1359,8 +1407,15 @@
       document.querySelectorAll('input[name="eneActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+          var heuresSemaineJour = Math.max(0, parseFloat(document.getElementById("eneHeuresSemaine").value) || 0);
+          var heuresSamediJour = parseFloat(document.getElementById("eneSamedi").value) || 0;
+          var heuresDimancheJour = parseFloat(document.getElementById("eneDimanche").value) || 0;
+          var activiteInput = document.getElementById("eneActivite");
+          var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
           document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
-          document.getElementById("eneActivite").value = mode === "jour" ? 40 : 6000;
+          // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
+          // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
+          activiteInput.value = Math.round(convertirActivite(ancienne, mode === "an", heuresSemaineJour, heuresSamediJour, heuresDimancheJour));
           recalculer();
         });
       });
