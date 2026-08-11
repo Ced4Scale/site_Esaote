@@ -556,11 +556,11 @@ var ENERGIE_MACHINES = [
   // pas de distinction Paris/IDF/Province) et pour le filtre "gamme" du simulateur. ----------
   {
     key: "siemens-goall",
-    nomCourt: "Siemens SOMATOM go.All",
+    nomCourt: "Siemens go.All",
     type: "ct",
     champT: null,
     marque: "Siemens",
-    modele: "SOMATOM go.All (scanner CT)",
+    modele: "go.All (scanner CT)",
     aimant: "ct",
     eteint: 2.7,
     pret: 2.7,
@@ -573,11 +573,11 @@ var ENERGIE_MACHINES = [
   },
   {
     key: "siemens-gotop",
-    nomCourt: "Siemens SOMATOM go.Top",
+    nomCourt: "Siemens go.Top",
     type: "ct",
     champT: null,
     marque: "Siemens",
-    modele: "SOMATOM go.Top (scanner CT)",
+    modele: "go.Top (scanner CT)",
     aimant: "ct",
     eteint: 2.7,
     pret: 2.7,
