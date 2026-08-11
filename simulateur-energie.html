@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260811-field-groups" />
+  <link rel="stylesheet" href="styles.css?v=20260811-hours-input" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js?v=20260811-nosomatom"></script>
@@ -41,15 +41,18 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <div class="simulator__field-group">
+        <div class="simulator__field-group" style="border-left-color:#6b5b95">
           <h3 style="margin:0 0 1.2rem">Paramètres communs</h3>
           <div class="field">
-            <label for="enePrix">Coût du kWh (€, TTC)</label>
-            <input type="number" id="enePrix" value="0.20" min="0" step="0.01" />
+            <label for="enePrix">Coût du kWh</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="enePrix" value="0.20" min="0" step="0.01" />
+              <span>€ TTC</span>
+            </div>
           </div>
         </div>
 
-        <div class="simulator__field-group">
+        <div class="simulator__field-group" style="border-left-color:#1baf7a">
           <h3 style="margin:0 0 1.2rem">Horaires d'ouverture aux patients</h3>
           <div class="field">
             <label for="eneHeuresSemaine">Amplitude par jour, du lundi au vendredi</label>
@@ -60,19 +63,17 @@
           </div>
           <div class="field">
             <label for="eneSamedi">Samedi</label>
-            <select id="eneSamedi">
-              <option value="0">Fermé</option>
-              <option value="4">Ouvert le matin (4h)</option>
-              <option value="8">Ouvert toute la journée (8h)</option>
-            </select>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneSamedi" value="0" min="0" max="24" step="1" />
+              <span id="eneSamediUnite">heure</span>
+            </div>
           </div>
           <div class="field">
             <label for="eneDimanche">Dimanche</label>
-            <select id="eneDimanche">
-              <option value="0" selected>Fermé</option>
-              <option value="4">Ouvert le matin (4h)</option>
-              <option value="8">Ouvert toute la journée (8h)</option>
-            </select>
+            <div class="simulator__field-suffix">
+              <input type="number" id="eneDimanche" value="0" min="0" max="24" step="1" />
+              <span id="eneDimancheUnite">heure</span>
+            </div>
           </div>
 
           <h3 style="margin:1.4rem 0 1.2rem">Activité</h3>
@@ -1366,8 +1367,16 @@
       ["enePrix", "eneHeuresSemaine", "eneActivite", "eneAcqA", "eneAcqB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
-      ["eneSamedi", "eneDimanche"].forEach(function (id) {
-        document.getElementById(id).addEventListener("change", recalculer);
+      // "heure" au singulier, "heures" au pluriel dès que le nombre saisi dépasse 1 —
+      // demande de Cédric le 11/08/2026, valeur par défaut passée de menus fixes (0/4h/8h) à
+      // un champ libre (défaut 0).
+      function majUniteHeure(inputId, spanId) {
+        var val = parseFloat(document.getElementById(inputId).value) || 0;
+        document.getElementById(spanId).textContent = Math.abs(val) > 1 ? "heures" : "heure";
+      }
+      [["eneSamedi", "eneSamediUnite"], ["eneDimanche", "eneDimancheUnite"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () { majUniteHeure(pair[0], pair[1]); recalculer(); });
+        majUniteHeure(pair[0], pair[1]);
       });
 
       function goBack() {
