@@ -119,6 +119,11 @@
           <label for="cvMermB">Nombre de MERM en poste</label>
           <input type="number" id="cvMermB" value="2" min="0" step="1" />
         </div>
+        <div class="field">
+          <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
+          <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
+        </div>
+        <p class="simulator__hint">Estimation par défaut (16 %), d'après la répartition nationale des examens scanner par indication (rapport SFPM n°39, 2020 — TAP 11 % + corps entier 5 %) — à ajuster selon le recrutement réel.</p>
       </div>
 
       <div class="simulator__results">
@@ -181,7 +186,7 @@
             <tbody id="cvSyntheseBody"></tbody>
           </table>
           </div>
-          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), 25,27 € pour un scanner mono-région (thorax ou abdomen-pelvis) — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
+          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), et pour le scanner 25,27 € pour un examen mono-région (thorax ou abdomen-pelvis) ou 50,54 € pour un examen multi-région (ex. TAP), pondérés selon la part saisie plus haut — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
         </div>
 
         <div class="simulator__chart-card" id="cvRecap">
@@ -416,12 +421,20 @@
       // examens IRM par application communiquée par Esaote ("MRI Exam by Application",
       // présentation CHU Nîmes avril 2025 — Joints 25%, Head&Neck 30%, Spine 30%, MRA/Cardio 6%,
       // Abdominal/Other 9%) donne "Joints" = 25% au tarif "membre", le reste (75%) aux autres
-      // régions : 0,25×55 + 0,75×69 = 65,50€. Scanner : 25,27€ pour un examen mono-région
-      // (thorax ou abdomen-pelvis). Nuance MSK : un arthroscanner d'un membre (plus proche de
+      // régions : 0,25×55 + 0,75×69 = 65,50€.
+      // Scanner : 25,27€ pour un examen mono-région (thorax ou abdomen-pelvis), 50,54€ pour un
+      // examen multi-région (TAP...) — pondérés selon la part saisie par le visiteur (16% par
+      // défaut, d'après le rapport SFPM n°39 (2020) sur 6610 examens nationaux : TAP 11% + corps
+      // entier 5% = 16% multi-région). Nuance MSK : un arthroscanner d'un membre (plus proche de
       // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
       // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
       // sous le tableau récapitulatif).
-      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 25.27 : 65.50; }
+      var TARIF_CT_MONO_REGION = 25.27, TARIF_CT_MULTI_REGION = 50.54;
+      function acteIntellectuelPatient(machine, pctMultiRegion) {
+        if (machine.type !== "ct") return 65.50;
+        var p = Math.max(0, Math.min(100, pctMultiRegion || 0)) / 100;
+        return (1 - p) * TARIF_CT_MONO_REGION + p * TARIF_CT_MULTI_REGION;
+      }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
       // à l'ouverture), ramené à un coût FIXE mensuel + un coût VARIABLE par patient, pour que
@@ -442,7 +455,7 @@
 
       function calculerMachine(m, params) {
         var recette = recetteFT(m.machine, params.dateIso, params.zone, params.amortiKey);
-        var acte = acteIntellectuelPatient(m.machine);
+        var acte = acteIntellectuelPatient(m.machine, m.pctMultiRegion);
         var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
         var rh = m.nombreMerm * params.coutMermMensuel;
         var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
@@ -503,7 +516,7 @@
 
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: +document.getElementById("cvLoyerA").value || 0, nombreMerm: Math.max(0, +mermA.value || 0) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("cvLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0) }
+          { slot: 1, machine: machineParKey(selectB.value), loyer: +document.getElementById("cvLoyerB").value || 0, nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)) }
         ];
 
         var resultats = configs.map(function (c) {
@@ -854,7 +867,7 @@
         });
       }
 
-      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite"].forEach(function (id) {
+      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
       dateSelect.addEventListener("change", recalculer);
