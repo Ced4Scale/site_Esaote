@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260810-mobile-fix6" />
+  <link rel="stylesheet" href="styles.css?v=20260811-inflation" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-fallback-fix"></script>
@@ -73,6 +73,14 @@
           </div>
         </div>
 
+        <div class="field">
+          <label><mark class="simulator__highlight">Corriger les recettes de l'inflation (pouvoir d'achat) ?</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="simInflation" value="non" checked /> Non — euros courants</label>
+            <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (pouvoir d'achat de l'année 1)</label>
+          </div>
+        </div>
+
         <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
       </div>
 
@@ -104,6 +112,17 @@
         </div>
         <p class="simulator__hint" id="simChute"></p>
         <p class="simulator__hint">Au-delà de l'activité de référence, le forfait technique de chaque examen supplémentaire est moins élevé, par tranches dégressives (voir les seuils de la classe ci-dessus) — c'est ce qui fait baisser le forfait moyen par examen indiqué au-dessus de chaque camembert.</p>
+
+        <div class="simulator__chart-card" id="simActeCard">
+          <h3 style="margin-bottom:.6rem">Recettes de l'acte intellectuel du radiologue</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Estimation à 65,50&nbsp;€ en moyenne par examen (55&nbsp;€ pour un examen « membre », 69&nbsp;€ pour les autres régions, pondérés 25&nbsp;%/75&nbsp;% selon la répartition communiquée par Esaote) — ce tarif est fixe, il ne suit pas le barème dégressif du forfait technique ci-dessus. Recherche faite le 11/08/2026 auprès de la FNMR et de la SFR : aucune trace d'une revalorisation de ce tarif depuis 2018 — au contraire, ces deux organisations dénoncent un acte intellectuel gelé pendant que les charges (salaires MERM, électricité, maintenance) augmentent. La ligne « pouvoir d'achat » montre ce que ces mêmes euros représentent réellement une fois l'inflation prise en compte (INSEE 2018-2025 réalisé, prévisions Bercy 2026-2027, puis 1,75&nbsp;%/an au-delà), à partir de l'année en cours.</p>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" id="simActeTable">
+              <thead><tr id="simActeTableHead"><th>Année&nbsp;:</th></tr></thead>
+              <tbody id="simActeTableBody"></tbody>
+            </table>
+          </div>
+        </div>
 
         <div class="simulator__chart-card" id="simRecap">
           <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
@@ -203,6 +222,30 @@
       var SLOT_COLORS = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100"];
 
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+
+      // Taux d'inflation annuels (IPC, moyenne annuelle, France) — 2018-2025 réalisé (INSEE),
+      // 2026-2027 prévision (Bercy, Rapport économique social et financier de mars 2026),
+      // au-delà 1,75 %/an (rythme de croisière retenu par Bercy à partir de 2028, cohérent
+      // avec la cible BCE de 2 % pour la zone euro). Demande de Cédric du 11/08/2026 :
+      // utiliser les vrais taux année par année plutôt qu'un taux constant supposé.
+      var INFLATION_ANNUELLE = {
+        2018: 0.018, 2019: 0.011, 2020: 0.005, 2021: 0.016, 2022: 0.052,
+        2023: 0.049, 2024: 0.020, 2025: 0.009, 2026: 0.019, 2027: 0.016
+      };
+      var INFLATION_DEFAUT = 0.0175;
+      function tauxInflation(annee) {
+        return INFLATION_ANNUELLE.hasOwnProperty(annee) ? INFLATION_ANNUELLE[annee] : INFLATION_DEFAUT;
+      }
+      // Facteur pour convertir une somme perçue "decalage" années après "anneeBase" en pouvoir
+      // d'achat de anneeBase (decalage = 0 -> facteur 1, aucune inflation encore écoulée).
+      function facteurDeflation(anneeBase, decalage) {
+        var f = 1;
+        for (var j = 0; j < decalage; j++) f *= 1 + tauxInflation(anneeBase + j);
+        return f;
+      }
+      function inflationActive() {
+        return document.querySelector('input[name="simInflation"]:checked').value === "oui";
+      }
 
       var machineSelect = document.getElementById("simMachine");
       MACHINES.forEach(function (m) {
@@ -334,6 +377,7 @@
         tbody.innerHTML = "";
         var totaux = [];
         derniereSerie = [];
+        var inflationOn = inflationActive();
 
         scenarios.forEach(function (sc) {
           var tr = document.createElement("tr");
@@ -344,6 +388,9 @@
           var values = [];
           var cumul = [0];
           var cumulMensuel = [0]; // pour le graphe uniquement : 84 pas d'1 mois (7 ans x 12)
+          var anneeDepart = new Date(sc.iso + "T00:00:00").getFullYear();
+          var valuesReel = inflationOn ? [] : null;
+          var cumulMensuelReel = inflationOn ? [0] : null;
           for (var i = 0; i < 7; i++) {
             var ca = caPourAnnee(sc.iso, classe, zone, volume, i, rejoue);
             values.push(ca);
@@ -356,10 +403,41 @@
             var td = document.createElement("td");
             td.textContent = euros.format(ca);
             tr.appendChild(td);
+
+            if (inflationOn) {
+              // Pouvoir d'achat de l'année de départ (deflateur = 1 pour l'année 1, puisque
+              // aucune inflation ne s'est encore écoulée à ce moment-là).
+              var caReel = ca / facteurDeflation(anneeDepart, i);
+              valuesReel.push(caReel);
+              var caMensuelReel = caReel / 12;
+              for (var m2 = 0; m2 < 12; m2++) {
+                cumulMensuelReel.push(cumulMensuelReel[cumulMensuelReel.length - 1] + caMensuelReel);
+              }
+            }
           }
           tbody.appendChild(tr);
+
+          if (inflationOn) {
+            var trReel = document.createElement("tr");
+            var tdLabelReel = document.createElement("td");
+            tdLabelReel.innerHTML = '<span style="color:' + sc.color + ';font-style:italic;font-weight:600">— pouvoir d\'achat</span>';
+            trReel.appendChild(tdLabelReel);
+            valuesReel.forEach(function (v) {
+              var tdr = document.createElement("td");
+              tdr.style.fontStyle = "italic";
+              tdr.style.color = "var(--muted)";
+              tdr.textContent = euros.format(v);
+              trReel.appendChild(tdr);
+            });
+            tbody.appendChild(trReel);
+          }
+
           totaux.push({ label: sc.label, total: totalLigne });
-          derniereSerie.push({ label: "Départ " + sc.label, color: sc.color, values: values, cumul: cumul, cumulMensuel: cumulMensuel });
+          derniereSerie.push({
+            label: "Départ " + sc.label, color: sc.color,
+            values: values, cumul: cumul, cumulMensuel: cumulMensuel,
+            cumulMensuelReel: cumulMensuelReel
+          });
         });
 
         var chuteEl = document.getElementById("simChute");
@@ -384,6 +462,50 @@
         dessinerLegende(scenarios);
         dessinerLegendeCamembert();
         dessinerRecap(scenarios, classe, zone, volume, rejoue);
+        dessinerActe(volume);
+      }
+
+      // ---- Recettes de l'acte intellectuel du radiologue — demande de Cédric du 11/08/2026,
+      // suite à une recherche FNMR/SFR ne montrant aucune revalorisation de ce tarif depuis
+      // 2018 (contrairement au forfait technique, qui lui baisse). Tarif fixe, indépendant des
+      // dates de forfait technique comparées ci-dessus — une seule table, pas une par date.
+      var ACTE_MOYEN = 65.5; // €/examen — 25 % "membre" (55 €) / 75 % autres régions (69 €)
+      function dessinerActe(volume) {
+        var theadActe = document.getElementById("simActeTableHead");
+        while (theadActe.children.length > 1) theadActe.removeChild(theadActe.lastChild);
+        for (var i = 0; i < 7; i++) {
+          var th = document.createElement("th");
+          th.textContent = "Année " + (i + 1);
+          theadActe.appendChild(th);
+        }
+
+        var anneeCourante = new Date().getFullYear();
+        var recetteNominale = volume * ACTE_MOYEN;
+        var tbodyActe = document.getElementById("simActeTableBody");
+        tbodyActe.innerHTML = "";
+
+        var trNominal = document.createElement("tr");
+        var tdLabelNominal = document.createElement("td");
+        tdLabelNominal.innerHTML = "<strong>Sans inflation (euros courants)</strong>";
+        trNominal.appendChild(tdLabelNominal);
+        for (var i2 = 0; i2 < 7; i2++) {
+          var td2 = document.createElement("td");
+          td2.textContent = euros.format(recetteNominale);
+          trNominal.appendChild(td2);
+        }
+        tbodyActe.appendChild(trNominal);
+
+        var trReel = document.createElement("tr");
+        var tdLabelReel = document.createElement("td");
+        tdLabelReel.innerHTML = "<strong style=\"color:var(--muted)\">Avec inflation (pouvoir d'achat)</strong>";
+        trReel.appendChild(tdLabelReel);
+        for (var i3 = 0; i3 < 7; i3++) {
+          var td3 = document.createElement("td");
+          td3.style.color = "var(--muted)";
+          td3.textContent = euros.format(recetteNominale / facteurDeflation(anneeCourante, i3));
+          trReel.appendChild(td3);
+        }
+        tbodyActe.appendChild(trReel);
       }
 
       // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : machine/barème utilisé,
@@ -409,7 +531,8 @@
         var paramsCommuns = [
           ["Zone géographique", zoneLabel],
           ["Nombre d'examens IRM par an", seuilsEntiers.format(volume)],
-          ["Décrets postérieurs appliqués ensuite ?", rejoue ? "Oui — vraie chronologie" : "Non — tarif de départ gelé"]
+          ["Décrets postérieurs appliqués ensuite ?", rejoue ? "Oui — vraie chronologie" : "Non — tarif de départ gelé"],
+          ["Correction inflation (pouvoir d'achat) ?", inflationActive() ? "Oui" : "Non — euros courants"]
         ];
 
         derniersRecap = { bareme: bareme, recettes: recettes, paramsCommuns: paramsCommuns };
@@ -478,6 +601,14 @@
           item.appendChild(text);
           legendEl.appendChild(item);
         });
+        if (inflationActive()) {
+          var note = document.createElement("span");
+          note.className = "simulator__legend-item";
+          note.style.color = "var(--muted)";
+          note.style.fontStyle = "italic";
+          note.textContent = "(pointillé = pouvoir d'achat)";
+          legendEl.appendChild(note);
+        }
       }
 
       // Géométrie du graphe (viewBox 640 x VIEWBOX_H) — hauteur augmentée le 09/08/2026
@@ -573,6 +704,17 @@
             var v2 = s.cumulMensuel[an2 * 12];
             svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 6, fill: "#fcfcfb" }));
             svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 4, fill: s.color }));
+          }
+
+          // Courbe "pouvoir d'achat" (déflatée) — en pointillé, même couleur, sans marqueurs
+          // pour ne pas surcharger le graphe. Affichée uniquement quand le bouton "Correction
+          // inflation" est sur "Oui" (demande de Cédric du 11/08/2026).
+          if (s.cumulMensuelReel) {
+            var pointsReel = s.cumulMensuelReel.map(function (v, i) { return xAt(i) + "," + yAt(v); }).join(" ");
+            svg.appendChild(svgEl("polyline", {
+              points: pointsReel, fill: "none", stroke: s.color, "stroke-width": "2",
+              "stroke-dasharray": "5,4", "stroke-linejoin": "round", "stroke-linecap": "round", opacity: "0.7"
+            }));
           }
         });
 
@@ -771,6 +913,9 @@
       });
       dateSelects.forEach(function (select) { select.addEventListener("change", recalculer); });
       document.querySelectorAll('input[name="simRejoue"]').forEach(function (radio) {
+        radio.addEventListener("change", recalculer);
+      });
+      document.querySelectorAll('input[name="simInflation"]').forEach(function (radio) {
         radio.addEventListener("change", recalculer);
       });
       machineSelect.addEventListener("change", function () {
@@ -1081,6 +1226,27 @@
 
         var rows = document.querySelectorAll("#simTableBody tr");
         rows.forEach(function (tr) {
+          var cells = tr.querySelectorAll("td");
+          var rowLabel = cells[0].textContent;
+          var dataCells = Array.prototype.slice.call(cells).slice(1);
+          drawRow(rowLabel, dataCells, false);
+        });
+
+        // Tableau "Recettes de l'acte intellectuel" — même technique générique (lecture directe
+        // du DOM) que le tableau ci-dessus, reprend automatiquement la ligne "pouvoir d'achat"
+        // si le bouton "Correction inflation" est activé.
+        y += 4;
+        ensureSpace(14);
+        doc.setFontSize(10.5);
+        doc.setTextColor(0);
+        doc.setFont(undefined, "bold");
+        doc.text("Recettes de l'acte intellectuel (estimation, hors barème du forfait technique)", 15, y); y += 6;
+        doc.setFontSize(8);
+        var acteHeaderCells = Array.prototype.slice.call(document.querySelectorAll("#simActeTableHead th")).slice(1);
+        drawRow("Année", acteHeaderCells, true);
+        doc.setDrawColor(200);
+        doc.line(x0, y - 4, x0 + labelWidth + colWidth * acteHeaderCells.length, y - 4);
+        document.querySelectorAll("#simActeTableBody tr").forEach(function (tr) {
           var cells = tr.querySelectorAll("td");
           var rowLabel = cells[0].textContent;
           var dataCells = Array.prototype.slice.call(cells).slice(1);
