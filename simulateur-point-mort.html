@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260810-mobile-fix6" />
+  <link rel="stylesheet" href="styles.css?v=20260811-simplify" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
@@ -37,59 +37,6 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
-        <div class="field">
-          <label for="pmDate">Date de forfait technique</label>
-          <select id="pmDate"></select>
-        </div>
-        <div class="field">
-          <label for="pmZone">Zone géographique</label>
-          <select id="pmZone">
-            <option value="province">Province</option>
-            <option value="idf">Île-de-France (hors Paris)</option>
-            <option value="paris">Paris</option>
-          </select>
-        </div>
-        <div class="field">
-          <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="pmAmorti" value="nonAmorti" checked /> Non amortie</label>
-            <label><input type="radio" name="pmAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
-          </div>
-        </div>
-        <div class="field">
-          <label for="pmKwh">Coût du kWh (€, TTC)</label>
-          <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
-        </div>
-        <div class="field">
-          <label for="pmHeures">Amplitude d'ouverture par jour (heures)</label>
-          <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
-        </div>
-        <div class="field">
-          <label for="pmJours">Jours d'ouverture par mois</label>
-          <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
-        </div>
-        <div class="field">
-          <label for="pmNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
-          <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="pmCoutMermCalcule"></p>
-        <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
-
-        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
-        <div class="field">
-          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="pmActiviteMode" value="jour" checked /> Patients par jour</label>
-            <label><input type="radio" name="pmActiviteMode" value="an" /> Patients par an</label>
-          </div>
-        </div>
-        <div class="field">
-          <label for="pmActivite" id="pmActiviteLabel">Nombre de patients par jour</label>
-          <input type="number" id="pmActivite" value="20" min="0" step="0.5" />
-        </div>
-        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
-
         <div class="field">
           <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
           <div class="simulator__toggle">
@@ -98,7 +45,7 @@
           </div>
         </div>
 
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">Machine A</span></h3>
+        <h3 style="margin:1.2rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">Machine A</span></h3>
         <div class="field">
           <label for="pmChampA">Filtrer par gamme de champ</label>
           <select id="pmChampA"></select>
@@ -147,9 +94,69 @@
           </div>
           <p class="simulator__hint" id="pmMembreHintB"></p>
         </div>
+
+        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
+        <div class="field">
+          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+          <div class="simulator__toggle">
+            <label><input type="radio" name="pmActiviteMode" value="jour" checked /> Patients par jour</label>
+            <label><input type="radio" name="pmActiviteMode" value="an" /> Patients par an</label>
+          </div>
+        </div>
+        <div class="field">
+          <label for="pmActivite" id="pmActiviteLabel">Nombre de patients par jour</label>
+          <input type="number" id="pmActivite" value="20" min="0" step="0.5" />
+        </div>
+        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
+
+        <h3 class="simulator__collapse-toggle" id="pmHypothesesToggle" style="margin:1.4rem 0 1.2rem;cursor:pointer">Hypothèses de calcul <span aria-hidden="true">▾</span></h3>
+        <div id="pmHypothesesBody" hidden>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</p>
+          <div class="field">
+            <label for="pmDate">Date de forfait technique</label>
+            <select id="pmDate"></select>
+          </div>
+          <div class="field">
+            <label for="pmZone">Zone géographique</label>
+            <select id="pmZone">
+              <option value="province">Province</option>
+              <option value="idf">Île-de-France (hors Paris)</option>
+              <option value="paris">Paris</option>
+            </select>
+          </div>
+          <div class="field">
+            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="pmAmorti" value="nonAmorti" checked /> Non amortie</label>
+              <label><input type="radio" name="pmAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="pmKwh">Coût du kWh (€, TTC)</label>
+            <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+          </div>
+          <div class="field">
+            <label for="pmHeures">Amplitude d'ouverture par jour (heures)</label>
+            <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
+          </div>
+          <div class="field">
+            <label for="pmJours">Jours d'ouverture par mois</label>
+            <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
+          </div>
+          <div class="field">
+            <label for="pmNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
+            <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
+          </div>
+          <p class="simulator__hint" id="pmCoutMermCalcule"></p>
+          <p class="simulator__hint">Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
+        </div>
       </div>
 
       <div class="simulator__results">
+        <div class="simulator__chart-card" id="pmVerdictCard">
+          <p id="pmVerdict" style="margin:0;font-size:1.15rem;line-height:1.5"></p>
+        </div>
+
         <div style="overflow-x:auto">
           <table class="stats-table simulator__table simulator__table--compare2" id="pmTable">
           <thead>
@@ -162,7 +169,6 @@
           <tbody id="pmTableBody"></tbody>
         </table>
         </div>
-        <p class="simulator__hint" id="pmEcart"></p>
 
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
@@ -177,7 +183,8 @@
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</p>
 
         <div class="simulator__chart-card" id="pmRecap">
-          <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
+          <h3 class="simulator__collapse-toggle" id="pmRecapToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail complet des données utilisées <span aria-hidden="true">▾</span></h3>
+          <div id="pmRecapBody" hidden>
           <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
@@ -205,6 +212,7 @@
               <thead><tr id="pmRecapParamsHeadRow"><th></th></tr></thead>
               <tbody id="pmRecapParamsBody"></tbody>
             </table>
+          </div>
           </div>
         </div>
 
@@ -513,6 +521,22 @@
         radio.addEventListener("change", function () { appliquerNbMachines(); recalculer(); });
       });
 
+      // Sections repliables — "Hypothèses de calcul" (formulaire) et "Détail complet" (résultats),
+      // même mécanisme que "Ce que disent les études indépendantes" du simulateur énergie :
+      // repliées par défaut pour un formulaire et une page plus courts à lire, tout en gardant
+      // l'accès complet à qui veut ajuster les hypothèses ou vérifier le détail.
+      function brancherToggle(toggleId, bodyId) {
+        var toggle = document.getElementById(toggleId);
+        var body = document.getElementById(bodyId);
+        toggle.addEventListener("click", function () {
+          var ouvert = !body.hidden;
+          body.hidden = ouvert;
+          toggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
+        });
+      }
+      brancherToggle("pmHypothesesToggle", "pmHypothesesBody");
+      brancherToggle("pmRecapToggle", "pmRecapBody");
+
       document.querySelectorAll('input[name="pmActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="pmActiviteMode"]:checked').value;
@@ -597,7 +621,7 @@
           return (res >= 0 ? "+" : "") + euros.format(res) + " / mois";
         }), true);
 
-        var ecartEl = document.getElementById("pmEcart");
+        var ecartEl = document.getElementById("pmVerdict");
         if (resultats.length === 1) {
           var seule = resultats[0];
           ecartEl.innerHTML = isFinite(seule.pointMortJour)
