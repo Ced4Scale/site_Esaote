@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260810-mobile-fix6" />
+  <link rel="stylesheet" href="styles.css?v=20260811-ene-reorg" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js?v=20260811-nosomatom"></script>
@@ -32,6 +32,11 @@
       <h1>Simulateur d'impact énergétique et RSE de l'IRM</h1>
       <p>Compare le <strong>coût énergétique</strong>, le <strong>coût par patient</strong> et l'<strong>empreinte carbone</strong> de deux IRM, selon vos horaires d'ouverture et votre activité — un indicateur directement mobilisable dans une grille d'achat responsable ou un dossier RSE d'appel d'offres. Distingue trois états de consommation (arrêt / prêt / en acquisition) : l'écart entre un aimant permanent (Esaote) et un aimant supraconducteur (maintien en froid permanent, y compris à l'arrêt) relève d'une <strong>sobriété structurelle</strong> — un choix de technologie, pas seulement une pratique d'utilisation.</p>
       <p class="simulator__source">Valeurs estimées par Ced4Scale à partir de sources techniques disponibles, dont plusieurs confirmées par les déclarations environnementales officielles des fabricants — <a href="sources-energie.html">détail des hypothèses, sources et études indépendantes</a>. Les sources sont jointes à chaque simulation reçue par e-mail.</p>
+      <div class="simulator__hero-stat" id="eneHeroStat">
+        <div class="simulator__hero-stat__label">À retenir</div>
+        <p class="simulator__hero-stat__figure" id="eneEcart"></p>
+        <p class="simulator__hero-stat__sub" id="eneEcartCo2"></p>
+      </div>
     </div>
 
     <div class="simulator__layout">
@@ -88,8 +93,11 @@
           <select id="eneChampA"></select>
         </div>
         <div class="field">
-          <label for="eneAcqA">Durée d'acquisition — Machine A (minutes)</label>
-          <input type="number" id="eneAcqA" min="1" step="1" />
+          <label for="eneAcqA">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="0">Machine A</span></label>
+          <div class="simulator__field-suffix">
+            <input type="number" id="eneAcqA" min="1" step="1" />
+            <span>minutes</span>
+          </div>
         </div>
         <div class="field">
           <label for="eneMachineB"><span class="simulator__swatch-text" data-slot="1">Machine B</span></label>
@@ -100,33 +108,17 @@
           <select id="eneChampB"></select>
         </div>
         <div class="field">
-          <label for="eneAcqB">Durée d'acquisition — Machine B (minutes)</label>
-          <input type="number" id="eneAcqB" min="1" step="1" />
+          <label for="eneAcqB">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="1">Machine B</span></label>
+          <div class="simulator__field-suffix">
+            <input type="number" id="eneAcqB" min="1" step="1" />
+            <span>minutes</span>
+          </div>
         </div>
         <p class="simulator__hint">Durée pré-remplie selon la machine choisie (un champ plus bas prend en général plus de temps par séquence) — modifiable selon le protocole réellement pratiqué.</p>
         <p class="simulator__hint" id="eneRefroidissement"></p>
       </div>
 
       <div class="simulator__results">
-        <div class="simulator__chart-card" id="eneCardTech">
-          <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</p>
-          <div style="overflow-x:auto">
-            <div style="overflow-x:auto">
-              <table class="stats-table simulator__table simulator__table--compare2" id="eneTableTech">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th><span class="simulator__swatch-text" data-slot="0" id="eneTableTechHeadA"></span></th>
-                  <th><span class="simulator__swatch-text" data-slot="1" id="eneTableTechHeadB"></span></th>
-                </tr>
-              </thead>
-              <tbody id="eneTableTechBody"></tbody>
-            </table>
-            </div>
-          </div>
-          <p class="simulator__hint" style="margin-top:.6rem">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
-        </div>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
@@ -148,39 +140,6 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
-          <div style="overflow-x:auto">
-            <table class="stats-table simulator__table simulator__table--compare2" id="eneTableSocle">
-            <thead>
-              <tr>
-                <th></th>
-                <th><span class="simulator__swatch-text" data-slot="0" id="eneTableSocleHeadA"></span></th>
-                <th><span class="simulator__swatch-text" data-slot="1" id="eneTableSocleHeadB"></span></th>
-              </tr>
-            </thead>
-            <tbody id="eneTableSocleBody"></tbody>
-          </table>
-          </div>
-        </div>
-
-        <div style="overflow-x:auto">
-          <table class="stats-table simulator__table simulator__table--compare2" id="eneTable">
-          <thead>
-            <tr>
-              <th></th>
-              <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
-              <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
-            </tr>
-          </thead>
-          <tbody id="eneTableBody"></tbody>
-        </table>
-        </div>
-        <p class="simulator__hint" id="eneEcart"></p>
-        <p class="simulator__hint" id="eneEcartCo2"></p>
-        <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
-
-        <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Empreinte carbone (mix électrique français)</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</p>
           <div style="overflow-x:auto">
@@ -197,23 +156,77 @@
           </div>
         </div>
 
-        <div class="simulator__chart-card" id="eneRecap">
-          <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation</h3>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</p>
-          <table class="stats-table simulator__table" id="eneRecapParamsCommunsTable">
-            <tbody id="eneRecapParamsCommunsBody"></tbody>
-          </table>
-          <div style="overflow-x:auto">
-            <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem" id="eneRecapParamsTable">
+        <div class="simulator__chart-card">
+          <h3 class="simulator__collapse-toggle" id="eneDetailToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail des calculs <span aria-hidden="true">▾</span></h3>
+          <div id="eneDetailBody" hidden>
+            <div class="simulator__chart-card" id="eneCardTech">
+              <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées</h3>
+              <p class="simulator__hint" style="margin:0 0 .6rem">Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</p>
+              <div style="overflow-x:auto">
+                <table class="stats-table simulator__table simulator__table--compare2" id="eneTableTech">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableTechHeadA"></span></th>
+                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableTechHeadB"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="eneTableTechBody"></tbody>
+              </table>
+              </div>
+              <p class="simulator__hint" style="margin-top:.6rem">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
+            </div>
+
+            <div class="simulator__chart-card">
+              <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible</h3>
+              <p class="simulator__hint" style="margin:0 0 .6rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
+              <div style="overflow-x:auto">
+                <table class="stats-table simulator__table simulator__table--compare2" id="eneTableSocle">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableSocleHeadA"></span></th>
+                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableSocleHeadB"></span></th>
+                  </tr>
+                </thead>
+                <tbody id="eneTableSocleBody"></tbody>
+              </table>
+              </div>
+            </div>
+
+            <div style="overflow-x:auto">
+              <table class="stats-table simulator__table simulator__table--compare2" id="eneTable">
               <thead>
                 <tr>
                   <th></th>
-                  <th><span class="simulator__swatch-text" data-slot="0" id="eneRecapParamsHeadA"></span></th>
-                  <th><span class="simulator__swatch-text" data-slot="1" id="eneRecapParamsHeadB"></span></th>
+                  <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
+                  <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
                 </tr>
               </thead>
-              <tbody id="eneRecapParamsBody"></tbody>
+              <tbody id="eneTableBody"></tbody>
             </table>
+            </div>
+            <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
+
+            <div class="simulator__chart-card" id="eneRecap">
+              <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation</h3>
+              <p class="simulator__hint" style="margin:0 0 .8rem">Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</p>
+              <table class="stats-table simulator__table" id="eneRecapParamsCommunsTable">
+                <tbody id="eneRecapParamsCommunsBody"></tbody>
+              </table>
+              <div style="overflow-x:auto">
+                <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem" id="eneRecapParamsTable">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th><span class="simulator__swatch-text" data-slot="0" id="eneRecapParamsHeadA"></span></th>
+                      <th><span class="simulator__swatch-text" data-slot="1" id="eneRecapParamsHeadB"></span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="eneRecapParamsBody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -554,30 +567,34 @@
         dessinerGraphe(resultats);
         if (!document.getElementById("eneCardSocleDetail").hidden) dessinerCamembertSocle(resultats);
 
+        // Bloc "À retenir" en haut de page — le résultat avant les explications techniques
+        // (réorganisation du 11/08/2026, demande de Cédric : "plus simple à lire, avec les
+        // parties importantes mises en valeur"). eneEcart devient le gros chiffre, eneEcartCo2
+        // la phrase de contexte (machines + CO2) — mêmes ids qu'avant, donc pas de changement
+        // côté PDF (genererPdfBase64 lit toujours document.getElementById("eneEcart")).
         var ecartEl = document.getElementById("eneEcart");
         var diff = resultats[0].coutAnnuel - resultats[1].coutAnnuel;
         var plusCher = diff > 0 ? resultats[0] : resultats[1];
         var moinsCher = diff > 0 ? resultats[1] : resultats[0];
         var ecartAbs = Math.abs(diff);
         var pct = plusCher.coutAnnuel > 0 ? Math.round((ecartAbs / plusCher.coutAnnuel) * 100) : 0;
-        if (ecartAbs < 1) {
-          ecartEl.innerHTML = "<strong>Coût énergétique quasiment identique entre les deux machines choisies.</strong>";
-        } else {
-          var ecartMensuel = euros.format(ecartAbs / 12);
-          ecartEl.innerHTML = "À horaires et activité identiques, <strong style=\"color:var(--red)\">" +
-            moinsCher.machine.nomCourt + " coûte " + euros.format(ecartAbs) + " de moins par an (soit " + ecartMensuel +
-            " par mois) en énergie que " + plusCher.machine.nomCourt + " — une économie de " + pct + " %.</strong>";
-        }
-
         var ecartCo2El = document.getElementById("eneEcartCo2");
         var diffKwh = resultats[0].kwh - resultats[1].kwh;
         var plusEmetteur = diffKwh > 0 ? resultats[0] : resultats[1];
         var moinsEmetteur = diffKwh > 0 ? resultats[1] : resultats[0];
         var ecartKg = Math.round(Math.abs(diffKwh) * CO2_G_PAR_KWH_FRANCE / 1000);
-        if (ecartKg >= 1) {
-          ecartCo2El.innerHTML = "Soit " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an avec " +
-            moinsEmetteur.machine.nomCourt + " plutôt que " +
-            plusEmetteur.machine.nomCourt + " (mix électrique français, ADEME).";
+        if (ecartAbs < 1) {
+          ecartEl.textContent = "Coût énergétique quasiment identique";
+          ecartCo2El.textContent = "Entre les deux machines choisies, à horaires et activité identiques.";
+        } else {
+          var ecartMensuel = euros.format(ecartAbs / 12);
+          ecartEl.innerHTML = euros.format(ecartAbs) + " / an <span style=\"opacity:.85;font-weight:700\">(-" + pct + " %)</span>";
+          var sousTexte = "Économisés avec " + moinsCher.machine.nomCourt + " plutôt que " + plusCher.machine.nomCourt +
+            " (" + ecartMensuel + " / mois), à horaires et activité identiques.";
+          if (ecartKg >= 1) {
+            sousTexte += " Soit aussi " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an (mix électrique français, ADEME).";
+          }
+          ecartCo2El.textContent = sousTexte;
         }
       }
 
@@ -1238,6 +1255,14 @@
         var ouvert = !etudesBody.hidden;
         etudesBody.hidden = ouvert;
         etudesToggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
+      });
+
+      var detailToggle = document.getElementById("eneDetailToggle");
+      var detailBody = document.getElementById("eneDetailBody");
+      detailToggle.addEventListener("click", function () {
+        var ouvert = !detailBody.hidden;
+        detailBody.hidden = ouvert;
+        detailToggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
       });
 
       var exportForm = document.getElementById("eneExportForm");
