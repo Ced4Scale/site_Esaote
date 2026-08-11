@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260811-inflation" />
+  <link rel="stylesheet" href="styles.css?v=20260811-euros-constants" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-fallback-fix"></script>
@@ -497,7 +497,7 @@
 
         var trReel = document.createElement("tr");
         var tdLabelReel = document.createElement("td");
-        tdLabelReel.innerHTML = "<strong style=\"color:var(--muted)\">Avec inflation (pouvoir d'achat)</strong>";
+        tdLabelReel.innerHTML = "<strong style=\"color:var(--muted)\">Avec inflation (euros constants)</strong>";
         trReel.appendChild(tdLabelReel);
         for (var i3 = 0; i3 < 7; i3++) {
           var td3 = document.createElement("td");
@@ -532,7 +532,7 @@
           ["Zone géographique", zoneLabel],
           ["Nombre d'examens IRM par an", seuilsEntiers.format(volume)],
           ["Décrets postérieurs appliqués ensuite ?", rejoue ? "Oui — vraie chronologie" : "Non — tarif de départ gelé"],
-          ["Correction inflation (pouvoir d'achat) ?", inflationActive() ? "Oui" : "Non — euros courants"]
+          ["Correction inflation (euros constants) ?", inflationActive() ? "Oui" : "Non — euros courants"]
         ];
 
         derniersRecap = { bareme: bareme, recettes: recettes, paramsCommuns: paramsCommuns };
@@ -606,7 +606,7 @@
           note.className = "simulator__legend-item";
           note.style.color = "var(--muted)";
           note.style.fontStyle = "italic";
-          note.textContent = "(pointillé = pouvoir d'achat)";
+          note.textContent = "(pointillé = euros constants)";
           legendEl.appendChild(note);
         }
       }
@@ -706,7 +706,7 @@
             svg.appendChild(svgEl("circle", { cx: xAt(an2 * 12), cy: yAt(v2), r: 4, fill: s.color }));
           }
 
-          // Courbe "pouvoir d'achat" (déflatée) — en pointillé, même couleur, sans marqueurs
+          // Courbe "euros constants" (déflatée) — en pointillé, même couleur, sans marqueurs
           // pour ne pas surcharger le graphe. Affichée uniquement quand le bouton "Correction
           // inflation" est sur "Oui" (demande de Cédric du 11/08/2026).
           if (s.cumulMensuelReel) {
@@ -1248,7 +1248,7 @@
         });
 
         // Tableau "Recettes de l'acte intellectuel" — même technique générique (lecture directe
-        // du DOM) que le tableau ci-dessus, reprend automatiquement la ligne "pouvoir d'achat"
+        // du DOM) que le tableau ci-dessus, reprend automatiquement la ligne "euros constants"
         // si le bouton "Correction inflation" est activé.
         y += 4;
         ensureSpace(14);
