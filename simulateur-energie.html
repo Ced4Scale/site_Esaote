@@ -80,12 +80,12 @@
           <div class="field">
             <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
             <div class="simulator__toggle">
-              <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré type</label>
+              <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré</label>
               <label><input type="radio" name="eneActiviteMode" value="an" /> Patients par an</label>
             </div>
           </div>
           <div class="field">
-            <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré type</label>
+            <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour ouvré</label>
             <input type="number" id="eneActivite" value="40" min="0" step="1" />
           </div>
           <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
@@ -493,7 +493,7 @@
           var heuresSamediJour = parseFloat(document.getElementById("eneSamedi").value) || 0;
           var heuresDimancheJour = parseFloat(document.getElementById("eneDimanche").value) || 0;
           var totalHeuresOuvertesSemaine = 5 * heuresSemaineJour + heuresSamediJour + heuresDimancheJour;
-          // "valeur" = patients par jour ouvré type (jour de semaine plein) — on en déduit un
+          // "valeur" = patients par jour ouvré (jour de semaine plein) — on en déduit un
           // taux horaire, appliqué aussi au samedi/dimanche au prorata de leurs heures.
           var tauxHoraire = heuresSemaineJour > 0 ? valeur / heuresSemaineJour : 0;
           var patientsSemaineTotale = valeur * 5 + tauxHoraire * heuresSamediJour + tauxHoraire * heuresDimancheJour;
@@ -670,7 +670,7 @@
           ["Amplitude par jour, lundi à vendredi", p.heuresSemaineJour + " h/jour"],
           ["Samedi", libelleJourFerme(p.heuresSamediJour)],
           ["Dimanche", libelleJourFerme(p.heuresDimancheJour)],
-          ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour ouvré type" : " patients/an")]
+          ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour ouvré" : " patients/an")]
         ];
         var paramsMachines = [
           { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] }
@@ -1359,7 +1359,7 @@
       document.querySelectorAll('input[name="eneActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
-          document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour ouvré type" : "Nombre de patients par an";
+          document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour ouvré" : "Nombre de patients par an";
           document.getElementById("eneActivite").value = mode === "jour" ? 40 : 6000;
           recalculer();
         });
