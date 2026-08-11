@@ -45,43 +45,51 @@
           </div>
         </div>
 
-        <h3 style="margin:1.2rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">Machine A</span></h3>
-        <div class="field">
-          <label for="pmChampA">Filtrer par gamme de champ</label>
-          <select id="pmChampA"></select>
-        </div>
-        <div class="field">
-          <label for="pmMachineA">Choix du champ / machine</label>
-          <select id="pmMachineA"></select>
-        </div>
-        <div class="field">
-          <label for="pmLoyerA">Loyer de l'IRM, SAV inclus (€ / mois)</label>
-          <input type="number" id="pmLoyerA" value="5700" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="pmLoyerHintA"></p>
-        <div class="field">
-          <label for="pmMermA">Nombre de MERM en poste</label>
-          <input type="number" id="pmMermA" value="1" min="0" step="1" />
-        </div>
-        <div class="field">
-          <label for="pmMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
-          <input type="number" id="pmMembreA" value="25" min="0" max="100" step="5" />
-        </div>
-        <p class="simulator__hint" id="pmMembreHintA"></p>
-
-        <div id="pmMachineBSection">
-          <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Machine B</span></h3>
+        <div class="simulator__machine-box" data-slot="0">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
           <div class="field">
-            <label for="pmChampB">Filtrer par gamme de champ</label>
+            <label for="pmChampA">Gamme de champ</label>
+            <select id="pmChampA"></select>
+          </div>
+          <div class="field">
+            <label for="pmMachineA">Choix IRM</label>
+            <select id="pmMachineA"></select>
+          </div>
+          <div class="field">
+            <label for="pmLoyerA">Loyer de l'IRM, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmLoyerA" value="5700" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="pmLoyerHintA"></p>
+          <div class="field">
+            <label for="pmMermA">Nombre de MERM en poste</label>
+            <input type="number" id="pmMermA" value="1" min="0" step="1" />
+          </div>
+          <div class="field">
+            <label for="pmMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
+            <input type="number" id="pmMembreA" value="25" min="0" max="100" step="5" />
+          </div>
+          <p class="simulator__hint" id="pmMembreHintA"></p>
+        </div>
+
+        <div id="pmMachineBSection" class="simulator__machine-box" data-slot="1">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
+          <div class="field">
+            <label for="pmChampB">Gamme de champ</label>
             <select id="pmChampB"></select>
           </div>
           <div class="field">
-            <label for="pmMachineB">Choix du champ / machine</label>
+            <label for="pmMachineB">Choix IRM</label>
             <select id="pmMachineB"></select>
           </div>
           <div class="field">
-            <label for="pmLoyerB">Loyer de l'IRM, SAV inclus (€ / mois)</label>
-            <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
+            <label for="pmLoyerB">Loyer de l'IRM, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmLoyerB" value="11500" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
           </div>
           <p class="simulator__hint" id="pmLoyerHintB"></p>
           <div class="field">
@@ -95,22 +103,24 @@
           <p class="simulator__hint" id="pmMembreHintB"></p>
         </div>
 
-        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
-        <div class="field">
-          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="pmActiviteMode" value="jour" checked /> Patients par jour</label>
-            <label><input type="radio" name="pmActiviteMode" value="an" /> Patients par an</label>
+        <div class="simulator__field-group" style="border-left-color:#1baf7a">
+          <h3 style="margin:0 0 1.2rem">Votre activité</h3>
+          <div class="field">
+            <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="pmActiviteMode" value="jour" checked /> Patients par jour</label>
+              <label><input type="radio" name="pmActiviteMode" value="an" /> Patients par an</label>
+            </div>
           </div>
+          <div class="field">
+            <label for="pmActivite" id="pmActiviteLabel">Nombre de patients par jour</label>
+            <input type="number" id="pmActivite" value="20" min="0" step="0.5" />
+          </div>
+          <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
         </div>
-        <div class="field">
-          <label for="pmActivite" id="pmActiviteLabel">Nombre de patients par jour</label>
-          <input type="number" id="pmActivite" value="20" min="0" step="0.5" />
-        </div>
-        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
 
         <h3 class="simulator__collapse-toggle" id="pmHypothesesToggle" style="margin:1.4rem 0 1.2rem;cursor:pointer">Hypothèses de calcul <span aria-hidden="true">▾</span></h3>
-        <div id="pmHypothesesBody" hidden>
+        <div id="pmHypothesesBody" class="simulator__field-group" style="border-left-color:#6b5b95" hidden>
           <p class="simulator__hint" style="margin:0 0 .8rem">Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</p>
           <div class="field">
             <label for="pmDate">Date de forfait technique</label>
@@ -132,20 +142,29 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmKwh">Coût du kWh (€, TTC)</label>
-            <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+            <label for="pmKwh">Coût du kWh</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+              <span>€ TTC</span>
+            </div>
           </div>
           <div class="field">
-            <label for="pmHeures">Amplitude d'ouverture par jour (heures)</label>
-            <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
+            <label for="pmHeures">Amplitude d'ouverture par jour</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
+              <span>heures</span>
+            </div>
           </div>
           <div class="field">
             <label for="pmJours">Jours d'ouverture par mois</label>
             <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
           </div>
           <div class="field">
-            <label for="pmNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
-            <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
+            <label for="pmNetMerm">Salaire MERM net avant impôt</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmNetMerm" value="1800" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
           </div>
           <p class="simulator__hint" id="pmCoutMermCalcule"></p>
           <p class="simulator__hint">Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
@@ -260,12 +279,26 @@
   <script>
     (function () {
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      // Version éclaircie de la couleur d'un slot, pour un nom de machine cité dans une
+      // phrase (moins agressif que la couleur pleine, réservée aux en-têtes/étiquettes) —
+      // même principe que simulateur-energie.html.
+      function eclaircir(hex, part) {
+        var r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+        r = Math.round(r + (255 - r) * part);
+        g = Math.round(g + (255 - g) * part);
+        b = Math.round(b + (255 - b) * part);
+        return "rgb(" + r + "," + g + "," + b + ")";
+      }
+      var SLOT_COLORS_CLAIR = SLOT_COLORS.map(function (c) { return eclaircir(c, 0.3); });
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 
       document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
         sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+      document.querySelectorAll(".simulator__machine-box").forEach(function (box) {
+        box.style.borderLeftColor = SLOT_COLORS[+box.getAttribute("data-slot")];
       });
 
       // ---- Classe de forfait technique dérivée du champ magnétique (même seuils que le
@@ -622,17 +655,18 @@
         }), true);
 
         var ecartEl = document.getElementById("pmVerdict");
+        function nomColore(r) { return "<strong style=\"color:" + SLOT_COLORS_CLAIR[r.slot] + "\">" + r.machine.nomCourt + "</strong>"; }
         if (resultats.length === 1) {
           var seule = resultats[0];
           ecartEl.innerHTML = isFinite(seule.pointMortJour)
-            ? "<strong>" + seule.machine.nomCourt + " atteint son point mort à " + patientsFmt.format(seule.pointMortJour) + " patients/jour</strong> (soit " + patientsFmt.format(seule.pointMortMois) + " patients/mois)."
-            : "Avec ces charges, " + seule.machine.nomCourt + " n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+            ? nomColore(seule) + " atteint son point mort à <strong>" + patientsFmt.format(seule.pointMortJour) + " patients/jour</strong> (soit " + patientsFmt.format(seule.pointMortMois) + " patients/mois)."
+            : "Avec ces charges, " + nomColore(seule) + " n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         } else if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
           var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
           var ecart = pire.pointMortJour - meilleur.pointMortJour;
-          ecartEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
-            patientsFmt.format(ecart) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
+          ecartEl.innerHTML = nomColore(meilleur) + " atteint son point mort avec <strong>" +
+            patientsFmt.format(ecart) + " patient(s) de moins par jour</strong> que " + nomColore(pire) +
             " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour).";
         } else {
           ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";

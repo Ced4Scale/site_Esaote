@@ -38,93 +38,116 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <h3 style="margin-bottom:1.2rem">Paramètres communs</h3>
-        <div class="field">
-          <label for="cvDate">Date de forfait technique</label>
-          <select id="cvDate"></select>
+        <div class="simulator__field-group" style="border-left-color:#6b5b95">
+          <h3 style="margin:0 0 1.2rem">Paramètres communs</h3>
+          <div class="field">
+            <label for="cvDate">Date de forfait technique</label>
+            <select id="cvDate"></select>
+          </div>
+          <div class="field">
+            <label for="cvZone">Zone géographique</label>
+            <select id="cvZone">
+              <option value="province">Province</option>
+              <option value="idf">Île-de-France (hors Paris)</option>
+              <option value="paris">Paris</option>
+            </select>
+          </div>
+          <div class="field">
+            <label><mark class="simulator__highlight">Machines amorties ou non ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="cvAmorti" value="nonAmorti" checked /> Non amorties</label>
+              <label><input type="radio" name="cvAmorti" value="amorti" /> Amorties (&gt; 7 ans)</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cvKwh">Coût du kWh</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
+              <span>€ TTC</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cvHeures">Amplitude d'ouverture par jour</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvHeures" value="8" min="1" max="24" step="0.5" />
+              <span>heures</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cvJours">Jours d'ouverture par mois</label>
+            <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
+          </div>
+          <div class="field">
+            <label for="cvNetMerm">Salaire MERM net avant impôt</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvNetMerm" value="1800" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="cvCoutMermCalcule"></p>
+          <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette du forfait technique reste donc le tarif plein.</p>
         </div>
-        <div class="field">
-          <label for="cvZone">Zone géographique</label>
-          <select id="cvZone">
-            <option value="province">Province</option>
-            <option value="idf">Île-de-France (hors Paris)</option>
-            <option value="paris">Paris</option>
-          </select>
+
+        <div class="simulator__field-group" style="border-left-color:#1baf7a">
+          <h3 style="margin:0 0 1.2rem">Votre activité</h3>
+          <div class="field">
+            <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
+              <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="cvActivite" id="cvActiviteLabel">Nombre de patients par jour</label>
+            <input type="number" id="cvActivite" value="5" min="0" step="0.5" />
+          </div>
+          <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
         </div>
-        <div class="field">
-          <label><mark class="simulator__highlight">Machines amorties ou non ?</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="cvAmorti" value="nonAmorti" checked /> Non amorties</label>
-            <label><input type="radio" name="cvAmorti" value="amorti" /> Amorties (&gt; 7 ans)</label>
+
+        <div class="simulator__machine-box" data-slot="0">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">IRM Esaote</h4>
+          <div class="field">
+            <label for="cvMachineA">Modèle</label>
+            <select id="cvMachineA"></select>
+          </div>
+          <div class="field">
+            <label for="cvLoyerA">Loyer de l'IRM, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvLoyerA" value="12000" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="cvLoyerHintA"></p>
+          <div class="field">
+            <label for="cvMermA">Nombre de MERM en poste</label>
+            <input type="number" id="cvMermA" value="1" min="0" step="1" />
           </div>
         </div>
-        <div class="field">
-          <label for="cvKwh">Coût du kWh (€, TTC)</label>
-          <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
-        </div>
-        <div class="field">
-          <label for="cvHeures">Amplitude d'ouverture par jour (heures)</label>
-          <input type="number" id="cvHeures" value="8" min="1" max="24" step="0.5" />
-        </div>
-        <div class="field">
-          <label for="cvJours">Jours d'ouverture par mois</label>
-          <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
-        </div>
-        <div class="field">
-          <label for="cvNetMerm">Salaire MERM net avant impôt (€ / mois)</label>
-          <input type="number" id="cvNetMerm" value="1800" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="cvCoutMermCalcule"></p>
-        <p class="simulator__hint">Hypothèse : le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette du forfait technique reste donc le tarif plein.</p>
 
-        <h3 style="margin:1.4rem 0 1.2rem">Votre activité</h3>
-        <div class="field">
-          <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
-            <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
+        <div class="simulator__machine-box" data-slot="1">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Scanner (CT)</h4>
+          <div class="field">
+            <label for="cvMachineB">Modèle</label>
+            <select id="cvMachineB"></select>
           </div>
+          <div class="field">
+            <label for="cvLoyerB">Loyer du scanner, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvLoyerB" value="12000" min="0" step="50" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="cvLoyerHintB"></p>
+          <div class="field">
+            <label for="cvMermB">Nombre de MERM en poste</label>
+            <input type="number" id="cvMermB" value="2" min="0" step="1" />
+          </div>
+          <div class="field">
+            <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
+            <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
+          </div>
+          <p class="simulator__hint">Estimation par défaut (16 %), d'après la répartition nationale des examens scanner par indication (rapport SFPM n°39, 2020 — TAP 11 % + corps entier 5 %) — à ajuster selon le recrutement réel.</p>
         </div>
-        <div class="field">
-          <label for="cvActivite" id="cvActiviteLabel">Nombre de patients par jour</label>
-          <input type="number" id="cvActivite" value="5" min="0" step="0.5" />
-        </div>
-        <p class="simulator__hint">Sert de repère sur le graphique et dans le tableau — ne change pas le calcul du point mort lui-même.</p>
-
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span></h3>
-        <div class="field">
-          <label for="cvMachineA">Modèle</label>
-          <select id="cvMachineA"></select>
-        </div>
-        <div class="field">
-          <label for="cvLoyerA">Loyer de l'IRM, SAV inclus (€ / mois)</label>
-          <input type="number" id="cvLoyerA" value="12000" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="cvLoyerHintA"></p>
-        <div class="field">
-          <label for="cvMermA">Nombre de MERM en poste</label>
-          <input type="number" id="cvMermA" value="1" min="0" step="1" />
-        </div>
-
-        <h3 style="margin:1.4rem 0 1.2rem"><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span></h3>
-        <div class="field">
-          <label for="cvMachineB">Modèle</label>
-          <select id="cvMachineB"></select>
-        </div>
-        <div class="field">
-          <label for="cvLoyerB">Loyer du scanner, SAV inclus (€ / mois)</label>
-          <input type="number" id="cvLoyerB" value="12000" min="0" step="50" />
-        </div>
-        <p class="simulator__hint" id="cvLoyerHintB"></p>
-        <div class="field">
-          <label for="cvMermB">Nombre de MERM en poste</label>
-          <input type="number" id="cvMermB" value="2" min="0" step="1" />
-        </div>
-        <div class="field">
-          <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
-          <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
-        </div>
-        <p class="simulator__hint">Estimation par défaut (16 %), d'après la répartition nationale des examens scanner par indication (rapport SFPM n°39, 2020 — TAP 11 % + corps entier 5 %) — à ajuster selon le recrutement réel.</p>
       </div>
 
       <div class="simulator__results">
@@ -278,6 +301,9 @@
 
       document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
         sw.style.color = SLOT_COLORS[+sw.getAttribute("data-slot")];
+      });
+      document.querySelectorAll(".simulator__machine-box").forEach(function (box) {
+        box.style.borderLeftColor = SLOT_COLORS[+box.getAttribute("data-slot")];
       });
 
       // ---- Classe de forfait technique dérivée de la machine : IRM Esaote -> classe "≤ 0,5 T"
