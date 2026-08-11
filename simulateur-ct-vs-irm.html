@@ -181,7 +181,7 @@
             <tbody id="cvSyntheseBody"></tbody>
           </table>
           </div>
-          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 69 € pour une IRM, 25,27 € pour un scanner mono-région (thorax ou abdomen-pelvis) — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
+          <p class="simulator__hint">Écart = IRM Esaote moins scanner. Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), 25,27 € pour un scanner mono-région (thorax ou abdomen-pelvis) — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
         </div>
 
         <div class="simulator__chart-card" id="cvRecap">
@@ -410,14 +410,18 @@
       // ---- Recette de l'acte intellectuel du radiologue, par patient — c'est ce poste qui
       // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
       // le forfait technique seul sous-estime l'écart réel de rentabilité. Tarifs CCAM secteur 1
-      // usuels (base de remboursement, hors majorations) : 69€ pour une IRM standard, 25,27€
-      // pour un scanner mono-région (thorax ou abdomen-pelvis) — vérifiés sur ameli.fr le
-      // 10/08/2026 (remplace une estimation antérieure moins précise, 55€/33€, tirée du fichier
-      // Excel personnel de Cédric). Nuance MSK : un arthroscanner d'un membre (plus proche de
+      // usuels (base de remboursement, hors majorations) : 55€ pour un examen IRM "membre",
+      // 69€ pour les autres régions — vérifiés sur ameli.fr le 10/08/2026. Pour l'IRM, moyenne
+      // pondérée à 65,50€ (25% membre / 75% autre) plutôt qu'un simple 69€ : la répartition des
+      // examens IRM par application communiquée par Esaote ("MRI Exam by Application",
+      // présentation CHU Nîmes avril 2025 — Joints 25%, Head&Neck 30%, Spine 30%, MRA/Cardio 6%,
+      // Abdominal/Other 9%) donne "Joints" = 25% au tarif "membre", le reste (75%) aux autres
+      // régions : 0,25×55 + 0,75×69 = 65,50€. Scanner : 25,27€ pour un examen mono-région
+      // (thorax ou abdomen-pelvis). Nuance MSK : un arthroscanner d'un membre (plus proche de
       // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
       // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
       // sous le tableau récapitulatif).
-      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 25.27 : 69; }
+      function acteIntellectuelPatient(machine) { return machine.type === "ct" ? 25.27 : 65.50; }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
       // à l'ouverture), ramené à un coût FIXE mensuel + un coût VARIABLE par patient, pour que
