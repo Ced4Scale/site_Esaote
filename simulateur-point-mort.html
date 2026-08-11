@@ -176,6 +176,38 @@
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</p>
 
+        <div class="simulator__chart-card" id="pmRecap">
+          <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
+
+          <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" id="pmRecapEquipTable">
+              <thead><tr id="pmRecapEquipHeadRow"><th></th></tr></thead>
+              <tbody id="pmRecapEquipBody"></tbody>
+            </table>
+          </div>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Forfait technique et acte intellectuel — valeurs calculées</h4>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" id="pmRecapRecettesTable">
+              <thead><tr id="pmRecapRecettesHeadRow"><th></th></tr></thead>
+              <tbody id="pmRecapRecettesBody"></tbody>
+            </table>
+          </div>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Paramètres saisis avant de lancer la simulation</h4>
+          <table class="stats-table simulator__table" id="pmRecapParamsCommunsTable">
+            <tbody id="pmRecapParamsCommunsBody"></tbody>
+          </table>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" style="margin-top:.6rem" id="pmRecapParamsTable">
+              <thead><tr id="pmRecapParamsHeadRow"><th></th></tr></thead>
+              <tbody id="pmRecapParamsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="simulator__export" id="pmExport">
           <button type="button" class="btn btn--lg" id="pmExportToggle">Recevoir ce comparatif par e-mail</button>
           <form id="pmExportForm" hidden>
@@ -521,7 +553,7 @@
           r.color = SLOT_COLORS[c.slot];
           return r;
         });
-        derniers = { resultats: resultats, params: params };
+        derniers = { resultats: resultats, params: params, configs: configs };
 
         document.getElementById("pmTableHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("pmTableHeadB").textContent = resultats[1] ? resultats[1].machine.nomCourt : "";
@@ -582,8 +614,109 @@
           ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         }
 
+        dessinerRecap(resultats, configs, params);
         dessinerLegende(resultats);
         dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
+      }
+
+      // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : reprendre en un seul
+      // endroit les données techniques des équipements, les valeurs calculées (FT + acte
+      // intellectuel) et les paramètres saisis. Générique sur le nombre de machines (1 ou 2,
+      // voir "Comparer à une 2e IRM ?" plus haut) — les en-têtes de colonnes sont reconstruits
+      // à chaque calcul plutôt que fixés dans le HTML.
+      var ZONE_LABELS = { paris: "Paris", idf: "Île-de-France (hors Paris)", province: "Province" };
+      function recapDonnees(resultats, configs, params) {
+        var dateLabel = dateSelect.options[dateSelect.selectedIndex].textContent;
+        var amortiLabel = params.amortiKey === "amorti" ? "Amortie(s) (> 7 ans)" : "Non amortie(s)";
+        var modeActivite = document.querySelector('input[name="pmActiviteMode"]:checked').value;
+        var activiteBrute = document.getElementById("pmActivite").value;
+
+        var equip = [
+          { label: "Champ / aimant", valeurs: resultats.map(function (r) { return r.machine.champT + " T (aimant " + r.machine.aimant + ")"; }) },
+          { label: "Puissance à l'arrêt", valeurs: resultats.map(function (r) { return r.machine.eteint.toFixed(2) + " kW"; }) },
+          { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
+          { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
+          { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
+          { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
+          { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
+        ];
+
+        var recettes = [
+          { label: "Date de forfait technique", valeurs: resultats.map(function () { return dateLabel; }) },
+          { label: "Zone géographique", valeurs: resultats.map(function () { return ZONE_LABELS[params.zone]; }) },
+          { label: "Statut amorti", valeurs: resultats.map(function () { return amortiLabel; }) },
+          { label: "Recette forfait technique / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recetteFt); }) },
+          { label: "Recette acte intellectuel / patient", valeurs: resultats.map(function (r, i) { return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)"; }) },
+          { label: "Recette totale / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) }
+        ];
+
+        var paramsCommuns = [
+          ["Coût du kWh", eurosCent.format(params.prixKwh)],
+          ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
+          ["Jours d'ouverture par mois", params.joursParMois + " jours"],
+          ["Salaire MERM net avant impôt", euros.format(+document.getElementById("pmNetMerm").value || 0) + " / mois"],
+          ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
+        ];
+
+        var paramsMachines = [
+          { label: "Loyer, SAV inclus", valeurs: configs.map(function (c) { return euros.format(c.loyer) + " / mois"; }) },
+          { label: "Nombre de MERM en poste", valeurs: configs.map(function (c) { return String(c.nombreMerm); }) }
+        ];
+
+        return { equip: equip, recettes: recettes, paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
+      }
+
+      function remplirEnTete(headRowId, resultats) {
+        var headRow = document.getElementById(headRowId);
+        headRow.innerHTML = "<th></th>";
+        resultats.forEach(function (r) {
+          var th = document.createElement("th");
+          th.innerHTML = '<span class="simulator__swatch-text" data-slot="' + r.slot + '" style="color:' + r.color + '">' + r.machine.nomCourt + "</span>";
+          headRow.appendChild(th);
+        });
+      }
+
+      function remplirTableauNCol(tbodyId, lignes) {
+        var tbody = document.getElementById(tbodyId);
+        tbody.innerHTML = "";
+        lignes.forEach(function (l) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + l.label + "</strong>";
+          tr.appendChild(td0);
+          l.valeurs.forEach(function (v) {
+            var td = document.createElement("td");
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+      }
+
+      function dessinerRecap(resultats, configs, params) {
+        var d = recapDonnees(resultats, configs, params);
+
+        remplirEnTete("pmRecapEquipHeadRow", resultats);
+        remplirTableauNCol("pmRecapEquipBody", d.equip);
+
+        remplirEnTete("pmRecapRecettesHeadRow", resultats);
+        remplirTableauNCol("pmRecapRecettesBody", d.recettes);
+
+        var tbodyCommuns = document.getElementById("pmRecapParamsCommunsBody");
+        tbodyCommuns.innerHTML = "";
+        d.paramsCommuns.forEach(function (pair) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>";
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = pair[1];
+          tr.appendChild(td1);
+          tbodyCommuns.appendChild(tr);
+        });
+
+        remplirEnTete("pmRecapParamsHeadRow", resultats);
+        remplirTableauNCol("pmRecapParamsBody", d.paramsMachines);
       }
 
       function dessinerLegende(resultats) {
@@ -887,6 +1020,48 @@
           drawRow("Point mort", derniers.resultats.map(function (r) {
             return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./jour" : "jamais atteint";
           }), true);
+
+          // ---- Page 2 : récapitulatif complet (équipements, FT + acte, paramètres saisis) ----
+          doc.addPage();
+          var d = recapDonnees(derniers.resultats, derniers.configs, derniers.params);
+          var py = 18, px0 = 15, plabelW = 65, pcolW = 55;
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Récapitulatif de la simulation", px0, py); py += 8;
+
+          function drawSectionTitle(titre) {
+            doc.setFontSize(10.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(titre, px0, py); py += 6;
+          }
+          function drawRecapRow(label, valeurs, bold) {
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.setTextColor(bold ? 0 : 60);
+            var x = px0;
+            doc.text(String(label), x, py);
+            x += plabelW;
+            valeurs.forEach(function (v) { doc.text(String(v), x, py); x += pcolW; });
+            py += 5.5;
+          }
+          var noms = derniers.resultats.map(function (r) { return r.machine.nomCourt; });
+
+          drawSectionTitle("Équipements — valeurs utilisées dans le calcul");
+          drawRecapRow("", noms, true);
+          d.equip.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+          py += 3;
+
+          drawSectionTitle("Forfait technique et acte intellectuel — valeurs calculées");
+          drawRecapRow("", noms, true);
+          d.recettes.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+          py += 3;
+
+          drawSectionTitle("Paramètres saisis avant de lancer la simulation");
+          d.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
+          drawRecapRow("", noms, true);
+          d.paramsMachines.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
 
           return doc.output("datauristring").split(",")[1];
         });
