@@ -332,27 +332,36 @@
       selectA.value = "esaote-g-scan";
       selectB.value = "siemens-gotop";
 
-      // ---- Seuils du barème dégressif — fixes pour cette page (machine A toujours classée
-      // "le05", machine B toujours "ct", quel que soit le modèle choisi), donc calculés une
-      // seule fois au chargement plutôt que dans recalculer().
-      (function afficherSeuils() {
-        var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
-        function tranches(classe) {
-          return [
-            { debut: 1, fin: classe.REF },
-            { debut: classe.REF + 1, fin: classe.SEUIL1 },
-            { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2 },
-            { debut: classe.SEUIL2 + 1, fin: null }
-          ];
-        }
-        var trIrm = tranches(FT_CLASSES.le05), trCt = tranches(FT_CLASSES.ct);
+      // ---- Seuils du barème dégressif — la plage (en examens/an) ne dépend que de la classe
+      // (fixe : machine A toujours "le05", machine B toujours "ct"), mais le MONTANT du forfait
+      // technique par tranche dépend de la date/zone/statut amorti choisis — recalculé à chaque
+      // changement de ces paramètres, pas seulement au chargement.
+      var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      function tranchesAvecMontant(classe, dateIso, zone, amortiKey) {
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        var tarifPlein = plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+        return [
+          { debut: 1, fin: classe.REF, montant: tarifPlein },
+          { debut: classe.REF + 1, fin: classe.SEUIL1, montant: ligne.reduits.seuil1 },
+          { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2, montant: ligne.reduits.seuil2 },
+          { debut: classe.SEUIL2 + 1, fin: null, montant: ligne.reduits.plafond }
+        ];
+      }
+      function afficherSeuilsBareme() {
+        var dateIso = dateSelect.value;
+        var zone = document.getElementById("cvZone").value;
+        var amortiKey = document.querySelector('input[name="cvAmorti"]:checked').value;
+        var trIrm = tranchesAvecMontant(FT_CLASSES.le05, dateIso, zone, amortiKey);
+        var trCt = tranchesAvecMontant(FT_CLASSES.ct, dateIso, zone, amortiKey);
         var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
         var tbody = document.getElementById("cvSeuilsBody");
+        tbody.innerHTML = "";
         labels.forEach(function (label, i) {
           function plage(t) {
-            return t.fin != null
+            return (t.fin != null
               ? "de " + seuilsEntiers.format(t.debut) + " à " + seuilsEntiers.format(t.fin)
-              : "au-delà de " + seuilsEntiers.format(t.debut - 1);
+              : "au-delà de " + seuilsEntiers.format(t.debut - 1)) + " examens/an";
           }
           var tr = document.createElement("tr");
           var tdLabel = document.createElement("td");
@@ -360,12 +369,13 @@
           tr.appendChild(tdLabel);
           [trIrm[i], trCt[i]].forEach(function (t) {
             var td = document.createElement("td");
-            td.textContent = plage(t) + " examens/an";
+            td.innerHTML = plage(t) + "<br><strong>" + eurosCent.format(t.montant) + "</strong> / examen";
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         });
-      })();
+      }
+      afficherSeuilsBareme();
 
       // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
       // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
@@ -499,6 +509,7 @@
       var derniers = null;
 
       function recalculer() {
+        afficherSeuilsBareme();
         var params = {
           dateIso: dateSelect.value,
           zone: document.getElementById("cvZone").value,
