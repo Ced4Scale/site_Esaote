@@ -197,6 +197,26 @@
           </div>
         </div>
 
+        <div class="simulator__chart-card" id="eneRecap">
+          <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</p>
+          <table class="stats-table simulator__table" id="eneRecapParamsCommunsTable">
+            <tbody id="eneRecapParamsCommunsBody"></tbody>
+          </table>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem" id="eneRecapParamsTable">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th><span class="simulator__swatch-text" data-slot="0" id="eneRecapParamsHeadA"></span></th>
+                  <th><span class="simulator__swatch-text" data-slot="1" id="eneRecapParamsHeadB"></span></th>
+                </tr>
+              </thead>
+              <tbody id="eneRecapParamsBody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <div class="simulator__chart-card">
           <h3 class="simulator__collapse-toggle" id="eneEtudesToggle" style="margin-bottom:.6rem;cursor:pointer">Ce que disent les études indépendantes <span aria-hidden="true">▾</span></h3>
           <div id="eneEtudesBody" hidden>
@@ -525,6 +545,10 @@
         remplirTableauSocle(resultats);
         remplirTableau(resultats, patientsAn);
         remplirTableauCo2(resultats);
+        remplirTableauParamsSaisis(machineA, machineB, {
+          prix: prix, heuresSemaineJour: heuresSemaineJour, heuresSamediJour: heuresSamediJour,
+          heuresDimancheJour: heuresDimancheJour, dureesAcq: dureesAcq
+        });
         remplirEtudesListe();
         dessinerLegende();
         dessinerGraphe(resultats);
@@ -582,6 +606,60 @@
         ligneTable(tbody, "Puissance en acquisition", machines.map(function (m) { return m.mesure + " kW"; }));
         ligneTable(tbody, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT > 0 ? "+" + Math.round(m.coeffRefroidissementLT * 100) + " %" : "—"; }));
         ligneTable(tbody, "Climatisation salle d'examen", machines.map(function (m) { return m.climSalleKw + " kW (continu)"; }));
+      }
+
+      // ---- Paramètres saisis par le visiteur — demandé par Cédric le 10/08/2026, en
+      // complément des tableaux "Valeurs techniques" et de résultats déjà affichés sur la
+      // page : reprend tout ce qui a été renseigné avant de lancer la simulation, pour que le
+      // résultat reste compréhensible même relu ou transmis plus tard. Stocké dans une
+      // variable globale pour être réutilisé tel quel dans le PDF (genererPdfBase64).
+      var derniersParamsSaisis = null;
+      function libelleJourFerme(valeur) {
+        return { "0": "Fermé", "4": "Ouvert le matin (4h)", "8": "Ouvert toute la journée (8h)" }[String(valeur)] || (valeur + "h");
+      }
+      function remplirTableauParamsSaisis(machineA, machineB, p) {
+        var modeActivite = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var activiteBrute = document.getElementById("eneActivite").value;
+        var paramsCommuns = [
+          ["Coût du kWh", eurosCent.format(p.prix)],
+          ["Amplitude par jour, lundi à vendredi", p.heuresSemaineJour + " h/jour"],
+          ["Samedi", libelleJourFerme(p.heuresSamediJour)],
+          ["Dimanche", libelleJourFerme(p.heuresDimancheJour)],
+          ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour ouvré type" : " patients/an")]
+        ];
+        var paramsMachines = [
+          { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] }
+        ];
+        derniersParamsSaisis = { paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
+
+        document.getElementById("eneRecapParamsHeadA").textContent = machineA.nomCourt;
+        document.getElementById("eneRecapParamsHeadB").textContent = machineB.nomCourt;
+        var tbodyCommuns = document.getElementById("eneRecapParamsCommunsBody");
+        tbodyCommuns.innerHTML = "";
+        paramsCommuns.forEach(function (pair) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>";
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = pair[1];
+          tr.appendChild(td1);
+          tbodyCommuns.appendChild(tr);
+        });
+        var tbodyMachines = document.getElementById("eneRecapParamsBody");
+        tbodyMachines.innerHTML = "";
+        paramsMachines.forEach(function (l) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + l.label + "</strong>";
+          tr.appendChild(td0);
+          l.valeurs.forEach(function (v) {
+            var td = document.createElement("td");
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          tbodyMachines.appendChild(tr);
+        });
       }
 
       // Conversion kWh -> kg CO2 (volet RSE), à partir du facteur d'émission de l'électricité
@@ -935,15 +1013,17 @@
           // Filet de sécurité : neutralise toute espace fine/insécable restante avant qu'elle
           // n'atteigne jsPDF (même piège que sur simulateur-recettes.html — voir la mémoire du
           // site pour le détail).
+          // ₂ (indice de CO₂) corrompt le rendu jsPDF exactement comme l'espace fine/insecable
+          // deja rencontree (voir memoire du site) -- neutralise ici en 2 normal.
           var _origDocText = doc.text.bind(doc);
           doc.text = function (text, x, y, opts) {
-            function clean(t) { return typeof t === "string" ? t.replace(/[\xa0 ]/g, " ") : t; }
+            function clean(t) { return typeof t === "string" ? t.replace(/[\xa0 ]/g, " ").replace(/₂/g, "2") : t; }
             text = Array.isArray(text) ? text.map(clean) : clean(text);
             return _origDocText(text, x, y, opts);
           };
           var _origDocTextWithLink = doc.textWithLink.bind(doc);
           doc.textWithLink = function (text, x, y, opts) {
-            if (typeof text === "string") text = text.replace(/[\xa0 ]/g, " ");
+            if (typeof text === "string") text = text.replace(/[\xa0 ]/g, " ").replace(/₂/g, "2");
             return _origDocTextWithLink(text, x, y, opts);
           };
           var prenom = document.getElementById("enePrenom").value.trim();
@@ -1075,6 +1155,37 @@
             ["Émissions de CO₂ / an", kwhFmt.format(rA.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg", kwhFmt.format(rB.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg"],
             ["Sur 7 ans", kwhFmt.format(rA.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg", kwhFmt.format(rB.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg"]
           ]);
+
+          // ---- Paramètres saisis avant de lancer la simulation ----
+          ensureSpace(7 + 7 * (derniersParamsSaisis.paramsCommuns.length + derniersParamsSaisis.paramsMachines.length + 1) + 5);
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Paramètres saisis avant de lancer la simulation", 15, y); y += 7;
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(9);
+          derniersParamsSaisis.paramsCommuns.forEach(function (pair) {
+            ensureSpace(7);
+            doc.text(pair[0], colX[0], y);
+            doc.text(pair[1], colX[1], y);
+            y += 7;
+          });
+          y += 2;
+          ensureSpace(7);
+          doc.setFont(undefined, "bold");
+          doc.text("", colX[0], y);
+          doc.text(rA.machine.nomCourt, colX[1], y);
+          doc.text(rB.machine.nomCourt, colX[2], y);
+          y += 7;
+          doc.setFont(undefined, "normal");
+          derniersParamsSaisis.paramsMachines.forEach(function (l) {
+            ensureSpace(7);
+            doc.text(l.label, colX[0], y);
+            doc.text(l.valeurs[0], colX[1], y);
+            doc.text(l.valeurs[1], colX[2], y);
+            y += 7;
+          });
+          y += 3;
 
           ensureSpace(14);
           doc.setTextColor(0);
