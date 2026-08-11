@@ -105,6 +105,29 @@
         <p class="simulator__hint" id="simChute"></p>
         <p class="simulator__hint">Au-delà de l'activité de référence, le forfait technique de chaque examen supplémentaire est moins élevé, par tranches dégressives (voir les seuils de la classe ci-dessus) — c'est ce qui fait baisser le forfait moyen par examen indiqué au-dessus de chaque camembert.</p>
 
+        <div class="simulator__chart-card" id="simRecap">
+          <h3 style="margin-bottom:.6rem">Récapitulatif de votre simulation</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
+
+          <h4 style="margin:0 0 .5rem;font-size:.92rem">Machine et barème utilisés</h4>
+          <table class="stats-table simulator__table" id="simRecapBaremeTable">
+            <tbody id="simRecapBaremeBody"></tbody>
+          </table>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Recettes calculées — par date de départ</h4>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table" id="simRecapRecettesTable">
+              <thead><tr id="simRecapRecettesHeadRow"><th></th></tr></thead>
+              <tbody id="simRecapRecettesBody"></tbody>
+            </table>
+          </div>
+
+          <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Paramètres saisis avant de lancer la simulation</h4>
+          <table class="stats-table simulator__table" id="simRecapParamsTable">
+            <tbody id="simRecapParamsBody"></tbody>
+          </table>
+        </div>
+
         <div class="simulator__export" id="simExport">
           <button type="button" class="btn btn--lg" id="simExportToggle">Recevoir ce tableau par e-mail</button>
           <form id="simExportForm" hidden>
@@ -360,6 +383,86 @@
         dessinerCamemberts();
         dessinerLegende(scenarios);
         dessinerLegendeCamembert();
+        dessinerRecap(scenarios, classe, zone, volume, rejoue);
+      }
+
+      // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : machine/barème utilisé,
+      // recettes calculées par date de départ, et paramètres saisis. Stocké dans une variable
+      // globale pour être repris à l'identique dans le PDF (genererPdfBase64).
+      var derniersRecap = null;
+      function dessinerRecap(scenarios, classe, zone, volume, rejoue) {
+        var machineLabel = machineSelect.options[machineSelect.selectedIndex].textContent;
+        var zoneLabel = { paris: "Paris", idf: "Île-de-France (hors Paris)", province: "Province" }[zone];
+
+        var bareme = [
+          ["Machine / classe", machineLabel],
+          ["Activité de référence (tarif plein jusqu'à)", seuilsEntiers.format(classe.REF) + " examens/an"],
+          ["Seuil 1", seuilsEntiers.format(classe.SEUIL1) + " examens/an"],
+          ["Seuil 2", seuilsEntiers.format(classe.SEUIL2) + " examens/an"]
+        ];
+
+        var recettes = derniereSerie.map(function (s, i) {
+          var total7ans = s.values.reduce(function (a, b) { return a + b; }, 0);
+          return { label: s.label, color: s.color, annee1: s.values[0], total7ans: total7ans };
+        });
+
+        var paramsCommuns = [
+          ["Zone géographique", zoneLabel],
+          ["Nombre d'examens IRM par an", seuilsEntiers.format(volume)],
+          ["Décrets postérieurs appliqués ensuite ?", rejoue ? "Oui — vraie chronologie" : "Non — tarif de départ gelé"]
+        ];
+
+        derniersRecap = { bareme: bareme, recettes: recettes, paramsCommuns: paramsCommuns };
+
+        var tbodyBareme = document.getElementById("simRecapBaremeBody");
+        tbodyBareme.innerHTML = "";
+        bareme.forEach(function (pair) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>";
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = pair[1];
+          tr.appendChild(td1);
+          tbodyBareme.appendChild(tr);
+        });
+
+        var headRow = document.getElementById("simRecapRecettesHeadRow");
+        headRow.innerHTML = "<th></th>";
+        recettes.forEach(function (r) {
+          var th = document.createElement("th");
+          th.innerHTML = '<span style="color:' + r.color + ';font-weight:700">' + r.label + "</span>";
+          headRow.appendChild(th);
+        });
+        var tbodyRecettes = document.getElementById("simRecapRecettesBody");
+        tbodyRecettes.innerHTML = "";
+        function ligneRecap(label, valeurs) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + label + "</strong>";
+          tr.appendChild(td0);
+          valeurs.forEach(function (v) {
+            var td = document.createElement("td");
+            td.textContent = v;
+            tr.appendChild(td);
+          });
+          tbodyRecettes.appendChild(tr);
+        }
+        ligneRecap("Recettes année 1", recettes.map(function (r) { return euros.format(r.annee1); }));
+        ligneRecap("Recettes sur 7 ans", recettes.map(function (r) { return euros.format(r.total7ans); }));
+
+        var tbodyParams = document.getElementById("simRecapParamsBody");
+        tbodyParams.innerHTML = "";
+        paramsCommuns.forEach(function (pair) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>";
+          tr.appendChild(td0);
+          var td1 = document.createElement("td");
+          td1.textContent = pair[1];
+          tr.appendChild(td1);
+          tbodyParams.appendChild(tr);
+        });
       }
 
       function dessinerLegende(scenarios) {
@@ -802,13 +905,13 @@
         // uniquement dans le PDF ; l'affichage à l'écran n'est pas concerné.
         var _origDocText = doc.text.bind(doc);
         doc.text = function (text, x, y, opts) {
-          function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ") : t; }
+          function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/≤/g, "<=") : t; }
           text = Array.isArray(text) ? text.map(clean) : clean(text);
           return _origDocText(text, x, y, opts);
         };
         var _origDocTextWithLink = doc.textWithLink.bind(doc);
         doc.textWithLink = function (text, x, y, opts) {
-          if (typeof text === "string") text = text.replace(/[  ]/g, " ");
+          if (typeof text === "string") text = text.replace(/[  ]/g, " ").replace(/≤/g, "<=");
           return _origDocTextWithLink(text, x, y, opts);
         };
         var prenom = document.getElementById("simPrenom").value.trim();
@@ -991,7 +1094,50 @@
         var chuteTexte = document.getElementById("simChute").textContent;
         var lignesChute = doc.splitTextToSize(chuteTexte, RIGHT_X - 15);
         ensureSpace(5 * lignesChute.length + 5);
-        doc.text(lignesChute, 15, y); y += 5 * lignesChute.length + 3;
+        doc.text(lignesChute, 15, y); y += 5 * lignesChute.length + 6;
+
+        // ---- Récapitulatif complet : machine/barème, recettes par date, paramètres saisis ----
+        if (derniersRecap) {
+          ensureSpace(7 + 6 * (derniersRecap.bareme.length + derniersRecap.paramsCommuns.length + 1));
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Récapitulatif de la simulation", 15, y); y += 7;
+
+          function drawSectionTitle(titre) {
+            ensureSpace(6);
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(titre, 15, y); y += 5.5;
+          }
+          function drawRecapRow(label, valeurs, bold) {
+            ensureSpace(5.5);
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.setTextColor(bold ? 0 : 60);
+            var xr = 15;
+            doc.text(String(label), xr, y);
+            xr += 70;
+            valeurs.forEach(function (v) { doc.text(String(v), xr, y); xr += 55; });
+            y += 5.5;
+          }
+
+          drawSectionTitle("Machine et barème utilisés");
+          derniersRecap.bareme.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
+          y += 2;
+
+          drawSectionTitle("Recettes calculées — par date de départ");
+          drawRecapRow("", derniersRecap.recettes.map(function (r) { return r.label; }), true);
+          drawRecapRow("Recettes année 1", derniersRecap.recettes.map(function (r) { return euros.format(r.annee1); }));
+          drawRecapRow("Recettes sur 7 ans", derniersRecap.recettes.map(function (r) { return euros.format(r.total7ans); }));
+          y += 2;
+
+          drawSectionTitle("Paramètres saisis avant de lancer la simulation");
+          derniersRecap.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
+          y += 3;
+        }
+
         if (commentaire) {
           ensureSpace(5);
           doc.setTextColor(0);
