@@ -71,14 +71,14 @@ var ENERGIE_MACHINES = [
     marque: "Esaote",
     modele: "G-scan",
     aimant: "permanent",
-    eteint: 0.15,
-    pret: 0.6,
-    mesure: 2.0,
+    eteint: 0.4,
+    pret: 1.2,
+    mesure: 2.4,
     dureeAcquisitionMinutes: 16,
     coeffRefroidissementLT: 0,
     climSalleKw: 1.5,
     refroidissement: "aucun local technique dédié — climatisation de la salle d'examen seule, comme pour toute IRM",
-    confiance: "Estimation Ced4Scale par comparaison avec le S-scan Open — guide d'implantation officiel non accessible publiquement à ce jour. Climatisation de salle estimée. À confirmer avec Esaote."
+    confiance: "Puissances (arrêt/prêt/acquisition) CONFIRMÉES par le Site Planning Guide officiel \"GSCANOPEN\" (MAK000409 Rev 2, 2024), obtenu directement d'Esaote le 11/08/2026 — remplace l'ancienne estimation par comparaison. Le guide donne aussi 1,5 kVA \"en rotation\" et 2,1 kVA en chauffe rapide, deux états intermédiaires non modélisés ici. Climatisation de salle toujours estimée (ordre de grandeur), en attente de confirmation Esaote."
   },
   {
     key: "esaote-magnifico",
@@ -87,14 +87,36 @@ var ENERGIE_MACHINES = [
     marque: "Esaote",
     modele: "Magnifico Open",
     aimant: "permanent",
-    eteint: 0.15,
-    pret: 0.7,
-    mesure: 2.2,
+    eteint: 0.5,
+    pret: 1.2,
+    mesure: 2.4,
     dureeAcquisitionMinutes: 15,
     coeffRefroidissementLT: 0,
     climSalleKw: 1.6,
     refroidissement: "aucun local technique dédié — climatisation de la salle d'examen seule, comme pour toute IRM",
-    confiance: "Estimation Ced4Scale par comparaison avec le S-scan Open — guide d'implantation officiel non accessible publiquement à ce jour. Climatisation de salle estimée. À confirmer avec Esaote."
+    confiance: "Puissances (arrêt/prêt/acquisition) CONFIRMÉES par le Site Planning Guide officiel (MAK000283 rev 7, 2022), obtenu directement d'Esaote le 11/08/2026 — remplace l'ancienne estimation par comparaison (Tab. 8 \"Power Requirements\" : 500 VA à l'arrêt, 1200 VA en veille, 2400 VA en acquisition, 2000 VA en chauffe rapide non modélisée ici). Climatisation de salle toujours estimée (ordre de grandeur), en attente de confirmation Esaote."
+  },
+  {
+    key: "esaote-i-genius",
+    nomCourt: "Esaote I-Genius",
+    champT: 0.25,
+    marque: "Esaote",
+    modele: "I-Genius",
+    // Usage per-opératoire (bloc neuro), hors grille du forfait technique diagnostic —
+    // exclu explicitement des simulateurs qui calculent une recette FT (point mort,
+    // comparateur CT/IRM) via ce champ `type`, même principe que `type:"ct"` pour les
+    // scanners. Reste sélectionnable dans le simulateur énergie (comparaison de
+    // consommation pure, pas de recette).
+    type: "peroperatoire",
+    aimant: "permanent",
+    eteint: 0.4,
+    pret: 1.1,
+    mesure: 2.0,
+    dureeAcquisitionMinutes: 18,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 1.3,
+    refroidissement: "aucun local technique dédié — climatisation de la salle d'examen seule, comme pour toute IRM",
+    confiance: "Puissances (arrêt/prêt/acquisition) CONFIRMÉES par le Site Planning Guide officiel (MAK000449 Rev 1, 2025), obtenu directement d'Esaote le 11/08/2026 — 1re donnée électrique disponible pour cette machine (absente du simulateur jusqu'ici). Champ magnétique (0,25 T) et durée d'acquisition supposés identiques au S-scan Open (même poids de l'aimant, 6350 kg, indiqué dans les deux documents), à confirmer. Climatisation de salle : aucune valeur connue, reprise provisoirement de celle du S-scan Open en attendant la réponse d'Esaote."
   },
 
   // ---------- Siemens — aimant supraconducteur, refroidissement à eau glacée ----------
