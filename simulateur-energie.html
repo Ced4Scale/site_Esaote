@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="styles.css?v=20260811-hero-stat-light" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="assets/machines-energie-data.js?v=20260811-ct-power-fix"></script>
+  <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -112,7 +112,7 @@
             </div>
           </div>
           <div class="field">
-            <label for="eneInstallA">Temps d'installation du patient</label>
+            <label for="eneInstallA">Temps de prise en charge du patient</label>
             <div class="simulator__field-suffix">
               <input type="number" id="eneInstallA" min="0" step="1" />
               <span>minutes</span>
@@ -137,7 +137,7 @@
             </div>
           </div>
           <div class="field">
-            <label for="eneInstallB">Temps d'installation du patient</label>
+            <label for="eneInstallB">Temps de prise en charge du patient</label>
             <div class="simulator__field-suffix">
               <input type="number" id="eneInstallB" min="0" step="1" />
               <span>minutes</span>
@@ -403,7 +403,7 @@
       // Même principe pour le temps d'installation du patient (demandé par Cédric le
       // 11/08/2026) — pré-rempli depuis assets/machines-energie-data.js, éditable ensuite.
       function reinitialiserInstall(select, input) {
-        input.value = machineParKey(select.value).tempsInstallationMinutes;
+        input.value = machineParKey(select.value).dureeTotalePriseEnChargeMinutes;
       }
       var installA = document.getElementById("eneInstallA"), installB = document.getElementById("eneInstallB");
       reinitialiserDureeAcq(selectA, acqA);
@@ -574,17 +574,16 @@
         ];
 
         // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
-        // machine = amplitude d'ouverture en semaine (en minutes) / durée RÉELLE d'un créneau
-        // patient (temps d'installation + durée d'acquisition saisie, éditable ci-dessus —
-        // l'installation seule ne consomme pas d'électricité en plus mais prend bien de la
-        // place dans le planning). Non bloquant — juste un avertissement.
+        // machine = amplitude d'ouverture en semaine (en minutes) / temps de prise en charge
+        // total d'un patient (installation + acquisition + sortie, déjà tout compris — ne
+        // pas l'additionner à la durée d'acquisition saisie plus haut, il l'inclut déjà).
+        // Non bloquant — juste un avertissement.
         (function verifierCapacite() {
           var capaciteWarningEl = document.getElementById("eneCapaciteWarning");
           var depassements = [];
-          [["A", machineA, dureesAcq[0], dureesInstall[0]], ["B", machineB, dureesAcq[1], dureesInstall[1]]].forEach(function (t) {
-            var dureeCreneau = t[2] + t[3];
-            var capaciteJour = (heuresSemaineJour * 60) / dureeCreneau;
-            if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeAcq: t[2], dureeInstall: t[3] });
+          [["A", machineA, dureesInstall[0]], ["B", machineB, dureesInstall[1]]].forEach(function (t) {
+            var capaciteJour = (heuresSemaineJour * 60) / t[2];
+            if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeInstall: t[2] });
           });
           [document.getElementById("eneActivite"), document.getElementById("eneHeuresSemaine")].forEach(function (champ) {
             champ.classList.toggle("simulator__field-alert", depassements.length > 0);
@@ -594,7 +593,7 @@
           capaciteWarningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
             depassements.map(function (d) {
               return "<strong>" + d.machine.nomCourt + "</strong> (machine " + d.label + ") ne peut faire que " + entiers.format(d.capaciteJour) +
-                " patients/jour ouvré au maximum (" + d.dureeAcq + " min d'acquisition + " + d.dureeInstall + " min d'installation par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
+                " patients/jour ouvré au maximum (" + d.dureeInstall + " min de prise en charge par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
             }).join(" ; ") + " — activité saisie : ≈ " + entiers.format(equivalentJour) + " patients/jour ouvré. Réduis l'activité ou augmente l'amplitude d'ouverture.";
         })();
 
@@ -749,7 +748,7 @@
         ];
         var paramsMachines = [
           { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] },
-          { label: "Temps d'installation du patient", valeurs: [p.dureesInstall[0] + " min", p.dureesInstall[1] + " min"] }
+          { label: "Temps de prise en charge du patient", valeurs: [p.dureesInstall[0] + " min", p.dureesInstall[1] + " min"] }
         ];
         derniersParamsSaisis = { paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
 
