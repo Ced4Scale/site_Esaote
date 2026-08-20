@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script>
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
+        if (!(v && v.expiresAt && v.expiresAt > Date.now())) {
+          document.documentElement.style.visibility = "hidden";
+        }
+      } catch (e) {
+        document.documentElement.style.visibility = "hidden";
+      }
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Forfait technique IRM — synthèse maison — Ced4Scale</title>
@@ -352,5 +364,7 @@
       });
     })();
   </script>
+  <script src="assets/site-gate.js"></script>
+
 </body>
 </html>
