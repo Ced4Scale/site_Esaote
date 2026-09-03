@@ -199,7 +199,7 @@
 
         <div class="simulator__chart-card" id="eneCardCumul15">
           <h3 style="margin-bottom:.6rem">Écart cumulé sur 15 ans</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Projection à <strong>prix du kWh constant</strong> (celui saisi ci-contre) et conditions d'usage inchangées sur 15 ans — aucune hypothèse d'évolution du tarif de l'électricité n'est appliquée, par prudence. Si le prix augmente d'ici là, l'écart réel sera plus élevé que celui affiché ici.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Projection à <strong>prix du kWh constant</strong> (celui saisi ci-contre) et conditions d'usage inchangées sur 15 ans — le prix du kWh <strong>n'est jamais cumulé d'une année sur l'autre</strong>, seul l'écart de coût qu'il produit chaque année s'additionne. Aucune hypothèse d'évolution du tarif de l'électricité n'est appliquée, par prudence : si le prix augmente d'ici là, l'écart réel sera plus élevé que celui affiché ici.</p>
           <div class="simulator__chart-wrap">
             <svg id="eneChartCumul" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Écart de coût énergétique cumulé sur 15 ans entre les deux machines choisies, à prix du kWh constant"></svg>
           </div>
@@ -722,7 +722,7 @@
           ecartCo2El.innerHTML = sousTexte;
           cumulCaptionEl.innerHTML = "Sur " + NB_ANNEES_CUMUL + " ans, à prix du kWh et conditions d'usage inchangés, choisir <strong style=\"color:" + SLOT_COLORS_CLAIR[moinsCher.slot] + "\">" + moinsCher.machine.nomCourt + "</strong> plutôt que <strong style=\"color:" + SLOT_COLORS_CLAIR[plusCher.slot] + "\">" + plusCher.machine.nomCourt + "</strong> représenterait " + euros.format(ecartAbs * NB_ANNEES_CUMUL) + " économisés (hors évolution du prix de l'électricité).";
         }
-        dessinerGrapheCumul15Ans(ecartAbs);
+        dessinerGrapheCumul15Ans(ecartAbs, prix);
       }
 
       function ligneTable(tbody, label, cells, opts) {
@@ -978,14 +978,27 @@
       // Projection de l'écart annuel (résultat déjà mis en avant dans le bloc "À retenir")
       // cumulé sur 15 ans, à prix du kWh constant (pas d'hypothèse d'inflation électrique,
       // demande explicite de Cédric le 03/09/2026 — rester prudent plutôt que d'ajouter une
-      // hypothèse à justifier). Une seule série (l'écart), pas les deux machines séparément.
+      // hypothèse à justifier, et ne surtout pas cumuler le PRIX du kWh lui-même, seulement
+      // l'écart de coût qu'il produit chaque année). Une seule série (l'écart), pas les deux
+      // machines séparément.
+      // Axe en années calendaires réelles (demande du 03/09/2026, "ajouter les années") : la
+      // dernière barre est toujours l'année en cours (calculée dynamiquement, jamais figée en
+      // dur, ex. 2026), la 1re barre l'année en cours moins 14 (ex. 2012) — 15 barres au total.
       var NB_ANNEES_CUMUL = 15;
-      function dessinerGrapheCumul15Ans(ecartAbs) {
+      function dessinerGrapheCumul15Ans(ecartAbs, prixKwh) {
         var svg = document.getElementById("eneChartCumul");
         svg.innerHTML = "";
-        var top = 20, chartH = 220;
+        var top = 34, chartH = 206;
         var totalCumul = ecartAbs * NB_ANNEES_CUMUL;
         var yMax = niceCeil((totalCumul || 0.0001) * 1.08);
+        var anneeFin = new Date().getFullYear();
+        var anneeDepart = anneeFin - NB_ANNEES_CUMUL;
+
+        var prixLabel = svgEl("text", { x: 95, y: 14, class: "simulator__axis-label", "text-anchor": "start" });
+        prixLabel.style.fontSize = "11px";
+        prixLabel.style.fontWeight = "700";
+        prixLabel.textContent = "Prix du kWh utilisé : " + eurosCent.format(prixKwh) + " (fixe, jamais cumulé)";
+        svg.appendChild(prixLabel);
 
         for (var g = 0; g <= 5; g++) {
           var val = (yMax * g) / 5;
@@ -1000,22 +1013,21 @@
         var plotX0 = 95, plotX1 = 600, plotW = plotX1 - plotX0;
         var slotW = plotW / NB_ANNEES_CUMUL;
         var barWidth = slotW - 4;
+        var lastBarX = 0;
         for (var an = 1; an <= NB_ANNEES_CUMUL; an++) {
           var cumul = ecartAbs * an;
           var barH = yMax > 0 ? (cumul / yMax) * chartH : 0;
           var barX = plotX0 + (an - 1) * slotW + 2;
           var barY = top + chartH - barH;
           svg.appendChild(svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: "#1baf7a" }));
-          if (an === NB_ANNEES_CUMUL || an % 5 === 0) {
-            var lab = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 16, class: "simulator__axis-label", "text-anchor": "middle" });
-            lab.style.fontSize = "11px";
-            lab.textContent = "An " + an;
-            svg.appendChild(lab);
-          }
+          var lab = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 16, class: "simulator__axis-label", "text-anchor": "middle" });
+          lab.style.fontSize = "9px";
+          lab.textContent = String(anneeDepart + an);
+          svg.appendChild(lab);
+          if (an === NB_ANNEES_CUMUL) lastBarX = barX;
         }
 
         if (totalCumul >= 1) {
-          var lastBarX = plotX0 + (NB_ANNEES_CUMUL - 1) * slotW + 2;
           var totalLabel = svgEl("text", { x: lastBarX + barWidth / 2, y: top + chartH - (yMax > 0 ? (totalCumul / yMax) * chartH : 0) - 10, class: "simulator__axis-label", "text-anchor": "middle" });
           totalLabel.style.fontSize = "14px";
           totalLabel.style.fontWeight = "800";
