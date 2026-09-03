@@ -197,13 +197,13 @@
           </div>
         </div>
 
-        <div class="simulator__chart-card" id="eneCardCumul15">
-          <h3 style="margin-bottom:.6rem">Écart cumulé sur 15 ans</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Projection à <strong>prix du kWh constant</strong> (celui saisi ci-contre) et conditions d'usage inchangées sur 15 ans — le prix du kWh <strong>n'est jamais cumulé d'une année sur l'autre</strong>, seul l'écart de coût qu'il produit chaque année s'additionne. Aucune hypothèse d'évolution du tarif de l'électricité n'est appliquée, par prudence : si le prix augmente d'ici là, l'écart réel sera plus élevé que celui affiché ici.</p>
+        <div class="simulator__chart-card" id="eneCardHistoPrix">
+          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France (15 dernières années)</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong> publié par la Commission de Régulation de l'Énergie (CRE) à chaque changement. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.</p>
           <div class="simulator__chart-wrap">
-            <svg id="eneChartCumul" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Écart de coût énergétique cumulé sur 15 ans entre les deux machines choisies, à prix du kWh constant"></svg>
+            <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 15 ans, en euros par kWh TTC"></svg>
           </div>
-          <p class="simulator__hint" id="eneCumulCaption" style="margin-top:.4rem"></p>
+          <p class="simulator__hint" style="margin-top:.4rem">Source : <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">historique des délibérations tarifaires de la CRE</a>, consulté le 03/09/2026.</p>
         </div>
 
         <div class="simulator__chart-card">
@@ -706,11 +706,9 @@
         var plusEmetteur = diffKwh > 0 ? resultats[0] : resultats[1];
         var moinsEmetteur = diffKwh > 0 ? resultats[1] : resultats[0];
         var ecartKg = Math.round(Math.abs(diffKwh) * CO2_G_PAR_KWH_FRANCE / 1000);
-        var cumulCaptionEl = document.getElementById("eneCumulCaption");
         if (ecartAbs < 1) {
           ecartEl.textContent = "Coût énergétique quasiment identique";
           ecartCo2El.textContent = "Entre les deux machines choisies, à horaires et activité identiques.";
-          cumulCaptionEl.textContent = "Écart quasiment nul entre les deux machines choisies — pas de projection cumulée significative sur 15 ans.";
         } else {
           var ecartMensuel = euros.format(ecartAbs / 12);
           ecartEl.innerHTML = euros.format(ecartAbs) + " / an <span style=\"opacity:.85;font-weight:700\">(-" + pct + " %)</span>";
@@ -720,9 +718,7 @@
             sousTexte += " Soit aussi " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an (mix électrique français, ADEME).";
           }
           ecartCo2El.innerHTML = sousTexte;
-          cumulCaptionEl.innerHTML = "Sur " + NB_ANNEES_CUMUL + " ans, à prix du kWh et conditions d'usage inchangés, choisir <strong style=\"color:" + SLOT_COLORS_CLAIR[moinsCher.slot] + "\">" + moinsCher.machine.nomCourt + "</strong> plutôt que <strong style=\"color:" + SLOT_COLORS_CLAIR[plusCher.slot] + "\">" + plusCher.machine.nomCourt + "</strong> représenterait " + euros.format(ecartAbs * NB_ANNEES_CUMUL) + " économisés (hors évolution du prix de l'électricité).";
         }
-        dessinerGrapheCumul15Ans(ecartAbs, prix);
       }
 
       function ligneTable(tbody, label, cells, opts) {
@@ -975,67 +971,89 @@
         svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
-      // Projection de l'écart annuel (résultat déjà mis en avant dans le bloc "À retenir")
-      // cumulé sur 15 ans, à prix du kWh constant (pas d'hypothèse d'inflation électrique,
-      // demande explicite de Cédric le 03/09/2026 — rester prudent plutôt que d'ajouter une
-      // hypothèse à justifier, et ne surtout pas cumuler le PRIX du kWh lui-même, seulement
-      // l'écart de coût qu'il produit chaque année). Une seule série (l'écart), pas les deux
-      // machines séparément.
-      // Axe en années calendaires réelles (demande du 03/09/2026, "ajouter les années") : la
-      // dernière barre est toujours l'année en cours (calculée dynamiquement, jamais figée en
-      // dur, ex. 2026), la 1re barre l'année en cours moins 14 (ex. 2012) — 15 barres au total.
-      var NB_ANNEES_CUMUL = 15;
-      function dessinerGrapheCumul15Ans(ecartAbs, prixKwh) {
-        var svg = document.getElementById("eneChartCumul");
-        svg.innerHTML = "";
-        var top = 34, chartH = 206;
-        var totalCumul = ecartAbs * NB_ANNEES_CUMUL;
-        var yMax = niceCeil((totalCumul || 0.0001) * 1.08);
-        var anneeFin = new Date().getFullYear();
-        var anneeDepart = anneeFin - NB_ANNEES_CUMUL;
+      // Historique réel du tarif réglementé de vente d'électricité (TRV) en France, option
+      // Base, TTC — demande explicite de Cédric le 03/09/2026 ("uniquement l'évolution du
+      // coût du kWh en France depuis 15 ans", pas de comparaison de machines). Remplace
+      // l'ancien graphe "écart cumulé" (comparaison A/B), qui ne correspondait plus à la
+      // demande. Chaque changement officiel de tarif, pas une moyenne annuelle lissée — les
+      // dates et montants viennent de l'historique des délibérations de la CRE (Commission
+      // de Régulation de l'Énergie), repris par https://www.fournisseurs-electricite.com/
+      // contrat-electricite/prix/evolution (consulté le 03/09/2026). Tarif RÉSIDENTIEL (seule
+      // série publique complète et continue) — un cabinet paie un tarif professionnel
+      // négocié, en général indexé sur la même tendance, précisé dans le texte à l'écran.
+      // Donnée fixe, indépendante des machines comparées : dessinée une seule fois au
+      // chargement de la page (voir l'appel dans l'initialisation), jamais recalculée par
+      // `calculer()`.
+      var HISTORIQUE_PRIX_KWH_FRANCE = [
+        { date: "2012-07", prix: 0.1263 },
+        { date: "2013-08", prix: 0.1329 },
+        { date: "2014-11", prix: 0.1401 },
+        { date: "2015-08", prix: 0.1437 },
+        { date: "2016-08", prix: 0.1503 },
+        { date: "2017-08", prix: 0.1466 },
+        { date: "2018-02", prix: 0.1467 },
+        { date: "2018-08", prix: 0.1450 },
+        { date: "2019-06", prix: 0.1531 },
+        { date: "2020-02", prix: 0.1546 },
+        { date: "2020-08", prix: 0.1557 },
+        { date: "2021-02", prix: 0.1582 },
+        { date: "2021-08", prix: 0.1558 },
+        { date: "2022-02", prix: 0.1740 },
+        { date: "2023-02", prix: 0.2062 },
+        { date: "2023-08", prix: 0.2276 },
+        { date: "2024-02", prix: 0.2516 },
+        { date: "2025-02", prix: 0.2016 },
+        { date: "2025-08", prix: 0.1952 },
+        { date: "2026-02", prix: 0.1940 },
+        { date: "2026-08", prix: 0.2001 }
+      ];
 
-        var prixLabel = svgEl("text", { x: 95, y: 14, class: "simulator__axis-label", "text-anchor": "start" });
-        prixLabel.style.fontSize = "11px";
-        prixLabel.style.fontWeight = "700";
-        prixLabel.textContent = "Prix du kWh utilisé : " + eurosCent.format(prixKwh) + " (fixe, jamais cumulé)";
-        svg.appendChild(prixLabel);
+      function dessinerGrapheHistoriquePrixKwh() {
+        var svg = document.getElementById("eneChartHistoPrix");
+        svg.innerHTML = "";
+        var top = 20, chartH = 220;
+        var plotX0 = 95, plotX1 = 600, plotW = plotX1 - plotX0;
+        var data = HISTORIQUE_PRIX_KWH_FRANCE;
+        var maxVal = Math.max.apply(null, data.map(function (d) { return d.prix; }));
+        var yMax = niceCeil(maxVal * 1.08);
 
         for (var g = 0; g <= 5; g++) {
           var val = (yMax * g) / 5;
           var y = top + chartH - (chartH * val) / yMax;
-          svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
-          var labelY = svgEl("text", { x: 87, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
+          svg.appendChild(svgEl("line", { x1: plotX0, x2: plotX1, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: plotX0 - 8, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
           labelY.style.fontSize = "11px";
-          labelY.textContent = euros.format(val);
+          labelY.textContent = eurosCent.format(val) + "/kWh";
           svg.appendChild(labelY);
         }
 
-        var plotX0 = 95, plotX1 = 600, plotW = plotX1 - plotX0;
-        var slotW = plotW / NB_ANNEES_CUMUL;
-        var barWidth = slotW - 4;
-        var lastBarX = 0;
-        for (var an = 1; an <= NB_ANNEES_CUMUL; an++) {
-          var cumul = ecartAbs * an;
-          var barH = yMax > 0 ? (cumul / yMax) * chartH : 0;
-          var barX = plotX0 + (an - 1) * slotW + 2;
+        var slotW = plotW / data.length;
+        var barWidth = slotW - 3;
+        var derniereAnneeAffichee = null;
+        data.forEach(function (d, i) {
+          var barH = yMax > 0 ? (d.prix / yMax) * chartH : 0;
+          var barX = plotX0 + i * slotW + 1.5;
           var barY = top + chartH - barH;
-          svg.appendChild(svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: "#1baf7a" }));
-          var lab = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 16, class: "simulator__axis-label", "text-anchor": "middle" });
-          lab.style.fontSize = "9px";
-          lab.textContent = String(anneeDepart + an);
-          svg.appendChild(lab);
-          if (an === NB_ANNEES_CUMUL) lastBarX = barX;
-        }
+          var annee = d.date.slice(0, 4);
+          var estDernier = i === data.length - 1;
+          svg.appendChild(svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: estDernier ? "#eb6834" : "#2a78d6" }));
+          if (annee !== derniereAnneeAffichee) {
+            var lab = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 16, class: "simulator__axis-label", "text-anchor": "middle" });
+            lab.style.fontSize = "9px";
+            lab.textContent = annee;
+            svg.appendChild(lab);
+            derniereAnneeAffichee = annee;
+          }
+          if (estDernier) {
+            var totalLabel = svgEl("text", { x: barX + barWidth / 2, y: barY - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+            totalLabel.style.fontSize = "13px";
+            totalLabel.style.fontWeight = "800";
+            totalLabel.textContent = eurosCent.format(d.prix);
+            svg.appendChild(totalLabel);
+          }
+        });
 
-        if (totalCumul >= 1) {
-          var totalLabel = svgEl("text", { x: lastBarX + barWidth / 2, y: top + chartH - (yMax > 0 ? (totalCumul / yMax) * chartH : 0) - 10, class: "simulator__axis-label", "text-anchor": "middle" });
-          totalLabel.style.fontSize = "14px";
-          totalLabel.style.fontWeight = "800";
-          totalLabel.textContent = euros.format(totalCumul);
-          svg.appendChild(totalLabel);
-        }
-
-        svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+        svg.appendChild(svgEl("line", { x1: plotX0, x2: plotX1, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
       // ---- Détail à 5 parts, à la demande : clic sur un segment de barre -> un camembert
@@ -1213,7 +1231,7 @@
       function genererPdfBase64() {
         return Promise.all([
           svgVersPng(document.getElementById("eneChart")),
-          svgVersPng(document.getElementById("eneChartCumul")),
+          svgVersPng(document.getElementById("eneChartHistoPrix")),
           imageDataUrl("assets/logo-ced4scale.png")
         ]).then(function (images) {
           var chartPng = images[0], chartCumulPng = images[1], logoPng = images[2];
@@ -1404,12 +1422,12 @@
           ensureSpace(5 * lignesEcart.length + 5);
           doc.text(lignesEcart, 15, y); y += 5 * lignesEcart.length + 6;
 
-          // ---- Écart cumulé sur 15 ans (prix du kWh constant) ----
+          // ---- Évolution du prix du kWh en France (15 dernières années) ----
           ensureSpace(10);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
-          doc.text("Écart cumulé sur 15 ans", 15, y); y += 7;
+          doc.text("Évolution du prix du kWh en France (15 dernières années)", 15, y); y += 7;
           doc.setFont(undefined, "normal");
           var imgCumulWidth = RIGHT_X - 15;
           var imgCumulHeight = (imgCumulWidth * chartCumulPng.height) / chartCumulPng.width;
@@ -1418,8 +1436,10 @@
           y += imgCumulHeight + 6;
           doc.setFontSize(9);
           doc.setTextColor(90);
-          var cumulTexte = document.getElementById("eneCumulCaption").textContent;
-          var lignesCumul = doc.splitTextToSize(cumulTexte + " Projection à prix du kWh constant, sans hypothèse d'évolution du tarif.", RIGHT_X - 15);
+          var lignesCumul = doc.splitTextToSize(
+            "Tarif réglementé de vente d'électricité (TRV), option Base, TTC — tarif résidentiel publié par la CRE à chaque changement. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Source : historique des délibérations tarifaires de la CRE, via fournisseurs-electricite.com (consulté le 03/09/2026).",
+            RIGHT_X - 15
+          );
           ensureSpace(4.5 * lignesCumul.length + 5);
           doc.text(lignesCumul, 15, y); y += 4.5 * lignesCumul.length + 8;
           doc.setTextColor(0);
@@ -1580,6 +1600,7 @@
       document.getElementById("eneClose").addEventListener("click", goBack);
 
       recalculer();
+      dessinerGrapheHistoriquePrixKwh();
     })();
   </script>
   <script src="assets/site-gate.js"></script>
