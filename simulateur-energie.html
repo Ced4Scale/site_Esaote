@@ -198,14 +198,15 @@
         </div>
 
         <div class="simulator__chart-card" id="eneCardHistoPrix">
-          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France (15 dernières années)</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong> publié par la Commission de Régulation de l'Énergie (CRE) à chaque changement. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.</p>
+          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France depuis 2000</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem"><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</p>
           <div class="simulator__chart-wrap">
-            <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 15 ans, en euros par kWh TTC"></svg>
+            <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
           </div>
-          <p class="simulator__hint" style="margin:.4rem 0">Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée.</p>
+          <p class="simulator__hint" style="margin:.4rem 0">Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée).</p>
           <p class="simulator__hint" id="eneHistoDetail" style="font-weight:700;color:#1a1a1a"></p>
-          <p class="simulator__hint" style="margin-top:.4rem">Source : <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">historique des délibérations tarifaires de la CRE</a>, consulté le 03/09/2026.</p>
+          <p class="simulator__hint" style="margin-top:.4rem">Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</p>
         </div>
 
         <div class="simulator__chart-card">
@@ -975,18 +976,40 @@
 
       // Historique réel du tarif réglementé de vente d'électricité (TRV) en France, option
       // Base, TTC — demande explicite de Cédric le 03/09/2026 ("uniquement l'évolution du
-      // coût du kWh en France depuis 15 ans", pas de comparaison de machines). Remplace
-      // l'ancien graphe "écart cumulé" (comparaison A/B), qui ne correspondait plus à la
-      // demande. Chaque changement officiel de tarif, pas une moyenne annuelle lissée — les
-      // dates et montants viennent de l'historique des délibérations de la CRE (Commission
-      // de Régulation de l'Énergie), repris par https://www.fournisseurs-electricite.com/
-      // contrat-electricite/prix/evolution (consulté le 03/09/2026). Tarif RÉSIDENTIEL (seule
-      // série publique complète et continue) — un cabinet paie un tarif professionnel
-      // négocié, en général indexé sur la même tendance, précisé dans le texte à l'écran.
-      // Donnée fixe, indépendante des machines comparées : dessinée une seule fois au
-      // chargement de la page (voir l'appel dans l'initialisation), jamais recalculée par
-      // `calculer()`.
+      // coût du kWh en France", pas de comparaison de machines, puis "démarrer le tableau à
+      // l'année 2000"). Remplace l'ancien graphe "écart cumulé" (comparaison A/B), qui ne
+      // correspondait plus à la demande. Pour 2012-2026 : chaque changement officiel de
+      // tarif, pas une moyenne annuelle lissée — dates et montants viennent de l'historique
+      // des délibérations de la CRE (Commission de Régulation de l'Énergie), repris par
+      // https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution
+      // (consulté le 03/09/2026). Tarif RÉSIDENTIEL (seule série publique complète et
+      // continue) — un cabinet paie un tarif professionnel négocié, en général indexé sur la
+      // même tendance, précisé dans le texte à l'écran. Donnée fixe, indépendante des
+      // machines comparées : dessinée une seule fois au chargement de la page (voir l'appel
+      // dans l'initialisation), jamais recalculée par `calculer()`.
+      //
+      // Pour 2000-2011 (`estime: true`) : AUCUNE série CRE fiable et datée trouvée en accès
+      // public (recherché explicitement, voir mémoire du site) — reconstruit par
+      // extrapolation depuis le seul point connu et sourcé de cette période (2007,
+      // 0,1061 €/kWh TTC) avec le taux de croissance moyen publié par l'INSEE pour
+      // 1986-2007 (+2,6 %/an, INSEE Première n°1746, avril 2019). Ce n'est PAS une mesure
+      // réelle année par année — juste une tendance plausible, validée explicitement par
+      // Cédric le 03/09/2026 après avoir été prévenu du manque de source directe. Distingué
+      // visuellement (barres plus claires) et dans le texte, jamais présenté comme une
+      // donnée CRE.
       var HISTORIQUE_PRIX_KWH_FRANCE = [
+        { date: "2000-01", prix: 0.0887, estime: true },
+        { date: "2001-01", prix: 0.0910, estime: true },
+        { date: "2002-01", prix: 0.0933, estime: true },
+        { date: "2003-01", prix: 0.0957, estime: true },
+        { date: "2004-01", prix: 0.0982, estime: true },
+        { date: "2005-01", prix: 0.1008, estime: true },
+        { date: "2006-01", prix: 0.1034, estime: true },
+        { date: "2007-01", prix: 0.1061, estime: true },
+        { date: "2008-01", prix: 0.1089, estime: true },
+        { date: "2009-01", prix: 0.1117, estime: true },
+        { date: "2010-01", prix: 0.1146, estime: true },
+        { date: "2011-01", prix: 0.1176, estime: true },
         { date: "2012-07", prix: 0.1263 },
         { date: "2013-08", prix: 0.1329 },
         { date: "2014-11", prix: 0.1401 },
@@ -1036,9 +1059,11 @@
           var barH = yMax > 0 ? (d.prix / yMax) * chartH : 0;
           var barX = plotX0 + i * slotW + 1.5;
           var barY = top + chartH - barH;
-          var moisAnnee = d.date.slice(5, 7) + "/" + d.date.slice(0, 4);
+          // Barres estimées (2000-2011) : juste l'année, pas de mois réel à afficher.
+          var moisAnnee = d.estime ? d.date.slice(0, 4) : (d.date.slice(5, 7) + "/" + d.date.slice(0, 4));
           var estDernier = i === data.length - 1;
-          var barRect = svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: estDernier ? "#eb6834" : "#2a78d6" });
+          var couleur = estDernier ? "#eb6834" : (d.estime ? "#a9c2e8" : "#2a78d6");
+          var barRect = svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: couleur });
           // Clic sur une barre -> évolution en % par rapport à l'année la plus ancienne
           // affichée (demande du 03/09/2026), dans l'encadré fixe sous le graphe — jamais
           // une bulle qui suit le curseur (convention du site).
@@ -1076,7 +1101,9 @@
         if (!el) return;
         var pct = prixPlusAncien > 0 ? Math.round(((point.prix - prixPlusAncien) / prixPlusAncien) * 100) : 0;
         var signe = pct >= 0 ? "+" : "";
-        el.innerHTML = eurosCent.format(point.prix) + "/kWh en <strong>" + formaterMoisAnnee(point.date) + "</strong> : <strong>" + signe + pct + " %</strong> par rapport à " + formaterMoisAnnee(HISTORIQUE_PRIX_KWH_FRANCE[0].date) + " (" + eurosCent.format(prixPlusAncien) + "/kWh), l'année la plus ancienne affichée.";
+        var pointRef = HISTORIQUE_PRIX_KWH_FRANCE[0];
+        el.innerHTML = eurosCent.format(point.prix) + "/kWh en <strong>" + formaterMoisAnnee(point.date) + "</strong>" + (point.estime ? " (estimé)" : "") +
+          " : <strong>" + signe + pct + " %</strong> par rapport à " + formaterMoisAnnee(pointRef.date) + " (" + eurosCent.format(prixPlusAncien) + "/kWh" + (pointRef.estime ? ", estimé" : "") + "), l'année la plus ancienne affichée.";
       }
 
       // ---- Détail à 5 parts, à la demande : clic sur un segment de barre -> un camembert
@@ -1445,12 +1472,12 @@
           ensureSpace(5 * lignesEcart.length + 5);
           doc.text(lignesEcart, 15, y); y += 5 * lignesEcart.length + 6;
 
-          // ---- Évolution du prix du kWh en France (15 dernières années) ----
+          // ---- Évolution du prix du kWh en France depuis 2000 ----
           ensureSpace(10);
           doc.setFontSize(10.5);
           doc.setTextColor(0);
           doc.setFont(undefined, "bold");
-          doc.text("Évolution du prix du kWh en France (15 dernières années)", 15, y); y += 7;
+          doc.text("Évolution du prix du kWh en France depuis 2000", 15, y); y += 7;
           doc.setFont(undefined, "normal");
           var imgCumulWidth = RIGHT_X - 15;
           var imgCumulHeight = (imgCumulWidth * chartCumulPng.height) / chartCumulPng.width;
@@ -1460,7 +1487,7 @@
           doc.setFontSize(9);
           doc.setTextColor(90);
           var lignesCumul = doc.splitTextToSize(
-            "Tarif réglementé de vente d'électricité (TRV), option Base, TTC — tarif résidentiel publié par la CRE à chaque changement. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Source : historique des délibérations tarifaires de la CRE, via fournisseurs-electricite.com (consulté le 03/09/2026).",
+            "Tarif réglementé de vente d'électricité (TRV), option Base, TTC, résidentiel. 2012-2026 (barres foncées) : chaque changement réel de tarif, sourcé CRE via fournisseurs-electricite.com (consulté le 03/09/2026). 2000-2011 (barres claires) : estimation par extrapolation depuis le seul point connu de 2007 (0,1061 €/kWh) avec le taux moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an, INSEE Première n°1746) — pas une mesure réelle année par année. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance.",
             RIGHT_X - 15
           );
           ensureSpace(4.5 * lignesCumul.length + 5);
