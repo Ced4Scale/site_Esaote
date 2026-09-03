@@ -197,6 +197,15 @@
           </div>
         </div>
 
+        <div class="simulator__chart-card" id="eneCardCumul15">
+          <h3 style="margin-bottom:.6rem">Écart cumulé sur 15 ans</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Projection à <strong>prix du kWh constant</strong> (celui saisi ci-contre) et conditions d'usage inchangées sur 15 ans — aucune hypothèse d'évolution du tarif de l'électricité n'est appliquée, par prudence. Si le prix augmente d'ici là, l'écart réel sera plus élevé que celui affiché ici.</p>
+          <div class="simulator__chart-wrap">
+            <svg id="eneChartCumul" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Écart de coût énergétique cumulé sur 15 ans entre les deux machines choisies, à prix du kWh constant"></svg>
+          </div>
+          <p class="simulator__hint" id="eneCumulCaption" style="margin-top:.4rem"></p>
+        </div>
+
         <div class="simulator__chart-card">
           <h3 class="simulator__collapse-toggle" id="eneDetailToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail des calculs <span aria-hidden="true">▾</span></h3>
           <div id="eneDetailBody" hidden>
@@ -697,9 +706,11 @@
         var plusEmetteur = diffKwh > 0 ? resultats[0] : resultats[1];
         var moinsEmetteur = diffKwh > 0 ? resultats[1] : resultats[0];
         var ecartKg = Math.round(Math.abs(diffKwh) * CO2_G_PAR_KWH_FRANCE / 1000);
+        var cumulCaptionEl = document.getElementById("eneCumulCaption");
         if (ecartAbs < 1) {
           ecartEl.textContent = "Coût énergétique quasiment identique";
           ecartCo2El.textContent = "Entre les deux machines choisies, à horaires et activité identiques.";
+          cumulCaptionEl.textContent = "Écart quasiment nul entre les deux machines choisies — pas de projection cumulée significative sur 15 ans.";
         } else {
           var ecartMensuel = euros.format(ecartAbs / 12);
           ecartEl.innerHTML = euros.format(ecartAbs) + " / an <span style=\"opacity:.85;font-weight:700\">(-" + pct + " %)</span>";
@@ -709,7 +720,9 @@
             sousTexte += " Soit aussi " + kwhFmt.format(ecartKg) + " kg de CO₂ évités par an (mix électrique français, ADEME).";
           }
           ecartCo2El.innerHTML = sousTexte;
+          cumulCaptionEl.innerHTML = "Sur " + NB_ANNEES_CUMUL + " ans, à prix du kWh et conditions d'usage inchangés, choisir <strong style=\"color:" + SLOT_COLORS_CLAIR[moinsCher.slot] + "\">" + moinsCher.machine.nomCourt + "</strong> plutôt que <strong style=\"color:" + SLOT_COLORS_CLAIR[plusCher.slot] + "\">" + plusCher.machine.nomCourt + "</strong> représenterait " + euros.format(ecartAbs * NB_ANNEES_CUMUL) + " économisés (hors évolution du prix de l'électricité).";
         }
+        dessinerGrapheCumul15Ans(ecartAbs);
       }
 
       function ligneTable(tbody, label, cells, opts) {
@@ -962,6 +975,57 @@
         svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
       }
 
+      // Projection de l'écart annuel (résultat déjà mis en avant dans le bloc "À retenir")
+      // cumulé sur 15 ans, à prix du kWh constant (pas d'hypothèse d'inflation électrique,
+      // demande explicite de Cédric le 03/09/2026 — rester prudent plutôt que d'ajouter une
+      // hypothèse à justifier). Une seule série (l'écart), pas les deux machines séparément.
+      var NB_ANNEES_CUMUL = 15;
+      function dessinerGrapheCumul15Ans(ecartAbs) {
+        var svg = document.getElementById("eneChartCumul");
+        svg.innerHTML = "";
+        var top = 20, chartH = 220;
+        var totalCumul = ecartAbs * NB_ANNEES_CUMUL;
+        var yMax = niceCeil((totalCumul || 0.0001) * 1.08);
+
+        for (var g = 0; g <= 5; g++) {
+          var val = (yMax * g) / 5;
+          var y = top + chartH - (chartH * val) / yMax;
+          svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: 87, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.style.fontSize = "11px";
+          labelY.textContent = euros.format(val);
+          svg.appendChild(labelY);
+        }
+
+        var plotX0 = 95, plotX1 = 600, plotW = plotX1 - plotX0;
+        var slotW = plotW / NB_ANNEES_CUMUL;
+        var barWidth = slotW - 4;
+        for (var an = 1; an <= NB_ANNEES_CUMUL; an++) {
+          var cumul = ecartAbs * an;
+          var barH = yMax > 0 ? (cumul / yMax) * chartH : 0;
+          var barX = plotX0 + (an - 1) * slotW + 2;
+          var barY = top + chartH - barH;
+          svg.appendChild(svgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: "#1baf7a" }));
+          if (an === NB_ANNEES_CUMUL || an % 5 === 0) {
+            var lab = svgEl("text", { x: barX + barWidth / 2, y: top + chartH + 16, class: "simulator__axis-label", "text-anchor": "middle" });
+            lab.style.fontSize = "11px";
+            lab.textContent = "An " + an;
+            svg.appendChild(lab);
+          }
+        }
+
+        if (totalCumul >= 1) {
+          var lastBarX = plotX0 + (NB_ANNEES_CUMUL - 1) * slotW + 2;
+          var totalLabel = svgEl("text", { x: lastBarX + barWidth / 2, y: top + chartH - (yMax > 0 ? (totalCumul / yMax) * chartH : 0) - 10, class: "simulator__axis-label", "text-anchor": "middle" });
+          totalLabel.style.fontSize = "14px";
+          totalLabel.style.fontWeight = "800";
+          totalLabel.textContent = euros.format(totalCumul);
+          svg.appendChild(totalLabel);
+        }
+
+        svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+      }
+
       // ---- Détail à 5 parts, à la demande : clic sur un segment de barre -> un camembert
       // par machine (entre deux patients / examens / IRM / local technique / climatisation),
       // pour ne pas alourdir le graphe principal en continu. Les 5 parts sont mutuellement
@@ -1137,9 +1201,10 @@
       function genererPdfBase64() {
         return Promise.all([
           svgVersPng(document.getElementById("eneChart")),
+          svgVersPng(document.getElementById("eneChartCumul")),
           imageDataUrl("assets/logo-ced4scale.png")
         ]).then(function (images) {
-          var chartPng = images[0], logoPng = images[1];
+          var chartPng = images[0], chartCumulPng = images[1], logoPng = images[2];
           var doc = new window.jspdf.jsPDF({ orientation: "portrait" });
           var RIGHT_X = 195;
           // Filet de sécurité : neutralise toute espace fine/insécable restante avant qu'elle
@@ -1326,6 +1391,26 @@
           var lignesEcart = doc.splitTextToSize(ecartTexte, RIGHT_X - 15);
           ensureSpace(5 * lignesEcart.length + 5);
           doc.text(lignesEcart, 15, y); y += 5 * lignesEcart.length + 6;
+
+          // ---- Écart cumulé sur 15 ans (prix du kWh constant) ----
+          ensureSpace(10);
+          doc.setFontSize(10.5);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text("Écart cumulé sur 15 ans", 15, y); y += 7;
+          doc.setFont(undefined, "normal");
+          var imgCumulWidth = RIGHT_X - 15;
+          var imgCumulHeight = (imgCumulWidth * chartCumulPng.height) / chartCumulPng.width;
+          ensureSpace(imgCumulHeight + 5);
+          doc.addImage(chartCumulPng.dataUrl, "PNG", 15, y, imgCumulWidth, imgCumulHeight, undefined, "MEDIUM");
+          y += imgCumulHeight + 6;
+          doc.setFontSize(9);
+          doc.setTextColor(90);
+          var cumulTexte = document.getElementById("eneCumulCaption").textContent;
+          var lignesCumul = doc.splitTextToSize(cumulTexte + " Projection à prix du kWh constant, sans hypothèse d'évolution du tarif.", RIGHT_X - 15);
+          ensureSpace(4.5 * lignesCumul.length + 5);
+          doc.text(lignesCumul, 15, y); y += 4.5 * lignesCumul.length + 8;
+          doc.setTextColor(0);
 
           if (commentaire) {
             ensureSpace(10);
