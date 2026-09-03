@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <script>
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
+        if (!(v && v.expiresAt && v.expiresAt > Date.now())) {
+          document.documentElement.style.visibility = "hidden";
+        }
+      } catch (e) {
+        document.documentElement.style.visibility = "hidden";
+      }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur de bascule vers un O-scan — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260811-hero-stat-light" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <style>
+    /* Réglages propres à ce simulateur (curseur + courbe), pas encore dans styles.css partagé. */
+    .bascule-champ { margin-bottom: 1rem; }
+    .bascule-champ label { display: block; font-weight: 600; font-size: .88rem; margin-bottom: .4rem; }
+    .bascule-champ select {
+      width: 100%; padding: .75rem .9rem; border: 1px solid var(--line-2); border-radius: 6px;
+      font-family: inherit; font-size: .95rem; background: #fff; color: var(--ink);
+    }
+    .bascule-range { display: flex; align-items: center; gap: .7rem; }
+    .bascule-range input[type=range] { flex: 1; accent-color: var(--red); }
+    .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; }
+
+    .bascule-courbe-zone { position: relative; margin: 2.2rem 0 .5rem; }
+    .bascule-courbe-zone svg { width: 100%; height: 100px; display: block; overflow: visible; }
+    .bascule-courbe-label { position: absolute; top: -1.5rem; left: 0; font-size: .82rem; color: var(--muted); font-weight: 600; }
+    .bascule-slider-labels { position: relative; height: 1.4rem; }
+    .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
+    .bascule-track-wrap { position: relative; }
+    .bascule-slider-track { position: relative; height: 30px; border-radius: 15px; overflow: hidden; background: #2a78d6; box-shadow: inset 0 0 0 1px var(--line); }
+    .bascule-slider-track .fill-oscan { position: absolute; top: 0; right: 0; bottom: 0; background: #eb6834; }
+    input[type=range].bascule-curseur {
+      position: absolute; top: -4px; left: 0; width: 100%; height: 38px; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent; cursor: grab;
+    }
+    input[type=range].bascule-curseur:active { cursor: grabbing; }
+    input[type=range].bascule-curseur::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 38px; border-radius: 6px;
+      background: var(--red); border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: grab;
+    }
+    input[type=range].bascule-curseur::-moz-range-thumb {
+      width: 18px; height: 38px; border-radius: 6px; background: var(--red); border: 2px solid #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: grab;
+    }
+    input[type=range].bascule-curseur::-webkit-slider-runnable-track { background: transparent; }
+    input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
+    .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
+
+    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+    @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
+    .bascule-stat { border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--wash); }
+    .bascule-stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); }
+    .bascule-stat-value { font-size: 1.55rem; font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+    .bascule-stat-detail { display: flex; flex-direction: column; gap: .15rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .84rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+    .bascule-stat-gain { margin-top: .4rem; padding-top: .4rem; border-top: 1px dashed var(--line); font-size: .86rem; font-weight: 700; color: #1a7a3d; }
+    .bascule-stat-gain.negatif { color: var(--red); }
+    .bascule-stat.result .bascule-stat-value { color: #1a7a3d; }
+    .bascule-stat.result.negatif .bascule-stat-value { color: var(--red); }
+
+    .bascule-capnote { font-size: .84rem; margin-top: .8rem; padding: .6rem .85rem; border-radius: 8px; }
+    .bascule-capnote.ok { background: var(--success-bg); color: var(--success-tx); }
+    .bascule-capnote.warn { background: #fff2e0; color: #8a5a15; }
+
+    .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    .bascule-mini h3 { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
+    .bascule-mini-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    .bascule-mini-table th, .bascule-mini-table td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
+    .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+  </style>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>Bascule vers un O-scan</strong>
+    </div>
+    <button class="document-viewer__close" id="boClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Coût faible — preuves chiffrées</span>
+      <h1>À partir de quand basculer l'activité MSK vers un O-scan ?</h1>
+      <p>Répartis l'activité annuelle entre une IRM tunnel (1,5&nbsp;T ou 3&nbsp;T) et un O-scan dédié aux
+      examens membres/extrémités, et regarde le chiffre d'affaires et le résultat net changer en temps
+      réel — forfait technique dégressif réel (barème UNCAM par paliers), hors acte intellectuel du
+      radiologue (perçu dans les deux cas, donc neutre dans la comparaison).</p>
+      <p class="simulator__source">Forfait technique : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>.
+      Le curseur ne dépasse jamais la capacité physique de l'O-scan (débit horaire × 9&nbsp;h d'ouverture/jour ×
+      264&nbsp;jours/an) ni le volume réel d'examens membres/extrémités disponible dans l'activité totale.</p>
+    </div>
+
+    <div class="simulator__layout">
+      <form id="boForm">
+        <div class="simulator__machine-box" data-slot="0" style="border-left-color:#2a78d6">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" style="color:#2a78d6">Machine A — IRM tunnel</h4>
+          <div class="bascule-champ">
+            <label for="boClasseA">Champ</label>
+            <select id="boClasseA">
+              <option value="t15">1,5 T</option>
+              <option value="sup15">3 T</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="boLoyerA">Loyer mensuel, SAV inclus (moyenné sur 7 ans)</label>
+            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerA" value="25.000" style="width:6rem" /><span>€/mois</span></div>
+          </div>
+          <div class="field">
+            <label for="boManipA">Manip en poste</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boManipA" value="2" /><span>manip</span></div>
+          </div>
+          <div class="field">
+            <label for="boDebitA">Examens par heure</label>
+            <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitA" value="4" /><span>FT/h</span></div>
+          </div>
+          <div class="field">
+            <label for="boVolumeA">Activité totale actuelle</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boVolumeA" value="14000" style="width:5rem" /><span>ex./an</span></div>
+          </div>
+          <div class="bascule-champ" style="margin-bottom:0">
+            <label for="boPartExtremites">Part membres/extrémités</label>
+            <div class="bascule-range">
+              <input type="range" id="boPartExtremites" min="0" max="100" value="35" />
+              <span class="val" id="boPartExtremitesVal">35 %</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="simulator__machine-box" data-slot="1" style="border-left-color:#eb6834">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" style="color:#eb6834">O-scan</h4>
+          <div class="field">
+            <label for="boLoyerO">Loyer mensuel, SAV inclus (moyenné sur 7 ans)</label>
+            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerO" value="12.000" style="width:6rem" /><span>€/mois</span></div>
+          </div>
+          <div class="field">
+            <label>Manip en poste</label>
+            <div class="simulator__field-suffix"><input type="text" value="1" disabled /><span>connu</span></div>
+          </div>
+          <p class="simulator__hint" style="margin:-.4rem 0 1rem">100 % de son activité en examens membres/extrémités (verrouillé).</p>
+          <div class="field">
+            <label for="boDebitO">Examens par heure</label>
+            <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitO" value="3" /><span>FT/h</span></div>
+          </div>
+        </div>
+
+        <div class="simulator__field-group">
+          <div class="field" style="margin-bottom:0">
+            <label for="boKwh">Coût du kWh</label>
+            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
+          </div>
+        </div>
+      </form>
+
+      <div>
+        <div class="simulator__chart-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
+            <h3 style="margin:0;font-size:1.05rem">Répartition de l'activité</h3>
+            <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale</button>
+          </div>
+
+          <div class="bascule-courbe-zone">
+            <svg id="boCourbeSvg" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total selon la répartition de l'activité">
+              <line id="boCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
+              <path id="boCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
+              <line id="boLigneSeuil" x1="0" y1="0" x2="0" y2="170" stroke="#b8790b" stroke-width="1.5" stroke-dasharray="5,3"></line>
+              <text id="boLabelSeuil" x="0" y="16" font-size="15" fill="#b8790b" font-weight="800" text-anchor="middle"></text>
+            </svg>
+            <div class="bascule-courbe-label" id="boCourbeLabel">—</div>
+          </div>
+          <div class="bascule-slider-labels">
+            <span class="lbl" id="boLblA" style="color:#2a78d6">Machine A : 14.000 ex./an</span>
+            <span class="lbl" id="boLblO" style="color:#eb6834">O-scan : 0 ex./an</span>
+          </div>
+          <div class="bascule-track-wrap">
+            <div class="bascule-slider-track">
+              <div class="fill-oscan" id="boFillOscan" style="width:0%"></div>
+            </div>
+            <input type="range" class="bascule-curseur" id="boCurseur" min="0" max="14000" step="10" value="14000" />
+          </div>
+          <div class="bascule-ends"><span>0</span><span id="boEndMax">14.000</span></div>
+
+          <div class="bascule-stats">
+            <div class="bascule-stat">
+              <div class="bascule-stat-label">Chiffre d'affaires total (FT)</div>
+              <div class="bascule-stat-value" id="boStatCA">—</div>
+              <div class="bascule-stat-detail">
+                <span style="color:#2a78d6"><span id="boNomClasseA1">1,5 T</span> : <span id="boStatCA_A">—</span></span>
+                <span style="color:#eb6834">O-scan : <span id="boStatCA_O">—</span></span>
+              </div>
+            </div>
+            <div class="bascule-stat result" id="boStatResultBox">
+              <div class="bascule-stat-label">Résultat net total</div>
+              <div class="bascule-stat-value" id="boStatResultat">—</div>
+              <div class="bascule-stat-detail">
+                <span style="color:#2a78d6"><span id="boNomClasseA2">1,5 T</span> : <span id="boStatResultat_A">—</span></span>
+                <span style="color:#eb6834">O-scan : <span id="boStatResultat_O">—</span></span>
+              </div>
+              <div class="bascule-stat-gain" id="boStatGainOscan">—</div>
+            </div>
+          </div>
+
+          <p class="bascule-capnote" id="boCapaciteNote"></p>
+
+          <div class="bascule-mini">
+            <h3>Forfait technique par palier</h3>
+            <div style="overflow-x:auto">
+              <table class="bascule-mini-table">
+                <thead><tr><th>Palier</th><th>Jusqu'à</th><th><span id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th><th>Jusqu'à</th><th style="color:#eb6834">O-scan</th></tr></thead>
+                <tbody id="boBaremeMini"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <details class="simulator__chart-card simulator__chart-card--collapsible">
+          <summary>Hypothèses de ce simulateur</summary>
+          <p class="simulator__hint">
+            Salaire MERM net 1.800&nbsp;€/mois (÷0,78 brut ×1,42 charges patronales, base 151,67&nbsp;h/mois
+            légales, soit 21,61&nbsp;€/h) ; électricité limitée au coût des gradients pendant l'acquisition
+            (12&nbsp;min pour la 1,5&nbsp;T, 10&nbsp;min pour la 3&nbsp;T, 15&nbsp;min pour l'O-scan, delta de
+            puissance mesure−veille active) — pas de climatisation ni de socle électrique fixe dans cette
+            version ; capacité maximale de l'O-scan déduite de son propre débit horaire × 9&nbsp;h/jour ×
+            264&nbsp;jours/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone
+            Province, hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison).
+          </p>
+        </details>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      function fmt(n, dec) {
+        dec = dec === undefined ? 0 : dec;
+        return new Intl.NumberFormat("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec));
+      }
+      function eur(n, dec) { return fmt(n, dec) + " €"; }
+      function lireMontant(el) { return parseFloat(String(el.value).replace(/\./g, "").replace(",", ".")) || 0; }
+
+      var FT_CLASSES = {
+        t15:   { REF: 4750, SEUIL1: 8000, SEUIL2: 11000, plein: 154.77, reduit1: 52.72, reduit2: 44.58, plafond: 29.30 },
+        sup15: { REF: 4500, SEUIL1: 8000, SEUIL2: 11000, plein: 181.29, reduit1: 75.40, reduit2: 65.65, plafond: 42.47 },
+        le05:  { REF: 3500, SEUIL1: 8000, SEUIL2: 11000, plein: 109.58, reduit1: 73.94, reduit2: 59.53, plafond: 29.95 }
+      };
+      function ftAnnuel(classeKey, volumeAnnuel) {
+        var c = FT_CLASSES[classeKey];
+        var v = Math.max(0, volumeAnnuel);
+        var total = Math.min(v, c.REF) * c.plein;
+        if (v > c.REF) total += (Math.min(v, c.SEUIL1) - c.REF) * c.reduit1;
+        if (v > c.SEUIL1) total += (Math.min(v, c.SEUIL2) - c.SEUIL1) * c.reduit2;
+        if (v > c.SEUIL2) total += (v - c.SEUIL2) * c.plafond;
+        return total;
+      }
+
+      var ELEC = {
+        t15:   { deltaKw: 20.2 - 8.2,  dureeMin: 12 },
+        sup15: { deltaKw: 22.4 - 10.8, dureeMin: 10 },
+        le05:  { deltaKw: 1.0 - 0.3,   dureeMin: 15 }
+      };
+      var NET_MERM = 1800;
+      var HEURES_LEGALES_MOIS = 151.67;
+      var JOURS_OUVERTURE_AN = 264;
+      var AMPLITUDE_HEURES_JOUR = 9;
+      var NOM_CLASSE = { t15: "1,5 T", sup15: "3 T" };
+
+      function coutHoraireMerm() {
+        return (NET_MERM / 0.78) * 1.42 / HEURES_LEGALES_MOIS;
+      }
+      function capaciteAnnuelle(examensParHeure) {
+        return examensParHeure * AMPLITUDE_HEURES_JOUR * JOURS_OUVERTURE_AN;
+      }
+      function resultat(classeKey, volumeAnnuel, nbManip, examensParHeure, loyerMensuel, kwh) {
+        var ca = ftAnnuel(classeKey, volumeAnnuel);
+        var coutManip = examensParHeure > 0 ? (coutHoraireMerm() / examensParHeure) * nbManip * volumeAnnuel : 0;
+        var e = ELEC[classeKey];
+        var coutElec = volumeAnnuel * e.deltaKw * (e.dureeMin / 60) * kwh;
+        var loyerAnnuel = volumeAnnuel > 0 ? loyerMensuel * 12 : 0;
+        return { ca: ca, net: ca - coutManip - coutElec - loyerAnnuel };
+      }
+      function totalPour(X, N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh) {
+        var rA = resultat(classeA, X, manipA, debitA, loyerA, kwh);
+        var rO = resultat("le05", N - X, 1, debitO, loyerO, kwh);
+        return rA.net + rO.net;
+      }
+
+      var curseur = document.getElementById("boCurseur");
+
+      function trouverOptimum(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites) {
+        var capaciteO = capaciteAnnuelle(debitO);
+        var volumeExtremitesDispo = N * partExtremites;
+        var maxOscan = Math.min(capaciteO, volumeExtremitesDispo);
+        var Xmin = Math.max(0, N - maxOscan);
+        Xmin = Math.ceil(Xmin / 10) * 10;
+        var candidats = [Xmin, N,
+          FT_CLASSES[classeA].REF, FT_CLASSES[classeA].SEUIL1, FT_CLASSES[classeA].SEUIL2,
+          N - FT_CLASSES.le05.REF, N - FT_CLASSES.le05.SEUIL1, N - FT_CLASSES.le05.SEUIL2];
+        var meilleurX = Xmin, meilleurVal = -Infinity;
+        candidats.forEach(function (X) {
+          if (X < Xmin || X > N) return;
+          var rA = resultat(classeA, X, manipA, debitA, loyerA, kwh);
+          var rO = resultat("le05", N - X, 1, debitO, loyerO, kwh);
+          var total = rA.net + rO.net;
+          if (total > meilleurVal) { meilleurVal = total; meilleurX = X; }
+        });
+        return meilleurX;
+      }
+
+      var courbeEchelle = null;
+      function dessinerCourbe(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites) {
+        var xs = [];
+        for (var i = 0; i <= 200; i++) { xs.push(Math.round(N * i / 200)); }
+        xs = xs.concat([0, 1, Math.max(0, N - 1), N,
+          FT_CLASSES[classeA].REF, FT_CLASSES[classeA].SEUIL1, FT_CLASSES[classeA].SEUIL2,
+          N - FT_CLASSES.le05.REF, N - FT_CLASSES.le05.SEUIL1, N - FT_CLASSES.le05.SEUIL2]);
+        xs = xs.filter(function (x) { return x >= 0 && x <= N; });
+        xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
+
+        var pts = xs.map(function (x) { return { x: x, y: totalPour(x, N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh) }; });
+        var yMin = Math.min.apply(null, pts.map(function (p) { return p.y; }));
+        var yMax = Math.max.apply(null, pts.map(function (p) { return p.y; }));
+        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+        var pad = (yMax - yMin) * 0.08;
+        yMin -= pad; yMax += pad;
+
+        var W = 640, H = 170, top = 8, bottom = 8;
+        function px(x) { return N > 0 ? (x / N) * W : 0; }
+        function py(y) { return top + (1 - (y - yMin) / (yMax - yMin)) * (H - top - bottom); }
+
+        var d = pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
+        document.getElementById("boCourbePath").setAttribute("d", d);
+
+        var zeroLine = document.getElementById("boCourbeZero");
+        var yZeroPx = py(0);
+        if (yZeroPx >= top - 1 && yZeroPx <= H - bottom + 1) {
+          zeroLine.setAttribute("y1", yZeroPx); zeroLine.setAttribute("y2", yZeroPx);
+          zeroLine.style.display = "";
+        } else {
+          zeroLine.style.display = "none";
+        }
+
+        var volumeExtremitesDispo = N * partExtremites;
+        var Xseuil = Math.min(N, Math.max(0, N - volumeExtremitesDispo));
+        var xSeuilPx = px(Xseuil);
+        var ligneSeuil = document.getElementById("boLigneSeuil");
+        var labelSeuil = document.getElementById("boLabelSeuil");
+        ligneSeuil.setAttribute("x1", xSeuilPx); ligneSeuil.setAttribute("x2", xSeuilPx);
+        labelSeuil.setAttribute("x", xSeuilPx);
+        labelSeuil.textContent = fmt(partExtremites * 100, 0) + " %";
+        if (Xseuil <= 0 || Xseuil >= N) {
+          ligneSeuil.style.display = "none"; labelSeuil.style.display = "none";
+        } else {
+          ligneSeuil.style.display = ""; labelSeuil.style.display = "";
+        }
+
+        courbeEchelle = { N: N, classeA: classeA, loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh, px: px, py: py };
+      }
+
+      function positionnerMarqueur(X) {
+        if (!courbeEchelle) return;
+        var y = totalPour(X, courbeEchelle.N, courbeEchelle.classeA, courbeEchelle.loyerA, courbeEchelle.manipA, courbeEchelle.debitA, courbeEchelle.loyerO, courbeEchelle.debitO, courbeEchelle.kwh);
+        document.getElementById("boCourbeLabel").textContent = "Résultat net à cette répartition : " + eur(y);
+      }
+
+      function dessinerBaremeMini(classeA, nomClasseA) {
+        document.getElementById("boNomClasseA3").textContent = nomClasseA;
+        var cA = FT_CLASSES[classeA], cO = FT_CLASSES.le05;
+        var lignes = [
+          { label: "Plein",    jusquaA: cA.REF,    tarifA: cA.plein,   jusquaO: cO.REF,    tarifO: cO.plein },
+          { label: "Palier 1", jusquaA: cA.SEUIL1, tarifA: cA.reduit1, jusquaO: cO.SEUIL1, tarifO: cO.reduit1 },
+          { label: "Palier 2", jusquaA: cA.SEUIL2, tarifA: cA.reduit2, jusquaO: cO.SEUIL2, tarifO: cO.reduit2 },
+          { label: "Plafond",  jusquaA: Infinity,  tarifA: cA.plafond, jusquaO: Infinity,  tarifO: cO.plafond }
+        ];
+        var html = "";
+        lignes.forEach(function (l) {
+          var txtA = l.jusquaA === Infinity ? "au-delà" : fmt(l.jusquaA) + " ex./an";
+          var txtO = l.jusquaO === Infinity ? "au-delà" : fmt(l.jusquaO) + " ex./an";
+          html += "<tr><td>" + l.label + "</td>"
+            + "<td>" + txtA + "</td><td><strong>" + eur(l.tarifA, 2) + "</strong></td>"
+            + "<td>" + txtO + "</td><td><strong>" + eur(l.tarifO, 2) + "</strong></td></tr>";
+        });
+        document.getElementById("boBaremeMini").innerHTML = html;
+      }
+
+      function repositionnerCurseur() {
+        var classeA = document.getElementById("boClasseA").value;
+        var loyerA = lireMontant(document.getElementById("boLoyerA"));
+        var manipA = parseInt(document.getElementById("boManipA").value, 10) || 1;
+        var debitA = parseFloat(document.getElementById("boDebitA").value) || 1;
+        var N = parseInt(document.getElementById("boVolumeA").value, 10) || 0;
+        var loyerO = lireMontant(document.getElementById("boLoyerO"));
+        var debitO = parseFloat(document.getElementById("boDebitO").value) || 1;
+        var kwh = parseFloat(document.getElementById("boKwh").value.replace(",", ".")) || 0;
+        var partExtremites = parseInt(document.getElementById("boPartExtremites").value, 10) / 100;
+        curseur.max = N;
+        document.getElementById("boEndMax").textContent = fmt(N);
+        curseur.value = trouverOptimum(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites);
+        dessinerCourbe(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites);
+        recalculer();
+      }
+
+      function attacherMontant(id) {
+        var el = document.getElementById(id);
+        el.addEventListener("blur", function () {
+          el.value = fmt(lireMontant(el));
+          repositionnerCurseur();
+        });
+      }
+      ["boLoyerA", "boLoyerO"].forEach(attacherMontant);
+      document.getElementById("boKwh").addEventListener("blur", repositionnerCurseur);
+      document.getElementById("boClasseA").addEventListener("change", repositionnerCurseur);
+      ["boManipA", "boDebitA", "boVolumeA", "boDebitO"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", repositionnerCurseur);
+      });
+      document.getElementById("boPartExtremites").addEventListener("input", function () {
+        document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
+        repositionnerCurseur();
+      });
+      curseur.addEventListener("input", recalculer);
+      document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
+
+      function recalculer() {
+        var classeA = document.getElementById("boClasseA").value;
+        var nomClasseA = NOM_CLASSE[classeA];
+        document.getElementById("boNomClasseA1").textContent = nomClasseA;
+        document.getElementById("boNomClasseA2").textContent = nomClasseA;
+        var loyerA = lireMontant(document.getElementById("boLoyerA"));
+        var manipA = parseInt(document.getElementById("boManipA").value, 10) || 1;
+        var debitA = parseFloat(document.getElementById("boDebitA").value) || 1;
+        var volumeTotal = parseInt(document.getElementById("boVolumeA").value, 10) || 0;
+        var loyerO = lireMontant(document.getElementById("boLoyerO"));
+        var debitO = parseFloat(document.getElementById("boDebitO").value) || 1;
+        var kwh = parseFloat(document.getElementById("boKwh").value.replace(",", ".")) || 0;
+        var partExtremites = parseInt(document.getElementById("boPartExtremites").value, 10) / 100;
+
+        var X = parseInt(curseur.value, 10);
+        if (X > volumeTotal) X = volumeTotal;
+        var volA = X;
+        var volO = volumeTotal - X;
+        var pct = volumeTotal > 0 ? (X / volumeTotal * 100) : 100;
+
+        document.getElementById("boFillOscan").style.width = (100 - pct) + "%";
+        document.getElementById("boLblA").style.left = (pct / 2) + "%";
+        document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " ex./an";
+        document.getElementById("boLblO").style.left = (pct + (100 - pct) / 2) + "%";
+        document.getElementById("boLblO").textContent = "O-scan : " + fmt(volO) + " ex./an";
+
+        positionnerMarqueur(X);
+
+        var rA = resultat(classeA, volA, manipA, debitA, loyerA, kwh);
+        var rO = resultat("le05", volO, 1, debitO, loyerO, kwh);
+
+        var caTotal = rA.ca + rO.ca;
+        var netTotal = rA.net + rO.net;
+
+        document.getElementById("boStatCA").textContent = eur(caTotal);
+        document.getElementById("boStatCA_A").textContent = eur(rA.ca);
+        document.getElementById("boStatCA_O").textContent = eur(rO.ca);
+        document.getElementById("boStatResultat").textContent = eur(netTotal);
+        document.getElementById("boStatResultat_A").textContent = eur(rA.net);
+        document.getElementById("boStatResultat_O").textContent = eur(rO.net);
+        document.getElementById("boStatResultBox").classList.toggle("negatif", netTotal < 0);
+
+        var rSansOscan = resultat(classeA, volumeTotal, manipA, debitA, loyerA, kwh);
+        var gainOscan = netTotal - rSansOscan.net;
+        var gainEl = document.getElementById("boStatGainOscan");
+        gainEl.classList.toggle("negatif", gainOscan < 0);
+        gainEl.textContent = (gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(gainOscan)) + " grâce à l'O-scan (vs tout sur la " + nomClasseA + ")";
+
+        var volOJour = volO / JOURS_OUVERTURE_AN;
+        var capaciteJour = debitO * AMPLITUDE_HEURES_JOUR;
+        var capaciteAnnuelleO = capaciteJour * JOURS_OUVERTURE_AN;
+        var volumeExtremitesDispo = volumeTotal * partExtremites;
+        var capaciteNote = document.getElementById("boCapaciteNote");
+
+        if (volO > volumeExtremitesDispo + 1e-6 && volO > capaciteAnnuelleO + 1e-6) {
+          capaciteNote.className = "bascule-capnote warn";
+          capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse à la fois sa capacité physique (" + fmt(capaciteAnnuelleO) + " ex./an) ET le volume d'examens membres/extrémités disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale).";
+        } else if (volO > volumeExtremitesDispo + 1e-6) {
+          capaciteNote.className = "bascule-capnote warn";
+          capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse le volume d'examens membres/extrémités réellement disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale) — l'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.";
+        } else if (volO > capaciteAnnuelleO + 1e-6) {
+          capaciteNote.className = "bascule-capnote warn";
+          capaciteNote.textContent = "⚠ " + fmt(volOJour, 1) + " patients/jour sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + AMPLITUDE_HEURES_JOUR + " h/jour = " + fmt(capaciteJour, 1) + " patients/jour max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
+        } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
+          capaciteNote.className = "bascule-capnote warn";
+          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — la plus basse entre sa capacité physique et le volume d'examens membres/extrémités disponible).";
+        } else {
+          capaciteNote.className = "bascule-capnote ok";
+          capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
+        }
+
+        dessinerBaremeMini(classeA, nomClasseA);
+      }
+
+      function goBack() {
+        if (window.history.length > 1) { window.history.back(); } else { window.location.href = "index.html#produits"; }
+      }
+      document.getElementById("boClose").addEventListener("click", goBack);
+
+      repositionnerCurseur();
+    })();
+  </script>
+  <script src="assets/site-gate.js"></script>
+</body>
+</html>
