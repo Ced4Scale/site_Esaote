@@ -399,6 +399,11 @@
         return new Intl.NumberFormat("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec));
       }
       function eur(n, dec) { return fmt(n, dec) + " €"; }
+      // Comme fmt(), mais sans imposer de nombre de décimales fixe : n'arrondit pas et
+      // n'ajoute pas de zéro superflu (4,5 reste "4,5", 5 reste "5").
+      function fmtExact(n) {
+        return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(n);
+      }
       function lireMontant(el) { return parseFloat(String(el.value).replace(/\./g, "").replace(",", ".")) || 0; }
 
       var FT_CLASSES = {
@@ -861,7 +866,7 @@
           capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaine(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmt(debitO) + " FT/h).";
+          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmtExact(debitO) + " FT/h).";
         } else {
           capaciteNote.className = "bascule-capnote ok";
           capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
