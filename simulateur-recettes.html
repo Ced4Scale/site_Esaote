@@ -22,6 +22,23 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260811-hero-stat-light" />
+  <style>
+    /* Roue crantée "Réglages avancés" (motif repris de simulateur-bascule-oscan.html
+       le 04/09/2026, sur demande de Cédric) : panneau ancré à gauche, sans fond
+       assombri — le tableau et le graphique restent visibles et cliquables pendant
+       le réglage, pour voir l'effet en temps réel des 2 bascules déplacées ici. */
+    .sim-gear-btn {
+      background: none; border: 0; padding: .1rem .2rem; margin: 0; cursor: pointer;
+      font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
+    }
+    .sim-gear-btn:hover, .sim-gear-btn:focus-visible { opacity: 1; }
+    .sim-hyp-body { padding: clamp(1.3rem, 3vw, 1.8rem); }
+    .sim-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
+    .sim-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
+    #simHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #simHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #simHypOverlay .modal__scroll { height: 100%; }
+  </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-fallback-fix"></script>
@@ -48,7 +65,10 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <h3 style="margin-bottom:1.2rem">Paramètres</h3>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+          <h3 style="margin:0">Paramètres</h3>
+          <button type="button" class="sim-gear-btn" id="simBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+        </div>
         <div class="field">
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
@@ -80,22 +100,6 @@
         <div class="field">
           <label for="simDateSel1"><span class="simulator__swatch-text" data-slot="1">Date 2</span></label>
           <select id="simDateSel1"></select>
-        </div>
-
-        <div class="field">
-          <label><mark class="simulator__highlight">Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="simRejoue" value="oui" checked /> Oui — suivre la vraie chronologie</label>
-            <label><input type="radio" name="simRejoue" value="non" /> Non — geler le tarif de départ</label>
-          </div>
-        </div>
-
-        <div class="field">
-          <label><mark class="simulator__highlight">Corriger les recettes de l'inflation (euros constants) ?</mark></label>
-          <div class="simulator__toggle">
-            <label><input type="radio" name="simInflation" value="non" checked /> Non — euros courants</label>
-            <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (valeur de l'année 1)</label>
-          </div>
         </div>
 
         <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
@@ -194,6 +198,36 @@
       </div>
     </div>
   </main>
+
+  <div class="modal-overlay" id="simHypOverlay" role="dialog" aria-modal="true" aria-labelledby="simHypTitle" hidden>
+    <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="modal__close" id="simHypClose" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="sim-hyp-body">
+          <h3 id="simHypTitle">Réglages avancés</h3>
+          <div class="field">
+            <label><mark class="simulator__highlight">Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="simRejoue" value="oui" checked /> Oui — suivre la vraie chronologie</label>
+              <label><input type="radio" name="simRejoue" value="non" /> Non — geler le tarif de départ</label>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label><mark class="simulator__highlight">Corriger les recettes de l'inflation (euros constants) ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="simInflation" value="non" checked /> Non — euros courants</label>
+              <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (valeur de l'année 1)</label>
+            </div>
+          </div>
+          <p class="simulator__hint" style="margin-top:.8rem">Chaque champ s'applique tout de suite — regarde le
+          tableau et le graphique changer pendant que tu ajustes.</p>
+          <div class="sim-hyp-actions">
+            <button type="button" class="btn" id="simHypDone">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -910,6 +944,20 @@
       });
       document.querySelectorAll('input[name="simInflation"]').forEach(function (radio) {
         radio.addEventListener("change", recalculer);
+      });
+      var simHypOverlay = document.getElementById("simHypOverlay");
+      document.getElementById("simBtnHypotheses").addEventListener("click", function () {
+        simHypOverlay.hidden = false;
+        simHypOverlay.classList.add("is-open");
+      });
+      function fermerSimHyp() {
+        simHypOverlay.classList.remove("is-open");
+        simHypOverlay.hidden = true;
+      }
+      document.getElementById("simHypClose").addEventListener("click", fermerSimHyp);
+      document.getElementById("simHypDone").addEventListener("click", fermerSimHyp);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && simHypOverlay.classList.contains("is-open")) fermerSimHyp();
       });
       machineSelect.addEventListener("change", function () {
         remplirSelectsDates();
