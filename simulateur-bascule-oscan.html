@@ -348,6 +348,7 @@
                     <div class="bascule-stat-gain" id="boJokerVolEl">—</div>
                     <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
                     <div class="bascule-stat-gain" id="boJokerGain">—</div>
+                    <div class="bascule-stat-gain" id="boJokerGainGlobal" style="border-top:1px dashed var(--line);padding-top:.4rem;margin-top:.4rem">—</div>
                   </div>
                 </div>
               </div>
@@ -1125,18 +1126,23 @@
         var jokerVolEl = document.getElementById("boJokerVolEl");
         var jokerGainCAEl = document.getElementById("boJokerGainCA");
         var jokerGainEl = document.getElementById("boJokerGain");
+        var jokerGainGlobalEl = document.getElementById("boJokerGainGlobal");
         if (capaciteJoker > 0) {
           jokerVolEl.textContent = "+ " + fmt(capaciteJoker) + " examens réalisables/an";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "+ " + eur(gainCAJoker) + " de CA en plus";
           jokerGainEl.classList.toggle("negatif", gainNetJoker < 0);
           jokerGainEl.textContent = (gainNetJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainNetJoker)) + " de résultat net en plus";
+          jokerGainGlobalEl.classList.toggle("negatif", netTotal + gainNetJoker < 0);
+          jokerGainGlobalEl.textContent = eur(netTotal + gainNetJoker) + " de résultat net global";
         } else {
           jokerVolEl.textContent = "—";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "—";
           jokerGainEl.classList.remove("negatif");
           jokerGainEl.textContent = "—";
+          jokerGainGlobalEl.classList.remove("negatif");
+          jokerGainGlobalEl.textContent = "—";
         }
         document.getElementById("boJokerCapaciteNote").innerHTML =
           capaciteJoker > 0
