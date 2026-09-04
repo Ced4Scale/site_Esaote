@@ -914,23 +914,18 @@
       // glacée/bombée — un dégradé linéaire clair→foncé ne suffisait pas à lire
       // comme "brillant" (signalé par Cédric, la version précédente avait l'air
       // juste dégradée, pas réfléchissante).
-      function ajouterGradientGlace(defs, colorHexBrut) {
-        var colorHex = vivifier(colorHexBrut);
-        glossGradSeq++;
-        var id = "glossGrad" + glossGradSeq;
-        var grad = svgEl("radialGradient", { id: id, cx: "32%", cy: "22%", r: "85%" });
-        grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": eclaircir(colorHex, 0.92) }));
-        grad.appendChild(svgEl("stop", { offset: "16%", "stop-color": eclaircir(colorHex, 0.55) }));
-        grad.appendChild(svgEl("stop", { offset: "45%", "stop-color": colorHex }));
-        grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": assombrir(colorHex, 0.3) }));
-        defs.appendChild(grad);
-        return "url(#" + id + ")";
+      // Figure simplifiée le 04/09/2026 (2e image de référence de Cédric, "plus
+      // simple comme figure") : couleur PLATE par part (pas de dégradé glacé, pas
+      // de reflet/point de brillance) — juste la couleur vive de la part, une
+      // tranche plate plus foncée en dessous, et l'ombre portée déjà en place.
+      function couleurPlate(colorHexBrut) {
+        return vivifier(colorHexBrut);
       }
 
       function dessinerUnCamembert(cx, cy, r, camembert) {
         // Géométrie du rendu "glacé/3D" : ellipse (vue en légère plongée),
         // parts écartées du centre, tranche foncée extrudée en dessous.
-        var ryRatio = 0.48, depth = r * 0.58, explode = r * 0.24;
+        var ryRatio = 0.62, depth = r * 0.42, explode = r * 0.16;
         var defs = svgEl("defs", {});
         svg2.appendChild(defs);
         // Pas de `filter` ni `mix-blend-mode` CSS ici : sur cette page, ces deux
@@ -971,56 +966,14 @@
         // se retrouve caché par la paroi de la part voisine.
         slices.forEach(function (s) {
           var wall = sideWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle, depth);
-          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: assombrir(vivifier(s.p.color), 0.38) }));
+          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: assombrir(couleurPlate(s.p.color), 0.32) }));
         });
         slices.forEach(function (s) {
-          var fillUrl = ajouterGradientGlace(defs, s.p.color);
           pieGroup.appendChild(svgEl("path", {
             d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle),
-            fill: fillUrl, stroke: "#fcfcfb", "stroke-width": "1.5"
+            fill: couleurPlate(s.p.color), stroke: "#fcfcfb", "stroke-width": "1.5"
           }));
         });
-        // Reflet lumineux — en plus du dégradé radial par part, qui ne suffisait
-        // pas seul à lire comme "brillant" (signalé par Cédric). Posé UNIQUEMENT
-        // sur la part la plus grande (celle qui domine visuellement, comme sur la
-        // photo de référence), et rogné à SA PROPRE forme exacte (sa position déjà
-        // écartée) — jamais à la silhouette globale non écartée du camembert : avec
-        // des parts très séparées (explode élevé), un rognage global tombe à côté
-        // et découpe le reflet n'importe où sur une petite part décalée (bug
-        // rencontré en testant). Chute d'opacité brutale (quasi opaque jusqu'à
-        // 45%, transparent dès 60%) pour lire comme un vrai éclat, pas un
-        // dégradé doux ; plus un petit point de brillance dur en plus.
-        var plusGrandeSlice = slices.reduce(function (a, b) { return b.fraction > a.fraction ? b : a; });
-        (function () {
-          var s = plusGrandeSlice;
-          glossGradSeq++;
-          var clipId = "glossClip" + glossGradSeq;
-          var clip = svgEl("clipPath", { id: clipId });
-          clip.appendChild(svgEl("path", { d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle) }));
-          defs.appendChild(clip);
-          var hlId = "glossHighlight" + glossGradSeq;
-          var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
-          hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.9" }));
-          hlGrad.appendChild(svgEl("stop", { offset: "45%", "stop-color": "#ffffff", "stop-opacity": "0.75" }));
-          hlGrad.appendChild(svgEl("stop", { offset: "60%", "stop-color": "#ffffff", "stop-opacity": "0" }));
-          hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
-          defs.appendChild(hlGrad);
-          pieGroup.appendChild(svgEl("ellipse", {
-            cx: s.ecx - r * 0.15, cy: s.ecy - r * ryRatio * 0.5, rx: r * 0.42, ry: r * ryRatio * 0.22,
-            transform: "rotate(-18 " + (s.ecx - r * 0.15) + " " + (s.ecy - r * ryRatio * 0.5) + ")",
-            fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
-          }));
-          var hotId = "glossHot" + glossGradSeq;
-          var hotGrad = svgEl("radialGradient", { id: hotId, cx: "50%", cy: "50%", r: "50%" });
-          hotGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.98" }));
-          hotGrad.appendChild(svgEl("stop", { offset: "70%", "stop-color": "#ffffff", "stop-opacity": "0.6" }));
-          hotGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
-          defs.appendChild(hotGrad);
-          pieGroup.appendChild(svgEl("ellipse", {
-            cx: s.ecx - r * 0.32, cy: s.ecy - r * ryRatio * 0.55, rx: r * 0.1, ry: r * ryRatio * 0.09,
-            fill: "url(#" + hotId + ")", "clip-path": "url(#" + clipId + ")"
-          }));
-        })();
 
         // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
         // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
@@ -1132,11 +1085,16 @@
       // colonne — même logique que le filtre `lignesMontants` d'origine.
       function afficherSeuils() {
         var classe = classeCourante();
+        // Toujours "non amorti" (même hypothèse que le reste de la page, voir plus
+        // haut) et la zone actuellement choisie — la ligne "Activité de référence"
+        // affiche maintenant le vrai montant du tarif plein (demandé par Cédric le
+        // 04/09/2026, remplace le texte "Tarif plein"), qui dépend de ces deux-là.
+        var zone = document.getElementById("simZone").value;
         var lignesDates = dateSelects.map(function (select, i) {
           if (!select.value) return null;
           var ligne = classe.dates.filter(function (d) { return d.iso === select.value; })[0];
           if (!ligne) return null;
-          return { couleur: SLOT_COLORS[i], label: ligne.label, reduits: ligne.reduits };
+          return { couleur: SLOT_COLORS[i], label: ligne.label, reduits: ligne.reduits, plein: ligne.plein[zone].nonAmorti };
         }).filter(Boolean);
 
         var head = "<th>Seuil</th><th>Jusqu'à</th>";
@@ -1148,12 +1106,13 @@
         function ligneTable(label, jusqua, champ) {
           var tds = "<td>" + label + "</td><td>" + jusqua + "</td>";
           lignesDates.forEach(function (l) {
-            tds += "<td>" + (champ ? euros.format(l.reduits[champ]) : "Tarif plein") + "</td>";
+            var montant = champ === "plein" ? l.plein : l.reduits[champ];
+            tds += "<td>" + euros.format(montant) + "</td>";
           });
           return "<tr>" + tds + "</tr>";
         }
         document.getElementById("simSeuilsBody").innerHTML =
-          ligneTable("Activité de référence", seuilsEntiers.format(classe.REF) + " examens/an", null) +
+          ligneTable("Activité de référence", seuilsEntiers.format(classe.REF) + " examens/an", "plein") +
           ligneTable("Seuil 1", seuilsEntiers.format(classe.SEUIL1) + " examens/an", "seuil1") +
           ligneTable("Seuil 2", seuilsEntiers.format(classe.SEUIL2) + " examens/an", "seuil2") +
           ligneTable("Au-delà (plafond)", "—", "plafond");
@@ -1165,6 +1124,9 @@
       ["simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+      // Le tarif plein affiché dans "Seuils de cette classe" dépend de la zone —
+      // recalcule le tableau aussi quand elle change (pas seulement les dates).
+      document.getElementById("simZone").addEventListener("change", afficherSeuils);
       dateSelects.forEach(function (select) { select.addEventListener("change", function () { afficherSeuils(); recalculer(); }); });
       document.querySelectorAll('input[name="simRejoue"]').forEach(function (radio) {
         radio.addEventListener("change", recalculer);
