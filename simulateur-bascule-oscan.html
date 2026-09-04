@@ -98,19 +98,20 @@
     input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
     .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
 
-    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
-    .bascule-stat-joker { perspective: 1200px; min-height: 540px; }
+    .bascule-stat-joker { perspective: 1200px; }
+    .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
-      position: relative; width: 100%; height: 100%; min-height: 520px;
+      position: relative; width: 100%; height: 100%; min-height: 100%;
       transition: transform .5s cubic-bezier(.2,.7,.3,1); transform-style: preserve-3d;
     }
-    .bascule-joker-row { margin-top: .55rem; }
-    .bascule-joker-row label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .2rem; }
-    .bascule-joker-row .simulator__field-suffix input { width: 4rem; }
-    .bascule-joker-row--3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
-    .bascule-joker-row--3 .simulator__field-suffix input { width: 100%; }
+    .bascule-joker-fields { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: .6rem; }
+    .bascule-joker-field { flex: 1 1 6rem; min-width: 6rem; }
+    .bascule-joker-field label { display: block; font-size: .76rem; font-weight: 600; margin-bottom: .2rem; }
+    .bascule-joker-field .simulator__field-suffix input { width: 100%; }
+    .bascule-joker-resultats { display: flex; flex-wrap: wrap; gap: 1.5rem; }
     .bascule-stat-joker.is-flipped .bascule-joker-flip { transform: rotateY(180deg); }
     .bascule-joker-face {
       position: absolute; inset: 0; backface-visibility: hidden; border-radius: 8px;
@@ -123,10 +124,10 @@
       background: linear-gradient(135deg, var(--wash), #fff);
     }
     .bascule-joker-front:hover { border-color: var(--red); }
-    .bascule-joker-icon { font-size: 2.2rem; line-height: 1; }
-    .bascule-joker-title { font-weight: 700; font-size: .92rem; }
-    .bascule-joker-cta { font-size: .82rem; font-weight: 700; color: var(--red); }
-    .bascule-joker-back { transform: rotateY(180deg); text-align: left; }
+    .bascule-joker-icon { font-size: 9rem; line-height: 1; }
+    .bascule-joker-back { transform: rotateY(180deg); text-align: left; padding: .6rem .9rem; overflow: hidden; }
+    .bascule-joker-back .simulator__hint { margin: .4rem 0; font-size: .78rem; }
+    .bascule-joker-back .bascule-stat-gain { margin-top: 0; padding-top: 0; border-top: 0; }
     .bascule-joker-retour {
       position: absolute; top: .5rem; right: .5rem; background: none; border: 0; cursor: pointer;
       font-size: 1rem; opacity: .6; padding: .1rem .3rem;
@@ -277,6 +278,9 @@
               <path id="boCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
               <line id="boLigneSeuil" x1="0" y1="0" x2="0" y2="170" stroke="#b8790b" stroke-width="1.5" stroke-dasharray="5,3"></line>
               <text id="boLabelSeuil" x="0" y="-16" font-size="15" fill="#b8790b" font-weight="800" text-anchor="middle"></text>
+              <text id="boLabelPic" x="0" y="-30" font-size="12" font-weight="700" text-anchor="middle">
+                <tspan id="boLabelPicA" fill="#2a78d6"></tspan><tspan fill="#8a8f98"> / </tspan><tspan id="boLabelPicO" fill="#eb6834"></tspan>
+              </text>
               <line id="boLignePointMortA" x1="0" y1="0" x2="0" y2="170" stroke="#2a78d6" stroke-width="1.5" stroke-dasharray="3,3"></line>
               <text id="boLabelPointMortA" x="0" y="-4" font-size="10" fill="#2a78d6" font-weight="700" text-anchor="middle"></text>
               <line id="boLignePointMortO" x1="0" y1="0" x2="0" y2="170" stroke="#eb6834" stroke-width="1.5" stroke-dasharray="3,3"></line>
@@ -313,39 +317,39 @@
             </div>
             <div class="bascule-stat-joker" id="boJokerCard">
               <div class="bascule-joker-flip" id="boJokerFlip">
-                <button type="button" class="bascule-joker-face bascule-joker-front" id="boJokerFrontBtn" aria-expanded="false">
-                  <span class="bascule-joker-icon">🃏</span>
-                  <span class="bascule-joker-title">Et si l'O-scan attirait plus d'activité MSK ?</span>
-                  <span class="bascule-joker-cta">Cliquer pour essayer →</span>
+                <button type="button" class="bascule-joker-face bascule-joker-front" id="boJokerFrontBtn" aria-expanded="false" aria-label="Et si l'O-scan attirait plus d'activité MSK ? Cliquer pour essayer.">
+                  <span class="bascule-joker-icon" aria-hidden="true">🃏</span>
                 </button>
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
                   <div class="bascule-stat-label">🃏 Heures en plus sur l'O-scan</div>
-                  <div class="bascule-joker-row">
-                    <label for="boJokerDebit">Examens/h dans ces heures</label>
-                    <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boJokerDebit" value="3" /><span>FT/h</span></div>
-                  </div>
-                  <div class="bascule-joker-row bascule-joker-row--3">
-                    <div>
+                  <div class="bascule-joker-fields">
+                    <div class="bascule-joker-field">
+                      <label for="boJokerDebit">Examens/h</label>
+                      <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boJokerDebit" value="3" /><span>FT/h</span></div>
+                    </div>
+                    <div class="bascule-joker-field">
                       <label for="boJokerSemaine">Lun-ven</label>
                       <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSemaine" value="0" /><span>h/j</span></div>
                     </div>
-                    <div>
+                    <div class="bascule-joker-field">
                       <label for="boJokerSamedi">Samedi</label>
                       <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSamedi" value="0" /><span>h/j</span></div>
                     </div>
-                    <div>
+                    <div class="bascule-joker-field">
                       <label for="boJokerDimanche">Dimanche</label>
                       <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerDimanche" value="0" /><span>h/j</span></div>
                     </div>
+                    <div class="bascule-joker-field">
+                      <label for="boJokerVol">Combien ajouter</label>
+                      <div class="simulator__field-suffix"><input type="number" min="0" step="10" id="boJokerVol" value="0" /><span>ex./an</span></div>
+                    </div>
                   </div>
-                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.5rem 0 0"></p>
-                  <div class="bascule-joker-row">
-                    <label for="boJokerVol">Combien en ajouter</label>
-                    <div class="simulator__field-suffix"><input type="number" min="0" step="10" id="boJokerVol" value="0" /><span>ex./an</span></div>
+                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.5rem 0"></p>
+                  <div class="bascule-joker-resultats">
+                    <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
+                    <div class="bascule-stat-gain" id="boJokerGain">—</div>
                   </div>
-                  <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
-                  <div class="bascule-stat-gain" id="boJokerGain">—</div>
                 </div>
               </div>
             </div>
@@ -452,7 +456,7 @@
             <label for="boHypHeuresDimanche">Amplitude d'ouverture, dimanche</label>
             <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresDimanche" value="0" /><span>h/jour</span></div>
           </div>
-          <div class="field" style="margin-bottom:0">
+          <div class="field">
             <label for="boHypModeleA">Modèle d'IRM (Machine A) — pour l'électricité</label>
             <select id="boHypModeleA">
               <option value="">Valeur générique 1,5 T / 3 T</option>
@@ -460,6 +464,16 @@
             <p class="simulator__hint">Estimations Ced4Scale à partir des guides d'implantation
             officiels, pas des données constructeur — détail et niveau de confiance par modèle sur
             la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</p>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="boHypZone">Zone tarifaire (forfait technique)</label>
+            <select id="boHypZone">
+              <option value="province">Province</option>
+              <option value="idf">Île-de-France</option>
+              <option value="paris">Paris</option>
+            </select>
+            <p class="simulator__hint">Seul le tarif plein change selon la zone — les paliers réduits et le
+            plafond sont identiques partout.</p>
           </div>
           <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde la
           case "Résultat net total" changer pendant que tu ajustes.</p>
@@ -521,15 +535,22 @@
       }
       function lireMontant(el) { return parseFloat(String(el.value).replace(/\./g, "").replace(",", ".")) || 0; }
 
+      // Barème UNCAM au 1er janvier 2027 (tarif "non amorti"), forfait technique —
+      // seul le tarif plein varie par zone (Paris/IDF/Province), les paliers réduits
+      // et le plafond sont identiques dans les 3 zones. Source : même jeu de données
+      // que assets/forfaits-techniques-data.js (non chargé ici pour éviter un conflit
+      // de nom sur FT_CLASSES, qui a une forme différente sur cette page).
       var FT_CLASSES = {
-        t15:   { REF: 4750, SEUIL1: 8000, SEUIL2: 11000, plein: 154.77, reduit1: 52.72, reduit2: 44.58, plafond: 29.30 },
-        sup15: { REF: 4500, SEUIL1: 8000, SEUIL2: 11000, plein: 181.29, reduit1: 75.40, reduit2: 65.65, plafond: 42.47 },
-        le05:  { REF: 3500, SEUIL1: 8000, SEUIL2: 11000, plein: 109.58, reduit1: 73.94, reduit2: 59.53, plafond: 29.95 }
+        t15:   { REF: 4750, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 154.71, idf: 151.46, province: 150.30 }, reduit1: 52.72, reduit2: 44.58, plafond: 29.30 },
+        sup15: { REF: 4500, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 178.15, idf: 176.47, province: 176.05 }, reduit1: 75.40, reduit2: 65.65, plafond: 42.47 },
+        le05:  { REF: 3500, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 114.56, idf: 111.39, province: 106.41 }, reduit1: 73.94, reduit2: 59.53, plafond: 29.95 }
       };
+      var ZONE_TARIFAIRE = "province"; // "paris" | "idf" | "province", réglable via la roue crantée
       function ftAnnuel(classeKey, volumeAnnuel) {
         var c = FT_CLASSES[classeKey];
+        var plein = c.pleinParZone[ZONE_TARIFAIRE];
         var v = Math.max(0, volumeAnnuel);
-        var total = Math.min(v, c.REF) * c.plein;
+        var total = Math.min(v, c.REF) * plein;
         if (v > c.REF) total += (Math.min(v, c.SEUIL1) - c.REF) * c.reduit1;
         if (v > c.SEUIL1) total += (Math.min(v, c.SEUIL2) - c.SEUIL1) * c.reduit2;
         if (v > c.SEUIL2) total += (v - c.SEUIL2) * c.plafond;
@@ -563,6 +584,7 @@
       var AMPLITUDE_O_DIMANCHE = 0;
       var SEMAINES_PAR_AN = 52; // fixe, non éditable (pas de semaines de fermeture distinctes)
       var NOM_CLASSE = { t15: "1,5 T", sup15: "3 T" };
+      var NOM_ZONE = { paris: "Paris", idf: "Île-de-France", province: "Province" };
 
       function coutHoraireMerm() {
         return (NET_MERM / COEF_BRUT) * COEF_CHARGES / HEURES_LEGALES_MOIS;
@@ -657,6 +679,14 @@
         var d = pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
         document.getElementById("boCourbePath").setAttribute("d", d);
 
+        // Répartition machine A / O-scan au point culminant de la courbe (meilleur
+        // résultat net toutes positions confondues) — affichée au-dessus du graphe.
+        var pic = pts.reduce(function (meilleur, p) { return p.y > meilleur.y ? p : meilleur; }, pts[0]);
+        var xPic = px(pic.x);
+        document.getElementById("boLabelPic").setAttribute("x", xPic);
+        document.getElementById("boLabelPicA").textContent = "Machine A : " + fmt(pic.x) + " ex./an";
+        document.getElementById("boLabelPicO").textContent = "O-scan : " + fmt(N - pic.x) + " ex./an";
+
         var zeroLine = document.getElementById("boCourbeZero");
         var yZeroPx = py(0);
         if (yZeroPx >= top - 1 && yZeroPx <= H - bottom + 1) {
@@ -715,7 +745,7 @@
         document.getElementById("boNomClasseA3").textContent = nomClasseA;
         var cA = FT_CLASSES[classeA], cO = FT_CLASSES.le05;
         var lignes = [
-          { label: "Plein",    jusquaA: cA.REF,    tarifA: cA.plein,   jusquaO: cO.REF,    tarifO: cO.plein },
+          { label: "Plein",    jusquaA: cA.REF,    tarifA: cA.pleinParZone[ZONE_TARIFAIRE],   jusquaO: cO.REF,    tarifO: cO.pleinParZone[ZONE_TARIFAIRE] },
           { label: "Palier 1", jusquaA: cA.SEUIL1, tarifA: cA.reduit1, jusquaO: cO.SEUIL1, tarifO: cO.reduit1 },
           { label: "Palier 2", jusquaA: cA.SEUIL2, tarifA: cA.reduit2, jusquaO: cO.SEUIL2, tarifO: cO.reduit2 },
           { label: "Plafond",  jusquaA: Infinity,  tarifA: cA.plafond, jusquaO: Infinity,  tarifO: cO.plafond }
@@ -787,7 +817,8 @@
       // défaut définies plus haut.
       var HYP_DEFAUTS = {
         netMerm: NET_MERM, heuresLegales: HEURES_LEGALES_MOIS,
-        heuresSemaine: AMPLITUDE_A_SEMAINE, heuresSamedi: AMPLITUDE_A_SAMEDI, heuresDimanche: AMPLITUDE_A_DIMANCHE
+        heuresSemaine: AMPLITUDE_A_SEMAINE, heuresSamedi: AMPLITUDE_A_SAMEDI, heuresDimanche: AMPLITUDE_A_DIMANCHE,
+        zone: ZONE_TARIFAIRE
       };
       var hypOverlay = document.getElementById("boHypOverlay");
 
@@ -849,8 +880,8 @@
           ligne("Amplitude O-scan (capacité)", fmt(AMPLITUDE_O_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_O_SAMEDI, 1) +
             " h samedi / " + fmt(AMPLITUDE_O_DIMANCHE, 1) + " h dimanche, × son débit horaire × " +
             fmt(SEMAINES_PAR_AN) + " semaines/an") +
-          ligne("Forfait technique", "Barème dégressif réel UNCAM au 1ᵉʳ juillet 2027, zone Province, hors acte " +
-            "intellectuel (perçu par les deux machines, neutre dans la comparaison)");
+          ligne("Forfait technique", "Barème dégressif réel UNCAM au 1ᵉʳ janvier 2027, zone " + NOM_ZONE[ZONE_TARIFAIRE] +
+            ", hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison)");
       }
 
       function ouvrirHypotheses() {
@@ -859,6 +890,7 @@
         document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
+        document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
@@ -883,6 +915,7 @@
         if (heuresSamedi >= 0) AMPLITUDE_A_SAMEDI = heuresSamedi;
         if (heuresDimanche >= 0) AMPLITUDE_A_DIMANCHE = heuresDimanche;
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
+        ZONE_TARIFAIRE = document.getElementById("boHypZone").value;
         majResumeHypotheses();
         repositionnerCurseur();
       }
@@ -900,15 +933,17 @@
         document.getElementById(id).addEventListener("input", appliquerHypotheses);
       });
       document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
+      document.getElementById("boHypZone").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
         AMPLITUDE_A_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_A_SAMEDI = HYP_DEFAUTS.heuresSamedi;
-        AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = "";
+        AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = ""; ZONE_TARIFAIRE = HYP_DEFAUTS.zone;
         document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
         document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
+        document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         remplirModelesA();
         majResumeHypotheses();
         repositionnerCurseur();
@@ -1077,7 +1112,7 @@
         var jokerSemaine = parseFloat(document.getElementById("boJokerSemaine").value.replace(",", ".")) || 0;
         var jokerSamedi = parseFloat(document.getElementById("boJokerSamedi").value.replace(",", ".")) || 0;
         var jokerDimanche = parseFloat(document.getElementById("boJokerDimanche").value.replace(",", ".")) || 0;
-        var capaciteJoker = Math.round(debitJoker * heuresParSemaine(jokerSemaine, jokerSamedi, jokerDimanche) * SEMAINES_PAR_AN);
+        var capaciteJoker = Math.max(0, Math.round(debitJoker * heuresParSemaine(jokerSemaine, jokerSamedi, jokerDimanche) * SEMAINES_PAR_AN) - volO);
         var jokerInput = document.getElementById("boJokerVol");
         var jokerVol = Math.max(0, parseInt(jokerInput.value, 10) || 0);
         if (jokerVol > capaciteJoker) { jokerVol = capaciteJoker; jokerInput.value = jokerVol; }
@@ -1104,8 +1139,8 @@
         }
         document.getElementById("boJokerCapaciteNote").textContent =
           capaciteJoker > 0
-            ? "Ces heures en plus permettraient de réaliser jusqu'à " + fmt(capaciteJoker) + " examens supplémentaires/an."
-            : "Ajoute des heures ci-dessus pour voir combien d'examens en plus ça permettrait.";
+            ? "Ces heures en plus permettraient de réaliser jusqu'à " + fmt(capaciteJoker) + " examens supplémentaires/an (déjà déduit : " + fmt(volO) + " ex./an réalisés dans la simulation)."
+            : "Ajoute des heures ci-dessus pour voir combien d'examens en plus ça permettrait (les " + fmt(volO) + " ex./an déjà réalisés dans la simulation sont déjà déduits).";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
@@ -1304,7 +1339,7 @@
           drawRecapRow("", [e.nomClasseA, "O-scan"], true);
           var cA = FT_CLASSES[e.classeA], cO = FT_CLASSES.le05;
           [
-            ["Plein", cA.REF, cA.plein, cO.REF, cO.plein],
+            ["Plein", cA.REF, cA.pleinParZone[ZONE_TARIFAIRE], cO.REF, cO.pleinParZone[ZONE_TARIFAIRE]],
             ["Palier 1", cA.SEUIL1, cA.reduit1, cO.SEUIL1, cO.reduit1],
             ["Palier 2", cA.SEUIL2, cA.reduit2, cO.SEUIL2, cO.reduit2],
             ["Plafond", null, cA.plafond, null, cO.plafond]
