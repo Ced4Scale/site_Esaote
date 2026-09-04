@@ -42,6 +42,15 @@
        change rien au padding fixé en rem par .stats-table) pour tenir sur une
        seule ligne par entrée sans dépasser — demandé par Cédric le 05/09/2026. */
     #cvActiviteTable td { padding: .3rem .3rem .3rem 0; }
+    /* Curseur sous "Résultat à votre activité" (motif repris de
+       simulateur-bascule-oscan.html, .bascule-range) — change directement le
+       nombre de patients par jour ou par an, selon la bascule choisie dans la
+       roue crantée. Bornes recalculées à chaque `recalculer()` (fonction
+       `ajusterSliderActivite()`), pas fixes, pour rester cohérentes que l'on
+       raisonne en jour ou en an. */
+    .cv-activite-slider { display: flex; align-items: center; gap: .8rem; margin-top: 1rem; }
+    .cv-activite-slider input[type=range] { flex: 1; accent-color: var(--red); }
+    .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -190,6 +199,10 @@
             </thead>
             <tbody id="cvSyntheseBody"></tbody>
           </table>
+          </div>
+          <div class="cv-activite-slider">
+            <input type="range" id="cvActiviteSlider" min="0" max="40" step="0.5" value="15" aria-label="Activité (patients)" />
+            <div class="cv-activite-slider-value" id="cvActiviteSliderLabel"></div>
           </div>
         </div>
 
@@ -655,9 +668,37 @@
         });
       });
 
+      // Curseur sous "Résultat à votre activité" — reflète et modifie la même
+      // valeur que le champ "Patients par jour/an" (id="cvActivite"), jamais
+      // une valeur séparée qui pourrait diverger. Bornes recalculées à chaque
+      // appel (pas fixes en dur) : le plafond "par an" dépend du nombre de
+      // jours d'ouverture par mois (réglable dans la roue crantée), donc du
+      // mode actuellement choisi.
+      var cvActiviteSlider = document.getElementById("cvActiviteSlider");
+      var cvActiviteSliderLabel = document.getElementById("cvActiviteSliderLabel");
+      var PLAFOND_PATIENTS_JOUR = 40; // ordre de grandeur large, jamais une vraie limite physique
+      function ajusterSliderActivite() {
+        var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var joursParMois = Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1);
+        if (mode === "jour") {
+          cvActiviteSlider.min = 0; cvActiviteSlider.max = PLAFOND_PATIENTS_JOUR; cvActiviteSlider.step = 0.5;
+        } else {
+          cvActiviteSlider.min = 0; cvActiviteSlider.max = Math.round(PLAFOND_PATIENTS_JOUR * joursParMois * 12); cvActiviteSlider.step = 10;
+        }
+        var activiteInput = document.getElementById("cvActivite");
+        var valeur = Math.max(0, parseFloat(activiteInput.value) || 0);
+        cvActiviteSlider.value = Math.min(valeur, +cvActiviteSlider.max);
+        cvActiviteSliderLabel.textContent = patientsFmt.format(valeur) + (mode === "jour" ? " patients/jour" : " patients/an");
+      }
+      cvActiviteSlider.addEventListener("input", function () {
+        document.getElementById("cvActivite").value = cvActiviteSlider.value;
+        recalculer();
+      });
+
       var derniers = null;
 
       function recalculer() {
+        ajusterSliderActivite();
         afficherSeuilsBareme();
         var params = {
           dateIso: dateSelect.value,
