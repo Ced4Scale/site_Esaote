@@ -182,6 +182,11 @@
     .bascule-capnote { font-size: .84rem; margin-top: .8rem; padding: .6rem .85rem; border-radius: 8px; }
     .bascule-capnote.ok { background: var(--success-bg); color: var(--success-tx); }
     .bascule-capnote.warn { background: #fff2e0; color: #8a5a15; }
+    .bascule-capnote-status { font-weight: 700; margin-bottom: .3rem; }
+    .bascule-capnote-table { width: 100%; border-collapse: collapse; font-size: .82rem; font-variant-numeric: tabular-nums; }
+    .bascule-capnote-table td { padding: .1rem 0; }
+    .bascule-capnote-table td:last-child { text-align: right; font-weight: 600; }
+    .bascule-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .8rem; }
 
     .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
     .bascule-mini h3, .bascule-mini summary { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
@@ -364,7 +369,7 @@
             </div>
           </div>
 
-          <p class="bascule-capnote" id="boCapaciteNote"></p>
+          <div class="bascule-capnote" id="boCapaciteNote"></div>
 
           <details class="bascule-mini simulator__chart-card--collapsible" open>
             <summary>Forfait technique par palier</summary>
@@ -536,6 +541,21 @@
       }
       function lireMontant(el) { return parseFloat(String(el.value).replace(/\./g, "").replace(",", ".")) || 0; }
 
+      // Construit le contenu de la note de capacité O-scan (boCapaciteNote) en mode
+      // tableau : icône + statut court, puis les valeurs numériques en lignes label/
+      // valeur (pas en phrase), puis un conseil optionnel en italique. Demandé par
+      // Cédric le 04/09/2026, même principe que la note de la carte joker.
+      function capnoteHTML(icone, statut, lignes, conseil) {
+        var html = "<div class=\"bascule-capnote-status\">" + icone + " " + statut + "</div>";
+        html += "<table class=\"bascule-capnote-table\"><tbody>";
+        lignes.forEach(function (l) {
+          html += "<tr><td>" + l[0] + "</td><td>" + l[1] + "</td></tr>";
+        });
+        html += "</tbody></table>";
+        if (conseil) html += "<div class=\"bascule-capnote-hint\">" + conseil + "</div>";
+        return html;
+      }
+
       // Barème UNCAM au 1er janvier 2027 (tarif "non amorti"), forfait technique —
       // seul le tarif plein varie par zone (Paris/IDF/Province), les paliers réduits
       // et le plafond sont identiques dans les 3 zones. Source : même jeu de données
@@ -685,8 +705,8 @@
         var pic = pts.reduce(function (meilleur, p) { return p.y > meilleur.y ? p : meilleur; }, pts[0]);
         var xPic = px(pic.x);
         document.getElementById("boLabelPic").setAttribute("x", xPic);
-        document.getElementById("boLabelPicA").textContent = "Machine A : " + fmt(pic.x) + " ex./an";
-        document.getElementById("boLabelPicO").textContent = "O-scan : " + fmt(N - pic.x) + " ex./an";
+        document.getElementById("boLabelPicA").textContent = fmt(pic.x);
+        document.getElementById("boLabelPicO").textContent = fmt(N - pic.x);
 
         var zeroLine = document.getElementById("boCourbeZero");
         var yZeroPx = py(0);
@@ -1082,22 +1102,46 @@
 
         if (volO > volumeExtremitesDispo + 1e-6 && volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse à la fois sa capacité physique (" + fmt(capaciteAnnuelleO) + " ex./an) ET le volume d'examens membres/extrémités disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale).";
+          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse à la fois sa capacité physique ET le volume disponible", [
+            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Capacité physique max", fmt(capaciteAnnuelleO) + " ex./an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
+          ]);
         } else if (volO > volumeExtremitesDispo + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse le volume d'examens membres/extrémités réellement disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale) — l'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.";
+          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse le volume d'examens membres/extrémités disponible", [
+            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
+          ], "L'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.");
         } else if (volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaineO(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
+          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse ce que son débit permet physiquement", [
+            ["Volume O-scan", fmt(volOSemaine, 1) + " ex./semaine"],
+            ["Débit", fmt(debitO, 1) + " ex./h"],
+            ["Ouverture", fmt(heuresParSemaineO(), 1) + " h/semaine"],
+            ["Capacité max", fmt(capaciteSemaine, 1) + " ex./semaine"]
+          ], "Il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.");
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) - 0.5) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan : tu es à sa limite à " + fmtExact(debitO) + " FT/h (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an max). Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.";
+          capaciteNote.innerHTML = capnoteHTML("◐", "À sa limite", [
+            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Débit", fmtExact(debitO) + " FT/h"],
+            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an"]
+          ], "Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.");
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan : tu es proche de sa limite à " + fmtExact(debitO) + " FT/h (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an max). Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.";
+          capaciteNote.innerHTML = capnoteHTML("◐", "Proche de sa limite", [
+            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Débit", fmtExact(debitO) + " FT/h"],
+            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an"]
+          ], "Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.");
         } else {
           capaciteNote.className = "bascule-capnote ok";
-          capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
+          capaciteNote.innerHTML = capnoteHTML("✓", "Dans sa capacité", [
+            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Capacité physique max", fmt(capaciteAnnuelleO) + " ex./an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an"]
+          ]);
         }
 
         // Carte joker : capacité RESTANTE de l'O-scan, dans ses plages d'ouverture
