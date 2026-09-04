@@ -371,7 +371,7 @@
         <div class="simulator__chart-card">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
             <h3 style="margin:0;font-size:1.05rem">Répartition de l'activité</h3>
-            <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale</button>
+            <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale<span id="boBtnOptimumPct" style="font-size:.72rem;opacity:.85"></span></button>
           </div>
 
           <div class="bascule-courbe-zone">
@@ -1185,6 +1185,11 @@
         var debitO = parseFloat(document.getElementById("boDebitO").value) || 1;
         var kwh = parseFloat(document.getElementById("boKwh").value.replace(",", ".")) || 0;
         var partExtremites = parseInt(document.getElementById("boPartExtremites").value, 10) / 100;
+        // Petit rappel du % part membres/extrémités sur le bouton "Rentabilité
+        // maximale", ajouté le 04/09/2026 sur demande de Cédric — pour qu'on
+        // sache à quelle hypothèse (curseur du dessous) correspond l'optimum
+        // qu'il propose, sans avoir à remonter les yeux vers le curseur.
+        document.getElementById("boBtnOptimumPct").textContent = " (à " + fmt(partExtremites * 100, 0) + " %)";
 
         var X = parseInt(curseur.value, 10);
         if (X > volumeTotal) X = volumeTotal;
