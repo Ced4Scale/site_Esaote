@@ -664,10 +664,17 @@
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
           var ecartPm = pire.pointMortJour - meilleur.pointMortJour;
           var ecart7ans = lignesSynthese[meilleur.slot].resultat7ans - lignesSynthese[pire.slot].resultat7ans;
-          heroEl.innerHTML = "<strong>" + meilleur.machine.nomCourt + " atteint son point mort avec " +
-            patientsFmt.format(ecartPm) + " patient(s) de moins par jour</strong> que " + pire.machine.nomCourt +
-            " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour)." +
-            " Soit <strong>" + euros.format(ecart7ans) + " de résultat en plus sur 7 ans</strong>, à votre activité renseignée plus bas.";
+          heroEl.innerHTML =
+            "<table style=\"width:100%;border-collapse:collapse;font-size:1rem\">" +
+            "<tr><th style=\"text-align:left;padding:.15rem .5rem .35rem 0;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75\">Machine</th>" +
+            "<th style=\"text-align:left;padding:.15rem 0 .35rem;font-size:.72rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75\">Point mort</th></tr>" +
+            "<tr><td style=\"padding:.2rem .5rem .2rem 0;font-weight:700\">" + meilleur.machine.nomCourt + "</td><td style=\"padding:.2rem 0\">" + patientsFmt.format(meilleur.pointMortJour) + " patients/jour</td></tr>" +
+            "<tr><td style=\"padding:.2rem .5rem .2rem 0;font-weight:700\">" + pire.machine.nomCourt + "</td><td style=\"padding:.2rem 0\">" + patientsFmt.format(pire.pointMortJour) + " patients/jour</td></tr>" +
+            "<tr><td style=\"padding:.2rem .5rem .2rem 0;font-weight:700\">Écart</td><td style=\"padding:.2rem 0\">" + patientsFmt.format(ecartPm) + " patient(s)/jour</td></tr>" +
+            "<tr><td style=\"padding:.45rem .5rem .2rem 0;font-weight:700;border-top:1px solid currentColor\">Résultat en plus sur 7 ans</td>" +
+            "<td style=\"padding:.45rem 0 .2rem;font-weight:800;border-top:1px solid currentColor\">" + euros.format(ecart7ans) + "</td></tr>" +
+            "</table>" +
+            "<p style=\"margin:.5rem 0 0;font-size:.82rem;opacity:.8\">À votre activité renseignée plus bas.</p>";
         } else {
           heroEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
         }
