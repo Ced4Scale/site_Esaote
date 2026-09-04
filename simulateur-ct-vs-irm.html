@@ -94,8 +94,11 @@
               <span>patients</span>
             </div>
           </div>
-          <p class="simulator__hint" id="cvActiviteEquivalent"></p>
-          <p class="simulator__hint" id="cvResultatActivite"></p>
+          <div style="overflow-x:auto; margin:.4rem 0 0">
+            <table class="stats-table" style="max-width:420px">
+              <tbody id="cvActiviteTableBody"></tbody>
+            </table>
+          </div>
           <p class="simulator__warning" id="cvCapaciteWarning" hidden></p>
         </div>
 
@@ -662,9 +665,9 @@
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
         var modeActiviteCourant = document.querySelector('input[name="cvActiviteMode"]:checked').value;
-        document.getElementById("cvActiviteEquivalent").textContent = modeActiviteCourant === "jour"
-          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + " patients/an."
-          : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour.";
+        var activiteEquivalenteTxt = modeActiviteCourant === "jour"
+          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + " patients/an"
+          : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour";
 
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: Math.max(0, +installA.value || 0) },
@@ -683,11 +686,13 @@
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("cvCapaciteWarning"),
           [document.getElementById("cvActivite"), document.getElementById("cvHeures")]);
 
-        document.getElementById("cvResultatActivite").innerHTML = "Résultat mensuel à cette activité : " +
-          resultats.map(function (r) {
-            var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
-            return "<strong>" + r.machine.nomCourt + "</strong> " + (res >= 0 ? "+" : "") + euros.format(res);
-          }).join(" · ") + ".";
+        var lignesResultatActivite = resultats.map(function (r) {
+          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+          return "<tr><td style=\"color:" + r.color + "\"><strong>" + r.machine.nomCourt + "</strong></td><td>" + (res >= 0 ? "+" : "") + euros.format(res) + "</td></tr>";
+        }).join("");
+        document.getElementById("cvActiviteTableBody").innerHTML =
+          "<tr><td>Activité équivalente</td><td>" + activiteEquivalenteTxt + "</td></tr>" +
+          lignesResultatActivite;
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
 
