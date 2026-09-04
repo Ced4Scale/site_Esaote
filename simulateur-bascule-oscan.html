@@ -86,8 +86,15 @@
       position: absolute; top: 100%; margin-top: .3rem; transform: translateX(-50%);
       font-size: .95rem; color: var(--red); font-weight: 800; opacity: .85; pointer-events: none;
     }
-    .bascule-slider-track { position: relative; height: 30px; border-radius: 15px; overflow: hidden; background: #2a78d6; box-shadow: inset 0 0 0 1px var(--line); }
-    .bascule-slider-track .fill-oscan { position: absolute; top: 0; right: 0; bottom: 0; background: #eb6834; }
+    /* Dégradé bleu→orange continu sur toute la barre (esthétique, demandé par
+       Cédric le 04/09/2026) au lieu d'un aplat bleu / aplat orange à séparation
+       nette — la poignée rouge du curseur reste le seul repère exact de la
+       répartition, le dégradé n'est plus qu'un habillage visuel. `.fill-oscan`
+       (overlay orange plein qui marquait la part O-scan) neutralisé en
+       transparent plutôt que retiré du HTML/JS, pour ne pas toucher au JS qui
+       lui donne sa largeur. */
+    .bascule-slider-track { position: relative; height: 30px; border-radius: 15px; overflow: hidden; background: linear-gradient(90deg, #2a78d6, #eb6834); box-shadow: inset 0 0 0 1px var(--line); }
+    .bascule-slider-track .fill-oscan { position: absolute; top: 0; right: 0; bottom: 0; background: transparent; }
     input[type=range].bascule-curseur {
       position: absolute; top: -4px; left: 0; width: 100%; height: 38px; margin: 0;
       -webkit-appearance: none; appearance: none; background: transparent; cursor: grab;
@@ -112,20 +119,20 @@
     .bascule-stats { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: minmax(0, 1fr); } }
-    /* Pas de min-height fixe ici : repliée (icône 🃏), la carte n'a besoin
-       d'aucune hauteur imposée — la grille `.bascule-stats` (stretch par
-       défaut) l'étire de toute façon à la hauteur des 2 cases voisines
-       (~238px mesuré, largement assez pour l'icône). Une fois RETOURNÉE
-       (`.is-flipped`), sa hauteur est calée sur son contenu réel par JS
-       (`ajusterHauteurJoker()`, appelée au clic sur la carte + au
-       redimensionnement) plutôt que par une valeur fixe en dur — essayé
-       400 → 470 → 540 → 520 → 515px sans jamais trouver une valeur juste
-       partout (le contenu réel varie de ~407px en desktop à ~512px sur
-       iPhone SE portrait), et une 1ère version de ce calcul JS mesurait par
-       erreur la carte REPLIÉE (colonne étroite, camembert qui repasse à la
-       ligne) au lieu de la carte OUVERTE — corrigé en ne mesurant qu'après le
-       clic, jamais au chargement de la page. */
-    .bascule-stat-joker { perspective: 1200px; display: flex; }
+    /* 270px de plancher, pas plus : juste ce qu'il faut pour loger l'icône 🃏
+       repliée (16,3rem ≈ 261px de haut au maximum de son clamp) sans qu'elle
+       soit rognée en haut/bas par l'`overflow:hidden` de `.bascule-joker-face`
+       — bug introduit en retirant le min-height précédent (238px, la hauteur
+       naturelle des 2 cases voisines seulement, insuffisante pour l'icône),
+       repéré par Cédric juste après coup ("carte tronquée en haut"). Le reste
+       (238px) suffisait pour Résultat/CA mais pas pour cette icône. Une fois
+       RETOURNÉE (`.is-flipped`), la hauteur est recalée sur le contenu réel
+       par JS (`ajusterHauteurJoker()`, appelée au clic + au redimensionnement)
+       — ce plancher de 270px sert alors de valeur plancher/secours seulement,
+       la fonction JS pose presque toujours une valeur plus grande. Historique
+       des valeurs fixes essayées sans jamais convenir partout : 400 → 470 →
+       540 → 520 → 515px, avant le passage au calcul dynamique. */
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 270px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -1364,16 +1371,31 @@
             ? ""
             : "<tr><td>Statut</td><td>Déjà à pleine capacité</td></tr>";
 
-        // Camembert 1 : déjà réalisé (gris) / capacité restante réalisable
+        // Camemberts "capacité restante" en dégradé bleu→orange (au lieu de
+        // gris→orange), assorti au dégradé de la barre de répartition
+        // au-dessus, sur demande de Cédric le 04/09/2026 ("pour un côté
+        // esthétique"). Transition adoucie sur une petite zone de fondu
+        // (±1,5 point) autour de la vraie frontière plutôt qu'une séparation
+        // nette à 1 pixel — reste fidèle à la proportion réelle (la zone de
+        // fondu est trop étroite pour fausser la lecture visuelle), juste
+        // moins dur à l'œil.
+        function camembertDegrade(pct) {
+          var p = Math.max(0, Math.min(100, pct));
+          var zone = 1.5;
+          var p1 = Math.max(0, p - zone).toFixed(1);
+          var p2 = Math.min(100, p + zone).toFixed(1);
+          return "conic-gradient(#2a78d6 0%, #2a78d6 " + p1 + "%, #eb6834 " + p2 + "%, #eb6834 100%)";
+        }
+
+        // Camembert 1 : déjà réalisé (bleu) / capacité restante réalisable
         // (orange O-scan) — remplace le 04/09/2026 la ligne "Déjà réalisé" du
         // tableau et le texte "+X examens réalisables/an", sur demande de
         // Cédric. Parts calculées sur la capacité physique totale de l'O-scan
         // (capaciteAnnuelleO), pas sur un total arbitraire.
         var pctRealise = capaciteAnnuelleO > 0 ? Math.min(100, (volO / capaciteAnnuelleO) * 100) : 0;
-        document.getElementById("boJokerPie").style.background =
-          "conic-gradient(var(--line-2) 0% " + pctRealise.toFixed(1) + "%, #eb6834 " + pctRealise.toFixed(1) + "% 100%)";
+        document.getElementById("boJokerPie").style.background = camembertDegrade(pctRealise);
         document.getElementById("boJokerLegend").innerHTML =
-          "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:var(--line-2)\"></span>Déjà réalisé : " + fmt(volO) + " FT/an</div>"
+          "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#2a78d6\"></span>Déjà réalisé : " + fmt(volO) + " FT/an</div>"
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Réalisables en plus : " + (capaciteJoker > 0 ? fmt(capaciteJoker) + " FT/an" : "0") + "</div>";
 
         // Camembert 2, ajouté le 04/09/2026 (session suivante) à droite du 1er,
@@ -1386,10 +1408,9 @@
         var heuresParJourOuvertO = joursOuvertsSemaineO > 0 ? heuresParSemaineO() / joursOuvertsSemaineO : 0;
         var heuresUtiliseesParJour = Math.max(0, heuresParJourOuvertO - heuresRestantesParJour);
         var pctHeuresUtilisees = heuresParJourOuvertO > 0 ? Math.min(100, (heuresUtiliseesParJour / heuresParJourOuvertO) * 100) : 0;
-        document.getElementById("boJokerPieHeures").style.background =
-          "conic-gradient(var(--line-2) 0% " + pctHeuresUtilisees.toFixed(1) + "%, #eb6834 " + pctHeuresUtilisees.toFixed(1) + "% 100%)";
+        document.getElementById("boJokerPieHeures").style.background = camembertDegrade(pctHeuresUtilisees);
         document.getElementById("boJokerLegendHeures").innerHTML =
-          "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:var(--line-2)\"></span>Utilisées : " + fmt(heuresUtiliseesParJour, 1) + " h/jour</div>"
+          "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#2a78d6\"></span>Utilisées : " + fmt(heuresUtiliseesParJour, 1) + " h/jour</div>"
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
