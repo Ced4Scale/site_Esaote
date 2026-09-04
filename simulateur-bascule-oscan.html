@@ -95,8 +95,11 @@
     input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
     .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
 
-    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
+    @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
+    .bascule-stat-joker { border-style: dashed; }
+    .bascule-stat-joker .simulator__field-suffix input { width: 4.5rem; }
     .bascule-stat { border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--wash); }
     .bascule-stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); }
     .bascule-stat-value { font-size: 1.55rem; font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
@@ -271,6 +274,15 @@
                 <span id="boStatGainOscan">—</span><button type="button" class="bascule-eye-btn" id="boGainEyeBtn" aria-label="Voir le détail du gain (énergie, RH, forfait technique)" title="Voir le détail du gain" hidden>👁</button>
                 <div class="bascule-gain-detail" id="boGainDetail" hidden></div>
               </div>
+            </div>
+            <div class="bascule-stat bascule-stat-joker" id="boJokerCard">
+              <div class="bascule-stat-label">🃏 Et si l'O-scan attirait plus d'activité MSK ?</div>
+              <div class="simulator__field-suffix" style="margin-top:.5rem">
+                <input type="number" min="0" step="10" id="boJokerVol" value="0" />
+                <span>ex./an en plus</span>
+              </div>
+              <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.4rem 0 0"></p>
+              <div class="bascule-stat-gain" id="boJokerGain">—</div>
             </div>
             <div class="bascule-stat">
               <div class="bascule-stat-label">Chiffre d'affaires total (FT)</div>
@@ -690,6 +702,7 @@
         repositionnerCurseur();
       });
       curseur.addEventListener("input", recalculer);
+      document.getElementById("boJokerVol").addEventListener("input", recalculer);
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
       // Hypothèses de la Machine A, modifiables via sa roue crantée. Le salaire MERM
@@ -974,6 +987,34 @@
           capaciteNote.className = "bascule-capnote ok";
           capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
         }
+
+        // Carte joker : activité MSK supplémentaire, en plus de l'activité totale
+        // actuelle, captée grâce à l'O-scan (nouveaux patients, patients qui n'auraient
+        // pas attendu le tunnel...) — entièrement sur l'O-scan, jamais comptée dans le
+        // volume membres/extrémités disponible (c'est de la demande en plus, pas une
+        // partie de l'activité déjà existante). Bornée par la capacité physique
+        // restante de l'O-scan une fois la répartition du curseur posée. Le loyer de
+        // l'O-scan est déjà compté dans rO (dès que volO > 0) : ce volume en plus n'a
+        // donc quasiment aucune charge fixe à couvrir, juste le variable (manip +
+        // élec) — d'où un gain marginal très élevé, c'est tout l'argument du joker.
+        var capaciteRestanteO = Math.max(0, capaciteAnnuelleO - volO);
+        var jokerInput = document.getElementById("boJokerVol");
+        var jokerVol = Math.max(0, parseInt(jokerInput.value, 10) || 0);
+        if (jokerVol > capaciteRestanteO) { jokerVol = capaciteRestanteO; jokerInput.value = Math.round(jokerVol); }
+        var rOAvecJoker = resultat("le05", volO + jokerVol, 1, debitO, loyerO, kwh);
+        var gainJoker = rOAvecJoker.net - rO.net;
+        var jokerGainEl = document.getElementById("boJokerGain");
+        if (jokerVol > 0) {
+          jokerGainEl.classList.toggle("negatif", gainJoker < 0);
+          jokerGainEl.textContent = (gainJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainJoker)) + " supplémentaires";
+        } else {
+          jokerGainEl.classList.remove("negatif");
+          jokerGainEl.textContent = "—";
+        }
+        document.getElementById("boJokerCapaciteNote").textContent =
+          capaciteRestanteO > 0
+            ? fmt(capaciteRestanteO) + " ex./an de marge physique restante sur l'O-scan avec cette répartition."
+            : "Aucune marge physique restante sur l'O-scan avec cette répartition (déjà à sa capacité).";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
