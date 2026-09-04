@@ -1010,6 +1010,28 @@
             fill: couleurPlate(s.p.color), stroke: "#fcfcfb", "stroke-width": "1.5"
           }));
         });
+        // Petit reflet ajouté sur chaque part (discret, pas le rendu glacé
+        // retiré plus tôt) — rogné à la forme exacte de SA propre part écartée
+        // via l'attribut SVG natif `clip-path` (le rognage à la silhouette
+        // globale du camembert cassait sur les petites parts très séparées, déjà
+        // rencontré une fois).
+        slices.forEach(function (s) {
+          glossGradSeq++;
+          var clipId = "glossClip" + glossGradSeq;
+          var clip = svgEl("clipPath", { id: clipId });
+          clip.appendChild(svgEl("path", { d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle) }));
+          defs.appendChild(clip);
+          var hlId = "glossHighlight" + glossGradSeq;
+          var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
+          hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.55" }));
+          hlGrad.appendChild(svgEl("stop", { offset: "50%", "stop-color": "#ffffff", "stop-opacity": "0.2" }));
+          hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
+          defs.appendChild(hlGrad);
+          pieGroup.appendChild(svgEl("ellipse", {
+            cx: s.ecx - r * 0.15, cy: s.ecy - r * ryRatio * 0.45, rx: r * 0.4, ry: r * ryRatio * 0.3,
+            fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
+          }));
+        });
 
         // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
         // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
