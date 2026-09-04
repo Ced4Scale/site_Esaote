@@ -918,6 +918,17 @@
         d += " L" + bot.slice().reverse().map(function (p) { return p[0] + "," + p[1]; }).join(" L") + " Z";
         return d;
       }
+      // Paroi DROITE (les 2 côtés radiaux d'une part, du centre à l'arc extérieur)
+      // — sans ça, une part écartée du centre n'avait d'épaisseur visible que sur
+      // son bord arrondi extérieur, jamais sur ses 2 côtés droits (le "V" entre 2
+      // parts séparées restait plat, à plat comme une découpe 2D) : c'est
+      // pourtant l'indice de profondeur le plus visible sur la photo de référence
+      // de Cédric (vraies parts de gâteau détachées, épaisses sur tous les
+      // côtés) — corrigé le 04/09/2026.
+      function radialWallPath(cx, cy, rx, ry, angle, depth) {
+        var p = ellipsePoint(cx, cy, rx, ry, angle);
+        return "M" + cx + "," + cy + " L" + p[0] + "," + p[1] + " L" + p[0] + "," + (p[1] + depth) + " L" + cx + "," + (cy + depth) + " Z";
+      }
       var glossGradSeq = 0;
       // Dégradé RADIAL (pas linéaire) avec un vrai point de brillance quasi blanc
       // décentré en haut à gauche, comme un reflet de lumière sur une surface
@@ -975,8 +986,23 @@
         // Parois d'abord (toutes), puis dessus (tous) — pour qu'aucun dessus ne
         // se retrouve caché par la paroi de la part voisine.
         slices.forEach(function (s) {
+          var wallColor = assombrir(couleurPlate(s.p.color), 0.32);
           var wall = sideWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle, depth);
-          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: assombrir(couleurPlate(s.p.color), 0.32) }));
+          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: wallColor }));
+          // Les 2 côtés droits d'une part, dessinés seulement quand ils font face
+          // au visiteur — sinon on peindrait la face NON visible d'une découpe
+          // (celle tournée vers l'arrière du camembert), qui n'a rien à faire là.
+          // Le côté "début" (dans le sens de balayage) fait face au visiteur
+          // quand son cosinus est négatif, le côté "fin" quand il est positif —
+          // les deux parts qui se touchent à une même frontière ne peuvent
+          // jamais l'avoir visible toutes les deux à la fois, une seule paroi
+          // est donc dessinée par frontière (jamais de doublon).
+          if (Math.cos(s.startAngle) < 0) {
+            pieGroup.appendChild(svgEl("path", { d: radialWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, depth), fill: wallColor }));
+          }
+          if (Math.cos(s.endAngle) > 0) {
+            pieGroup.appendChild(svgEl("path", { d: radialWallPath(s.ecx, s.ecy, r, r * ryRatio, s.endAngle, depth), fill: wallColor }));
+          }
         });
         slices.forEach(function (s) {
           pieGroup.appendChild(svgEl("path", {
