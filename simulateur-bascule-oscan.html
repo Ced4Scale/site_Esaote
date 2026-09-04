@@ -181,6 +181,10 @@
               <path id="boCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
               <line id="boLigneSeuil" x1="0" y1="0" x2="0" y2="170" stroke="#b8790b" stroke-width="1.5" stroke-dasharray="5,3"></line>
               <text id="boLabelSeuil" x="0" y="16" font-size="15" fill="#b8790b" font-weight="800" text-anchor="middle"></text>
+              <line id="boLignePointMortA" x1="0" y1="0" x2="0" y2="170" stroke="#2a78d6" stroke-width="1.5" stroke-dasharray="3,3"></line>
+              <text id="boLabelPointMortA" x="0" y="168" font-size="10" fill="#2a78d6" font-weight="700" text-anchor="middle"></text>
+              <line id="boLignePointMortO" x1="0" y1="0" x2="0" y2="170" stroke="#eb6834" stroke-width="1.5" stroke-dasharray="3,3"></line>
+              <text id="boLabelPointMortO" x="0" y="168" font-size="10" fill="#eb6834" font-weight="700" text-anchor="middle"></text>
             </svg>
           </div>
           <div class="bascule-slider-labels">
@@ -337,6 +341,24 @@
         return rA.net + rO.net;
       }
 
+      // Point mort d'une machine prise seule : plus petit volume > 0 où son propre
+      // résultat net (rendu par resultatFn) passe à 0 €. Recherche par échantillonnage
+      // (le résultat est linéaire par morceaux à cause du barème FT dégressif, donc pas
+      // d'inversion analytique simple) puis interpolation linéaire entre les deux points
+      // encadrant le passage à 0. Retourne null si jamais atteint dans [0, vMax].
+      function trouverPointMort(resultatFn, vMax) {
+        var pas = Math.max(1, vMax / 500);
+        var vPrec = 0, netPrec = 0;
+        for (var v = pas; v <= vMax; v += pas) {
+          var net = resultatFn(v);
+          if (netPrec <= 0 && net > 0) {
+            return vPrec + (0 - netPrec) / (net - netPrec) * (v - vPrec);
+          }
+          vPrec = v; netPrec = net;
+        }
+        return null;
+      }
+
       var curseur = document.getElementById("boCurseur");
       var dernierEtat = null;
 
@@ -405,6 +427,34 @@
           ligneSeuil.style.display = "none"; labelSeuil.style.display = "none";
         } else {
           ligneSeuil.style.display = ""; labelSeuil.style.display = "";
+        }
+
+        // Point mort de chaque machine prise isolément (là où son propre résultat net
+        // passe à 0 €), repéré par une ligne verticale pointillée à sa couleur.
+        var pointMortA = trouverPointMort(function (v) { return resultat(classeA, v, manipA, debitA, loyerA, kwh).net; }, N);
+        var ligneA = document.getElementById("boLignePointMortA");
+        var labelA = document.getElementById("boLabelPointMortA");
+        if (pointMortA !== null && pointMortA > 0 && pointMortA < N) {
+          var xPmA = px(pointMortA);
+          ligneA.setAttribute("x1", xPmA); ligneA.setAttribute("x2", xPmA);
+          labelA.setAttribute("x", xPmA);
+          labelA.textContent = fmt(pointMortA);
+          ligneA.style.display = ""; labelA.style.display = "";
+        } else {
+          ligneA.style.display = "none"; labelA.style.display = "none";
+        }
+
+        var pointMortO = trouverPointMort(function (v) { return resultat("le05", v, 1, debitO, loyerO, kwh).net; }, N);
+        var ligneO = document.getElementById("boLignePointMortO");
+        var labelO = document.getElementById("boLabelPointMortO");
+        if (pointMortO !== null && pointMortO > 0 && pointMortO < N) {
+          var xPmO = px(N - pointMortO);
+          ligneO.setAttribute("x1", xPmO); ligneO.setAttribute("x2", xPmO);
+          labelO.setAttribute("x", xPmO);
+          labelO.textContent = fmt(pointMortO);
+          ligneO.style.display = ""; labelO.style.display = "";
+        } else {
+          ligneO.style.display = "none"; labelO.style.display = "none";
         }
 
         courbeEchelle = { N: N, classeA: classeA, loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh, px: px, py: py };
@@ -530,7 +580,7 @@
           capaciteNote.textContent = "⚠ " + fmt(volOJour, 1) + " patients/jour sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + AMPLITUDE_HEURES_JOUR + " h/jour = " + fmt(capaciteJour, 1) + " patients/jour max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — la plus basse entre sa capacité physique et le volume d'examens membres/extrémités disponible).";
+          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmt(debitO) + " FT/h).";
         } else {
           capaciteNote.className = "bascule-capnote ok";
           capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
