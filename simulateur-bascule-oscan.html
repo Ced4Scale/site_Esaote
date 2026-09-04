@@ -55,6 +55,13 @@
     .bascule-hyp-body h3 { margin: 0 0 .3rem; font-size: 1.15rem; }
     .bascule-hyp-body .field { margin-bottom: .8rem; }
     .bascule-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
+
+    /* Panneau ancré tout à gauche de l'écran, sans fond assombri : le reste de la page
+       (graphique, résultats) reste visible et cliquable pendant le réglage, pour voir
+       l'effet en temps réel. */
+    #boHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #boHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #boHypOverlay .modal__scroll { height: 100%; }
     .bascule-range { display: flex; align-items: center; gap: .7rem; }
     .bascule-range input[type=range] { flex: 1; accent-color: var(--red); }
     .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; }
@@ -63,7 +70,11 @@
     .bascule-courbe-zone svg { width: 100%; height: 100px; display: block; overflow: visible; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
-    .bascule-track-wrap { position: relative; }
+    .bascule-track-wrap { position: relative; margin-bottom: 1.3rem; }
+    .bascule-curseur-hint {
+      position: absolute; top: 100%; margin-top: .3rem; transform: translateX(-50%);
+      font-size: .95rem; color: var(--muted); opacity: .75; pointer-events: none;
+    }
     .bascule-slider-track { position: relative; height: 30px; border-radius: 15px; overflow: hidden; background: #2a78d6; box-shadow: inset 0 0 0 1px var(--line); }
     .bascule-slider-track .fill-oscan { position: absolute; top: 0; right: 0; bottom: 0; background: #eb6834; }
     input[type=range].bascule-curseur {
@@ -238,6 +249,7 @@
               <div class="fill-oscan" id="boFillOscan" style="width:0%"></div>
             </div>
             <input type="range" class="bascule-curseur" id="boCurseur" min="0" max="12000" step="10" value="12000" />
+            <div class="bascule-curseur-hint" id="boCurseurHint" aria-hidden="true">↔</div>
           </div>
           <div class="bascule-ends"><span>0</span><span id="boEndMax">12.000</span></div>
 
@@ -369,9 +381,11 @@
             officiels, pas des données constructeur — détail et niveau de confiance par modèle sur
             la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</p>
           </div>
+          <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde la
+          case "Résultat net total" changer pendant que tu ajustes.</p>
           <div class="bascule-hyp-actions">
             <button type="button" class="btn btn--ghost" id="boHypReset">Valeurs par défaut</button>
-            <button type="button" class="btn" id="boHypApply">Appliquer</button>
+            <button type="button" class="btn" id="boHypDone">Fermer</button>
           </div>
         </div>
       </div>
@@ -703,6 +717,10 @@
         hypOverlay.classList.remove("is-open");
         hypOverlay.hidden = true;
       }
+      // Applique tout de suite le contenu des champs (pas de bouton "Appliquer" à
+      // cliquer) — le panneau reste ouvert à gauche pour voir l'effet en temps réel
+      // sur les résultats affichés à droite, toujours visibles et cliquables pendant
+      // le réglage.
       function appliquerHypotheses() {
         var netMerm = lireMontant(document.getElementById("boHypNetMerm"));
         var heuresLegales = parseFloat(document.getElementById("boHypHeuresLegales").value.replace(",", "."));
@@ -716,7 +734,6 @@
         if (heuresDimanche >= 0) AMPLITUDE_DIMANCHE = heuresDimanche;
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         majResumeHypotheses();
-        fermerHypotheses();
         repositionnerCurseur();
       }
       document.getElementById("boGainEyeBtn").addEventListener("click", function () {
@@ -724,16 +741,28 @@
       });
       document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
-      document.getElementById("boHypApply").addEventListener("click", appliquerHypotheses);
+      document.getElementById("boHypDone").addEventListener("click", fermerHypotheses);
+      document.getElementById("boHypNetMerm").addEventListener("blur", function () {
+        this.value = fmt(lireMontant(this));
+        appliquerHypotheses();
+      });
+      ["boHypHeuresLegales", "boHypHeuresSemaine", "boHypHeuresSamedi", "boHypHeuresDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", appliquerHypotheses);
+      });
+      document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
         AMPLITUDE_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_SAMEDI = HYP_DEFAUTS.heuresSamedi;
         AMPLITUDE_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = "";
+        document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
+        document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
+        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_SEMAINE;
+        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_SAMEDI;
+        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_DIMANCHE;
+        remplirModelesA();
         majResumeHypotheses();
-        fermerHypotheses();
         repositionnerCurseur();
       });
-      hypOverlay.addEventListener("click", function (e) { if (e.target === hypOverlay) fermerHypotheses(); });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && hypOverlay.classList.contains("is-open")) fermerHypotheses();
       });
@@ -759,6 +788,7 @@
         var pct = volumeTotal > 0 ? (X / volumeTotal * 100) : 100;
 
         document.getElementById("boFillOscan").style.width = (100 - pct) + "%";
+        document.getElementById("boCurseurHint").style.left = pct + "%";
         document.getElementById("boLblA").style.left = (pct / 2) + "%";
         document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " ex./an";
         document.getElementById("boLblO").style.left = (pct + (100 - pct) / 2) + "%";
