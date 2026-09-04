@@ -98,8 +98,38 @@
     .bascule-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.4rem; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
-    .bascule-stat-joker { border-style: dashed; }
-    .bascule-stat-joker .simulator__field-suffix input { width: 4.5rem; }
+    .bascule-stat-joker { perspective: 1200px; min-height: 540px; }
+    .bascule-joker-flip {
+      position: relative; width: 100%; height: 100%; min-height: 520px;
+      transition: transform .5s cubic-bezier(.2,.7,.3,1); transform-style: preserve-3d;
+    }
+    .bascule-joker-row { margin-top: .55rem; }
+    .bascule-joker-row label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .2rem; }
+    .bascule-joker-row .simulator__field-suffix input { width: 4rem; }
+    .bascule-joker-row--3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+    .bascule-joker-row--3 .simulator__field-suffix input { width: 100%; }
+    .bascule-stat-joker.is-flipped .bascule-joker-flip { transform: rotateY(180deg); }
+    .bascule-joker-face {
+      position: absolute; inset: 0; backface-visibility: hidden; border-radius: 8px;
+      border: 1px dashed var(--line); background: var(--wash); padding: 1rem 1.2rem; box-sizing: border-box;
+    }
+    .bascule-joker-front {
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: .5rem; text-align: center; cursor: pointer; font-family: inherit; font-size: 1rem;
+      color: inherit; width: 100%; margin: 0; appearance: none; border: 1px dashed var(--line);
+      background: linear-gradient(135deg, var(--wash), #fff);
+    }
+    .bascule-joker-front:hover { border-color: var(--red); }
+    .bascule-joker-icon { font-size: 2.2rem; line-height: 1; }
+    .bascule-joker-title { font-weight: 700; font-size: .92rem; }
+    .bascule-joker-cta { font-size: .82rem; font-weight: 700; color: var(--red); }
+    .bascule-joker-back { transform: rotateY(180deg); text-align: left; }
+    .bascule-joker-retour {
+      position: absolute; top: .5rem; right: .5rem; background: none; border: 0; cursor: pointer;
+      font-size: 1rem; opacity: .6; padding: .1rem .3rem;
+    }
+    .bascule-joker-retour:hover { opacity: 1; }
+    .bascule-joker-back .simulator__field-suffix input { width: 4.5rem; }
     .bascule-stat { border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--wash); }
     .bascule-stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); }
     .bascule-stat-value { font-size: 1.55rem; font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
@@ -113,11 +143,12 @@
     .bascule-eye-btn:hover, .bascule-eye-btn:focus-visible { opacity: 1; }
     .bascule-gain-detail {
       margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed var(--line);
-      font-size: .8rem; font-weight: 600; color: var(--ink); display: flex; flex-direction: column; gap: .2rem;
+      font-size: .8rem; font-weight: 600; color: var(--ink);
+      display: grid; grid-template-columns: 1fr auto; column-gap: .8rem; row-gap: .3rem; align-items: baseline;
     }
     .bascule-gain-detail[hidden] { display: none; }
-    .bascule-gain-detail-row { display: flex; justify-content: space-between; gap: .8rem; font-variant-numeric: tabular-nums; }
-    .bascule-gain-detail-row span:last-child { white-space: nowrap; }
+    .bascule-gain-detail-row { display: contents; font-variant-numeric: tabular-nums; }
+    .bascule-gain-detail-row span:last-child { white-space: nowrap; text-align: right; }
     .bascule-gain-detail-row.negatif span:last-child { color: var(--red); }
     .bascule-gain-detail-row.positif span:last-child { color: #1a7a3d; }
     .bascule-stat.result .bascule-stat-value { color: #1a7a3d; }
@@ -133,6 +164,8 @@
     .bascule-mini-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
     .bascule-mini-table th, .bascule-mini-table td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
     .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
+    .bascule-hyp-table td:last-child { text-align: left; font-variant-numeric: normal; font-weight: 400; color: var(--ink); }
+    .bascule-hyp-table td:first-child { width: 30%; white-space: nowrap; }
   </style>
 </head>
 <body class="tool-page">
@@ -216,14 +249,14 @@
           <p class="simulator__hint" style="margin:-.1rem 0 .35rem">100 % de son activité en examens membres/extrémités (verrouillé).</p>
           <div class="field">
             <label for="boDebitO">Examens par heure</label>
-            <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitO" value="3" /><span>FT/h</span></div>
+            <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitO" value="2.5" /><span>FT/h</span></div>
           </div>
         </div>
 
         <div class="simulator__field-group">
           <div class="field" style="margin-bottom:0">
             <label for="boKwh">Coût du kWh</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
+            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
           </div>
         </div>
       </form>
@@ -275,14 +308,43 @@
                 <div class="bascule-gain-detail" id="boGainDetail" hidden></div>
               </div>
             </div>
-            <div class="bascule-stat bascule-stat-joker" id="boJokerCard">
-              <div class="bascule-stat-label">🃏 Et si l'O-scan attirait plus d'activité MSK ?</div>
-              <div class="simulator__field-suffix" style="margin-top:.5rem">
-                <input type="number" min="0" step="10" id="boJokerVol" value="0" />
-                <span>ex./an en plus</span>
+            <div class="bascule-stat-joker" id="boJokerCard">
+              <div class="bascule-joker-flip" id="boJokerFlip">
+                <button type="button" class="bascule-joker-face bascule-joker-front" id="boJokerFrontBtn" aria-expanded="false">
+                  <span class="bascule-joker-icon">🃏</span>
+                  <span class="bascule-joker-title">Et si l'O-scan attirait plus d'activité MSK ?</span>
+                  <span class="bascule-joker-cta">Cliquer pour essayer →</span>
+                </button>
+                <div class="bascule-joker-face bascule-joker-back">
+                  <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
+                  <div class="bascule-stat-label">🃏 Heures en plus sur l'O-scan</div>
+                  <div class="bascule-joker-row">
+                    <label for="boJokerDebit">Examens/h dans ces heures</label>
+                    <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boJokerDebit" value="3" /><span>FT/h</span></div>
+                  </div>
+                  <div class="bascule-joker-row bascule-joker-row--3">
+                    <div>
+                      <label for="boJokerSemaine">Lun-ven</label>
+                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSemaine" value="0" /><span>h/j</span></div>
+                    </div>
+                    <div>
+                      <label for="boJokerSamedi">Samedi</label>
+                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSamedi" value="0" /><span>h/j</span></div>
+                    </div>
+                    <div>
+                      <label for="boJokerDimanche">Dimanche</label>
+                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerDimanche" value="0" /><span>h/j</span></div>
+                    </div>
+                  </div>
+                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.5rem 0 0"></p>
+                  <div class="bascule-joker-row">
+                    <label for="boJokerVol">Combien en ajouter</label>
+                    <div class="simulator__field-suffix"><input type="number" min="0" step="10" id="boJokerVol" value="0" /><span>ex./an</span></div>
+                  </div>
+                  <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
+                  <div class="bascule-stat-gain" id="boJokerGain">—</div>
+                </div>
               </div>
-              <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.4rem 0 0"></p>
-              <div class="bascule-stat-gain" id="boJokerGain">—</div>
             </div>
             <div class="bascule-stat">
               <div class="bascule-stat-label">Chiffre d'affaires total (FT)</div>
@@ -309,16 +371,13 @@
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Hypothèses de ce simulateur</summary>
-          <p class="simulator__hint" id="boHypSummary">
-            Salaire MERM net 1.800&nbsp;€/mois (÷0,78 brut ×1,42 charges patronales, base 151,67&nbsp;h/mois
-            légales, soit 21,61&nbsp;€/h) ; électricité limitée au coût des gradients pendant l'acquisition
-            (12&nbsp;min pour la 1,5&nbsp;T, 10&nbsp;min pour la 3&nbsp;T, 15&nbsp;min pour l'O-scan, delta de
-            puissance mesure−veille active) — pas de climatisation ni de socle électrique fixe dans cette
-            version ; capacité maximale de l'O-scan déduite de son propre débit horaire × 9&nbsp;h/jour ×
-            264&nbsp;jours/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone
-            Province, hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison).
-            Modifiable via l'icône ⚙ du bloc Machine A.
-          </p>
+          <div style="overflow-x:auto">
+            <table class="bascule-mini-table bascule-hyp-table">
+              <tbody id="boHypSummary"></tbody>
+            </table>
+          </div>
+          <p class="simulator__hint" style="margin-top:.6rem">Modifiable via l'icône ⚙ de chaque bloc (Machine A
+          pour le salaire/base légale/amplitude/modèle, O-scan pour sa propre amplitude).</p>
         </details>
 
         <div class="simulator__export" id="boExport">
@@ -449,7 +508,9 @@
         dec = dec === undefined ? 0 : dec;
         return new Intl.NumberFormat("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec }).format(Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec));
       }
-      function eur(n, dec) { return fmt(n, dec) + " €"; }
+      // Espace insécable entre le montant et € : un montant en euros ne doit jamais se
+      // couper en fin de ligne (règle Cédric, voir skill ced4scale-simulateur-web).
+      function eur(n, dec) { return fmt(n, dec) + " €"; }
       // Comme fmt(), mais sans imposer de nombre de décimales fixe : n'arrondit pas et
       // n'ajoute pas de zéro superflu (4,5 reste "4,5", 5 reste "5").
       function fmtExact(n) {
@@ -702,7 +763,17 @@
         repositionnerCurseur();
       });
       curseur.addEventListener("input", recalculer);
-      document.getElementById("boJokerVol").addEventListener("input", recalculer);
+      ["boJokerVol", "boJokerDebit", "boJokerSemaine", "boJokerSamedi", "boJokerDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", recalculer);
+      });
+      document.getElementById("boJokerFrontBtn").addEventListener("click", function () {
+        document.getElementById("boJokerCard").classList.add("is-flipped");
+        this.setAttribute("aria-expanded", "true");
+      });
+      document.getElementById("boJokerBackBtn").addEventListener("click", function () {
+        document.getElementById("boJokerCard").classList.remove("is-flipped");
+        document.getElementById("boJokerFrontBtn").setAttribute("aria-expanded", "false");
+      });
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
       // Hypothèses de la Machine A, modifiables via sa roue crantée. Le salaire MERM
@@ -756,25 +827,27 @@
         var classeA = document.getElementById("boClasseA").value;
         var modele = modelesTunnelPourChamp(classeA).filter(function (m) { return m.key === MODELE_A_KEY; })[0];
         var elecTxt = modele
-          ? "électricité de la Machine A calculée à partir du modèle réel sélectionné (" + modele.nomCourt +
-            ", delta mesure-veille " + fmt(modele.mesure - modele.pret, 2) + "&nbsp;kW × " +
-            fmt(modele.dureeAcquisitionMinutes, 0) + "&nbsp;min/examen) ; O-scan sur sa valeur générique"
-          : "électricité limitée au coût des gradients pendant l'acquisition (12&nbsp;min pour la 1,5&nbsp;T, " +
-            "10&nbsp;min pour la 3&nbsp;T, 15&nbsp;min pour l'O-scan, delta de puissance mesure-veille active)";
-        var resume = document.getElementById("boHypSummary");
-        resume.innerHTML =
-          "Salaire MERM net " + fmt(NET_MERM) + "&nbsp;€/mois (coût réel employeur estimé à " +
-          fmt(coutHoraireMerm(), 2) + "&nbsp;€/h, base " + fmt(HEURES_LEGALES_MOIS, 2) + "&nbsp;h/mois légales) ; " +
-          elecTxt + " — pas de climatisation ni de socle électrique fixe dans cette version ; amplitude de " +
-          "Machine A " + fmt(AMPLITUDE_A_SEMAINE, 1) + "&nbsp;h lun-ven / " + fmt(AMPLITUDE_A_SAMEDI, 1) +
-          "&nbsp;h samedi / " + fmt(AMPLITUDE_A_DIMANCHE, 1) + "&nbsp;h dimanche ; capacité maximale de l'O-scan " +
-          "déduite de sa propre amplitude (" + fmt(AMPLITUDE_O_SEMAINE, 1) + "&nbsp;h lun-ven / " +
-          fmt(AMPLITUDE_O_SAMEDI, 1) + "&nbsp;h samedi / " + fmt(AMPLITUDE_O_DIMANCHE, 1) + "&nbsp;h dimanche, " +
-          "réglable via la roue crantée du bloc O-scan) × son débit horaire × " + fmt(SEMAINES_PAR_AN) +
-          "&nbsp;semaines/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone Province, " +
-          "hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison). " +
-          "Modifiable via l'icône ⚙ de chaque bloc (Machine A pour le salaire/base légale/amplitude/modèle, " +
-          "O-scan pour sa propre amplitude).";
+          ? "Modèle réel sélectionné pour la Machine A : " + modele.nomCourt + " (delta mesure-veille " +
+            fmt(modele.mesure - modele.pret, 2) + " kW × " + fmt(modele.dureeAcquisitionMinutes, 0) +
+            " min/examen). O-scan sur sa valeur générique."
+          : "Coût des gradients pendant l'acquisition seulement (12 min pour la 1,5 T, 10 min pour la 3 T, " +
+            "15 min pour l'O-scan, delta de puissance mesure-veille active) — pas de climatisation ni de socle " +
+            "électrique fixe dans cette version.";
+        function ligne(label, valeur) {
+          return "<tr><td>" + label + "</td><td>" + valeur + "</td></tr>";
+        }
+        document.getElementById("boHypSummary").innerHTML =
+          ligne("Salaire net MERM", eur(NET_MERM) + "/mois") +
+          ligne("Coût réel employeur estimé", eur(coutHoraireMerm(), 2) + "/h") +
+          ligne("Base légale mensuelle", fmt(HEURES_LEGALES_MOIS, 2) + " h/mois") +
+          ligne("Électricité", elecTxt) +
+          ligne("Amplitude Machine A", fmt(AMPLITUDE_A_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_A_SAMEDI, 1) +
+            " h samedi / " + fmt(AMPLITUDE_A_DIMANCHE, 1) + " h dimanche") +
+          ligne("Amplitude O-scan (capacité)", fmt(AMPLITUDE_O_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_O_SAMEDI, 1) +
+            " h samedi / " + fmt(AMPLITUDE_O_DIMANCHE, 1) + " h dimanche, × son débit horaire × " +
+            fmt(SEMAINES_PAR_AN) + " semaines/an") +
+          ligne("Forfait technique", "Barème dégressif réel UNCAM au 1ᵉʳ juillet 2027, zone Province, hors acte " +
+            "intellectuel (perçu par les deux machines, neutre dans la comparaison)");
       }
 
       function ouvrirHypotheses() {
@@ -982,39 +1055,54 @@
           capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaineO(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmtExact(debitO) + " FT/h). Il est possible d'augmenter le nombre d'examens/h en démarrant une activité de post-opératoire, dont les séquences sont plus focalisées et plus courtes.";
+          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan : tu es proche de sa limite à " + fmtExact(debitO) + " FT/h (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an max). Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.";
         } else {
           capaciteNote.className = "bascule-capnote ok";
           capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
         }
 
-        // Carte joker : activité MSK supplémentaire, en plus de l'activité totale
-        // actuelle, captée grâce à l'O-scan (nouveaux patients, patients qui n'auraient
-        // pas attendu le tunnel...) — entièrement sur l'O-scan, jamais comptée dans le
-        // volume membres/extrémités disponible (c'est de la demande en plus, pas une
-        // partie de l'activité déjà existante). Bornée par la capacité physique
-        // restante de l'O-scan une fois la répartition du curseur posée. Le loyer de
-        // l'O-scan est déjà compté dans rO (dès que volO > 0) : ce volume en plus n'a
-        // donc quasiment aucune charge fixe à couvrir, juste le variable (manip +
-        // élec) — d'où un gain marginal très élevé, c'est tout l'argument du joker.
-        var capaciteRestanteO = Math.max(0, capaciteAnnuelleO - volO);
+        // Carte joker : heures d'ouverture EN PLUS de celles déjà réglées pour l'O-scan
+        // (créneaux du soir, samedi, dimanche...), à leur propre débit — donc une
+        // capacité supplémentaire propre, pas empruntée à la capacité déjà comptée
+        // dans capaciteAnnuelleO. Ce volume est entièrement additionnel : jamais compté
+        // dans le volume membres/extrémités disponible (c'est de la demande en plus,
+        // pas une redistribution de l'activité déjà existante). Le loyer de l'O-scan
+        // est déjà compté dans rO (dès que volO > 0) : ce volume en plus n'a donc
+        // quasiment aucune charge fixe à couvrir, juste le variable (manip + élec) —
+        // d'où un gain marginal très élevé, c'est tout l'argument du joker.
+        var debitJoker = parseFloat(document.getElementById("boJokerDebit").value.replace(",", ".")) || 0;
+        var jokerSemaine = parseFloat(document.getElementById("boJokerSemaine").value.replace(",", ".")) || 0;
+        var jokerSamedi = parseFloat(document.getElementById("boJokerSamedi").value.replace(",", ".")) || 0;
+        var jokerDimanche = parseFloat(document.getElementById("boJokerDimanche").value.replace(",", ".")) || 0;
+        var capaciteJoker = Math.round(debitJoker * heuresParSemaine(jokerSemaine, jokerSamedi, jokerDimanche) * SEMAINES_PAR_AN);
         var jokerInput = document.getElementById("boJokerVol");
         var jokerVol = Math.max(0, parseInt(jokerInput.value, 10) || 0);
-        if (jokerVol > capaciteRestanteO) { jokerVol = capaciteRestanteO; jokerInput.value = Math.round(jokerVol); }
-        var rOAvecJoker = resultat("le05", volO + jokerVol, 1, debitO, loyerO, kwh);
-        var gainJoker = rOAvecJoker.net - rO.net;
+        if (jokerVol > capaciteJoker) { jokerVol = capaciteJoker; jokerInput.value = jokerVol; }
+        // Recette additionnelle (barème dégressif, à la suite du volume O-scan déjà
+        // posé) et coûts variables additionnels, au débit propre à ces heures en plus
+        // (pas celui de l'O-scan principal — ça peut être un rythme différent).
+        var gainCAJoker = ftAnnuel("le05", volO + jokerVol) - ftAnnuel("le05", volO);
+        var elecLe05 = elecPourClasse("le05");
+        var coutManipJoker = debitJoker > 0 ? (coutHoraireMerm() / debitJoker) * 1 * jokerVol : 0;
+        var coutElecJoker = jokerVol * elecLe05.deltaKw * (elecLe05.dureeMin / 60) * kwh;
+        var gainNetJoker = gainCAJoker - coutManipJoker - coutElecJoker;
+        var jokerGainCAEl = document.getElementById("boJokerGainCA");
         var jokerGainEl = document.getElementById("boJokerGain");
         if (jokerVol > 0) {
-          jokerGainEl.classList.toggle("negatif", gainJoker < 0);
-          jokerGainEl.textContent = (gainJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainJoker)) + " supplémentaires";
+          jokerGainCAEl.classList.remove("negatif");
+          jokerGainCAEl.textContent = "+ " + eur(gainCAJoker) + " de CA en plus";
+          jokerGainEl.classList.toggle("negatif", gainNetJoker < 0);
+          jokerGainEl.textContent = (gainNetJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainNetJoker)) + " de résultat net en plus";
         } else {
+          jokerGainCAEl.classList.remove("negatif");
+          jokerGainCAEl.textContent = "—";
           jokerGainEl.classList.remove("negatif");
           jokerGainEl.textContent = "—";
         }
         document.getElementById("boJokerCapaciteNote").textContent =
-          capaciteRestanteO > 0
-            ? fmt(capaciteRestanteO) + " ex./an de marge physique restante sur l'O-scan avec cette répartition."
-            : "Aucune marge physique restante sur l'O-scan avec cette répartition (déjà à sa capacité).";
+          capaciteJoker > 0
+            ? "Ces heures en plus permettraient de réaliser jusqu'à " + fmt(capaciteJoker) + " examens supplémentaires/an."
+            : "Ajoute des heures ci-dessus pour voir combien d'examens en plus ça permettrait.";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
