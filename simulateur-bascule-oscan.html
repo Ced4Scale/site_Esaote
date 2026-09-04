@@ -23,6 +23,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260811-hero-stat-light" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     /* Réglages propres à ce simulateur (curseur + courbe), pas encore dans styles.css partagé. */
     .bascule-champ { margin-bottom: 1rem; }
@@ -241,6 +242,44 @@
             Province, hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison).
           </p>
         </details>
+
+        <div class="simulator__export" id="boExport">
+          <button type="button" class="btn btn--lg" id="boExportToggle">Recevoir cette simulation par e-mail</button>
+          <form id="boExportForm" hidden>
+            <div class="simulator__export-grid">
+              <div class="field">
+                <label for="boPrenom">Prénom</label>
+                <input type="text" id="boPrenom" required autocomplete="given-name" />
+              </div>
+              <div class="field">
+                <label for="boNom">Nom</label>
+                <input type="text" id="boNom" required autocomplete="family-name" />
+              </div>
+              <div class="field">
+                <label for="boEtablissement">Établissement</label>
+                <input type="text" id="boEtablissement" required placeholder="CHU, clinique, cabinet…" />
+              </div>
+              <div class="field">
+                <label for="boFonction">Fonction</label>
+                <input type="text" id="boFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+              </div>
+              <div class="field">
+                <label for="boEmail">E-mail</label>
+                <input type="email" id="boEmail" required autocomplete="email" />
+              </div>
+            </div>
+            <div class="field">
+              <label for="boCommentaire">Commentaire</label>
+              <textarea id="boCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
+            </div>
+            <button type="submit" class="btn btn--lg" id="boExportSubmit">Recevoir ma simulation en PDF</button>
+            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+          </form>
+          <div class="simulator__export-success" id="boExportSuccess" role="status" hidden>
+            ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+          </div>
+          <p class="simulator__export-error" id="boExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
       </div>
     </div>
   </main>
@@ -301,6 +340,7 @@
       }
 
       var curseur = document.getElementById("boCurseur");
+      var dernierEtat = null;
 
       function trouverOptimum(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites) {
         var capaciteO = capaciteAnnuelle(debitO);
@@ -507,7 +547,271 @@
         }
 
         dessinerBaremeMini(classeA, nomClasseA);
+
+        dernierEtat = {
+          classeA: classeA, nomClasseA: nomClasseA, volA: volA, volO: volO, volumeTotal: volumeTotal,
+          loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh,
+          partExtremites: partExtremites,
+          rA: rA, rO: rO, caTotal: caTotal, netTotal: netTotal, gainOscan: gainOscan
+        };
       }
+
+      /* Réutilise le même flux Power Automate générique que les 4 autres simulateurs
+         ("Simulateur_Recettes_Envoi_PDF_V1") — il se contente d'envoyer par e-mail le PDF joint
+         avec les coordonnées du demandeur, aucun nouveau flux nécessaire pour ce 5ᵉ simulateur. */
+      var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      function figerLesStyles(svgSource) {
+        var clone = svgSource.cloneNode(true);
+        var liveEls = svgSource.querySelectorAll("*");
+        var cloneEls = clone.querySelectorAll("*");
+        for (var i = 0; i < liveEls.length; i++) {
+          var cs = getComputedStyle(liveEls[i]);
+          cloneEls[i].style.fontSize = cs.fontSize;
+          cloneEls[i].style.fontFamily = cs.fontFamily;
+          cloneEls[i].style.fontWeight = cs.fontWeight;
+          cloneEls[i].style.fill = cs.fill;
+          cloneEls[i].style.stroke = cs.stroke;
+          cloneEls[i].style.strokeWidth = cs.strokeWidth;
+          cloneEls[i].style.opacity = cs.opacity;
+        }
+        return clone;
+      }
+
+      function svgVersPng(svgSource) {
+        return new Promise(function (resolve, reject) {
+          var viewBox = svgSource.viewBox.baseVal;
+          var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
+          var vbHeight = viewBox && viewBox.height ? viewBox.height : 170;
+          var svgString = new XMLSerializer().serializeToString(figerLesStyles(svgSource));
+          var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+          var url = URL.createObjectURL(svgBlob);
+          var img = new Image();
+          img.onload = function () {
+            var scale = 2;
+            var canvas = document.createElement("canvas");
+            canvas.width = vbWidth * scale;
+            canvas.height = vbHeight * scale;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fcfcfb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve({ dataUrl: canvas.toDataURL("image/png"), width: vbWidth, height: vbHeight });
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+
+      function imageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+
+      function genererPdfBase64() {
+        var svgEl = document.getElementById("boCourbeSvg");
+        return Promise.all([svgVersPng(svgEl), imageDataUrl("assets/logo-ced4scale.png")]).then(function (images) {
+          var graphePng = images[0], logoPng = images[1];
+          var doc = new window.jspdf.jsPDF({ orientation: "portrait" });
+          var RIGHT_X = 195;
+
+          var _origDocText = doc.text.bind(doc);
+          doc.text = function (text, x, y, opts) {
+            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-") : t; }
+            text = Array.isArray(text) ? text.map(clean) : clean(text);
+            return _origDocText(text, x, y, opts);
+          };
+
+          var e = dernierEtat;
+          var prenom = document.getElementById("boPrenom").value.trim();
+          var nom = document.getElementById("boNom").value.trim();
+          var email = document.getElementById("boEmail").value.trim();
+          var etablissement = document.getElementById("boEtablissement").value.trim();
+          var fonction = document.getElementById("boFonction").value.trim();
+
+          var logoH = 12, logoW = logoH * 3.2;
+          doc.addImage(logoPng, "PNG", 15, 14, logoW, logoH, undefined, "MEDIUM");
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
+          doc.setDrawColor(220);
+          doc.line(15, 33, RIGHT_X, 33);
+
+          var y = 42;
+          doc.setTextColor(0);
+          doc.setFontSize(14);
+          doc.setFont(undefined, "bold");
+          doc.text("Simulation de bascule vers un O-scan", 15, y);
+          y += 6;
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(120);
+          doc.text(
+            "Répartition d'activité IRM tunnel / O-scan · " + new Date().toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+            15, y
+          );
+          y += 5;
+          var nomComplet = (prenom + " " + nom).trim();
+          var qualite = [fonction, etablissement].filter(Boolean).join(", ");
+          doc.text("Pour " + (nomComplet || "—") + (qualite ? " (" + qualite + ")" : "") + (email ? " — " + email : ""), 15, y);
+          y += 8;
+
+          var imgWidth = RIGHT_X - 15;
+          var imgHeight = (imgWidth * graphePng.height) / graphePng.width;
+          doc.addImage(graphePng.dataUrl, "PNG", 15, y, imgWidth, imgHeight, undefined, "MEDIUM");
+          y += imgHeight + 8;
+
+          doc.setFontSize(8);
+          var x0 = 15, labelWidth = 75, colWidth = 50;
+          function drawRow(label, cells, bold) {
+            var x = x0;
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.setTextColor(bold ? 0 : 60);
+            doc.text(String(label), x, y);
+            x += labelWidth;
+            cells.forEach(function (c) { doc.text(String(c), x, y); x += colWidth; });
+            y += 6.5;
+          }
+          drawRow("", [e.nomClasseA, "O-scan"], true);
+          doc.setDrawColor(200);
+          doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
+          drawRow("Activité répartie", [fmt(e.volA) + " ex./an", fmt(e.volO) + " ex./an"]);
+          drawRow("Chiffre d'affaires (FT)", [eur(e.rA.ca), eur(e.rO.ca)]);
+          drawRow("Résultat net", [eur(e.rA.net), eur(e.rO.net)], true);
+          y += 2;
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Résultat net total : " + eur(e.netTotal), x0, y);
+          y += 6;
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(e.gainOscan >= 0 ? 20 : 180, e.gainOscan >= 0 ? 120 : 20, e.gainOscan >= 0 ? 60 : 20);
+          doc.text((e.gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(e.gainOscan)) + " grâce à l'O-scan (vs tout sur la " + e.nomClasseA + ")", x0, y);
+
+          // ---- Page 2 : forfait technique par palier + paramètres saisis ----
+          doc.addPage();
+          var py = 18, px0 = 15, plabelW = 60, pcolW = 45;
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Récapitulatif de la simulation", px0, py); py += 8;
+
+          function drawSectionTitle(titre) {
+            doc.setFontSize(10.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(titre, px0, py); py += 6;
+          }
+          function drawRecapRow(label, valeurs, bold) {
+            doc.setFontSize(8.5);
+            doc.setFont(undefined, bold ? "bold" : "normal");
+            doc.setTextColor(bold ? 0 : 60);
+            var x = px0;
+            doc.text(String(label), x, py);
+            x += plabelW;
+            valeurs.forEach(function (v) { doc.text(String(v), x, py); x += pcolW; });
+            py += 5.5;
+          }
+
+          drawSectionTitle("Forfait technique par palier (barème dégressif UNCAM)");
+          drawRecapRow("", [e.nomClasseA, "O-scan"], true);
+          var cA = FT_CLASSES[e.classeA], cO = FT_CLASSES.le05;
+          [
+            ["Plein", cA.REF, cA.plein, cO.REF, cO.plein],
+            ["Palier 1", cA.SEUIL1, cA.reduit1, cO.SEUIL1, cO.reduit1],
+            ["Palier 2", cA.SEUIL2, cA.reduit2, cO.SEUIL2, cO.reduit2],
+            ["Plafond", null, cA.plafond, null, cO.plafond]
+          ].forEach(function (l) {
+            var seuilA = l[1] === null ? "au-delà" : "jusqu'à " + fmt(l[1]);
+            var seuilO = l[3] === null ? "au-delà" : "jusqu'à " + fmt(l[3]);
+            drawRecapRow(l[0], [seuilA + " : " + eur(l[2], 2), seuilO + " : " + eur(l[4], 2)]);
+          });
+          py += 3;
+
+          drawSectionTitle("Paramètres saisis avant de lancer la simulation");
+          drawRecapRow("Champ (Machine A)", [e.nomClasseA]);
+          drawRecapRow("Loyer mensuel Machine A", [eur(e.loyerA)]);
+          drawRecapRow("Manip en poste (Machine A)", [String(e.manipA)]);
+          drawRecapRow("Débit Machine A", [fmt(e.debitA, 1) + " FT/h"]);
+          drawRecapRow("Activité totale actuelle", [fmt(e.volumeTotal) + " ex./an"]);
+          drawRecapRow("Part membres/extrémités", [fmt(e.partExtremites * 100, 0) + " %"]);
+          drawRecapRow("Loyer mensuel O-scan", [eur(e.loyerO)]);
+          drawRecapRow("Débit O-scan", [fmt(e.debitO, 1) + " FT/h"]);
+          drawRecapRow("Coût du kWh", [eur(e.kwh, 2)]);
+
+          return doc.output("datauristring").split(",")[1];
+        });
+      }
+
+      var exportToggle = document.getElementById("boExportToggle");
+      var exportForm = document.getElementById("boExportForm");
+      var exportSubmit = document.getElementById("boExportSubmit");
+      var exportSuccess = document.getElementById("boExportSuccess");
+      var exportError = document.getElementById("boExportError");
+
+      exportToggle.addEventListener("click", function () {
+        exportForm.hidden = !exportForm.hidden;
+      });
+
+      exportForm.addEventListener("submit", function (evt) {
+        evt.preventDefault();
+        exportError.hidden = true;
+        exportSubmit.disabled = true;
+        exportSubmit.textContent = "Génération en cours…";
+
+        Promise.resolve().then(genererPdfBase64).then(function (pdfBase64) {
+          var payload = {
+            prenom: document.getElementById("boPrenom").value.trim(),
+            nom: document.getElementById("boNom").value.trim(),
+            email: document.getElementById("boEmail").value.trim(),
+            etablissement: document.getElementById("boEtablissement").value.trim(),
+            fonction: document.getElementById("boFonction").value.trim(),
+            commentaire: document.getElementById("boCommentaire").value.trim(),
+            filename: "simulation-bascule-oscan.pdf",
+            pdfBase64: pdfBase64
+          };
+          return fetch(SIMULATOR_REQUEST_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+        }).then(function (response) {
+          if (!response || !response.ok) throw new Error("Envoi échoué");
+          exportForm.hidden = true;
+          exportSuccess.hidden = false;
+        }).catch(function () {
+          exportError.hidden = false;
+        }).then(function () {
+          exportSubmit.disabled = false;
+          exportSubmit.textContent = "Recevoir ma simulation en PDF";
+        });
+      });
 
       function goBack() {
         if (window.history.length > 1) { window.history.back(); } else { window.location.href = "index.html#produits"; }
