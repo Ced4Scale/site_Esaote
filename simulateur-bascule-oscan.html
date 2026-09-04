@@ -47,10 +47,14 @@
     #boForm .simulator__field-group { padding: .6rem .8rem; margin-bottom: .5rem; }
     /* Colonne Machine A / O-scan resserrée pour cette page uniquement (les autres
        simulateurs gardent 300px, réglé dans styles.css partagé). Il faut reprendre
-       ici la règle mobile de styles.css (empiler en 1 colonne sous 780px), sinon
-       cette règle plus spécifique l'écrase silencieusement à toutes les largeurs. */
+       ici la règle mobile de styles.css (empiler en 1 colonne), sinon cette règle
+       plus spécifique l'écrase silencieusement à toutes les largeurs. Seuil abaissé
+       à 640px (au lieu des 780px du site) car la colonne resserrée à 250px tient
+       encore à cette largeur : ça permet de garder les 2 colonnes sur un iPhone en
+       paysage (ex. iPhone SE : 667px de large en paysage), pas seulement en
+       portrait — demande explicite de Cédric le 04/09/2026. */
     .simulator__layout { grid-template-columns: 250px minmax(0, 1fr); }
-    @media (max-width: 780px) { .simulator__layout { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 640px) { .simulator__layout { grid-template-columns: minmax(0, 1fr); } }
 
     .bascule-machine-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     .bascule-gear-btn {
@@ -101,9 +105,13 @@
     input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
     .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
 
-    .bascule-stats { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
-    @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
+    /* minmax(0, ...) partout (pas juste 1fr) : sinon une colonne ne peut pas
+       rétrécir sous la largeur intrinsèque de son contenu (montants, libellés) et
+       déborde de la page à certaines largeurs intermédiaires — piège classique du
+       site, repéré ici le 04/09/2026 en testant un iPhone en paysage (667px). */
+    .bascule-stats { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1.4rem; position: relative; }
+    @media (max-width: 900px) { .bascule-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
+    @media (max-width: 640px) { .bascule-stats { grid-template-columns: minmax(0, 1fr); } }
     .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 230px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
@@ -114,6 +122,7 @@
     .bascule-stat-joker.is-flipped .bascule-joker-flip { transform: rotateY(180deg); }
     .bascule-joker-face {
       position: absolute; inset: 0; backface-visibility: hidden; box-sizing: border-box;
+      overflow: hidden;
     }
     .bascule-joker-front {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
@@ -122,7 +131,11 @@
       border-radius: 8px;
     }
     .bascule-joker-front:hover { background: var(--wash); }
-    .bascule-joker-icon { font-size: 13.6rem; line-height: 1; }
+    /* Taille de l'icône proportionnelle à la largeur disponible (clamp), plutôt
+       qu'une taille fixe : sur un iPhone en paysage (ex. iPhone SE, 667px de large),
+       la colonne de la carte est trop étroite pour 13,6rem à taille fixe — ça
+       débordait de la page (repéré le 04/09/2026 en testant le paysage). */
+    .bascule-joker-icon { font-size: clamp(4rem, 16vw, 13.6rem); line-height: 1; }
     .bascule-joker-back {
       transform: rotateY(180deg); text-align: left; padding: 1rem 1.2rem; overflow: hidden;
       background: var(--white); border-radius: 8px;
@@ -137,7 +150,12 @@
     .bascule-joker-retour:hover { opacity: 1; }
     .bascule-stat { border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--wash); }
     .bascule-stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); }
-    .bascule-stat-value { font-size: 1.55rem; font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
+    /* Taille responsive (clamp) : les montants sont en white-space:nowrap (règle du
+       site — un montant en euros ne se coupe jamais en fin de ligne), donc à taille
+       fixe ils débordaient de leur case sur les largeurs de colonne étroites (ex.
+       iPhone en paysage, repéré le 04/09/2026 — le débordement devenait visible en
+       dépassant même de la carte joker retournée qui les recouvre). */
+    .bascule-stat-value { font-size: clamp(.85rem, 2.6vw, 1.55rem); font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
     .bascule-stat-detail { display: flex; flex-direction: column; gap: .15rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .84rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .bascule-stat-gain { margin-top: .4rem; padding-top: .4rem; border-top: 1px dashed var(--line); font-size: .86rem; font-weight: 700; color: #1a7a3d; }
     .bascule-stat-gain.negatif { color: var(--red); }
