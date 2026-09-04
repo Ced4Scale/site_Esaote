@@ -143,6 +143,7 @@
     .bascule-stat-joker.is-flipped .bascule-joker-back { box-shadow: 0 4px 18px rgba(0,0,0,.12); }
     .bascule-joker-back .simulator__hint { margin: .4rem 0; font-size: .78rem; }
     .bascule-joker-back .bascule-stat-gain { margin-top: 0; padding-top: 0; border-top: 0; }
+    #boJokerGain { font-size: 1.1rem; }
     .bascule-joker-retour {
       position: absolute; top: .5rem; right: .5rem; background: none; border: 0; cursor: pointer;
       font-size: 1rem; opacity: .6; padding: .1rem .3rem;
@@ -342,7 +343,7 @@
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
                   <div class="bascule-stat-label">🃏 Capacité restante sur l'O-scan</div>
-                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.4rem 0"></p>
+                  <table class="bascule-mini-table" style="margin:.4rem 0"><tbody id="boJokerCapaciteNote"></tbody></table>
                   <div class="bascule-joker-resultats">
                     <div class="bascule-stat-gain" id="boJokerVolEl">—</div>
                     <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
@@ -1137,10 +1138,12 @@
           jokerGainEl.classList.remove("negatif");
           jokerGainEl.textContent = "—";
         }
-        document.getElementById("boJokerCapaciteNote").textContent =
+        document.getElementById("boJokerCapaciteNote").innerHTML =
           capaciteJoker > 0
-            ? fmt(heuresRestantesParJour, 1) + " h/jour encore disponibles sur l'O-scan, dans ses mêmes plages d'ouverture (déjà déduit : " + fmt(volO) + " ex./an réalisés)."
-            : "L'O-scan est déjà à sa capacité physique dans ses plages d'ouverture actuelles (" + fmt(volO) + " ex./an réalisés).";
+            ? "<tr><td>Encore disponible</td><td>" + fmt(heuresRestantesParJour, 1) + " h/jour</td></tr>"
+              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " ex./an</td></tr>"
+            : "<tr><td>Statut</td><td>Déjà à pleine capacité</td></tr>"
+              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " ex./an</td></tr>";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
