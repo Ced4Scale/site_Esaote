@@ -46,8 +46,11 @@
     #boForm .simulator__hint { margin: -.1rem 0 .35rem; font-size: .76rem; }
     #boForm .simulator__field-group { padding: .6rem .8rem; margin-bottom: .5rem; }
     /* Colonne Machine A / O-scan resserrée pour cette page uniquement (les autres
-       simulateurs gardent 300px, réglé dans styles.css partagé). */
+       simulateurs gardent 300px, réglé dans styles.css partagé). Il faut reprendre
+       ici la règle mobile de styles.css (empiler en 1 colonne sous 780px), sinon
+       cette règle plus spécifique l'écrase silencieusement à toutes les largeurs. */
     .simulator__layout { grid-template-columns: 250px minmax(0, 1fr); }
+    @media (max-width: 780px) { .simulator__layout { grid-template-columns: minmax(0, 1fr); } }
 
     .bascule-machine-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
     .bascule-gear-btn {
@@ -98,10 +101,10 @@
     input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
     .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
 
-    .bascule-stats { display: grid; grid-template-columns: 1.35fr .6fr 1.35fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
+    .bascule-stats { display: grid; grid-template-columns: 1.2fr 1fr 1.2fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
-    .bascule-stat-joker { perspective: 1200px; display: flex; }
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 230px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -119,7 +122,7 @@
       border-radius: 8px;
     }
     .bascule-joker-front:hover { background: var(--wash); }
-    .bascule-joker-icon { font-size: 6.8rem; line-height: 1; }
+    .bascule-joker-icon { font-size: 13.6rem; line-height: 1; }
     .bascule-joker-back {
       transform: rotateY(180deg); text-align: left; padding: 1rem 1.2rem; overflow: hidden;
       background: var(--white); border-radius: 8px;
