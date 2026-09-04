@@ -843,6 +843,35 @@
         var c = hexToRgb(hex);
         return rgbToHex(c[0] * (1 - amt), c[1] * (1 - amt), c[2] * (1 - amt));
       }
+      // Sature/éclaircit la couleur de base vers un rendu "plastique brillant" —
+      // les couleurs de marque du site (bleu/orange), assez sobres, restaient
+      // trop ternes une fois en camembert glacé (signalé par Cédric). Remonte la
+      // saturation à un plancher et pousse un peu la luminosité, sans changer la
+      // teinte (donc toujours reconnaissable comme "le bleu"/"l'orange" du site).
+      function vivifier(hex) {
+        var c = hexToRgb(hex), r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
+        var max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, s = 0, h = 0;
+        if (max !== min) {
+          var d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+          else if (max === g) h = (b - r) / d + 2;
+          else h = (r - g) / d + 4;
+          h /= 6;
+        }
+        s = Math.max(s, 0.82);
+        l = Math.min(Math.max(l, 0.5), 0.56);
+        function hue2rgb(p, q, t) {
+          if (t < 0) t += 1;
+          if (t > 1) t -= 1;
+          if (t < 1 / 6) return p + (q - p) * 6 * t;
+          if (t < 1 / 2) return q;
+          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+          return p;
+        }
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
+        return rgbToHex(hue2rgb(p, q, h + 1 / 3) * 255, hue2rgb(p, q, h) * 255, hue2rgb(p, q, h - 1 / 3) * 255);
+      }
       function ellipsePoint(cx, cy, rx, ry, angle) {
         return [cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)];
       }
@@ -876,7 +905,8 @@
       // glacée/bombée — un dégradé linéaire clair→foncé ne suffisait pas à lire
       // comme "brillant" (signalé par Cédric, la version précédente avait l'air
       // juste dégradée, pas réfléchissante).
-      function ajouterGradientGlace(defs, colorHex) {
+      function ajouterGradientGlace(defs, colorHexBrut) {
+        var colorHex = vivifier(colorHexBrut);
         glossGradSeq++;
         var id = "glossGrad" + glossGradSeq;
         var grad = svgEl("radialGradient", { id: id, cx: "32%", cy: "22%", r: "85%" });
@@ -891,7 +921,7 @@
       function dessinerUnCamembert(cx, cy, r, camembert) {
         // Géométrie du rendu "glacé/3D" : ellipse (vue en légère plongée),
         // parts écartées du centre, tranche foncée extrudée en dessous.
-        var ryRatio = 0.5, depth = r * 0.38, explode = r * 0.1;
+        var ryRatio = 0.48, depth = r * 0.58, explode = r * 0.24;
         var defs = svgEl("defs", {});
         svg2.appendChild(defs);
         // Pas de `filter` ni `mix-blend-mode` CSS ici : sur cette page, ces deux
@@ -932,7 +962,7 @@
         // se retrouve caché par la paroi de la part voisine.
         slices.forEach(function (s) {
           var wall = sideWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle, depth);
-          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: assombrir(s.p.color, 0.38) }));
+          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: assombrir(vivifier(s.p.color), 0.38) }));
         });
         slices.forEach(function (s) {
           var fillUrl = ajouterGradientGlace(defs, s.p.color);
@@ -941,28 +971,47 @@
             fill: fillUrl, stroke: "#fcfcfb", "stroke-width": "1.5"
           }));
         });
-        // Reflet lumineux qui balaie tout le dessus du camembert (comme sur la
-        // photo de référence de Cédric) — en plus du dégradé radial par part, qui
-        // ne suffisait pas seul à lire comme "brillant". Dégradé radial blanc→
-        // transparent (stop-opacity, pas mix-blend-mode) rogné à la silhouette du
-        // camembert via l'attribut SVG natif `clip-path` (pas `style="clip-path"`,
-        // pour rester en dehors de tout pipeline de compositing CSS).
-        glossGradSeq++;
-        var clipId = "glossClip" + glossGradSeq;
-        var clip = svgEl("clipPath", { id: clipId });
-        clip.appendChild(svgEl("ellipse", { cx: cx, cy: cy, rx: r * 1.12, ry: r * ryRatio * 1.12 }));
-        defs.appendChild(clip);
-        var hlId = "glossHighlight" + glossGradSeq;
-        var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
-        hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.95" }));
-        hlGrad.appendChild(svgEl("stop", { offset: "22%", "stop-color": "#ffffff", "stop-opacity": "0.55" }));
-        hlGrad.appendChild(svgEl("stop", { offset: "55%", "stop-color": "#ffffff", "stop-opacity": "0.12" }));
-        hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
-        defs.appendChild(hlGrad);
-        pieGroup.appendChild(svgEl("ellipse", {
-          cx: cx - r * 0.2, cy: cy - r * ryRatio * 0.45, rx: r * 0.55, ry: r * ryRatio * 0.4,
-          fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
-        }));
+        // Reflet lumineux — en plus du dégradé radial par part, qui ne suffisait
+        // pas seul à lire comme "brillant" (signalé par Cédric). Posé UNIQUEMENT
+        // sur la part la plus grande (celle qui domine visuellement, comme sur la
+        // photo de référence), et rogné à SA PROPRE forme exacte (sa position déjà
+        // écartée) — jamais à la silhouette globale non écartée du camembert : avec
+        // des parts très séparées (explode élevé), un rognage global tombe à côté
+        // et découpe le reflet n'importe où sur une petite part décalée (bug
+        // rencontré en testant). Chute d'opacité brutale (quasi opaque jusqu'à
+        // 45%, transparent dès 60%) pour lire comme un vrai éclat, pas un
+        // dégradé doux ; plus un petit point de brillance dur en plus.
+        var plusGrandeSlice = slices.reduce(function (a, b) { return b.fraction > a.fraction ? b : a; });
+        (function () {
+          var s = plusGrandeSlice;
+          glossGradSeq++;
+          var clipId = "glossClip" + glossGradSeq;
+          var clip = svgEl("clipPath", { id: clipId });
+          clip.appendChild(svgEl("path", { d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle) }));
+          defs.appendChild(clip);
+          var hlId = "glossHighlight" + glossGradSeq;
+          var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
+          hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.9" }));
+          hlGrad.appendChild(svgEl("stop", { offset: "45%", "stop-color": "#ffffff", "stop-opacity": "0.75" }));
+          hlGrad.appendChild(svgEl("stop", { offset: "60%", "stop-color": "#ffffff", "stop-opacity": "0" }));
+          hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
+          defs.appendChild(hlGrad);
+          pieGroup.appendChild(svgEl("ellipse", {
+            cx: s.ecx - r * 0.15, cy: s.ecy - r * ryRatio * 0.5, rx: r * 0.42, ry: r * ryRatio * 0.22,
+            transform: "rotate(-18 " + (s.ecx - r * 0.15) + " " + (s.ecy - r * ryRatio * 0.5) + ")",
+            fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
+          }));
+          var hotId = "glossHot" + glossGradSeq;
+          var hotGrad = svgEl("radialGradient", { id: hotId, cx: "50%", cy: "50%", r: "50%" });
+          hotGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.98" }));
+          hotGrad.appendChild(svgEl("stop", { offset: "70%", "stop-color": "#ffffff", "stop-opacity": "0.6" }));
+          hotGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
+          defs.appendChild(hotGrad);
+          pieGroup.appendChild(svgEl("ellipse", {
+            cx: s.ecx - r * 0.32, cy: s.ecy - r * ryRatio * 0.55, rx: r * 0.1, ry: r * ryRatio * 0.09,
+            fill: "url(#" + hotId + ")", "clip-path": "url(#" + clipId + ")"
+          }));
+        })();
 
         // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
         // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
