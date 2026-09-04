@@ -191,7 +191,7 @@
             <tbody id="cvSyntheseBody"></tbody>
           </table>
           </div>
-          <p class="simulator__hint">Écart = IRM Esaote moins scanner (positif = avantage IRM). Recette de l'acte intellectuel : 65,50 € en moyenne pour une IRM (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025), et pour le scanner 25,27 € pour un examen mono-région (thorax ou abdomen-pelvis) ou 50,54 € pour un examen multi-région (ex. TAP), pondérés selon la part saisie plus haut — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
+          <p class="simulator__hint">Écart = IRM Esaote moins scanner (positif = avantage IRM). Recette de l'acte intellectuel pour l'IRM : 55 € pour l'O-scan (machine dédiée aux membres/extrémités, tarif "membre" CCAM appliqué en totalité), 65,50 € en moyenne pour les autres modèles Esaote plus généralistes S-scan/G-scan/Magnifico (55 € pour un examen "membre", 69 € pour les autres régions, pondérés 25 %/75 % selon la répartition des examens IRM par application communiquée par Esaote — présentation CHU Nîmes, avril 2025). Pour le scanner : 25,27 € pour un examen mono-région (thorax ou abdomen-pelvis) ou 50,54 € pour un examen multi-région (ex. TAP), pondérés selon la part saisie plus haut — tarifs CCAM secteur 1 usuels, hors majorations. Pour un arthroscanner (membre), l'acte intellectuel du scanner grimpe à 79,80-93,10 €, ce qui réduit nettement cet écart sur les examens ostéo-articulaires — à garder en tête si ton activité est surtout MSK.</p>
         </div>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
@@ -542,12 +542,18 @@
       // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
       // le forfait technique seul sous-estime l'écart réel de rentabilité. Tarifs CCAM secteur 1
       // usuels (base de remboursement, hors majorations) : 55€ pour un examen IRM "membre",
-      // 69€ pour les autres régions — vérifiés sur ameli.fr le 10/08/2026. Pour l'IRM, moyenne
-      // pondérée à 65,50€ (25% membre / 75% autre) plutôt qu'un simple 69€ : la répartition des
-      // examens IRM par application communiquée par Esaote ("MRI Exam by Application",
-      // présentation CHU Nîmes avril 2025 — Joints 25%, Head&Neck 30%, Spine 30%, MRA/Cardio 6%,
-      // Abdominal/Other 9%) donne "Joints" = 25% au tarif "membre", le reste (75%) aux autres
-      // régions : 0,25×55 + 0,75×69 = 65,50€.
+      // 69€ pour les autres régions — vérifiés sur ameli.fr le 10/08/2026. Pour une IRM Esaote
+      // généraliste (S-scan/G-scan/Magnifico), moyenne pondérée à 65,50€ (25% membre / 75% autre)
+      // plutôt qu'un simple 69€ : la répartition des examens IRM par application communiquée par
+      // Esaote ("MRI Exam by Application", présentation CHU Nîmes avril 2025 — Joints 25%,
+      // Head&Neck 30%, Spine 30%, MRA/Cardio 6%, Abdominal/Other 9%) donne "Joints" = 25% au
+      // tarif "membre", le reste (75%) aux autres régions : 0,25×55 + 0,75×69 = 65,50€.
+      // **O-scan traité à part (corrigé le 05/09/2026, signalé par Cédric)** : cette répartition
+      // 25%/75% est celle du PORTEFEUILLE ESAOTE GLOBAL (toutes IRM confondues), pas de l'O-scan
+      // spécifiquement — l'O-scan est justement la machine dédiée aux membres/extrémités
+      // (contrairement aux autres modèles, plus généralistes), donc sa vraie part "membre" est
+      // bien plus proche de 100% que de 25%. Lui appliquer 65,50€ sous-estimait son avantage
+      // réel face au scanner. Tarif "membre" pur (55€) retenu pour l'O-scan uniquement.
       // Scanner : 25,27€ pour un examen mono-région (thorax ou abdomen-pelvis), 50,54€ pour un
       // examen multi-région (TAP...) — pondérés selon la part saisie par le visiteur (16% par
       // défaut, d'après le rapport SFPM n°39 (2020) sur 6610 examens nationaux : TAP 11% + corps
@@ -555,9 +561,10 @@
       // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
       // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
       // sous le tableau récapitulatif).
+      var TARIF_IRM_MEMBRE = 55, TARIF_IRM_AUTRES_REGIONS = 69, TARIF_IRM_MOYENNE_GENERALISTE = 65.50;
       var TARIF_CT_MONO_REGION = 25.27, TARIF_CT_MULTI_REGION = 50.54;
       function acteIntellectuelPatient(machine, pctMultiRegion) {
-        if (machine.type !== "ct") return 65.50;
+        if (machine.type !== "ct") return machine.key === "esaote-o-scan" ? TARIF_IRM_MEMBRE : TARIF_IRM_MOYENNE_GENERALISTE;
         var p = Math.max(0, Math.min(100, pctMultiRegion || 0)) / 100;
         return (1 - p) * TARIF_CT_MONO_REGION + p * TARIF_CT_MULTI_REGION;
       }
