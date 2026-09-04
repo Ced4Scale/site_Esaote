@@ -855,6 +855,12 @@
         });
       }
 
+      // Un champ déplacé dans la roue crantée "Réglages avancés" ne doit plus
+      // apparaître ailleurs sur la page (demande explicite de Cédric le
+      // 05/09/2026) — filtré uniquement à l'affichage écran, pas dans le PDF
+      // envoyé par e-mail (qui doit rester un récapitulatif complet, autonome
+      // du site, puisque le destinataire n'a pas accès à l'outil interactif).
+      var LABELS_DANS_ROUE_CRANTEE = ["Statut amorti", "Coût du kWh", "Amplitude d'ouverture", "Jours d'ouverture par mois", "Salaire MERM net avant impôt"];
       function dessinerRecap(resultats, configs, params) {
         var d = recapDonnees(resultats, configs, params);
 
@@ -864,11 +870,11 @@
 
         document.getElementById("cvRecapRecettesHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("cvRecapRecettesHeadB").textContent = resultats[1].machine.nomCourt;
-        remplirTableau2Col("cvRecapRecettesBody", d.recettes);
+        remplirTableau2Col("cvRecapRecettesBody", d.recettes.filter(function (l) { return LABELS_DANS_ROUE_CRANTEE.indexOf(l.label) === -1; }));
 
         var tbodyCommuns = document.getElementById("cvRecapParamsCommunsBody");
         tbodyCommuns.innerHTML = "";
-        d.paramsCommuns.forEach(function (pair) {
+        d.paramsCommuns.filter(function (pair) { return LABELS_DANS_ROUE_CRANTEE.indexOf(pair[0]) === -1; }).forEach(function (pair) {
           var tr = document.createElement("tr");
           var td0 = document.createElement("td");
           td0.innerHTML = "<strong>" + pair[0] + "</strong>";
