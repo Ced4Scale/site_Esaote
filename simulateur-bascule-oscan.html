@@ -98,34 +98,33 @@
     input[type=range].bascule-curseur::-moz-range-track { background: transparent; }
     .bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
 
-    .bascule-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
+    .bascule-stats { display: grid; grid-template-columns: 1.35fr .6fr 1.35fr; gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: 1fr 1fr; } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: 1fr; } }
-    .bascule-stat-joker { perspective: 1200px; }
+    .bascule-stat-joker { perspective: 1200px; display: flex; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
       transition: transform .5s cubic-bezier(.2,.7,.3,1); transform-style: preserve-3d;
     }
-    .bascule-joker-fields { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: .6rem; }
-    .bascule-joker-field { flex: 1 1 6rem; min-width: 6rem; }
-    .bascule-joker-field label { display: block; font-size: .76rem; font-weight: 600; margin-bottom: .2rem; }
-    .bascule-joker-field .simulator__field-suffix input { width: 100%; }
-    .bascule-joker-resultats { display: flex; flex-wrap: wrap; gap: 1.5rem; }
+    .bascule-joker-resultats { display: flex; flex-direction: column; gap: .4rem; margin-top: .3rem; }
     .bascule-stat-joker.is-flipped .bascule-joker-flip { transform: rotateY(180deg); }
     .bascule-joker-face {
-      position: absolute; inset: 0; backface-visibility: hidden; border-radius: 8px;
-      border: 1px dashed var(--line); background: var(--wash); padding: 1rem 1.2rem; box-sizing: border-box;
+      position: absolute; inset: 0; backface-visibility: hidden; box-sizing: border-box;
     }
     .bascule-joker-front {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       gap: .5rem; text-align: center; cursor: pointer; font-family: inherit; font-size: 1rem;
-      color: inherit; width: 100%; margin: 0; appearance: none; border: 1px dashed var(--line);
-      background: linear-gradient(135deg, var(--wash), #fff);
+      color: inherit; width: 100%; margin: 0; appearance: none; border: 0; background: none;
+      border-radius: 8px;
     }
-    .bascule-joker-front:hover { border-color: var(--red); }
-    .bascule-joker-icon { font-size: 9rem; line-height: 1; }
-    .bascule-joker-back { transform: rotateY(180deg); text-align: left; padding: .6rem .9rem; overflow: hidden; }
+    .bascule-joker-front:hover { background: var(--wash); }
+    .bascule-joker-icon { font-size: 3.4rem; line-height: 1; }
+    .bascule-joker-back {
+      transform: rotateY(180deg); text-align: left; padding: 1rem 1.2rem; overflow: hidden;
+      background: var(--white); border-radius: 8px;
+    }
+    .bascule-stat-joker.is-flipped .bascule-joker-back { box-shadow: 0 4px 18px rgba(0,0,0,.12); }
     .bascule-joker-back .simulator__hint { margin: .4rem 0; font-size: .78rem; }
     .bascule-joker-back .bascule-stat-gain { margin-top: 0; padding-top: 0; border-top: 0; }
     .bascule-joker-retour {
@@ -133,7 +132,6 @@
       font-size: 1rem; opacity: .6; padding: .1rem .3rem;
     }
     .bascule-joker-retour:hover { opacity: 1; }
-    .bascule-joker-back .simulator__field-suffix input { width: 4.5rem; }
     .bascule-stat { border-radius: 8px; padding: 1rem 1.2rem; border: 1px solid var(--line); background: var(--wash); }
     .bascule-stat-label { font-size: .74rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700; color: var(--muted); }
     .bascule-stat-value { font-size: 1.55rem; font-weight: 800; margin-top: .2rem; font-variant-numeric: tabular-nums; }
@@ -322,31 +320,10 @@
                 </button>
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
-                  <div class="bascule-stat-label">🃏 Heures en plus sur l'O-scan</div>
-                  <div class="bascule-joker-fields">
-                    <div class="bascule-joker-field">
-                      <label for="boJokerDebit">Examens/h</label>
-                      <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boJokerDebit" value="3" /><span>FT/h</span></div>
-                    </div>
-                    <div class="bascule-joker-field">
-                      <label for="boJokerSemaine">Lun-ven</label>
-                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSemaine" value="0" /><span>h/j</span></div>
-                    </div>
-                    <div class="bascule-joker-field">
-                      <label for="boJokerSamedi">Samedi</label>
-                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerSamedi" value="0" /><span>h/j</span></div>
-                    </div>
-                    <div class="bascule-joker-field">
-                      <label for="boJokerDimanche">Dimanche</label>
-                      <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boJokerDimanche" value="0" /><span>h/j</span></div>
-                    </div>
-                    <div class="bascule-joker-field">
-                      <label for="boJokerVol">Combien ajouter</label>
-                      <div class="simulator__field-suffix"><input type="number" min="0" step="10" id="boJokerVol" value="0" /><span>ex./an</span></div>
-                    </div>
-                  </div>
-                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.5rem 0"></p>
+                  <div class="bascule-stat-label">🃏 Capacité restante sur l'O-scan</div>
+                  <p class="simulator__hint" id="boJokerCapaciteNote" style="margin:.4rem 0"></p>
                   <div class="bascule-joker-resultats">
+                    <div class="bascule-stat-gain" id="boJokerVolEl">—</div>
                     <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
                     <div class="bascule-stat-gain" id="boJokerGain">—</div>
                   </div>
@@ -796,9 +773,6 @@
         repositionnerCurseur();
       });
       curseur.addEventListener("input", recalculer);
-      ["boJokerVol", "boJokerDebit", "boJokerSemaine", "boJokerSamedi", "boJokerDimanche"].forEach(function (id) {
-        document.getElementById(id).addEventListener("input", recalculer);
-      });
       document.getElementById("boJokerFrontBtn").addEventListener("click", function () {
         document.getElementById("boJokerCard").classList.add("is-flipped");
         this.setAttribute("aria-expanded", "true");
@@ -1091,6 +1065,9 @@
         } else if (volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaineO(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
+        } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) - 0.5) {
+          capaciteNote.className = "bascule-capnote warn";
+          capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan : tu es à sa limite à " + fmtExact(debitO) + " FT/h (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an max). Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan : tu es proche de sa limite à " + fmtExact(debitO) + " FT/h (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an max). Une activité de post-opératoire — séquences plus courtes et plus focalisées — permettrait d'augmenter ce débit, et donc cette limite.";
@@ -1099,39 +1076,41 @@
           capaciteNote.textContent = "✓ " + fmt(volO) + " ex./an sur l'O-scan, dans sa capacité (max " + fmt(capaciteAnnuelleO) + " ex./an physiquement, " + fmt(volumeExtremitesDispo) + " ex./an disponibles en examens membres/extrémités).";
         }
 
-        // Carte joker : heures d'ouverture EN PLUS de celles déjà réglées pour l'O-scan
-        // (créneaux du soir, samedi, dimanche...), à leur propre débit — donc une
-        // capacité supplémentaire propre, pas empruntée à la capacité déjà comptée
-        // dans capaciteAnnuelleO. Ce volume est entièrement additionnel : jamais compté
-        // dans le volume membres/extrémités disponible (c'est de la demande en plus,
-        // pas une redistribution de l'activité déjà existante). Le loyer de l'O-scan
-        // est déjà compté dans rO (dès que volO > 0) : ce volume en plus n'a donc
-        // quasiment aucune charge fixe à couvrir, juste le variable (manip + élec) —
-        // d'où un gain marginal très élevé, c'est tout l'argument du joker.
-        var debitJoker = parseFloat(document.getElementById("boJokerDebit").value.replace(",", ".")) || 0;
-        var jokerSemaine = parseFloat(document.getElementById("boJokerSemaine").value.replace(",", ".")) || 0;
-        var jokerSamedi = parseFloat(document.getElementById("boJokerSamedi").value.replace(",", ".")) || 0;
-        var jokerDimanche = parseFloat(document.getElementById("boJokerDimanche").value.replace(",", ".")) || 0;
-        var capaciteJoker = Math.max(0, Math.round(debitJoker * heuresParSemaine(jokerSemaine, jokerSamedi, jokerDimanche) * SEMAINES_PAR_AN) - volO);
-        var jokerInput = document.getElementById("boJokerVol");
-        var jokerVol = Math.max(0, parseInt(jokerInput.value, 10) || 0);
-        if (jokerVol > capaciteJoker) { jokerVol = capaciteJoker; jokerInput.value = jokerVol; }
+        // Carte joker : capacité RESTANTE de l'O-scan, dans ses plages d'ouverture
+        // déjà réglées (AMPLITUDE_O_*) et à son propre débit (debitO) — plus de
+        // réglages séparés pour le joker, ce n'est plus des heures en plus mais ce
+        // qui n'est pas encore utilisé dans les mêmes heures d'ouverture. On déduit
+        // simplement ce qui est déjà réalisé (volO) de ce que la capacité totale
+        // permet physiquement (capaciteAnnuelleO) ; jamais compté dans le volume
+        // membres/extrémités disponible (c'est de la capacité physique libre, pas
+        // une redistribution de l'existant). Le loyer de l'O-scan est déjà compté
+        // dans rO (dès que volO > 0) : ce volume en plus n'a donc quasiment aucune
+        // charge fixe à couvrir, juste le variable (manip + élec) — d'où un gain
+        // marginal élevé, c'est tout l'argument du joker.
+        var capaciteJoker = Math.max(0, Math.round(capaciteAnnuelleO - volO));
+        // Heures/jour encore disponibles : capacité restante ÷ débit = heures
+        // restantes sur l'année, réparties sur les jours réellement ouverts.
+        var heuresRestantesAn = debitO > 0 ? capaciteJoker / debitO : 0;
+        var joursOuvertsSemaineO = (AMPLITUDE_O_SEMAINE > 0 ? 5 : 0) + (AMPLITUDE_O_SAMEDI > 0 ? 1 : 0) + (AMPLITUDE_O_DIMANCHE > 0 ? 1 : 0);
+        var heuresRestantesParJour = joursOuvertsSemaineO > 0 ? heuresRestantesAn / (joursOuvertsSemaineO * SEMAINES_PAR_AN) : 0;
         // Recette additionnelle (barème dégressif, à la suite du volume O-scan déjà
-        // posé) et coûts variables additionnels, au débit propre à ces heures en plus
-        // (pas celui de l'O-scan principal — ça peut être un rythme différent).
-        var gainCAJoker = ftAnnuel("le05", volO + jokerVol) - ftAnnuel("le05", volO);
+        // posé) et coûts variables additionnels, au débit de l'O-scan lui-même.
+        var gainCAJoker = ftAnnuel("le05", volO + capaciteJoker) - ftAnnuel("le05", volO);
         var elecLe05 = elecPourClasse("le05");
-        var coutManipJoker = debitJoker > 0 ? (coutHoraireMerm() / debitJoker) * 1 * jokerVol : 0;
-        var coutElecJoker = jokerVol * elecLe05.deltaKw * (elecLe05.dureeMin / 60) * kwh;
+        var coutManipJoker = debitO > 0 ? (coutHoraireMerm() / debitO) * capaciteJoker : 0;
+        var coutElecJoker = capaciteJoker * elecLe05.deltaKw * (elecLe05.dureeMin / 60) * kwh;
         var gainNetJoker = gainCAJoker - coutManipJoker - coutElecJoker;
+        var jokerVolEl = document.getElementById("boJokerVolEl");
         var jokerGainCAEl = document.getElementById("boJokerGainCA");
         var jokerGainEl = document.getElementById("boJokerGain");
-        if (jokerVol > 0) {
+        if (capaciteJoker > 0) {
+          jokerVolEl.textContent = "+ " + fmt(capaciteJoker) + " examens réalisables/an";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "+ " + eur(gainCAJoker) + " de CA en plus";
           jokerGainEl.classList.toggle("negatif", gainNetJoker < 0);
           jokerGainEl.textContent = (gainNetJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainNetJoker)) + " de résultat net en plus";
         } else {
+          jokerVolEl.textContent = "—";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "—";
           jokerGainEl.classList.remove("negatif");
@@ -1139,8 +1118,8 @@
         }
         document.getElementById("boJokerCapaciteNote").textContent =
           capaciteJoker > 0
-            ? "Ces heures en plus permettraient de réaliser jusqu'à " + fmt(capaciteJoker) + " examens supplémentaires/an (déjà déduit : " + fmt(volO) + " ex./an réalisés dans la simulation)."
-            : "Ajoute des heures ci-dessus pour voir combien d'examens en plus ça permettrait (les " + fmt(volO) + " ex./an déjà réalisés dans la simulation sont déjà déduits).";
+            ? fmt(heuresRestantesParJour, 1) + " h/jour encore disponibles sur l'O-scan, dans ses mêmes plages d'ouverture (déjà déduit : " + fmt(volO) + " ex./an réalisés)."
+            : "L'O-scan est déjà à sa capacité physique dans ses plages d'ouverture actuelles (" + fmt(volO) + " ex./an réalisés).";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
