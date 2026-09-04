@@ -147,7 +147,7 @@
           <p class="simulator__hint" style="margin:0 0 .6rem">Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année. La taille des deux camemberts est proportionnelle au total de recettes de chacun — pour ne pas donner l'impression que les deux dates rapportent pareil.</p>
           <div class="simulator__legend" id="simLegend2"></div>
           <div class="simulator__chart-wrap">
-            <svg id="simChart2" class="simulator__chart" style="isolation:isolate" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
+            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
           </div>
         </div>
         <div class="simulator__chart-card">
@@ -894,8 +894,27 @@
         var ryRatio = 0.55, depth = r * 0.32, explode = r * 0.1;
         var defs = svgEl("defs", {});
         svg2.appendChild(defs);
-        var pieGroup = svgEl("g", { style: "filter:drop-shadow(0 6px 8px rgba(0,0,0,.28))" });
+        // Pas de `filter` ni `mix-blend-mode` CSS ici : sur cette page, ces deux
+        // propriétés faisaient sortir le rendu du camembert de l'ordre d'empilement
+        // normal de la page et passer AU-DESSUS du popover "Seuils de cette classe"
+        // (opaque, z-index plus élevé) malgré `isolation:isolate` — un vrai bug de
+        // compositing Chrome, pas un souci de fond transparent. Corrigé le
+        // 04/09/2026 en ombre/reflet 100 % SVG (formes + dégradés), jamais de CSS
+        // filter/blend-mode sur un graphique de cette page.
+        var pieGroup = svgEl("g", {});
         svg2.appendChild(pieGroup);
+        // Ombre portée dessinée à la main (ellipse floutée via un dégradé radial
+        // sombre→transparent, pas de feGaussianBlur ni de CSS filter).
+        glossGradSeq++;
+        var shadowId = "glossShadow" + glossGradSeq;
+        var shadowGrad = svgEl("radialGradient", { id: shadowId, cx: "50%", cy: "50%", r: "50%" });
+        shadowGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#000000", "stop-opacity": "0.32" }));
+        shadowGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#000000", "stop-opacity": "0" }));
+        defs.appendChild(shadowGrad);
+        pieGroup.appendChild(svgEl("ellipse", {
+          cx: cx + r * 0.06, cy: cy + r * ryRatio + depth + r * 0.14,
+          rx: r * 1.15, ry: r * ryRatio * 0.42, fill: "url(#" + shadowId + ")"
+        }));
 
         var startAngle = -Math.PI / 2;
         var slices = [];
@@ -923,20 +942,25 @@
           }));
         });
         // Reflet lumineux qui balaie tout le dessus du camembert (comme sur la
-        // photo de référence de Cédric) — en plus du dégradé radial par part,
-        // qui ne suffisait pas seul à lire comme "brillant". Une seule ellipse
-        // blanche semi-transparente en mode "screen" (n'éclaircit que ce qu'elle
-        // recouvre, n'assombrit jamais), rognée à la silhouette globale du
-        // camembert pour ne pas déborder sur le fond de la page.
+        // photo de référence de Cédric) — en plus du dégradé radial par part, qui
+        // ne suffisait pas seul à lire comme "brillant". Dégradé radial blanc→
+        // transparent (stop-opacity, pas mix-blend-mode) rogné à la silhouette du
+        // camembert via l'attribut SVG natif `clip-path` (pas `style="clip-path"`,
+        // pour rester en dehors de tout pipeline de compositing CSS).
         glossGradSeq++;
         var clipId = "glossClip" + glossGradSeq;
         var clip = svgEl("clipPath", { id: clipId });
         clip.appendChild(svgEl("ellipse", { cx: cx, cy: cy, rx: r * 1.12, ry: r * ryRatio * 1.12 }));
         defs.appendChild(clip);
+        var hlId = "glossHighlight" + glossGradSeq;
+        var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
+        hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.85" }));
+        hlGrad.appendChild(svgEl("stop", { offset: "60%", "stop-color": "#ffffff", "stop-opacity": "0.3" }));
+        hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
+        defs.appendChild(hlGrad);
         pieGroup.appendChild(svgEl("ellipse", {
           cx: cx - r * 0.18, cy: cy - r * ryRatio * 0.4, rx: r * 0.8, ry: r * ryRatio * 0.55,
-          fill: "#ffffff", opacity: "0.45",
-          style: "mix-blend-mode:screen; clip-path:url(#" + clipId + ")"
+          fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
         }));
 
         // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
