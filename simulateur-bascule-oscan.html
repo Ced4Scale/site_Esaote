@@ -588,6 +588,13 @@
             officiels, pas des données constructeur — détail et niveau de confiance par modèle sur
             la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</p>
           </div>
+          <div class="field">
+            <label for="boHypDureeAcqA">Durée d'acquisition pure — Machine A</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypDureeAcqA" value="8" /><span>min/examen</span></div>
+            <p class="simulator__hint">Gradients actifs seulement (pas la prise en charge complète du
+            patient) — sert à répartir les heures d'ouverture entre "prêt sans patient" et "en cours
+            d'acquisition" pour le calcul électrique.</p>
+          </div>
           <div class="field" style="margin-bottom:0">
             <label for="boHypZone">Zone tarifaire (forfait technique)</label>
             <select id="boHypZone">
@@ -627,9 +634,15 @@
             <label for="boHypOHeuresSamedi">Amplitude d'ouverture, samedi</label>
             <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypOHeuresSamedi" value="0" /><span>h/jour</span></div>
           </div>
-          <div class="field" style="margin-bottom:0">
+          <div class="field">
             <label for="boHypOHeuresDimanche">Amplitude d'ouverture, dimanche</label>
             <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypOHeuresDimanche" value="0" /><span>h/jour</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="boHypDureeAcqO">Durée d'acquisition pure</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypDureeAcqO" value="10" /><span>min/examen</span></div>
+            <p class="simulator__hint">Gradients actifs seulement — sert au calcul électrique (répartition
+            "prêt sans patient" / "en cours d'acquisition").</p>
           </div>
           <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde la
           case "Résultat net total" changer pendant que tu ajustes.</p>
@@ -695,11 +708,44 @@
         return total;
       }
 
-      var ELEC = {
-        t15:   { deltaKw: 20.2 - 8.2,  dureeMin: 12 },
-        sup15: { deltaKw: 22.4 - 10.8, dureeMin: 10 },
-        le05:  { deltaKw: 1.0 - 0.3,   dureeMin: 15 }
+      // Modèle électrique à 3 couches (socle / entre-patients / examens), repris le
+      // 04/09/2026 de simulateur-energie.html — remplace l'ancien modèle "delta
+      // mesure-veille × durée d'acquisition × volume" qui ne comptait QUE le surcoût
+      // de l'acquisition elle-même, en oubliant que Machine A (aimant supraconducteur)
+      // doit être maintenue en froid en PERMANENCE (24h/24, 365j/an, même sans aucun
+      // patient) dès qu'elle est branchée au secteur — Cédric l'a fait remarquer en
+      // reliant ce point à ce que dit déjà simulateur-energie.html. L'ancien modèle
+      // sous-estimait donc le coût électrique réel de Machine A (biais en sa faveur
+      // dans la comparaison avec l'O-scan, dont l'aimant permanent n'a pas ce besoin).
+      //   - eteint/pret/mesure : 3 états de puissance (kW), comme sur le simulateur
+      //     énergie — "eteint" = hors examen ET hors plage d'ouverture, "pret" = sous
+      //     tension mais pas d'acquisition en cours, "mesure" = gradients actifs.
+      //   - coeffLT : surconsommation du refroidissement du local technique (maintien
+      //     en froid de l'aimant), en fraction de la conso machine — 0 pour un aimant
+      //     permanent (O-scan), 0,33 pour un aimant supraconducteur classique (valeur
+      //     de référence du simulateur énergie).
+      //   - climSalleKw : climatisation de la salle d'examen, comptée en continu
+      //     24h/24 (obligatoire même hors ouverture, stabilité thermique).
+      // Valeurs génériques calibrées sur les mêmes machines de référence déjà utilisées
+      // pour l'ancien delta (Siemens Altea pour 1,5 T, Siemens Prisma pour 3 T, Esaote
+      // O-scan) — cohérence conservée avec assets/machines-energie-data.js, qui reste
+      // la source si un modèle réel est choisi dans la roue crantée (voir
+      // elecPourClasse() plus bas, override MODELE_A_KEY inchangé).
+      var ELEC_GENERIC = {
+        t15:   { eteint: 4.3,  pret: 8.2,  mesure: 20.2, coeffLT: 0.33, climSalleKw: 2.5 },
+        sup15: { eteint: 4.8,  pret: 10.8, mesure: 22.4, coeffLT: 0.33, climSalleKw: 3.2 },
+        le05:  { eteint: 0.05, pret: 0.3,  mesure: 1.0,  coeffLT: 0,    climSalleKw: 1.0 }
       };
+      var HEURES_AN = 8736; // 52 semaines × 168 h — cohérent avec SEMAINES_PAR_AN
+      // Durée d'acquisition PURE (gradients actifs seulement, pas la prise en charge
+      // totale du patient) — nouveau champ éditable de la roue crantée, ajouté le
+      // 04/09/2026 sur demande de Cédric, qui sert à répartir les heures d'ouverture
+      // entre "prêt sans patient" et "en cours d'acquisition". Distinct du débit
+      // horaire (Examens par heure) déjà réglable sur la page principale, qui lui
+      // inclut la prise en charge complète (habillage, installation, etc.).
+      var DUREE_ACQ_A_DEFAUTS = { t15: 8, sup15: 7 };
+      var DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS.t15;
+      var DUREE_ACQ_O = 10;
       // Hypothèses par défaut, modifiables via la roue crantée du bloc Machine A
       // (voir boBtnHypotheses plus bas) — pas de mémorisation, on repart de ces
       // valeurs à chaque chargement de page.
@@ -738,12 +784,69 @@
       function capaciteAnnuelle(examensParHeure) {
         return examensParHeure * heuresParSemaineO() * SEMAINES_PAR_AN;
       }
+      // Répartit les heures d'ouverture réelles entre "prêt sans patient" et "en
+      // cours d'acquisition" — même logique que profilAnnuel() de
+      // simulateur-energie.html (volume réparti au prorata du temps d'ouverture de
+      // chaque type de jour), réduite ici aux deux seules valeurs utiles à
+      // coutElecAnnuel() (heuresEteint ne sert qu'au socle, qui est un plancher fixe
+      // HEURES_AN indépendant de l'ouverture réelle, voir plus bas).
+      function profilHeures(amplitudeSemaine, amplitudeSamedi, amplitudeDimanche, volumeAnnuel, dureeAcquisitionMin) {
+        var totalHeuresOuvertesSemaine = 5 * amplitudeSemaine + amplitudeSamedi + amplitudeDimanche;
+        var patientsParSemaine = volumeAnnuel / 52;
+        var typesJour = [
+          { nb: 5, heuresOuverture: amplitudeSemaine },
+          { nb: 1, heuresOuverture: amplitudeSamedi },
+          { nb: 1, heuresOuverture: amplitudeDimanche }
+        ];
+        var heuresPret = 0, heuresMesure = 0;
+        var tAcqH = dureeAcquisitionMin / 60;
+        typesJour.forEach(function (t) {
+          if (t.heuresOuverture <= 0) return;
+          var partHeures = totalHeuresOuvertesSemaine > 0 ? t.heuresOuverture / totalHeuresOuvertesSemaine : 0;
+          var patientsCeTypeParSemaine = patientsParSemaine * partHeures;
+          var patientsParJourCeType = patientsCeTypeParSemaine / t.nb;
+          var heuresMesureJour = Math.min(t.heuresOuverture, patientsParJourCeType * tAcqH);
+          var heuresPretJour = t.heuresOuverture - heuresMesureJour;
+          heuresPret += heuresPretJour * t.nb * 52;
+          heuresMesure += heuresMesureJour * t.nb * 52;
+        });
+        return { heuresPret: heuresPret, heuresMesure: heuresMesure };
+      }
+      // Décomposition en 3 couches (socle + entre-patients + examens), voir
+      // commentaire de ELEC_GENERIC plus haut — même formule que
+      // decompositionAnnuelle()/kwhAnnuel() de simulateur-energie.html.
+      function coutElecAnnuel(elecRef, profil, kwh) {
+        var coeffLT = elecRef.coeffLT;
+        var socleIRM = HEURES_AN * elecRef.eteint;
+        var socleLT = socleIRM * coeffLT;
+        var socleClim = HEURES_AN * elecRef.climSalleKw;
+        var deltaPret = elecRef.pret - elecRef.eteint;
+        var entrePatientsIRM = profil.heuresPret * deltaPret;
+        var entrePatientsLT = entrePatientsIRM * coeffLT;
+        var deltaMesure = elecRef.mesure - elecRef.eteint;
+        var examensIRM = profil.heuresMesure * deltaMesure;
+        var examensLT = examensIRM * coeffLT;
+        var kwhTotal = socleIRM + socleLT + socleClim + entrePatientsIRM + entrePatientsLT + examensIRM + examensLT;
+        return kwhTotal * kwh;
+      }
       function resultat(classeKey, volumeAnnuel, nbManip, examensParHeure, loyerMensuel, kwh) {
+        // Machine non exploitée dans ce scénario (0 examen) : pas de loyer (règle déjà
+        // en vigueur) NI de socle électrique — on ne paierait pas l'électricité d'une
+        // machine qu'on n'aurait jamais fait installer/brancher.
+        if (volumeAnnuel <= 0) return { ca: 0, coutManip: 0, coutElec: 0, loyerAnnuel: 0, net: 0 };
         var ca = ftAnnuel(classeKey, volumeAnnuel);
         var coutManip = examensParHeure > 0 ? (coutHoraireMerm() / examensParHeure) * nbManip * volumeAnnuel : 0;
         var e = elecPourClasse(classeKey);
-        var coutElec = volumeAnnuel * e.deltaKw * (e.dureeMin / 60) * kwh;
-        var loyerAnnuel = volumeAnnuel > 0 ? loyerMensuel * 12 : 0;
+        var estO = classeKey === "le05";
+        var profil = profilHeures(
+          estO ? AMPLITUDE_O_SEMAINE : AMPLITUDE_A_SEMAINE,
+          estO ? AMPLITUDE_O_SAMEDI : AMPLITUDE_A_SAMEDI,
+          estO ? AMPLITUDE_O_DIMANCHE : AMPLITUDE_A_DIMANCHE,
+          volumeAnnuel,
+          estO ? DUREE_ACQ_O : DUREE_ACQ_A
+        );
+        var coutElec = coutElecAnnuel(e, profil, kwh);
+        var loyerAnnuel = loyerMensuel * 12;
         return { ca: ca, coutManip: coutManip, coutElec: coutElec, loyerAnnuel: loyerAnnuel, net: ca - coutManip - coutElec - loyerAnnuel };
       }
       function totalPour(X, N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh) {
@@ -976,9 +1079,11 @@
       var hypOverlay = document.getElementById("boHypOverlay");
 
       // Modèle d'IRM réel choisi pour la Machine A (électricité) — "" = valeur
-      // générique par défaut (ELEC.t15/sup15). Réutilise le fichier partagé
+      // générique par défaut (ELEC_GENERIC.t15/sup15). Réutilise le fichier partagé
       // assets/machines-energie-data.js (ENERGIE_MACHINES), filtré aux IRM tunnel
-      // (aimant supraconducteur) du même champ que celui sélectionné pour Machine A.
+      // (aimant supraconducteur) du même champ que celui sélectionné pour Machine A —
+      // ce fichier fournit déjà eteint/pret/mesure/coeffRefroidissementLT/climSalleKw
+      // par modèle, exactement la forme dont a besoin coutElecAnnuel().
       var MODELE_A_KEY = "";
       function modelesTunnelPourChamp(classeA) {
         var champCible = classeA === "sup15" ? 3 : 1.5;
@@ -989,9 +1094,9 @@
       function elecPourClasse(classeKey) {
         if ((classeKey === "t15" || classeKey === "sup15") && MODELE_A_KEY) {
           var m = modelesTunnelPourChamp(classeKey).filter(function (x) { return x.key === MODELE_A_KEY; })[0];
-          if (m) return { deltaKw: m.mesure - m.pret, dureeMin: m.dureeAcquisitionMinutes };
+          if (m) return { eteint: m.eteint, pret: m.pret, mesure: m.mesure, coeffLT: m.coeffRefroidissementLT, climSalleKw: m.climSalleKw };
         }
-        return ELEC[classeKey];
+        return ELEC_GENERIC[classeKey];
       }
       function remplirModelesA() {
         var classeA = document.getElementById("boClasseA").value;
@@ -1007,6 +1112,13 @@
       }
       document.getElementById("boClasseA").addEventListener("change", function () {
         MODELE_A_KEY = ""; // la liste de modèles change avec le champ, on repart générique
+        // La durée d'acquisition par défaut dépend aussi du champ (8 min en 1,5 T,
+        // 7 min en 3 T) — reset comme le modèle si l'utilisateur n'a pas encore
+        // personnalisé le champ (heuristique simple : si la valeur actuelle est
+        // encore l'une des 2 valeurs par défaut, on la resynchronise).
+        if (DUREE_ACQ_A === DUREE_ACQ_A_DEFAUTS.t15 || DUREE_ACQ_A === DUREE_ACQ_A_DEFAUTS.sup15) {
+          DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS[this.value];
+        }
         majResumeHypotheses();
       });
 
@@ -1014,12 +1126,13 @@
         var classeA = document.getElementById("boClasseA").value;
         var modele = modelesTunnelPourChamp(classeA).filter(function (m) { return m.key === MODELE_A_KEY; })[0];
         var elecTxt = modele
-          ? "Modèle réel sélectionné pour la Machine A : " + modele.nomCourt + " (delta mesure-veille " +
-            fmt(modele.mesure - modele.pret, 2) + " kW × " + fmt(modele.dureeAcquisitionMinutes, 0) +
-            " min/examen). O-scan sur sa valeur générique."
-          : "Coût des gradients pendant l'acquisition seulement (12 min pour la 1,5 T, 10 min pour la 3 T, " +
-            "15 min pour l'O-scan, delta de puissance mesure-veille active) — pas de climatisation ni de socle " +
-            "électrique fixe dans cette version.";
+          ? "Modèle réel sélectionné pour la Machine A : " + modele.nomCourt + " (arrêt " + fmt(modele.eteint, 2) +
+            " kW / prêt " + fmt(modele.pret, 2) + " kW / acquisition " + fmt(modele.mesure, 2) + " kW). O-scan sur sa " +
+            "valeur générique."
+          : "Décomposition en 3 couches (comme sur le simulateur énergie) : un socle fixe 24h/24 et 365j/an " +
+            "(maintien en froid de l'aimant + climatisation de la salle), le surcoût d'être ouvert sans patient " +
+            "(\"prêt\"), et le surcoût de l'acquisition elle-même — pas seulement le delta d'acquisition comme dans " +
+            "une version précédente de ce simulateur.";
         function ligne(label, valeur) {
           return "<tr><td>" + label + "</td><td>" + valeur + "</td></tr>";
         }
@@ -1028,6 +1141,8 @@
           ligne("Coût réel employeur estimé", eur(coutHoraireMerm(), 2) + "/h") +
           ligne("Base légale mensuelle", fmt(HEURES_LEGALES_MOIS, 2) + " h/mois") +
           ligne("Électricité", elecTxt) +
+          ligne("Durée d'acquisition pure (Machine A)", fmt(DUREE_ACQ_A, 1) + " min/examen") +
+          ligne("Durée d'acquisition pure (O-scan)", fmt(DUREE_ACQ_O, 1) + " min/examen") +
           ligne("Amplitude Machine A", fmt(AMPLITUDE_A_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_A_SAMEDI, 1) +
             " h samedi / " + fmt(AMPLITUDE_A_DIMANCHE, 1) + " h dimanche") +
           ligne("Amplitude O-scan (capacité)", fmt(AMPLITUDE_O_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_O_SAMEDI, 1) +
@@ -1043,6 +1158,7 @@
         document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
+        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         remplirModelesA();
         hypOverlay.hidden = false;
@@ -1062,11 +1178,13 @@
         var heuresSemaine = parseFloat(document.getElementById("boHypHeuresSemaine").value.replace(",", "."));
         var heuresSamedi = parseFloat(document.getElementById("boHypHeuresSamedi").value.replace(",", "."));
         var heuresDimanche = parseFloat(document.getElementById("boHypHeuresDimanche").value.replace(",", "."));
+        var dureeAcqA = parseFloat(document.getElementById("boHypDureeAcqA").value.replace(",", "."));
         if (netMerm > 0) NET_MERM = netMerm;
         if (heuresLegales > 0) HEURES_LEGALES_MOIS = heuresLegales;
         if (heuresSemaine >= 0) AMPLITUDE_A_SEMAINE = heuresSemaine;
         if (heuresSamedi >= 0) AMPLITUDE_A_SAMEDI = heuresSamedi;
         if (heuresDimanche >= 0) AMPLITUDE_A_DIMANCHE = heuresDimanche;
+        if (dureeAcqA >= 0) DUREE_ACQ_A = dureeAcqA;
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         ZONE_TARIFAIRE = document.getElementById("boHypZone").value;
         majResumeHypotheses();
@@ -1082,7 +1200,7 @@
         this.value = fmt(lireMontant(this));
         appliquerHypotheses();
       });
-      ["boHypHeuresLegales", "boHypHeuresSemaine", "boHypHeuresSamedi", "boHypHeuresDimanche"].forEach(function (id) {
+      ["boHypHeuresLegales", "boHypHeuresSemaine", "boHypHeuresSamedi", "boHypHeuresDimanche", "boHypDureeAcqA"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", appliquerHypotheses);
       });
       document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
@@ -1091,11 +1209,13 @@
         NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
         AMPLITUDE_A_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_A_SAMEDI = HYP_DEFAUTS.heuresSamedi;
         AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = ""; ZONE_TARIFAIRE = HYP_DEFAUTS.zone;
+        DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS[document.getElementById("boClasseA").value];
         document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
         document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
+        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         remplirModelesA();
         majResumeHypotheses();
@@ -1109,13 +1229,15 @@
       // application en direct) que celui de la Machine A, mais uniquement l'amplitude
       // (le salaire MERM et la base légale restent communs, réglés côté Machine A).
       var HYP_O_DEFAUTS = {
-        heuresSemaine: AMPLITUDE_O_SEMAINE, heuresSamedi: AMPLITUDE_O_SAMEDI, heuresDimanche: AMPLITUDE_O_DIMANCHE
+        heuresSemaine: AMPLITUDE_O_SEMAINE, heuresSamedi: AMPLITUDE_O_SAMEDI, heuresDimanche: AMPLITUDE_O_DIMANCHE,
+        dureeAcqO: DUREE_ACQ_O
       };
       var hypOverlayO = document.getElementById("boHypOverlayO");
       function ouvrirHypothesesO() {
         document.getElementById("boHypOHeuresSemaine").value = AMPLITUDE_O_SEMAINE;
         document.getElementById("boHypOHeuresSamedi").value = AMPLITUDE_O_SAMEDI;
         document.getElementById("boHypOHeuresDimanche").value = AMPLITUDE_O_DIMANCHE;
+        document.getElementById("boHypDureeAcqO").value = DUREE_ACQ_O;
         hypOverlayO.hidden = false;
         hypOverlayO.classList.add("is-open");
       }
@@ -1127,24 +1249,27 @@
         var heuresSemaine = parseFloat(document.getElementById("boHypOHeuresSemaine").value.replace(",", "."));
         var heuresSamedi = parseFloat(document.getElementById("boHypOHeuresSamedi").value.replace(",", "."));
         var heuresDimanche = parseFloat(document.getElementById("boHypOHeuresDimanche").value.replace(",", "."));
+        var dureeAcqO = parseFloat(document.getElementById("boHypDureeAcqO").value.replace(",", "."));
         if (heuresSemaine >= 0) AMPLITUDE_O_SEMAINE = heuresSemaine;
         if (heuresSamedi >= 0) AMPLITUDE_O_SAMEDI = heuresSamedi;
         if (heuresDimanche >= 0) AMPLITUDE_O_DIMANCHE = heuresDimanche;
+        if (dureeAcqO >= 0) DUREE_ACQ_O = dureeAcqO;
         majResumeHypotheses();
         repositionnerCurseur();
       }
       document.getElementById("boBtnHypothesesO").addEventListener("click", ouvrirHypothesesO);
       document.getElementById("boHypCloseO").addEventListener("click", fermerHypothesesO);
       document.getElementById("boHypDoneO").addEventListener("click", fermerHypothesesO);
-      ["boHypOHeuresSemaine", "boHypOHeuresSamedi", "boHypOHeuresDimanche"].forEach(function (id) {
+      ["boHypOHeuresSemaine", "boHypOHeuresSamedi", "boHypOHeuresDimanche", "boHypDureeAcqO"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", appliquerHypothesesO);
       });
       document.getElementById("boHypResetO").addEventListener("click", function () {
         AMPLITUDE_O_SEMAINE = HYP_O_DEFAUTS.heuresSemaine; AMPLITUDE_O_SAMEDI = HYP_O_DEFAUTS.heuresSamedi;
-        AMPLITUDE_O_DIMANCHE = HYP_O_DEFAUTS.heuresDimanche;
+        AMPLITUDE_O_DIMANCHE = HYP_O_DEFAUTS.heuresDimanche; DUREE_ACQ_O = HYP_O_DEFAUTS.dureeAcqO;
         document.getElementById("boHypOHeuresSemaine").value = AMPLITUDE_O_SEMAINE;
         document.getElementById("boHypOHeuresSamedi").value = AMPLITUDE_O_SAMEDI;
         document.getElementById("boHypOHeuresDimanche").value = AMPLITUDE_O_DIMANCHE;
+        document.getElementById("boHypDureeAcqO").value = DUREE_ACQ_O;
         majResumeHypotheses();
         repositionnerCurseur();
       });
@@ -1330,7 +1455,15 @@
         var gainCAJoker = ftAnnuel("le05", volO + capaciteJoker) - ftAnnuel("le05", volO);
         var elecLe05 = elecPourClasse("le05");
         var coutManipJoker = debitO > 0 ? (coutHoraireMerm() / debitO) * capaciteJoker : 0;
-        var coutElecJoker = capaciteJoker * elecLe05.deltaKw * (elecLe05.dureeMin / 60) * kwh;
+        // Coût électrique marginal du joker : uniquement le delta "mesure - prêt"
+        // (pas "mesure - arrêt") — ces examens en plus se font dans les MÊMES heures
+        // d'ouverture déjà réglées pour l'O-scan (AMPLITUDE_O_*), donc le socle
+        // 24h/24 et le surcoût "prêt sans patient" sont déjà couverts par rO (dès
+        // que volO > 0) ; on ne convertit ici que du temps "prêt" déjà payé en
+        // temps "mesure", d'où un coût marginal bas — c'est tout l'argument du
+        // joker. Reprend DUREE_ACQ_O (durée d'acquisition pure), pas le débit
+        // horaire (qui inclut la prise en charge complète du patient).
+        var coutElecJoker = capaciteJoker * (elecLe05.mesure - elecLe05.pret) * (DUREE_ACQ_O / 60) * kwh;
         var gainNetJoker = gainCAJoker - coutManipJoker - coutElecJoker;
 
         // Graphe à bâtons des 3 scénarios comparés, dans l'ordre demandé par
@@ -1428,7 +1561,7 @@
         dernierEtat = {
           classeA: classeA, nomClasseA: nomClasseA, volA: volA, volO: volO, volumeTotal: volumeTotal,
           loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh,
-          partExtremites: partExtremites,
+          partExtremites: partExtremites, dureeAcqA: DUREE_ACQ_A, dureeAcqO: DUREE_ACQ_O,
           rA: rA, rO: rO, caTotal: caTotal, netTotal: netTotal, gainOscan: gainOscan, pctGainTxt: pctGainTxt
         };
       }
@@ -1636,10 +1769,12 @@
           drawRecapRow("Loyer mensuel Machine A", [eur(e.loyerA)]);
           drawRecapRow("Manip en poste (Machine A)", [String(e.manipA)]);
           drawRecapRow("Débit Machine A", [fmt(e.debitA, 1) + " FT/h"]);
+          drawRecapRow("Durée d'acquisition pure Machine A", [fmt(e.dureeAcqA, 1) + " min/examen"]);
           drawRecapRow("Activité totale actuelle", [fmt(e.volumeTotal) + " FT/an"]);
           drawRecapRow("Part membres/extrémités", [fmt(e.partExtremites * 100, 0) + " %"]);
           drawRecapRow("Loyer mensuel O-scan", [eur(e.loyerO)]);
           drawRecapRow("Débit O-scan", [fmt(e.debitO, 1) + " FT/h"]);
+          drawRecapRow("Durée d'acquisition pure O-scan", [fmt(e.dureeAcqO, 1) + " min/examen"]);
           drawRecapRow("Coût du kWh", [eur(e.kwh, 2)]);
 
           return doc.output("datauristring").split(",")[1];
