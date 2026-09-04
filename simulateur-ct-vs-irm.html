@@ -37,6 +37,11 @@
     #cvHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
     #cvHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
     #cvHypOverlay .modal__scroll { height: 100%; }
+    /* Colonne étroite du formulaire (~250px) : le tableau "Votre activité" a
+       besoin d'un padding resserré (pas juste une police réduite, qui ne
+       change rien au padding fixé en rem par .stats-table) pour tenir sur une
+       seule ligne par entrée sans dépasser — demandé par Cédric le 05/09/2026. */
+    #cvActiviteTable td { padding: .3rem .3rem .3rem 0; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -95,7 +100,7 @@
             </div>
           </div>
           <div style="overflow-x:auto; margin:.4rem 0 0">
-            <table class="stats-table" style="max-width:420px">
+            <table class="stats-table" id="cvActiviteTable" style="max-width:420px; white-space:nowrap; font-size:.78rem">
               <tbody id="cvActiviteTableBody"></tbody>
             </table>
           </div>
@@ -666,8 +671,8 @@
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
         var modeActiviteCourant = document.querySelector('input[name="cvActiviteMode"]:checked').value;
         var activiteEquivalenteTxt = modeActiviteCourant === "jour"
-          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + " patients/an"
-          : "≈ " + patientsFmt.format(params.activitePatientsJour) + " patients/jour";
+          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + "/an"
+          : "≈ " + patientsFmt.format(params.activitePatientsJour) + "/jour";
 
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: Math.max(0, +installA.value || 0) },
@@ -691,7 +696,7 @@
           return "<tr><td style=\"color:" + r.color + "\"><strong>" + r.machine.nomCourt + "</strong></td><td>" + (res >= 0 ? "+" : "") + euros.format(res) + "</td></tr>";
         }).join("");
         document.getElementById("cvActiviteTableBody").innerHTML =
-          "<tr><td>Activité équivalente</td><td>" + activiteEquivalenteTxt + "</td></tr>" +
+          "<tr><td>Équivalent</td><td>" + activiteEquivalenteTxt + "</td></tr>" +
           lignesResultatActivite;
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
