@@ -116,7 +116,13 @@
        + écarts affichés sous les barres 2 et 3 du graphe ajoutent encore de la
        hauteur — vérifié nécessaire jusqu'à 512px de contenu réel sur iPhone SE
        portrait. */
-    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 540px; }
+    /* 520px (540px puis 520px le 04/09/2026) : depuis que les libellés/écarts
+       sous les barres ne s'étirent plus à la hauteur de la colonne la plus
+       chargée (2 rangées flex séparées au lieu d'une grille à ligne partagée,
+       voir plus haut), le contenu réel de la carte est redevenu plus court —
+       vérifié jusqu'à 512px sur iPhone SE portrait, 520px laisse une petite
+       marge sans revenir au grand vide du 540px précédent. */
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 520px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -166,26 +172,33 @@
        bas (column-reverse), coins hauts arrondis (mark spec du skill dataviz).
        Même logique de couleur que le camembert juste au-dessus : gris = sans
        l'O-scan, orange dégradé = avec l'O-scan (plus foncé = plus d'activité).
-       Grille à 2 lignes partagées (haut = valeur+barre, bas = libellé+écarts)
-       plutôt qu'une simple colonne flex par bâton — nécessaire depuis l'ajout
-       des écarts sous les barres 2 et 3 (contenu de hauteur différente selon
-       la colonne) : avec 3 colonnes flex indépendantes alignées par le bas
-       (`align-items:flex-end`), une colonne avec plus de texte sous sa barre
-       remontait sa base plus haut que les colonnes voisines — corrigé le
-       04/09/2026 en partageant la ligne "haut" entre les 3 bâtons (même
-       hauteur de ligne pour tous, donc même position de base) via
-       `.bascule-joker-bar-col{display:contents}` qui laisse ses 2 enfants
-       (haut/bas) rejoindre directement la grille du parent. */
-    .bascule-joker-barchart { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-rows: auto auto; grid-auto-flow: column; column-gap: .6rem; margin: .6rem 0 .2rem; }
-    .bascule-joker-bar-col { display: contents; }
-    .bascule-joker-bar-top { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; min-width: 0; }
-    .bascule-joker-bar-bottom { display: flex; flex-direction: column; align-items: center; min-width: 0; }
+       2 rangées indépendantes empilées (haut = valeur+barre, bas =
+       libellé+écarts) plutôt qu'une seule colonne flex par bâton — nécessaire
+       depuis l'ajout des écarts sous les barres 2 et 3 (contenu de hauteur
+       différente selon la colonne) : avec 3 colonnes flex indépendantes
+       alignées par le bas (`align-items:flex-end`), une colonne avec plus de
+       texte sous sa barre remontait sa base plus haut que les colonnes
+       voisines. Une 1ʳᵉ correction (grille à 2 lignes PARTAGÉES) alignait bien
+       les bases mais forçait alors les libellés/écarts à s'étirer sur la
+       hauteur de la colonne la plus chargée (celle à 2 écarts), laissant un
+       vide visible sous "Sans l'O-scan" et "Avec l'O-scan" — **corrigé le
+       04/09/2026 en 2 rangées flex séparées et empilées** (`.bascule-joker-
+       bar-tops` / `.bascule-joker-bar-bottoms`, mêmes largeurs de colonne via
+       `flex:1 1 0` dans les deux) : la rangée du haut aligne les bases (les 3
+       hauteurs y sont de toute façon identiques : valeur + barre à hauteur
+       fixe), la rangée du bas n'a plus aucune raison de partager sa hauteur
+       entre colonnes, chacune ne prend que la place de son propre texte. */
+    .bascule-joker-barchart { display: flex; flex-direction: column; margin: .6rem 0 .2rem; }
+    .bascule-joker-bar-tops { display: flex; gap: .6rem; align-items: flex-end; }
+    .bascule-joker-bar-bottoms { display: flex; gap: .6rem; align-items: flex-start; margin-top: .35rem; }
+    .bascule-joker-bar-top { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; min-width: 0; }
+    .bascule-joker-bar-bottom { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; min-width: 0; }
     .bascule-joker-bar-value { font-size: .74rem; font-weight: 700; color: var(--ink); margin-bottom: .25rem; white-space: nowrap; }
     .bascule-joker-bar-value.negatif { color: var(--red); }
     .bascule-joker-bar-track { width: 100%; max-width: 46px; height: 110px; display: flex; flex-direction: column-reverse; }
     .bascule-joker-bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height .3s; min-height: 3px; }
     .bascule-joker-bar-fill.negatif { background: var(--red) !important; }
-    .bascule-joker-bar-label { font-size: .68rem; color: var(--muted); text-align: center; margin-top: .35rem; line-height: 1.2; }
+    .bascule-joker-bar-label { font-size: .68rem; color: var(--muted); text-align: center; line-height: 1.2; }
     /* Écart affiché sous la barre 2 (gain de la barre 1 à la 2, sans l'O-scan →
        activité actuelle avec l'O-scan), ajouté le 04/09/2026 sur demande de
        Cédric. Vert comme les autres gains positifs du site (.bascule-stat-gain). */
@@ -329,7 +342,7 @@
             <label>Manip en poste</label>
             <div class="simulator__field-suffix"><input type="text" value="1" disabled /><span>connu</span></div>
           </div>
-          <p class="simulator__hint" style="margin:-.1rem 0 .35rem">100 % de son activité en examens membres/extrémités (verrouillé).</p>
+          <p class="simulator__hint" style="margin:-.1rem 0 .35rem;font-size:.72rem;font-style:italic">100 % de son activité en examens membres/extrémités (verrouillé).</p>
           <div class="field">
             <label for="boDebitO">Examens par heure</label>
             <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitO" value="2.5" /><span>FT/h</span></div>
@@ -416,29 +429,27 @@
                   <div style="border-top:1px dashed var(--line);padding-top:.6rem;margin-top:.5rem">
                     <div class="bascule-stat-label" style="margin-bottom:0">Résultat net selon 3 scénarios</div>
                     <div class="bascule-joker-barchart" id="boJokerBarChart" role="img" aria-label="Comparaison du résultat net sans l'O-scan, à activité constante avec l'O-scan, et à 100 % de l'activité disponible sur l'O-scan">
-                      <div class="bascule-joker-bar-col">
+                      <div class="bascule-joker-bar-tops">
                         <div class="bascule-joker-bar-top">
                           <div class="bascule-joker-bar-value" id="boJokerBarVal0">—</div>
                           <div class="bascule-joker-bar-track"><div class="bascule-joker-bar-fill" id="boJokerBarFill0" style="background:var(--line-2)"></div></div>
                         </div>
-                        <div class="bascule-joker-bar-bottom">
-                          <div class="bascule-joker-bar-label">Sans l'O-scan</div>
-                        </div>
-                      </div>
-                      <div class="bascule-joker-bar-col">
                         <div class="bascule-joker-bar-top">
                           <div class="bascule-joker-bar-value" id="boJokerBarVal1">—</div>
                           <div class="bascule-joker-bar-track"><div class="bascule-joker-bar-fill" id="boJokerBarFill1" style="background:#f2b391"></div></div>
                         </div>
-                        <div class="bascule-joker-bar-bottom">
-                          <div class="bascule-joker-bar-label">Avec l'O-scan (activité actuelle)</div>
-                          <div class="bascule-joker-bar-ecart" id="boJokerBarEcart01">—</div>
-                        </div>
-                      </div>
-                      <div class="bascule-joker-bar-col">
                         <div class="bascule-joker-bar-top">
                           <div class="bascule-joker-bar-value" id="boJokerBarVal2">—</div>
                           <div class="bascule-joker-bar-track"><div class="bascule-joker-bar-fill" id="boJokerBarFill2" style="background:#eb6834"></div></div>
+                        </div>
+                      </div>
+                      <div class="bascule-joker-bar-bottoms">
+                        <div class="bascule-joker-bar-bottom">
+                          <div class="bascule-joker-bar-label">Sans l'O-scan</div>
+                        </div>
+                        <div class="bascule-joker-bar-bottom">
+                          <div class="bascule-joker-bar-label">Avec l'O-scan (activité actuelle)</div>
+                          <div class="bascule-joker-bar-ecart" id="boJokerBarEcart01">—</div>
                         </div>
                         <div class="bascule-joker-bar-bottom">
                           <div class="bascule-joker-bar-label">O-scan à 100 % de sa capacité</div>
