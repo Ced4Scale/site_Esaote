@@ -112,7 +112,7 @@
     .bascule-stats { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: minmax(0, 1fr); } }
-    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 290px; }
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 400px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -143,7 +143,7 @@
     .bascule-stat-joker.is-flipped .bascule-joker-back { box-shadow: 0 4px 18px rgba(0,0,0,.12); }
     .bascule-joker-back .simulator__hint { margin: .4rem 0; font-size: .78rem; }
     .bascule-joker-back .bascule-stat-gain { margin-top: 0; padding-top: 0; border-top: 0; }
-    #boJokerGain { font-size: 1.1rem; }
+    #boJokerNet100Pct { font-size: 1.1rem; }
     .bascule-joker-retour {
       position: absolute; top: .5rem; right: .5rem; background: none; border: 0; cursor: pointer;
       font-size: 1rem; opacity: .6; padding: .1rem .3rem;
@@ -166,10 +166,19 @@
       font-size: .95rem; line-height: 1; opacity: .6; vertical-align: -1px;
     }
     .bascule-eye-btn:hover, .bascule-eye-btn:focus-visible { opacity: 1; }
+    /* Popover qui s'adapte à la largeur de son texte (au lieu d'aller à la ligne
+       dans la colonne étroite de la carte) : sorti du flux normal, positionné par
+       rapport à #boGainLine (son parent immédiat, en position:relative ci-dessous),
+       en largeur "au contenu" — flotte au-dessus des cartes voisines si besoin,
+       demande explicite de Cédric le 04/09/2026. */
+    #boGainLine { position: relative; }
     .bascule-gain-detail {
-      margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed var(--line);
+      position: absolute; top: 100%; left: 0; z-index: 10;
+      margin-top: .3rem; padding: .5rem .7rem; border-top: 1px dashed var(--line);
+      background: var(--white); border-radius: 8px; box-shadow: 0 4px 18px rgba(0,0,0,.15);
       font-size: .8rem; font-weight: 600; color: var(--ink);
-      display: grid; grid-template-columns: 1fr auto; column-gap: .8rem; row-gap: .3rem; align-items: baseline;
+      display: grid; grid-template-columns: auto auto; column-gap: .8rem; row-gap: .3rem; align-items: baseline;
+      width: max-content; max-width: min(90vw, 26rem);
     }
     .bascule-gain-detail[hidden] { display: none; }
     .bascule-gain-detail-row { display: contents; font-variant-numeric: tabular-nums; }
@@ -349,9 +358,11 @@
                   <div class="bascule-joker-resultats">
                     <div class="bascule-stat-gain" id="boJokerVolEl">—</div>
                     <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
-                    <div class="bascule-stat-gain" id="boJokerGain">—</div>
-                    <div class="bascule-stat-gain" id="boJokerGainGlobal" style="border-top:1px dashed var(--line);padding-top:.4rem;margin-top:.4rem">—</div>
-                    <p class="simulator__hint" id="boJokerRappelSansOscan" style="margin:.2rem 0 0"></p>
+                  </div>
+                  <div class="bascule-joker-resultats" style="border-top:1px dashed var(--line);padding-top:.5rem;margin-top:.5rem">
+                    <div class="bascule-stat-gain" id="boJokerNetSansOscan">—</div>
+                    <div class="bascule-stat-gain" id="boJokerNetActiviteConstante">—</div>
+                    <div class="bascule-stat-gain" id="boJokerNet100Pct">—</div>
                   </div>
                 </div>
               </div>
@@ -1177,27 +1188,30 @@
         var gainNetJoker = gainCAJoker - coutManipJoker - coutElecJoker;
         var jokerVolEl = document.getElementById("boJokerVolEl");
         var jokerGainCAEl = document.getElementById("boJokerGainCA");
-        var jokerGainEl = document.getElementById("boJokerGain");
-        var jokerGainGlobalEl = document.getElementById("boJokerGainGlobal");
+        var jokerNetSansOscanEl = document.getElementById("boJokerNetSansOscan");
+        var jokerNetActiviteConstanteEl = document.getElementById("boJokerNetActiviteConstante");
+        var jokerNet100PctEl = document.getElementById("boJokerNet100Pct");
+        // Les 3 scénarios comparés côte à côte, dans l'ordre demandé par Cédric :
+        // (1) sans l'O-scan du tout, (2) à activité constante avec l'O-scan (la
+        // répartition actuelle du curseur, sans le joker), (3) en réalisant 100 %
+        // de l'activité encore disponible sur l'O-scan (curseur + capacité joker).
+        jokerNetSansOscanEl.classList.toggle("negatif", rSansOscan.net < 0);
+        jokerNetSansOscanEl.textContent = eur(rSansOscan.net) + " de résultat net sans l'O-scan";
+        jokerNetActiviteConstanteEl.classList.toggle("negatif", netTotal < 0);
+        jokerNetActiviteConstanteEl.textContent = eur(netTotal) + " de résultat net à activité constante avec l'O-scan";
         if (capaciteJoker > 0) {
           jokerVolEl.textContent = "+ " + fmt(capaciteJoker) + " examens réalisables/an";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "+ " + eur(gainCAJoker) + " de CA en plus";
-          jokerGainEl.classList.toggle("negatif", gainNetJoker < 0);
-          jokerGainEl.textContent = (gainNetJoker >= 0 ? "+ " : "− ") + eur(Math.abs(gainNetJoker)) + " de résultat net en plus";
-          jokerGainGlobalEl.classList.toggle("negatif", netTotal + gainNetJoker < 0);
-          jokerGainGlobalEl.textContent = eur(netTotal + gainNetJoker) + " de résultat net global (vs " + eur(netTotal) + " de résultat net total)";
+          jokerNet100PctEl.classList.toggle("negatif", netTotal + gainNetJoker < 0);
+          jokerNet100PctEl.textContent = eur(netTotal + gainNetJoker) + " de résultat net en réalisant 100 % de l'activité disponible sur l'O-scan";
         } else {
           jokerVolEl.textContent = "—";
           jokerGainCAEl.classList.remove("negatif");
           jokerGainCAEl.textContent = "—";
-          jokerGainEl.classList.remove("negatif");
-          jokerGainEl.textContent = "—";
-          jokerGainGlobalEl.classList.remove("negatif");
-          jokerGainGlobalEl.textContent = "—";
+          jokerNet100PctEl.classList.remove("negatif");
+          jokerNet100PctEl.textContent = "—";
         }
-        document.getElementById("boJokerRappelSansOscan").textContent =
-          "Rappel : sans l'O-scan, le résultat net était de " + eur(rSansOscan.net) + ".";
         document.getElementById("boJokerCapaciteNote").innerHTML =
           capaciteJoker > 0
             ? "<tr><td>Encore disponible</td><td>" + fmt(heuresRestantesParJour, 1) + " h/jour</td></tr>"
