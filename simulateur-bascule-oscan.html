@@ -91,6 +91,19 @@
     .bascule-stat-detail { display: flex; flex-direction: column; gap: .15rem; margin-top: .5rem; padding-top: .5rem; border-top: 1px solid var(--line); font-size: .84rem; font-weight: 600; font-variant-numeric: tabular-nums; }
     .bascule-stat-gain { margin-top: .4rem; padding-top: .4rem; border-top: 1px dashed var(--line); font-size: .86rem; font-weight: 700; color: #1a7a3d; }
     .bascule-stat-gain.negatif { color: var(--red); }
+    .bascule-eye-btn {
+      background: none; border: 0; padding: 0 0 0 .35rem; margin: 0; cursor: pointer;
+      font-size: .95rem; line-height: 1; opacity: .6; vertical-align: -1px;
+    }
+    .bascule-eye-btn:hover, .bascule-eye-btn:focus-visible { opacity: 1; }
+    .bascule-gain-detail {
+      margin-top: .5rem; padding-top: .5rem; border-top: 1px dashed var(--line);
+      font-size: .8rem; font-weight: 600; color: var(--ink); display: flex; flex-direction: column; gap: .2rem;
+    }
+    .bascule-gain-detail-row { display: flex; justify-content: space-between; gap: .8rem; font-variant-numeric: tabular-nums; }
+    .bascule-gain-detail-row span:last-child { white-space: nowrap; }
+    .bascule-gain-detail-row.negatif span:last-child { color: var(--red); }
+    .bascule-gain-detail-row.positif span:last-child { color: #1a7a3d; }
     .bascule-stat.result .bascule-stat-value { color: #1a7a3d; }
     .bascule-stat.result.negatif .bascule-stat-value { color: var(--red); }
 
@@ -236,7 +249,10 @@
                 <span style="color:#2a78d6"><span id="boNomClasseA2">1,5 T</span> : <span id="boStatResultat_A">—</span></span>
                 <span style="color:#eb6834">O-scan : <span id="boStatResultat_O">—</span></span>
               </div>
-              <div class="bascule-stat-gain" id="boStatGainOscan">—</div>
+              <div class="bascule-stat-gain" id="boGainLine">
+                <span id="boStatGainOscan">—</span><button type="button" class="bascule-eye-btn" id="boGainEyeBtn" aria-label="Voir le détail du gain (énergie, RH, forfait technique)" title="Voir le détail du gain" hidden>👁</button>
+                <div class="bascule-gain-detail" id="boGainDetail" hidden></div>
+              </div>
             </div>
             <div class="bascule-stat">
               <div class="bascule-stat-label">Chiffre d'affaires total (FT)</div>
@@ -423,7 +439,7 @@
         var e = elecPourClasse(classeKey);
         var coutElec = volumeAnnuel * e.deltaKw * (e.dureeMin / 60) * kwh;
         var loyerAnnuel = volumeAnnuel > 0 ? loyerMensuel * 12 : 0;
-        return { ca: ca, net: ca - coutManip - coutElec - loyerAnnuel };
+        return { ca: ca, coutManip: coutManip, coutElec: coutElec, loyerAnnuel: loyerAnnuel, net: ca - coutManip - coutElec - loyerAnnuel };
       }
       function totalPour(X, N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh) {
         var rA = resultat(classeA, X, manipA, debitA, loyerA, kwh);
@@ -703,6 +719,9 @@
         fermerHypotheses();
         repositionnerCurseur();
       }
+      document.getElementById("boGainEyeBtn").addEventListener("click", function () {
+        document.getElementById("boGainDetail").hidden = !document.getElementById("boGainDetail").hidden;
+      });
       document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
       document.getElementById("boHypApply").addEventListener("click", appliquerHypotheses);
@@ -770,9 +789,30 @@
         var gainOscan = netTotal - rSansOscan.net;
         var pctGainOscan = rSansOscan.net > 0 ? (gainOscan / rSansOscan.net * 100) : null;
         var pctGainTxt = pctGainOscan !== null ? " (" + (pctGainOscan >= 0 ? "+" : "−") + fmt(Math.abs(pctGainOscan), 1) + " %)" : "";
-        var gainEl = document.getElementById("boStatGainOscan");
-        gainEl.classList.toggle("negatif", gainOscan < 0);
-        gainEl.textContent = (gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(gainOscan)) + " grâce à l'O-scan" + pctGainTxt;
+        document.getElementById("boGainLine").classList.toggle("negatif", gainOscan < 0);
+        document.getElementById("boStatGainOscan").textContent = (gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(gainOscan)) + " grâce à l'O-scan" + pctGainTxt;
+
+        // Ventilation du gain par poste — même principe que gainOscan (comparaison vs
+        // "tout sur la Machine A"), mais catégorie par catégorie. Les 4 lignes somment
+        // exactement à gainOscan (vérifié par test), le loyer O-scan étant la nouvelle
+        // charge fixe qui n'existe pas dans le scénario de référence.
+        var gainFT = caTotal - rSansOscan.ca;
+        var gainRH = rSansOscan.coutManip - (rA.coutManip + rO.coutManip);
+        var gainEnergie = rSansOscan.coutElec - (rA.coutElec + rO.coutElec);
+        var gainLoyer = rSansOscan.loyerAnnuel - (rA.loyerAnnuel + rO.loyerAnnuel);
+        var eyeBtn = document.getElementById("boGainEyeBtn");
+        var detailEl = document.getElementById("boGainDetail");
+        eyeBtn.hidden = volO <= 0;
+        if (volO <= 0) detailEl.hidden = true;
+        function ligneDetail(label, valeur) {
+          return "<div class=\"bascule-gain-detail-row" + (valeur >= 0 ? " positif" : " negatif") + "\"><span>" + label +
+            "</span><span>" + (valeur >= 0 ? "+ " : "− ") + eur(Math.abs(valeur)) + "</span></div>";
+        }
+        detailEl.innerHTML =
+          ligneDetail("Forfait technique", gainFT) +
+          ligneDetail("RH (manipulateur)", gainRH) +
+          ligneDetail("Énergie", gainEnergie) +
+          ligneDetail("Loyer O-scan (nouvelle charge)", gainLoyer);
 
         var volOSemaine = volO / SEMAINES_PAR_AN;
         var capaciteSemaine = debitO * heuresParSemaine();
