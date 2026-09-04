@@ -112,16 +112,20 @@
     .bascule-stats { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: minmax(0, 1fr); } }
-    /* 540px (470px puis 540px le 04/09/2026) : 2e camembert (répartition h/jour)
-       + écarts affichés sous les barres 2 et 3 du graphe ajoutent encore de la
-       hauteur — vérifié nécessaire jusqu'à 512px de contenu réel sur iPhone SE
-       portrait. */
-    /* 515px (540 → 520 → 515px le 04/09/2026) : resserré au plus près du
-       contenu réel le plus haut (512px, mesuré sur iPhone SE portrait — le pire
-       cas, la dernière ligne "vs sans l'O-scan" y est la plus proche du bord),
-       en gardant juste 3px de marge pour ne jamais la couper. Ne pas descendre
-       plus bas sans revérifier ce cas précis. */
-    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 515px; }
+    /* Pas de min-height fixe ici : repliée (icône 🃏), la carte n'a besoin
+       d'aucune hauteur imposée — la grille `.bascule-stats` (stretch par
+       défaut) l'étire de toute façon à la hauteur des 2 cases voisines
+       (~238px mesuré, largement assez pour l'icône). Une fois RETOURNÉE
+       (`.is-flipped`), sa hauteur est calée sur son contenu réel par JS
+       (`ajusterHauteurJoker()`, appelée au clic sur la carte + au
+       redimensionnement) plutôt que par une valeur fixe en dur — essayé
+       400 → 470 → 540 → 520 → 515px sans jamais trouver une valeur juste
+       partout (le contenu réel varie de ~407px en desktop à ~512px sur
+       iPhone SE portrait), et une 1ère version de ce calcul JS mesurait par
+       erreur la carte REPLIÉE (colonne étroite, camembert qui repasse à la
+       ligne) au lieu de la carte OUVERTE — corrigé en ne mesurant qu'après le
+       clic, jamais au chargement de la page. */
+    .bascule-stat-joker { perspective: 1200px; display: flex; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -932,10 +936,18 @@
       document.getElementById("boJokerFrontBtn").addEventListener("click", function () {
         document.getElementById("boJokerCard").classList.add("is-flipped");
         this.setAttribute("aria-expanded", "true");
+        // Mesure la hauteur du contenu une fois la carte en pleine largeur
+        // (donc après l'ajout de la classe qui déclenche ce changement de
+        // largeur), jamais avant.
+        ajusterHauteurJoker();
       });
       document.getElementById("boJokerBackBtn").addEventListener("click", function () {
         document.getElementById("boJokerCard").classList.remove("is-flipped");
         document.getElementById("boJokerFrontBtn").setAttribute("aria-expanded", "false");
+        // Repliée, la carte n'a plus besoin de la hauteur calculée pour le
+        // contenu ouvert — on retire la valeur forcée, la grille reprend la
+        // main (étirée à la hauteur des 2 cases voisines).
+        document.getElementById("boJokerCard").style.minHeight = "";
       });
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
@@ -1127,6 +1139,30 @@
       });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && hypOverlayO.classList.contains("is-open")) fermerHypothesesO();
+      });
+
+      // Hauteur de la carte joker calée sur son contenu réel une fois
+      // RETOURNÉE, pas sur une valeur fixe en dur (voir commentaire CSS de
+      // .bascule-stat-joker) : le contenu varie de ~407px (desktop) à
+      // ~512px (iPhone SE portrait) selon la largeur d'écran ET les valeurs
+      // affichées (les montants ne font pas tous la même longueur). Ne fait
+      // RIEN si la carte n'est pas retournée : repliée, elle n'a besoin
+      // d'aucune hauteur forcée (la grille l'étire déjà à la hauteur des 2
+      // cases voisines) — mesurer dans cet état donnerait une valeur fausse
+      // (colonne étroite, camembert qui repasse à la ligne, plus haut que
+      // nécessaire une fois la carte réellement ouverte en pleine largeur).
+      function ajusterHauteurJoker() {
+        var card = document.getElementById("boJokerCard");
+        if (!card || !card.classList.contains("is-flipped")) return;
+        var back = card.querySelector(".bascule-joker-back");
+        card.style.minHeight = "0px";
+        var needed = back.scrollHeight;
+        card.style.minHeight = (needed + 4) + "px";
+      }
+      var jokerResizeTimer = null;
+      window.addEventListener("resize", function () {
+        clearTimeout(jokerResizeTimer);
+        jokerResizeTimer = setTimeout(ajusterHauteurJoker, 150);
       });
 
       function recalculer() {
@@ -1357,6 +1393,7 @@
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
+        ajusterHauteurJoker();
 
         dernierEtat = {
           classeA: classeA, nomClasseA: nomClasseA, volA: volA, volO: volO, volumeTotal: volumeTotal,
