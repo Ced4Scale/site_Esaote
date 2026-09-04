@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="styles.css?v=20260811-hero-stat-light" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script src="assets/machines-energie-data.js"></script>
   <style>
     /* Réglages propres à ce simulateur (curseur + courbe), pas encore dans styles.css partagé. */
     .bascule-champ { margin-bottom: 1rem; }
@@ -125,8 +126,9 @@
       réel — forfait technique dégressif réel (barème UNCAM par paliers), hors acte intellectuel du
       radiologue (perçu dans les deux cas, donc neutre dans la comparaison).</p>
       <p class="simulator__source">Forfait technique : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>.
-      Le curseur ne dépasse jamais la capacité physique de l'O-scan (débit horaire × 9&nbsp;h d'ouverture/jour ×
-      264&nbsp;jours/an) ni le volume réel d'examens membres/extrémités disponible dans l'activité totale.</p>
+      Le curseur ne dépasse jamais la capacité physique de l'O-scan (débit horaire × amplitude d'ouverture
+      hebdomadaire, réglable via l'icône ⚙ de la Machine A) ni le volume réel d'examens membres/extrémités
+      disponible dans l'activité totale.</p>
     </div>
 
     <div class="simulator__layout">
@@ -323,28 +325,33 @@
           <p class="simulator__hint">Communes aux deux machines. Ces réglages ne sont pas mémorisés : à ta
           prochaine visite, le simulateur repart des valeurs par défaut.</p>
           <div class="field">
-            <label for="boHypNetMerm">Salaire net MERM</label>
+            <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="1.800" /><span>€/mois</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypCoefBrut">Part du net dans le brut</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" max="100" step="0.1" id="boHypCoefBrut" value="78" /><span>%</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypChargesPatronales">Charges patronales</label>
-            <div class="simulator__field-suffix"><input type="number" min="0" max="200" step="0.1" id="boHypChargesPatronales" value="42" /><span>% du brut</span></div>
           </div>
           <div class="field">
             <label for="boHypHeuresLegales">Base légale mensuelle</label>
             <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
           </div>
           <div class="field">
-            <label for="boHypHeuresJour">Amplitude d'ouverture</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="0.5" id="boHypHeuresJour" value="9" /><span>h/jour</span></div>
+            <label for="boHypHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSemaine" value="9" /><span>h/jour</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypHeuresSamedi">Amplitude d'ouverture, samedi</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSamedi" value="0" /><span>h/jour</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresDimanche" value="0" /><span>h/jour</span></div>
           </div>
           <div class="field" style="margin-bottom:0">
-            <label for="boHypJoursAn">Jours d'ouverture</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boHypJoursAn" value="264" /><span>jours/an</span></div>
+            <label for="boHypModeleA">Modèle d'IRM (Machine A) — pour l'électricité</label>
+            <select id="boHypModeleA">
+              <option value="">Valeur générique 1,5 T / 3 T</option>
+            </select>
+            <p class="simulator__hint">Estimations Ced4Scale à partir des guides d'implantation
+            officiels, pas des données constructeur — détail et niveau de confiance par modèle sur
+            la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</p>
           </div>
           <div class="bascule-hyp-actions">
             <button type="button" class="btn btn--ghost" id="boHypReset">Valeurs par défaut</button>
@@ -388,23 +395,32 @@
       // (voir boBtnHypotheses plus bas) — pas de mémorisation, on repart de ces
       // valeurs à chaque chargement de page.
       var NET_MERM = 1800;
+      // Coefficients net→coût réel employeur fixes, non éditables dans le questionnaire
+      // (Cédric ne veut saisir que le salaire net avant IR, pas ces deux ratios).
       var COEF_BRUT = 0.78;
       var COEF_CHARGES = 1.42;
       var HEURES_LEGALES_MOIS = 151.67;
-      var JOURS_OUVERTURE_AN = 264;
-      var AMPLITUDE_HEURES_JOUR = 9;
+      // Amplitude d'ouverture par type de jour (h/jour) plutôt qu'un unique couple
+      // heures/jour × jours/an — permet un samedi/dimanche différent de la semaine.
+      var AMPLITUDE_SEMAINE = 9;
+      var AMPLITUDE_SAMEDI = 0;
+      var AMPLITUDE_DIMANCHE = 0;
+      var SEMAINES_PAR_AN = 52; // fixe, non éditable (pas de semaines de fermeture distinctes)
       var NOM_CLASSE = { t15: "1,5 T", sup15: "3 T" };
 
       function coutHoraireMerm() {
         return (NET_MERM / COEF_BRUT) * COEF_CHARGES / HEURES_LEGALES_MOIS;
       }
+      function heuresParSemaine() {
+        return 5 * AMPLITUDE_SEMAINE + AMPLITUDE_SAMEDI + AMPLITUDE_DIMANCHE;
+      }
       function capaciteAnnuelle(examensParHeure) {
-        return examensParHeure * AMPLITUDE_HEURES_JOUR * JOURS_OUVERTURE_AN;
+        return examensParHeure * heuresParSemaine() * SEMAINES_PAR_AN;
       }
       function resultat(classeKey, volumeAnnuel, nbManip, examensParHeure, loyerMensuel, kwh) {
         var ca = ftAnnuel(classeKey, volumeAnnuel);
         var coutManip = examensParHeure > 0 ? (coutHoraireMerm() / examensParHeure) * nbManip * volumeAnnuel : 0;
-        var e = ELEC[classeKey];
+        var e = elecPourClasse(classeKey);
         var coutElec = volumeAnnuel * e.deltaKw * (e.dureeMin / 60) * kwh;
         var loyerAnnuel = volumeAnnuel > 0 ? loyerMensuel * 12 : 0;
         return { ca: ca, net: ca - coutManip - coutElec - loyerAnnuel };
@@ -595,33 +611,75 @@
       // bloc Machine A. Pas de mémorisation (localStorage) : un rechargement de page
       // repart des valeurs par défaut définies plus haut.
       var HYP_DEFAUTS = {
-        netMerm: NET_MERM, coefBrut: COEF_BRUT * 100, chargesPatronales: (COEF_CHARGES - 1) * 100,
-        heuresLegales: HEURES_LEGALES_MOIS, heuresJour: AMPLITUDE_HEURES_JOUR, joursAn: JOURS_OUVERTURE_AN
+        netMerm: NET_MERM, heuresLegales: HEURES_LEGALES_MOIS,
+        heuresSemaine: AMPLITUDE_SEMAINE, heuresSamedi: AMPLITUDE_SAMEDI, heuresDimanche: AMPLITUDE_DIMANCHE
       };
       var hypOverlay = document.getElementById("boHypOverlay");
 
+      // Modèle d'IRM réel choisi pour la Machine A (électricité) — "" = valeur
+      // générique par défaut (ELEC.t15/sup15). Réutilise le fichier partagé
+      // assets/machines-energie-data.js (ENERGIE_MACHINES), filtré aux IRM tunnel
+      // (aimant supraconducteur) du même champ que celui sélectionné pour Machine A.
+      var MODELE_A_KEY = "";
+      function modelesTunnelPourChamp(classeA) {
+        var champCible = classeA === "sup15" ? 3 : 1.5;
+        return (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).filter(function (m) {
+          return m.aimant === "supraconducteur" && m.champT === champCible;
+        });
+      }
+      function elecPourClasse(classeKey) {
+        if ((classeKey === "t15" || classeKey === "sup15") && MODELE_A_KEY) {
+          var m = modelesTunnelPourChamp(classeKey).filter(function (x) { return x.key === MODELE_A_KEY; })[0];
+          if (m) return { deltaKw: m.mesure - m.pret, dureeMin: m.dureeAcquisitionMinutes };
+        }
+        return ELEC[classeKey];
+      }
+      function remplirModelesA() {
+        var classeA = document.getElementById("boClasseA").value;
+        var select = document.getElementById("boHypModeleA");
+        var modeles = modelesTunnelPourChamp(classeA);
+        select.innerHTML = "<option value=\"\">Valeur générique " + NOM_CLASSE[classeA] + "</option>";
+        modeles.forEach(function (m) {
+          var o = document.createElement("option");
+          o.value = m.key; o.textContent = m.nomCourt;
+          select.appendChild(o);
+        });
+        select.value = modeles.some(function (m) { return m.key === MODELE_A_KEY; }) ? MODELE_A_KEY : "";
+      }
+      document.getElementById("boClasseA").addEventListener("change", function () {
+        MODELE_A_KEY = ""; // la liste de modèles change avec le champ, on repart générique
+        majResumeHypotheses();
+      });
+
       function majResumeHypotheses() {
+        var classeA = document.getElementById("boClasseA").value;
+        var modele = modelesTunnelPourChamp(classeA).filter(function (m) { return m.key === MODELE_A_KEY; })[0];
+        var elecTxt = modele
+          ? "électricité de la Machine A calculée à partir du modèle réel sélectionné (" + modele.nomCourt +
+            ", delta mesure-veille " + fmt(modele.mesure - modele.pret, 2) + "&nbsp;kW × " +
+            fmt(modele.dureeAcquisitionMinutes, 0) + "&nbsp;min/examen) ; O-scan sur sa valeur générique"
+          : "électricité limitée au coût des gradients pendant l'acquisition (12&nbsp;min pour la 1,5&nbsp;T, " +
+            "10&nbsp;min pour la 3&nbsp;T, 15&nbsp;min pour l'O-scan, delta de puissance mesure-veille active)";
         var resume = document.getElementById("boHypSummary");
         resume.innerHTML =
-          "Salaire MERM net " + fmt(NET_MERM) + "&nbsp;€/mois (÷" + fmt(COEF_BRUT * 100, 1) + "&nbsp;% brut ×" +
-          fmt((COEF_CHARGES - 1) * 100, 1) + "&nbsp;% charges patronales, base " + fmt(HEURES_LEGALES_MOIS, 2) +
-          "&nbsp;h/mois légales, soit " + fmt(coutHoraireMerm(), 2) + "&nbsp;€/h) ; électricité limitée au coût des " +
-          "gradients pendant l'acquisition (12&nbsp;min pour la 1,5&nbsp;T, 10&nbsp;min pour la 3&nbsp;T, " +
-          "15&nbsp;min pour l'O-scan, delta de puissance mesure-veille active) — pas de climatisation ni de " +
-          "socle électrique fixe dans cette version ; capacité maximale de l'O-scan déduite de son propre débit " +
-          "horaire × " + fmt(AMPLITUDE_HEURES_JOUR, 1) + "&nbsp;h/jour × " + fmt(JOURS_OUVERTURE_AN) +
-          "&nbsp;jours/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone Province, " +
+          "Salaire MERM net " + fmt(NET_MERM) + "&nbsp;€/mois (coût réel employeur estimé à " +
+          fmt(coutHoraireMerm(), 2) + "&nbsp;€/h, base " + fmt(HEURES_LEGALES_MOIS, 2) + "&nbsp;h/mois légales) ; " +
+          elecTxt + " — pas de climatisation ni de socle électrique fixe dans cette version ; capacité maximale " +
+          "de l'O-scan déduite de son propre débit horaire × " + fmt(heuresParSemaine(), 1) +
+          "&nbsp;h/semaine (" + fmt(AMPLITUDE_SEMAINE, 1) + "&nbsp;h lun-ven, " + fmt(AMPLITUDE_SAMEDI, 1) +
+          "&nbsp;h samedi, " + fmt(AMPLITUDE_DIMANCHE, 1) + "&nbsp;h dimanche) × " + fmt(SEMAINES_PAR_AN) +
+          "&nbsp;semaines/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone Province, " +
           "hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison). " +
           "Modifiable via l'icône ⚙ du bloc Machine A.";
       }
 
       function ouvrirHypotheses() {
         document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
-        document.getElementById("boHypCoefBrut").value = (COEF_BRUT * 100).toFixed(1).replace(/\.0$/, "");
-        document.getElementById("boHypChargesPatronales").value = ((COEF_CHARGES - 1) * 100).toFixed(1).replace(/\.0$/, "");
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
-        document.getElementById("boHypHeuresJour").value = AMPLITUDE_HEURES_JOUR;
-        document.getElementById("boHypJoursAn").value = JOURS_OUVERTURE_AN;
+        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_SEMAINE;
+        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_SAMEDI;
+        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_DIMANCHE;
+        remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
       }
@@ -631,17 +689,16 @@
       }
       function appliquerHypotheses() {
         var netMerm = lireMontant(document.getElementById("boHypNetMerm"));
-        var coefBrut = parseFloat(document.getElementById("boHypCoefBrut").value.replace(",", "."));
-        var chargesPatronales = parseFloat(document.getElementById("boHypChargesPatronales").value.replace(",", "."));
         var heuresLegales = parseFloat(document.getElementById("boHypHeuresLegales").value.replace(",", "."));
-        var heuresJour = parseFloat(document.getElementById("boHypHeuresJour").value.replace(",", "."));
-        var joursAn = parseFloat(document.getElementById("boHypJoursAn").value.replace(",", "."));
+        var heuresSemaine = parseFloat(document.getElementById("boHypHeuresSemaine").value.replace(",", "."));
+        var heuresSamedi = parseFloat(document.getElementById("boHypHeuresSamedi").value.replace(",", "."));
+        var heuresDimanche = parseFloat(document.getElementById("boHypHeuresDimanche").value.replace(",", "."));
         if (netMerm > 0) NET_MERM = netMerm;
-        if (coefBrut > 0 && coefBrut <= 100) COEF_BRUT = coefBrut / 100;
-        if (chargesPatronales >= 0) COEF_CHARGES = 1 + chargesPatronales / 100;
         if (heuresLegales > 0) HEURES_LEGALES_MOIS = heuresLegales;
-        if (heuresJour > 0) AMPLITUDE_HEURES_JOUR = heuresJour;
-        if (joursAn > 0) JOURS_OUVERTURE_AN = joursAn;
+        if (heuresSemaine >= 0) AMPLITUDE_SEMAINE = heuresSemaine;
+        if (heuresSamedi >= 0) AMPLITUDE_SAMEDI = heuresSamedi;
+        if (heuresDimanche >= 0) AMPLITUDE_DIMANCHE = heuresDimanche;
+        MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         majResumeHypotheses();
         fermerHypotheses();
         repositionnerCurseur();
@@ -650,9 +707,9 @@
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
       document.getElementById("boHypApply").addEventListener("click", appliquerHypotheses);
       document.getElementById("boHypReset").addEventListener("click", function () {
-        NET_MERM = HYP_DEFAUTS.netMerm; COEF_BRUT = HYP_DEFAUTS.coefBrut / 100;
-        COEF_CHARGES = 1 + HYP_DEFAUTS.chargesPatronales / 100; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
-        AMPLITUDE_HEURES_JOUR = HYP_DEFAUTS.heuresJour; JOURS_OUVERTURE_AN = HYP_DEFAUTS.joursAn;
+        NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
+        AMPLITUDE_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_SAMEDI = HYP_DEFAUTS.heuresSamedi;
+        AMPLITUDE_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = "";
         majResumeHypotheses();
         fermerHypotheses();
         repositionnerCurseur();
@@ -717,9 +774,9 @@
         gainEl.classList.toggle("negatif", gainOscan < 0);
         gainEl.textContent = (gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(gainOscan)) + " grâce à l'O-scan" + pctGainTxt;
 
-        var volOJour = volO / JOURS_OUVERTURE_AN;
-        var capaciteJour = debitO * AMPLITUDE_HEURES_JOUR;
-        var capaciteAnnuelleO = capaciteJour * JOURS_OUVERTURE_AN;
+        var volOSemaine = volO / SEMAINES_PAR_AN;
+        var capaciteSemaine = debitO * heuresParSemaine();
+        var capaciteAnnuelleO = capaciteAnnuelle(debitO);
         var volumeExtremitesDispo = volumeTotal * partExtremites;
         var capaciteNote = document.getElementById("boCapaciteNote");
 
@@ -731,7 +788,7 @@
           capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse le volume d'examens membres/extrémités réellement disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale) — l'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.";
         } else if (volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "⚠ " + fmt(volOJour, 1) + " patients/jour sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + AMPLITUDE_HEURES_JOUR + " h/jour = " + fmt(capaciteJour, 1) + " patients/jour max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
+          capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaine(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmt(debitO) + " FT/h).";
