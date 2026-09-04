@@ -248,7 +248,7 @@
           </div>
           <div class="field">
             <label for="boVolumeA">Activité totale actuelle</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boVolumeA" value="12000" style="width:5rem" /><span>FT/an</span></div>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA" value="12000" style="width:5rem" /><span>FT/an</span></div>
           </div>
           <div class="bascule-champ" style="margin-bottom:0">
             <label for="boPartExtremites">Part membres/extrémités</label>
@@ -808,6 +808,16 @@
       ["boManipA", "boDebitA", "boVolumeA", "boDebitO"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", repositionnerCurseur);
       });
+      // Pas des flèches du champ "Activité totale actuelle" : plus fin en dessous de
+      // 8.000, plus large au-delà (demandé par Cédric le 04/09/2026, pour ne pas avoir
+      // à cliquer des dizaines de fois sur les gros volumes).
+      var boVolumeAEl = document.getElementById("boVolumeA");
+      function ajusterStepVolumeA() {
+        var v = parseFloat(boVolumeAEl.value) || 0;
+        boVolumeAEl.step = v > 10000 ? 500 : v > 8000 ? 200 : 100;
+      }
+      ajusterStepVolumeA();
+      boVolumeAEl.addEventListener("input", ajusterStepVolumeA);
       document.getElementById("boPartExtremites").addEventListener("input", function () {
         document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
         repositionnerCurseur();
