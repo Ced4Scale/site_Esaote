@@ -43,6 +43,17 @@
     #boForm .simulator__field-suffix { padding: .35rem .6rem; }
     #boForm .simulator__hint { margin: -.1rem 0 .35rem; font-size: .76rem; }
     #boForm .simulator__field-group { padding: .6rem .8rem; margin-bottom: .5rem; }
+
+    .bascule-machine-title { display: flex; align-items: center; justify-content: space-between; gap: .5rem; }
+    .bascule-gear-btn {
+      background: none; border: 0; padding: .1rem .2rem; margin: 0; cursor: pointer;
+      font-size: 1.1rem; line-height: 1; color: inherit; opacity: .6;
+    }
+    .bascule-gear-btn:hover, .bascule-gear-btn:focus-visible { opacity: 1; }
+    .bascule-hyp-body { padding: clamp(1.3rem, 3vw, 1.8rem); }
+    .bascule-hyp-body h3 { margin: 0 0 .3rem; font-size: 1.15rem; }
+    .bascule-hyp-body .field { margin-bottom: .8rem; }
+    .bascule-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
     .bascule-range { display: flex; align-items: center; gap: .7rem; }
     .bascule-range input[type=range] { flex: 1; accent-color: var(--red); }
     .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; }
@@ -121,7 +132,10 @@
     <div class="simulator__layout">
       <form id="boForm">
         <div class="simulator__machine-box" data-slot="0" style="border-left-color:#2a78d6">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" style="color:#2a78d6">Machine A — IRM tunnel</h4>
+          <h4 class="simulator__machine-box-title simulator__swatch-text bascule-machine-title" data-slot="0" style="color:#2a78d6">
+            <span>Machine A — IRM tunnel</span>
+            <button type="button" class="bascule-gear-btn" id="boBtnHypotheses" aria-label="Modifier les hypothèses de ce simulateur" title="Modifier les hypothèses de ce simulateur">⚙</button>
+          </h4>
           <div class="bascule-champ">
             <label for="boClasseA">Champ</label>
             <select id="boClasseA">
@@ -247,7 +261,7 @@
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Hypothèses de ce simulateur</summary>
-          <p class="simulator__hint">
+          <p class="simulator__hint" id="boHypSummary">
             Salaire MERM net 1.800&nbsp;€/mois (÷0,78 brut ×1,42 charges patronales, base 151,67&nbsp;h/mois
             légales, soit 21,61&nbsp;€/h) ; électricité limitée au coût des gradients pendant l'acquisition
             (12&nbsp;min pour la 1,5&nbsp;T, 10&nbsp;min pour la 3&nbsp;T, 15&nbsp;min pour l'O-scan, delta de
@@ -255,6 +269,7 @@
             version ; capacité maximale de l'O-scan déduite de son propre débit horaire × 9&nbsp;h/jour ×
             264&nbsp;jours/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone
             Province, hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison).
+            Modifiable via l'icône ⚙ du bloc Machine A.
           </p>
         </details>
 
@@ -299,6 +314,47 @@
     </div>
   </main>
 
+  <div class="modal-overlay" id="boHypOverlay" role="dialog" aria-modal="true" aria-labelledby="boHypTitle" hidden>
+    <div class="modal" style="width:min(480px, 100%); position:relative">
+      <button type="button" class="modal__close" id="boHypClose" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="bascule-hyp-body">
+          <h3 id="boHypTitle">Hypothèses de ce simulateur</h3>
+          <p class="simulator__hint">Communes aux deux machines. Ces réglages ne sont pas mémorisés : à ta
+          prochaine visite, le simulateur repart des valeurs par défaut.</p>
+          <div class="field">
+            <label for="boHypNetMerm">Salaire net MERM</label>
+            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="1.800" /><span>€/mois</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypCoefBrut">Part du net dans le brut</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" max="100" step="0.1" id="boHypCoefBrut" value="78" /><span>%</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypChargesPatronales">Charges patronales</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" max="200" step="0.1" id="boHypChargesPatronales" value="42" /><span>% du brut</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypHeuresLegales">Base légale mensuelle</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypHeuresJour">Amplitude d'ouverture</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="0.5" id="boHypHeuresJour" value="9" /><span>h/jour</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="boHypJoursAn">Jours d'ouverture</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boHypJoursAn" value="264" /><span>jours/an</span></div>
+          </div>
+          <div class="bascule-hyp-actions">
+            <button type="button" class="btn btn--ghost" id="boHypReset">Valeurs par défaut</button>
+            <button type="button" class="btn" id="boHypApply">Appliquer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       function fmt(n, dec) {
@@ -328,14 +384,19 @@
         sup15: { deltaKw: 22.4 - 10.8, dureeMin: 10 },
         le05:  { deltaKw: 1.0 - 0.3,   dureeMin: 15 }
       };
+      // Hypothèses par défaut, modifiables via la roue crantée du bloc Machine A
+      // (voir boBtnHypotheses plus bas) — pas de mémorisation, on repart de ces
+      // valeurs à chaque chargement de page.
       var NET_MERM = 1800;
+      var COEF_BRUT = 0.78;
+      var COEF_CHARGES = 1.42;
       var HEURES_LEGALES_MOIS = 151.67;
       var JOURS_OUVERTURE_AN = 264;
       var AMPLITUDE_HEURES_JOUR = 9;
       var NOM_CLASSE = { t15: "1,5 T", sup15: "3 T" };
 
       function coutHoraireMerm() {
-        return (NET_MERM / 0.78) * 1.42 / HEURES_LEGALES_MOIS;
+        return (NET_MERM / COEF_BRUT) * COEF_CHARGES / HEURES_LEGALES_MOIS;
       }
       function capaciteAnnuelle(examensParHeure) {
         return examensParHeure * AMPLITUDE_HEURES_JOUR * JOURS_OUVERTURE_AN;
@@ -529,6 +590,77 @@
       });
       curseur.addEventListener("input", recalculer);
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
+
+      // Hypothèses communes aux deux machines, modifiables via la roue crantée du
+      // bloc Machine A. Pas de mémorisation (localStorage) : un rechargement de page
+      // repart des valeurs par défaut définies plus haut.
+      var HYP_DEFAUTS = {
+        netMerm: NET_MERM, coefBrut: COEF_BRUT * 100, chargesPatronales: (COEF_CHARGES - 1) * 100,
+        heuresLegales: HEURES_LEGALES_MOIS, heuresJour: AMPLITUDE_HEURES_JOUR, joursAn: JOURS_OUVERTURE_AN
+      };
+      var hypOverlay = document.getElementById("boHypOverlay");
+
+      function majResumeHypotheses() {
+        var resume = document.getElementById("boHypSummary");
+        resume.innerHTML =
+          "Salaire MERM net " + fmt(NET_MERM) + "&nbsp;€/mois (÷" + fmt(COEF_BRUT * 100, 1) + "&nbsp;% brut ×" +
+          fmt((COEF_CHARGES - 1) * 100, 1) + "&nbsp;% charges patronales, base " + fmt(HEURES_LEGALES_MOIS, 2) +
+          "&nbsp;h/mois légales, soit " + fmt(coutHoraireMerm(), 2) + "&nbsp;€/h) ; électricité limitée au coût des " +
+          "gradients pendant l'acquisition (12&nbsp;min pour la 1,5&nbsp;T, 10&nbsp;min pour la 3&nbsp;T, " +
+          "15&nbsp;min pour l'O-scan, delta de puissance mesure-veille active) — pas de climatisation ni de " +
+          "socle électrique fixe dans cette version ; capacité maximale de l'O-scan déduite de son propre débit " +
+          "horaire × " + fmt(AMPLITUDE_HEURES_JOUR, 1) + "&nbsp;h/jour × " + fmt(JOURS_OUVERTURE_AN) +
+          "&nbsp;jours/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone Province, " +
+          "hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison). " +
+          "Modifiable via l'icône ⚙ du bloc Machine A.";
+      }
+
+      function ouvrirHypotheses() {
+        document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
+        document.getElementById("boHypCoefBrut").value = (COEF_BRUT * 100).toFixed(1).replace(/\.0$/, "");
+        document.getElementById("boHypChargesPatronales").value = ((COEF_CHARGES - 1) * 100).toFixed(1).replace(/\.0$/, "");
+        document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
+        document.getElementById("boHypHeuresJour").value = AMPLITUDE_HEURES_JOUR;
+        document.getElementById("boHypJoursAn").value = JOURS_OUVERTURE_AN;
+        hypOverlay.hidden = false;
+        hypOverlay.classList.add("is-open");
+      }
+      function fermerHypotheses() {
+        hypOverlay.classList.remove("is-open");
+        hypOverlay.hidden = true;
+      }
+      function appliquerHypotheses() {
+        var netMerm = lireMontant(document.getElementById("boHypNetMerm"));
+        var coefBrut = parseFloat(document.getElementById("boHypCoefBrut").value.replace(",", "."));
+        var chargesPatronales = parseFloat(document.getElementById("boHypChargesPatronales").value.replace(",", "."));
+        var heuresLegales = parseFloat(document.getElementById("boHypHeuresLegales").value.replace(",", "."));
+        var heuresJour = parseFloat(document.getElementById("boHypHeuresJour").value.replace(",", "."));
+        var joursAn = parseFloat(document.getElementById("boHypJoursAn").value.replace(",", "."));
+        if (netMerm > 0) NET_MERM = netMerm;
+        if (coefBrut > 0 && coefBrut <= 100) COEF_BRUT = coefBrut / 100;
+        if (chargesPatronales >= 0) COEF_CHARGES = 1 + chargesPatronales / 100;
+        if (heuresLegales > 0) HEURES_LEGALES_MOIS = heuresLegales;
+        if (heuresJour > 0) AMPLITUDE_HEURES_JOUR = heuresJour;
+        if (joursAn > 0) JOURS_OUVERTURE_AN = joursAn;
+        majResumeHypotheses();
+        fermerHypotheses();
+        repositionnerCurseur();
+      }
+      document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
+      document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
+      document.getElementById("boHypApply").addEventListener("click", appliquerHypotheses);
+      document.getElementById("boHypReset").addEventListener("click", function () {
+        NET_MERM = HYP_DEFAUTS.netMerm; COEF_BRUT = HYP_DEFAUTS.coefBrut / 100;
+        COEF_CHARGES = 1 + HYP_DEFAUTS.chargesPatronales / 100; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
+        AMPLITUDE_HEURES_JOUR = HYP_DEFAUTS.heuresJour; JOURS_OUVERTURE_AN = HYP_DEFAUTS.joursAn;
+        majResumeHypotheses();
+        fermerHypotheses();
+        repositionnerCurseur();
+      });
+      hypOverlay.addEventListener("click", function (e) { if (e.target === hypOverlay) fermerHypotheses(); });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && hypOverlay.classList.contains("is-open")) fermerHypotheses();
+      });
 
       function recalculer() {
         var classeA = document.getElementById("boClasseA").value;
@@ -880,6 +1012,7 @@
       }
       document.getElementById("boClose").addEventListener("click", goBack);
 
+      majResumeHypotheses();
       repositionnerCurseur();
     })();
   </script>
