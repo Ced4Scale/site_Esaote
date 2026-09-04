@@ -867,13 +867,19 @@
         return d;
       }
       var glossGradSeq = 0;
+      // Dégradé RADIAL (pas linéaire) avec un vrai point de brillance quasi blanc
+      // décentré en haut à gauche, comme un reflet de lumière sur une surface
+      // glacée/bombée — un dégradé linéaire clair→foncé ne suffisait pas à lire
+      // comme "brillant" (signalé par Cédric, la version précédente avait l'air
+      // juste dégradée, pas réfléchissante).
       function ajouterGradientGlace(defs, colorHex) {
         glossGradSeq++;
         var id = "glossGrad" + glossGradSeq;
-        var grad = svgEl("linearGradient", { id: id, x1: "15%", y1: "0%", x2: "85%", y2: "100%" });
-        grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": eclaircir(colorHex, 0.6) }));
-        grad.appendChild(svgEl("stop", { offset: "55%", "stop-color": colorHex }));
-        grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": assombrir(colorHex, 0.2) }));
+        var grad = svgEl("radialGradient", { id: id, cx: "32%", cy: "22%", r: "85%" });
+        grad.appendChild(svgEl("stop", { offset: "0%", "stop-color": eclaircir(colorHex, 0.92) }));
+        grad.appendChild(svgEl("stop", { offset: "16%", "stop-color": eclaircir(colorHex, 0.55) }));
+        grad.appendChild(svgEl("stop", { offset: "45%", "stop-color": colorHex }));
+        grad.appendChild(svgEl("stop", { offset: "100%", "stop-color": assombrir(colorHex, 0.3) }));
         defs.appendChild(grad);
         return "url(#" + id + ")";
       }
@@ -912,6 +918,22 @@
             fill: fillUrl, stroke: "#fcfcfb", "stroke-width": "1.5"
           }));
         });
+        // Reflet lumineux qui balaie tout le dessus du camembert (comme sur la
+        // photo de référence de Cédric) — en plus du dégradé radial par part,
+        // qui ne suffisait pas seul à lire comme "brillant". Une seule ellipse
+        // blanche semi-transparente en mode "screen" (n'éclaircit que ce qu'elle
+        // recouvre, n'assombrit jamais), rognée à la silhouette globale du
+        // camembert pour ne pas déborder sur le fond de la page.
+        glossGradSeq++;
+        var clipId = "glossClip" + glossGradSeq;
+        var clip = svgEl("clipPath", { id: clipId });
+        clip.appendChild(svgEl("ellipse", { cx: cx, cy: cy, rx: r * 1.12, ry: r * ryRatio * 1.12 }));
+        defs.appendChild(clip);
+        pieGroup.appendChild(svgEl("ellipse", {
+          cx: cx - r * 0.18, cy: cy - r * ryRatio * 0.4, rx: r * 0.8, ry: r * ryRatio * 0.55,
+          fill: "#ffffff", opacity: "0.45",
+          style: "mix-blend-mode:screen; clip-path:url(#" + clipId + ")"
+        }));
 
         // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
         // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
