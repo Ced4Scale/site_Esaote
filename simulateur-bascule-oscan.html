@@ -112,10 +112,11 @@
     .bascule-stats { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 1rem; margin-top: 1.4rem; position: relative; }
     @media (max-width: 900px) { .bascule-stats { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); } }
     @media (max-width: 640px) { .bascule-stats { grid-template-columns: minmax(0, 1fr); } }
-    /* 470px (au lieu de 400px) depuis le 04/09/2026 : le camembert + le graphe à
-       bâtons qui remplacent les 3 lignes de texte prennent plus de hauteur —
-       vérifié nécessaire jusqu'à 446px de contenu réel sur iPhone SE portrait. */
-    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 470px; }
+    /* 540px (470px puis 540px le 04/09/2026) : 2e camembert (répartition h/jour)
+       + écarts affichés sous les barres 2 et 3 du graphe ajoutent encore de la
+       hauteur — vérifié nécessaire jusqu'à 512px de contenu réel sur iPhone SE
+       portrait. */
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 540px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -146,13 +147,18 @@
     .bascule-stat-joker.is-flipped .bascule-joker-back { box-shadow: 0 4px 18px rgba(0,0,0,.12); }
     .bascule-joker-back .simulator__hint { margin: .4rem 0; font-size: .78rem; }
     .bascule-joker-back .bascule-stat-gain { margin-top: 0; padding-top: 0; border-top: 0; }
-    /* Camembert "déjà réalisé / capacité restante" — remplace le 04/09/2026 la ligne
-       "Déjà réalisé" du tableau et le texte "+X examens réalisables/an", sur demande
-       de Cédric. conic-gradient plutôt qu'un SVG : 2 parts fixes, pas besoin d'un
-       tracé de chemin pour un cas aussi simple. */
-    .bascule-joker-camembert { display: flex; align-items: center; gap: .8rem; margin: .5rem 0; }
-    .bascule-joker-pie { width: clamp(48px, 12vw, 70px); height: clamp(48px, 12vw, 70px); border-radius: 50%; flex: 0 0 auto; }
-    .bascule-joker-legend { display: flex; flex-direction: column; gap: .3rem; font-size: .82rem; }
+    /* Camemberts "déjà réalisé / capacité restante" (examens) et "répartition
+       h/jour" (utilisées / disponibles) — remplace le 04/09/2026 la ligne "Déjà
+       réalisé" du tableau et le texte "+X examens réalisables/an", puis complété
+       le même jour par un 2e camembert à droite du premier, sur demande de
+       Cédric. conic-gradient plutôt qu'un SVG : 2 parts fixes, pas besoin d'un
+       tracé de chemin pour un cas aussi simple. flex-wrap : les 2 camemberts
+       passent sur 2 lignes si la carte est trop étroite (mobile) plutôt que de
+       se tasser illisiblement côte à côte. */
+    .bascule-joker-camembert { display: flex; flex-wrap: wrap; gap: .6rem 1.4rem; margin: .5rem 0; }
+    .bascule-joker-pie-unit { display: flex; align-items: center; gap: .7rem; }
+    .bascule-joker-pie { width: clamp(44px, 10vw, 62px); height: clamp(44px, 10vw, 62px); border-radius: 50%; flex: 0 0 auto; }
+    .bascule-joker-legend { display: flex; flex-direction: column; gap: .3rem; font-size: .8rem; }
     .bascule-joker-legend-row { display: flex; align-items: center; gap: .4rem; }
     .bascule-joker-swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; }
     /* Graphe à bâtons des 3 scénarios — remplace le 04/09/2026 les 3 lignes de
@@ -168,6 +174,12 @@
     .bascule-joker-bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height .3s; min-height: 3px; }
     .bascule-joker-bar-fill.negatif { background: var(--red) !important; }
     .bascule-joker-bar-label { font-size: .68rem; color: var(--muted); text-align: center; margin-top: .35rem; line-height: 1.2; }
+    /* Écart affiché sous la barre 2 (gain de la barre 1 à la 2, sans l'O-scan →
+       activité actuelle avec l'O-scan), ajouté le 04/09/2026 sur demande de
+       Cédric. Vert comme les autres gains positifs du site (.bascule-stat-gain). */
+    .bascule-joker-bar-ecart { font-size: .74rem; font-weight: 700; color: #1a7a3d; text-align: center; margin-top: .2rem; white-space: nowrap; }
+    .bascule-joker-bar-ecart.negatif { color: var(--red); }
+    .bascule-joker-bar-ecart-sub { display: block; font-size: .62rem; font-weight: 400; color: var(--muted); margin-top: 1px; }
     .bascule-joker-retour {
       position: absolute; top: .5rem; right: .5rem; background: none; border: 0; cursor: pointer;
       font-size: 1rem; opacity: .6; padding: .1rem .3rem;
@@ -380,11 +392,14 @@
                   <div class="bascule-stat-label">🃏 Capacité restante sur l'O-scan</div>
                   <table class="bascule-mini-table" style="margin:.4rem 0"><tbody id="boJokerCapaciteNote"></tbody></table>
                   <div class="bascule-joker-camembert">
-                    <div class="bascule-joker-pie" id="boJokerPie" aria-hidden="true"></div>
-                    <div class="bascule-joker-legend" id="boJokerLegend"></div>
-                  </div>
-                  <div class="bascule-joker-resultats">
-                    <div class="bascule-stat-gain" id="boJokerGainCA">—</div>
+                    <div class="bascule-joker-pie-unit">
+                      <div class="bascule-joker-pie" id="boJokerPie" aria-hidden="true"></div>
+                      <div class="bascule-joker-legend" id="boJokerLegend"></div>
+                    </div>
+                    <div class="bascule-joker-pie-unit">
+                      <div class="bascule-joker-pie" id="boJokerPieHeures" aria-hidden="true"></div>
+                      <div class="bascule-joker-legend" id="boJokerLegendHeures"></div>
+                    </div>
                   </div>
                   <div style="border-top:1px dashed var(--line);padding-top:.6rem;margin-top:.5rem">
                     <div class="bascule-stat-label" style="margin-bottom:0">Résultat net selon 3 scénarios</div>
@@ -398,11 +413,14 @@
                         <div class="bascule-joker-bar-value" id="boJokerBarVal1">—</div>
                         <div class="bascule-joker-bar-track"><div class="bascule-joker-bar-fill" id="boJokerBarFill1" style="background:#f2b391"></div></div>
                         <div class="bascule-joker-bar-label">Avec l'O-scan (activité actuelle)</div>
+                        <div class="bascule-joker-bar-ecart" id="boJokerBarEcart01">—</div>
                       </div>
                       <div class="bascule-joker-bar-col">
                         <div class="bascule-joker-bar-value" id="boJokerBarVal2">—</div>
                         <div class="bascule-joker-bar-track"><div class="bascule-joker-bar-fill" id="boJokerBarFill2" style="background:#eb6834"></div></div>
                         <div class="bascule-joker-bar-label">O-scan à 100 % de sa capacité</div>
+                        <div class="bascule-joker-bar-ecart" id="boJokerBarEcart12">—</div>
+                        <div class="bascule-joker-bar-ecart" id="boJokerBarEcart02">—</div>
                       </div>
                     </div>
                   </div>
@@ -1228,14 +1246,6 @@
         var coutManipJoker = debitO > 0 ? (coutHoraireMerm() / debitO) * capaciteJoker : 0;
         var coutElecJoker = capaciteJoker * elecLe05.deltaKw * (elecLe05.dureeMin / 60) * kwh;
         var gainNetJoker = gainCAJoker - coutManipJoker - coutElecJoker;
-        var jokerGainCAEl = document.getElementById("boJokerGainCA");
-        if (capaciteJoker > 0) {
-          jokerGainCAEl.classList.remove("negatif");
-          jokerGainCAEl.textContent = "+ " + eur(gainCAJoker) + " de CA en plus";
-        } else {
-          jokerGainCAEl.classList.remove("negatif");
-          jokerGainCAEl.textContent = "—";
-        }
 
         // Graphe à bâtons des 3 scénarios comparés, dans l'ordre demandé par
         // Cédric : (1) sans l'O-scan du tout, (2) à activité constante avec
@@ -1259,22 +1269,58 @@
           fillEl.classList.toggle("negatif", s.val < 0);
           fillEl.style.height = Math.max(3, (Math.abs(s.val) / maxAbsScenario) * 100) + "%";
         });
+
+        // Écarts entre barres, ajoutés le 04/09/2026 (même session) sur demande
+        // de Cédric : sous la barre 2, l'écart avec la barre 1 (gain apporté par
+        // l'O-scan à activité constante) ; sous la barre 3, l'écart avec la
+        // barre 2 (gain du joker seul) puis, en dessous, l'écart avec la barre 1
+        // (gain total cumulé) — sous-libellé pour ne pas confondre les deux.
+        function remplirEcart(id, delta, sousLibelle) {
+          var el = document.getElementById(id);
+          el.classList.toggle("negatif", delta < 0);
+          var signe = delta >= 0 ? "+ " : "";
+          el.innerHTML = signe + eur(delta) + (sousLibelle ? "<span class=\"bascule-joker-bar-ecart-sub\">" + sousLibelle + "</span>" : "");
+        }
+        remplirEcart("boJokerBarEcart01", scenarios[1].val - scenarios[0].val, null);
+        remplirEcart("boJokerBarEcart12", scenarios[2].val - scenarios[1].val, "vs activité actuelle");
+        remplirEcart("boJokerBarEcart02", scenarios[2].val - scenarios[0].val, "vs sans l'O-scan");
+
+        // "Encore disponible X h/jour" retiré du tableau le 04/09/2026 (session
+        // suivante) : devenu redondant avec le 2e camembert (répartition h/jour)
+        // ajouté juste en dessous, qui montre cette même valeur ET son complément
+        // (heures déjà utilisées) — ne reste que le statut à pleine capacité.
         document.getElementById("boJokerCapaciteNote").innerHTML =
           capaciteJoker > 0
-            ? "<tr><td>Encore disponible</td><td>" + fmt(heuresRestantesParJour, 1) + " h/jour</td></tr>"
+            ? ""
             : "<tr><td>Statut</td><td>Déjà à pleine capacité</td></tr>";
 
-        // Camembert déjà réalisé (gris) / capacité restante réalisable (orange
-        // O-scan) — remplace le 04/09/2026 la ligne "Déjà réalisé" du tableau et le
-        // texte "+X examens réalisables/an", sur demande de Cédric. Parts calculées
-        // sur la capacité physique totale de l'O-scan (capaciteAnnuelleO), pas sur
-        // un total arbitraire.
+        // Camembert 1 : déjà réalisé (gris) / capacité restante réalisable
+        // (orange O-scan) — remplace le 04/09/2026 la ligne "Déjà réalisé" du
+        // tableau et le texte "+X examens réalisables/an", sur demande de
+        // Cédric. Parts calculées sur la capacité physique totale de l'O-scan
+        // (capaciteAnnuelleO), pas sur un total arbitraire.
         var pctRealise = capaciteAnnuelleO > 0 ? Math.min(100, (volO / capaciteAnnuelleO) * 100) : 0;
         document.getElementById("boJokerPie").style.background =
           "conic-gradient(var(--line-2) 0% " + pctRealise.toFixed(1) + "%, #eb6834 " + pctRealise.toFixed(1) + "% 100%)";
         document.getElementById("boJokerLegend").innerHTML =
           "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:var(--line-2)\"></span>Déjà réalisé : " + fmt(volO) + " FT/an</div>"
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Réalisables en plus : " + (capaciteJoker > 0 ? fmt(capaciteJoker) + " FT/an" : "0") + "</div>";
+
+        // Camembert 2, ajouté le 04/09/2026 (session suivante) à droite du 1er,
+        // sur demande de Cédric : même découpage mais en heures/jour au lieu
+        // d'examens/an — heures déjà utilisées (moyenne sur les jours réellement
+        // ouverts) vs heures encore disponibles (heuresRestantesParJour, déjà
+        // calculée plus haut). Même dénominateur que heuresRestantesParJour
+        // (jours ouverts réels × 52 semaines) pour que les 2 valeurs se
+        // recoupent exactement avec l'ouverture totale/jour.
+        var heuresParJourOuvertO = joursOuvertsSemaineO > 0 ? heuresParSemaineO() / joursOuvertsSemaineO : 0;
+        var heuresUtiliseesParJour = Math.max(0, heuresParJourOuvertO - heuresRestantesParJour);
+        var pctHeuresUtilisees = heuresParJourOuvertO > 0 ? Math.min(100, (heuresUtiliseesParJour / heuresParJourOuvertO) * 100) : 0;
+        document.getElementById("boJokerPieHeures").style.background =
+          "conic-gradient(var(--line-2) 0% " + pctHeuresUtilisees.toFixed(1) + "%, #eb6834 " + pctHeuresUtilisees.toFixed(1) + "% 100%)";
+        document.getElementById("boJokerLegendHeures").innerHTML =
+          "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:var(--line-2)\"></span>Utilisées : " + fmt(heuresUtiliseesParJour, 1) + " h/jour</div>"
+          + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
