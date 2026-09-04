@@ -248,7 +248,7 @@
           </div>
           <div class="field">
             <label for="boVolumeA">Activité totale actuelle</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boVolumeA" value="12000" style="width:5rem" /><span>ex./an</span></div>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boVolumeA" value="12000" style="width:5rem" /><span>FT/an</span></div>
           </div>
           <div class="bascule-champ" style="margin-bottom:0">
             <label for="boPartExtremites">Part membres/extrémités</label>
@@ -312,8 +312,8 @@
             </svg>
           </div>
           <div class="bascule-slider-labels">
-            <span class="lbl" id="boLblA" style="color:#2a78d6">Machine A : 12.000 ex./an</span>
-            <span class="lbl" id="boLblO" style="color:#eb6834">O-scan : 0 ex./an</span>
+            <span class="lbl" id="boLblA" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+            <span class="lbl" id="boLblO" style="color:#eb6834">O-scan : 0 FT/an</span>
           </div>
           <div class="bascule-track-wrap">
             <div class="bascule-slider-track">
@@ -769,8 +769,8 @@
         ];
         var html = "";
         lignes.forEach(function (l) {
-          var txtA = l.jusquaA === Infinity ? "au-delà" : fmt(l.jusquaA) + " ex./an";
-          var txtO = l.jusquaO === Infinity ? "au-delà" : fmt(l.jusquaO) + " ex./an";
+          var txtA = l.jusquaA === Infinity ? "au-delà" : fmt(l.jusquaA) + " FT/an";
+          var txtO = l.jusquaO === Infinity ? "au-delà" : fmt(l.jusquaO) + " FT/an";
           html += "<tr><td>" + l.label + "</td>"
             + "<td>" + txtA + "</td><td><strong>" + eur(l.tarifA, 2) + "</strong></td>"
             + "<td>" + txtO + "</td><td><strong>" + eur(l.tarifO, 2) + "</strong></td></tr>";
@@ -1036,9 +1036,9 @@
         document.getElementById("boFillOscan").style.width = (100 - pct) + "%";
         document.getElementById("boCurseurHint").style.left = pct + "%";
         document.getElementById("boLblA").style.left = (pct / 2) + "%";
-        document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " ex./an";
+        document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " FT/an";
         document.getElementById("boLblO").style.left = (pct + (100 - pct) / 2) + "%";
-        document.getElementById("boLblO").textContent = "O-scan : " + fmt(volO) + " ex./an";
+        document.getElementById("boLblO").textContent = "O-scan : " + fmt(volO) + " FT/an";
 
         var rA = resultat(classeA, volA, manipA, debitA, loyerA, kwh);
         var rO = resultat("le05", volO, 1, debitO, loyerO, kwh);
@@ -1099,15 +1099,15 @@
         if (volO > volumeExtremitesDispo + 1e-6 && volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse à la fois sa capacité physique ET le volume disponible", [
-            ["Volume O-scan", fmt(volO) + " ex./an"],
-            ["Capacité physique max", fmt(capaciteAnnuelleO) + " ex./an"],
-            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
+            ["Volume O-scan", fmt(volO) + " FT/an"],
+            ["Capacité physique max", fmt(capaciteAnnuelleO) + " FT/an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
           ]);
         } else if (volO > volumeExtremitesDispo + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse le volume d'examens membres/extrémités disponible", [
-            ["Volume O-scan", fmt(volO) + " ex./an"],
-            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
+            ["Volume O-scan", fmt(volO) + " FT/an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
           ], "L'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.");
         } else if (volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
@@ -1120,23 +1120,23 @@
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) - 0.5) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.innerHTML = capnoteHTML("◐", "À sa limite", [
-            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Débit", fmtExact(debitO) + " FT/h"],
-            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an"]
+            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " FT/an"]
           ], "Des séquences post-opératoires, plus courtes et plus ciblées, augmenteraient ce débit — et donc cette limite.");
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.innerHTML = capnoteHTML("◐", "Proche de sa limite", [
-            ["Volume O-scan", fmt(volO) + " ex./an"],
+            ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Débit", fmtExact(debitO) + " FT/h"],
-            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an"]
+            ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " FT/an"]
           ], "Des séquences post-opératoires, plus courtes et plus ciblées, augmenteraient ce débit — et donc cette limite.");
         } else {
           capaciteNote.className = "bascule-capnote ok";
           capaciteNote.innerHTML = capnoteHTML("✓", "Dans sa capacité", [
-            ["Volume O-scan", fmt(volO) + " ex./an"],
-            ["Capacité physique max", fmt(capaciteAnnuelleO) + " ex./an"],
-            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " ex./an"]
+            ["Volume O-scan", fmt(volO) + " FT/an"],
+            ["Capacité physique max", fmt(capaciteAnnuelleO) + " FT/an"],
+            ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an"]
           ]);
         }
 
@@ -1188,9 +1188,9 @@
         document.getElementById("boJokerCapaciteNote").innerHTML =
           capaciteJoker > 0
             ? "<tr><td>Encore disponible</td><td>" + fmt(heuresRestantesParJour, 1) + " h/jour</td></tr>"
-              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " ex./an</td></tr>"
+              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " FT/an</td></tr>"
             : "<tr><td>Statut</td><td>Déjà à pleine capacité</td></tr>"
-              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " ex./an</td></tr>";
+              + "<tr><td>Déjà réalisé</td><td>" + fmt(volO) + " FT/an</td></tr>";
 
         dessinerBaremeMini(classeA, nomClasseA);
 
@@ -1348,7 +1348,7 @@
           drawRow("", [e.nomClasseA, "O-scan"], true);
           doc.setDrawColor(200);
           doc.line(x0, y - 4, x0 + labelWidth + colWidth * 2, y - 4);
-          drawRow("Activité répartie", [fmt(e.volA) + " ex./an", fmt(e.volO) + " ex./an"]);
+          drawRow("Activité répartie", [fmt(e.volA) + " FT/an", fmt(e.volO) + " FT/an"]);
           drawRow("Chiffre d'affaires (FT)", [eur(e.rA.ca), eur(e.rO.ca)]);
           drawRow("Résultat net", [eur(e.rA.net), eur(e.rO.net)], true);
           y += 2;
@@ -1405,7 +1405,7 @@
           drawRecapRow("Loyer mensuel Machine A", [eur(e.loyerA)]);
           drawRecapRow("Manip en poste (Machine A)", [String(e.manipA)]);
           drawRecapRow("Débit Machine A", [fmt(e.debitA, 1) + " FT/h"]);
-          drawRecapRow("Activité totale actuelle", [fmt(e.volumeTotal) + " ex./an"]);
+          drawRecapRow("Activité totale actuelle", [fmt(e.volumeTotal) + " FT/an"]);
           drawRecapRow("Part membres/extrémités", [fmt(e.partExtremites * 100, 0) + " %"]);
           drawRecapRow("Loyer mensuel O-scan", [eur(e.loyerO)]);
           drawRecapRow("Débit O-scan", [fmt(e.debitO, 1) + " FT/h"]);
