@@ -38,6 +38,29 @@
     #simHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
     #simHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
     #simHypOverlay .modal__scroll { height: 100%; }
+
+    /* "Seuils de cette classe" repliable, avec le tableau qui déborde de la
+       colonne étroite du formulaire une fois ouvert — demandé par Cédric le
+       04/09/2026 ("qu'il n'y ait qu'une ligne de texte dans chaque ligne du
+       tableau"). Motif "popover qui s'adapte à la largeur de son texte" du
+       skill ced4scale-simulateur-web (déjà utilisé sur simulateur-bascule-
+       oscan.html) : le tableau sort du flux normal (position:absolute,
+       width:max-content) au lieu de rester contraint par la largeur de la
+       colonne, avec son propre fond + ombre puisqu'il flotte au-dessus du
+       reste de la page. */
+    .sim-seuils-details { position: relative; margin: -.4rem 0 1.1rem; }
+    .sim-seuils-details > summary { cursor: pointer; font-weight: 700; font-size: .95rem; list-style: none; }
+    .sim-seuils-details > summary::-webkit-details-marker { display: none; }
+    .sim-seuils-details > summary::before { content: "▸ "; }
+    .sim-seuils-details[open] > summary::before { content: "▾ "; }
+    .sim-seuils-details[open] .sim-seuils-popover {
+      position: absolute; top: 100%; left: 0; z-index: 6; margin: .3rem 0 0;
+      width: max-content; max-width: min(calc(100vw - 4.5rem), 640px); overflow-x: auto;
+      background: var(--white); box-shadow: 0 8px 24px rgba(0,0,0,.18);
+      border-radius: 8px; padding: .6rem .8rem;
+    }
+    .sim-seuils-popover table { font-size: .78rem; }
+    .sim-seuils-popover td, .sim-seuils-popover th { white-space: nowrap; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -73,12 +96,15 @@
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
         </div>
-        <div class="simulator__seuils" id="simSeuilsBox">
-          <table class="stats-table" id="simSeuilsTable" style="font-size:.78rem">
-            <thead><tr id="simSeuilsHead"></tr></thead>
-            <tbody id="simSeuilsBody"></tbody>
-          </table>
-        </div>
+        <details class="sim-seuils-details" id="simSeuilsDetails">
+          <summary>Seuils de cette classe</summary>
+          <div class="simulator__seuils sim-seuils-popover" id="simSeuilsBox">
+            <table class="stats-table" id="simSeuilsTable">
+              <thead><tr id="simSeuilsHead"></tr></thead>
+              <tbody id="simSeuilsBody"></tbody>
+            </table>
+          </div>
+        </details>
         <div class="field">
           <label for="simZone">Zone géographique</label>
           <select id="simZone">
@@ -912,7 +938,7 @@
           return { couleur: SLOT_COLORS[i], label: ligne.label, reduits: ligne.reduits };
         }).filter(Boolean);
 
-        var head = "<th>Seuil de cette classe</th><th>Jusqu'à</th>";
+        var head = "<th>Seuil</th><th>Jusqu'à</th>";
         lignesDates.forEach(function (l) {
           head += "<th style=\"color:" + l.couleur + "\">" + l.label + "</th>";
         });
