@@ -185,7 +185,6 @@
               </tbody>
             </table>
           </div>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Pondération selon la répartition communiquée par Esaote — ce tarif est fixe, il ne suit pas le barème dégressif du forfait technique ci-dessus. Recherche faite le 11/08/2026 auprès de la FNMR et de la SFR : aucune trace d'une revalorisation de ce tarif depuis 2018 — au contraire, ces deux organisations dénoncent un acte intellectuel gelé pendant que les charges (salaires MERM, électricité, maintenance) augmentent. La ligne « euros constants » montre ce que ces mêmes euros représentent réellement une fois l'inflation prise en compte (INSEE 2018-2025 réalisé, prévisions Bercy 2026-2027, puis 1,75&nbsp;%/an au-delà), à partir de l'année en cours.</p>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table" id="simActeTable">
               <thead><tr id="simActeTableHead"><th>Année&nbsp;:</th></tr></thead>
@@ -841,218 +840,44 @@
         return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
       }
 
-      // ---- Test "camembert glacé/3D" (04/09/2026) ----
-      // Reproduction d'un rendu fourni par Cédric (parts légèrement écartées,
-      // dessus glacé, tranche foncée en dessous, ombre portée) — appliqué en
-      // test UNIQUEMENT sur ce camembert pour validation avant de le généraliser
-      // (skill + tous les camemberts + graphes en bâton, si "c'est top").
-      function hexToRgb(hex) {
-        var v = parseInt(hex.replace("#", ""), 16);
-        return [(v >> 16) & 255, (v >> 8) & 255, v & 255];
-      }
-      function rgbToHex(r, g, b) {
-        function h(x) { return Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0"); }
-        return "#" + h(r) + h(g) + h(b);
-      }
-      function eclaircir(hex, amt) {
-        var c = hexToRgb(hex);
-        return rgbToHex(c[0] + (255 - c[0]) * amt, c[1] + (255 - c[1]) * amt, c[2] + (255 - c[2]) * amt);
-      }
-      function assombrir(hex, amt) {
-        var c = hexToRgb(hex);
-        return rgbToHex(c[0] * (1 - amt), c[1] * (1 - amt), c[2] * (1 - amt));
-      }
-      // Sature/éclaircit la couleur de base vers un rendu "plastique brillant" —
-      // les couleurs de marque du site (bleu/orange), assez sobres, restaient
-      // trop ternes une fois en camembert glacé (signalé par Cédric). Remonte la
-      // saturation à un plancher et pousse un peu la luminosité, sans changer la
-      // teinte (donc toujours reconnaissable comme "le bleu"/"l'orange" du site).
-      function vivifier(hex) {
-        var c = hexToRgb(hex), r = c[0] / 255, g = c[1] / 255, b = c[2] / 255;
-        var max = Math.max(r, g, b), min = Math.min(r, g, b), l = (max + min) / 2, s = 0, h = 0;
-        if (max !== min) {
-          var d = max - min;
-          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-          if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
-          else if (max === g) h = (b - r) / d + 2;
-          else h = (r - g) / d + 4;
-          h /= 6;
-        }
-        s = Math.max(s, 0.82);
-        l = Math.min(Math.max(l, 0.5), 0.56);
-        function hue2rgb(p, q, t) {
-          if (t < 0) t += 1;
-          if (t > 1) t -= 1;
-          if (t < 1 / 6) return p + (q - p) * 6 * t;
-          if (t < 1 / 2) return q;
-          if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-          return p;
-        }
-        var q = l < 0.5 ? l * (1 + s) : l + s - l * s, p = 2 * l - q;
-        return rgbToHex(hue2rgb(p, q, h + 1 / 3) * 255, hue2rgb(p, q, h) * 255, hue2rgb(p, q, h - 1 / 3) * 255);
-      }
-      function ellipsePoint(cx, cy, rx, ry, angle) {
-        return [cx + rx * Math.cos(angle), cy + ry * Math.sin(angle)];
-      }
-      function wedgeEllipsePath(cx, cy, rx, ry, a1, a2) {
-        var large = (a2 - a1) > Math.PI ? 1 : 0;
-        var p1 = ellipsePoint(cx, cy, rx, ry, a1);
-        var p2 = ellipsePoint(cx, cy, rx, ry, a2);
-        return "M" + cx + "," + cy + " L" + p1[0] + "," + p1[1] + " A" + rx + "," + ry + " 0 " + large + " 1 " + p2[0] + "," + p2[1] + " Z";
-      }
-      // Paroi visible uniquement sur la portion "avant" de l'arc (angle entre 0 et
-      // π, soit la moitié basse de l'ellipse dans un repère SVG y-vers-le-bas) —
-      // c'est la seule partie que l'œil verrait dépasser sous un camembert vu en
-      // léger plongée, comme sur l'image de référence.
-      function sideWallPath(cx, cy, rx, ry, a1, a2, depth) {
-        var lo = Math.max(a1, 0), hi = Math.min(a2, Math.PI);
-        if (lo >= hi) return null;
-        var steps = 14, top = [], bot = [];
-        for (var i = 0; i <= steps; i++) {
-          var t = lo + (hi - lo) * i / steps;
-          var p = ellipsePoint(cx, cy, rx, ry, t);
-          top.push(p);
-          bot.push([p[0], p[1] + depth]);
-        }
-        var d = "M" + top.map(function (p) { return p[0] + "," + p[1]; }).join(" L");
-        d += " L" + bot.slice().reverse().map(function (p) { return p[0] + "," + p[1]; }).join(" L") + " Z";
-        return d;
-      }
-      // Paroi DROITE (les 2 côtés radiaux d'une part, du centre à l'arc extérieur)
-      // — sans ça, une part écartée du centre n'avait d'épaisseur visible que sur
-      // son bord arrondi extérieur, jamais sur ses 2 côtés droits (le "V" entre 2
-      // parts séparées restait plat, à plat comme une découpe 2D) : c'est
-      // pourtant l'indice de profondeur le plus visible sur la photo de référence
-      // de Cédric (vraies parts de gâteau détachées, épaisses sur tous les
-      // côtés) — corrigé le 04/09/2026.
-      function radialWallPath(cx, cy, rx, ry, angle, depth) {
-        var p = ellipsePoint(cx, cy, rx, ry, angle);
-        return "M" + cx + "," + cy + " L" + p[0] + "," + p[1] + " L" + p[0] + "," + (p[1] + depth) + " L" + cx + "," + (cy + depth) + " Z";
-      }
-      var glossGradSeq = 0;
-      // Dégradé RADIAL (pas linéaire) avec un vrai point de brillance quasi blanc
-      // décentré en haut à gauche, comme un reflet de lumière sur une surface
-      // glacée/bombée — un dégradé linéaire clair→foncé ne suffisait pas à lire
-      // comme "brillant" (signalé par Cédric, la version précédente avait l'air
-      // juste dégradée, pas réfléchissante).
-      // Figure simplifiée le 04/09/2026 (2e image de référence de Cédric, "plus
-      // simple comme figure") : couleur PLATE par part (pas de dégradé glacé, pas
-      // de reflet/point de brillance) — juste la couleur vive de la part, une
-      // tranche plate plus foncée en dessous, et l'ombre portée déjà en place.
-      function couleurPlate(colorHexBrut) {
-        return vivifier(colorHexBrut);
-      }
-
+      // Camembert 3D "glacé/plastique" tenté le 04/09/2026 (2 photos de
+      // référence de Cédric) puis ABANDONNÉ le même jour ("on laisse tomber")
+      // après plusieurs itérations jugées insuffisantes malgré des correctifs
+      // réels (couleurs, épaisseur, côtés droits, reflet) — un rendu 3D fidèle
+      // à une vraie photo (perspective, éclairage, matériaux) dépasse ce qu'une
+      // approximation SVG à la main peut atteindre. Revenu au camembert plat
+      // d'origine (commit avant `f3fcf6c`), cohérent avec les autres
+      // simulateurs du site. Historique complet de la tentative dans
+      // [[site-web/simulateur-recettes]] si jamais repris un jour.
       function dessinerUnCamembert(cx, cy, r, camembert) {
-        // Géométrie du rendu "glacé/3D" : ellipse (vue en légère plongée),
-        // parts écartées du centre, tranche foncée extrudée en dessous.
-        var ryRatio = 0.62, depth = r * 0.42, explode = r * 0.16;
-        var defs = svgEl("defs", {});
-        svg2.appendChild(defs);
-        // Pas de `filter` ni `mix-blend-mode` CSS ici : sur cette page, ces deux
-        // propriétés faisaient sortir le rendu du camembert de l'ordre d'empilement
-        // normal de la page et passer AU-DESSUS du popover "Seuils de cette classe"
-        // (opaque, z-index plus élevé) malgré `isolation:isolate` — un vrai bug de
-        // compositing Chrome, pas un souci de fond transparent. Corrigé le
-        // 04/09/2026 en ombre/reflet 100 % SVG (formes + dégradés), jamais de CSS
-        // filter/blend-mode sur un graphique de cette page.
-        var pieGroup = svgEl("g", {});
-        svg2.appendChild(pieGroup);
-        // Ombre portée dessinée à la main (ellipse floutée via un dégradé radial
-        // sombre→transparent, pas de feGaussianBlur ni de CSS filter).
-        glossGradSeq++;
-        var shadowId = "glossShadow" + glossGradSeq;
-        var shadowGrad = svgEl("radialGradient", { id: shadowId, cx: "50%", cy: "50%", r: "50%" });
-        shadowGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#000000", "stop-opacity": "0.32" }));
-        shadowGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#000000", "stop-opacity": "0" }));
-        defs.appendChild(shadowGrad);
-        pieGroup.appendChild(svgEl("ellipse", {
-          cx: cx + r * 0.06, cy: cy + r * ryRatio + depth + r * 0.14,
-          rx: r * 1.15, ry: r * ryRatio * 0.42, fill: "url(#" + shadowId + ")"
-        }));
-
         var startAngle = -Math.PI / 2;
-        var slices = [];
         PALIERS.forEach(function (p) {
           var part = camembert.detail[p.key];
           if (!part) return; // palier non atteint à ce volume (ex. sous l'activité de référence)
           var fraction = part / camembert.total;
           var endAngle = startAngle + fraction * 2 * Math.PI;
-          var midAngle = (startAngle + endAngle) / 2;
-          var ecx = cx + explode * Math.cos(midAngle), ecy = cy + explode * ryRatio * Math.sin(midAngle);
-          slices.push({ p: p, part: part, fraction: fraction, startAngle: startAngle, endAngle: endAngle, midAngle: midAngle, ecx: ecx, ecy: ecy });
-          startAngle = endAngle;
-        });
-        // Parois d'abord (toutes), puis dessus (tous) — pour qu'aucun dessus ne
-        // se retrouve caché par la paroi de la part voisine.
-        slices.forEach(function (s) {
-          var wallColor = assombrir(couleurPlate(s.p.color), 0.32);
-          var wall = sideWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle, depth);
-          if (wall) pieGroup.appendChild(svgEl("path", { d: wall, fill: wallColor }));
-          // Les 2 côtés droits d'une part, dessinés seulement quand ils font face
-          // au visiteur — sinon on peindrait la face NON visible d'une découpe
-          // (celle tournée vers l'arrière du camembert), qui n'a rien à faire là.
-          // Le côté "début" (dans le sens de balayage) fait face au visiteur
-          // quand son cosinus est négatif, le côté "fin" quand il est positif —
-          // les deux parts qui se touchent à une même frontière ne peuvent
-          // jamais l'avoir visible toutes les deux à la fois, une seule paroi
-          // est donc dessinée par frontière (jamais de doublon).
-          if (Math.cos(s.startAngle) < 0) {
-            pieGroup.appendChild(svgEl("path", { d: radialWallPath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, depth), fill: wallColor }));
-          }
-          if (Math.cos(s.endAngle) > 0) {
-            pieGroup.appendChild(svgEl("path", { d: radialWallPath(s.ecx, s.ecy, r, r * ryRatio, s.endAngle, depth), fill: wallColor }));
-          }
-        });
-        slices.forEach(function (s) {
-          pieGroup.appendChild(svgEl("path", {
-            d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle),
-            fill: couleurPlate(s.p.color), stroke: "#fcfcfb", "stroke-width": "1.5"
-          }));
-        });
-        // Petit reflet ajouté sur chaque part (discret, pas le rendu glacé
-        // retiré plus tôt) — rogné à la forme exacte de SA propre part écartée
-        // via l'attribut SVG natif `clip-path` (le rognage à la silhouette
-        // globale du camembert cassait sur les petites parts très séparées, déjà
-        // rencontré une fois).
-        slices.forEach(function (s) {
-          glossGradSeq++;
-          var clipId = "glossClip" + glossGradSeq;
-          var clip = svgEl("clipPath", { id: clipId });
-          clip.appendChild(svgEl("path", { d: wedgeEllipsePath(s.ecx, s.ecy, r, r * ryRatio, s.startAngle, s.endAngle) }));
-          defs.appendChild(clip);
-          var hlId = "glossHighlight" + glossGradSeq;
-          var hlGrad = svgEl("radialGradient", { id: hlId, cx: "50%", cy: "50%", r: "50%" });
-          hlGrad.appendChild(svgEl("stop", { offset: "0%", "stop-color": "#ffffff", "stop-opacity": "0.55" }));
-          hlGrad.appendChild(svgEl("stop", { offset: "50%", "stop-color": "#ffffff", "stop-opacity": "0.2" }));
-          hlGrad.appendChild(svgEl("stop", { offset: "100%", "stop-color": "#ffffff", "stop-opacity": "0" }));
-          defs.appendChild(hlGrad);
-          pieGroup.appendChild(svgEl("ellipse", {
-            cx: s.ecx - r * 0.15, cy: s.ecy - r * ryRatio * 0.45, rx: r * 0.4, ry: r * ryRatio * 0.3,
-            fill: "url(#" + hlId + ")", "clip-path": "url(#" + clipId + ")"
-          }));
-        });
+          svg2.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, r, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
 
-        // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
-        // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
-        // fonctionne même pour les toutes petites parts (le plafond, souvent minuscule).
-        slices.forEach(function (s) {
-          var midAngle = s.midAngle;
-          var p1 = ellipsePoint(s.ecx, s.ecy, r * 1.04, r * ryRatio * 1.04, midAngle);
-          var p2 = ellipsePoint(s.ecx, s.ecy, r * 1.22, r * ryRatio * 1.22, midAngle);
-          svg2.appendChild(svgEl("line", { x1: p1[0], y1: p1[1], x2: p2[0], y2: p2[1], stroke: s.p.color, "stroke-width": "1.5" }));
+          // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
+          // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
+          // fonctionne même pour les toutes petites parts (le plafond, souvent minuscule).
+          var midAngle = (startAngle + endAngle) / 2;
+          var lx1 = cx + r * 1.02 * Math.cos(midAngle), ly1 = cy + r * 1.02 * Math.sin(midAngle);
+          var lx2 = cx + r * 1.18 * Math.cos(midAngle), ly2 = cy + r * 1.18 * Math.sin(midAngle);
+          svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.color, "stroke-width": "1.5" }));
           var cosA = Math.cos(midAngle);
           var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
-          var p3 = ellipsePoint(s.ecx, s.ecy, r * 1.3, r * ryRatio * 1.3, midAngle);
-          var pct = Math.round(s.fraction * 100);
-          var label = svgEl("text", { x: p3[0], y: p3[1], class: "simulator__pie-outlabel", "text-anchor": anchor });
-          var lineMontant = svgEl("tspan", { x: p3[0], dy: "0" });
-          lineMontant.textContent = euros.format(s.part);
+          var lx3 = cx + r * 1.24 * Math.cos(midAngle), ly3 = cy + r * 1.24 * Math.sin(midAngle);
+          var pct = Math.round(fraction * 100);
+          var label = svgEl("text", { x: lx3, y: ly3, class: "simulator__pie-outlabel", "text-anchor": anchor });
+          var lineMontant = svgEl("tspan", { x: lx3, dy: "0" });
+          lineMontant.textContent = euros.format(part);
           label.appendChild(lineMontant);
-          var linePct = svgEl("tspan", { x: p3[0], dy: "10", class: "simulator__axis-label" });
+          var linePct = svgEl("tspan", { x: lx3, dy: "10", class: "simulator__axis-label" });
           linePct.textContent = pct + " %";
           label.appendChild(linePct);
           svg2.appendChild(label);
+          startAngle = endAngle;
         });
         // Uniquement le forfait moyen par examen ici (pas le total) — c'est le chiffre le
         // plus parlant à cet endroit, juste au-dessus du détail par palier (demande de
@@ -1074,6 +899,7 @@
         caption.appendChild(suffixSpan);
         svg2.appendChild(caption);
       }
+
 
       // Petit graphe en barres des 4 paliers, sous chaque camembert — même montant que les
       // étiquettes autour du camembert, mais plus facile à comparer d'un coup d'œil entre les
