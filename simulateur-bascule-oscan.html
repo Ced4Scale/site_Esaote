@@ -180,11 +180,13 @@
               <line id="boCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
               <path id="boCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
               <line id="boLigneSeuil" x1="0" y1="0" x2="0" y2="170" stroke="#b8790b" stroke-width="1.5" stroke-dasharray="5,3"></line>
-              <text id="boLabelSeuil" x="0" y="16" font-size="15" fill="#b8790b" font-weight="800" text-anchor="middle"></text>
+              <text id="boLabelSeuil" x="0" y="-16" font-size="15" fill="#b8790b" font-weight="800" text-anchor="middle"></text>
               <line id="boLignePointMortA" x1="0" y1="0" x2="0" y2="170" stroke="#2a78d6" stroke-width="1.5" stroke-dasharray="3,3"></line>
-              <text id="boLabelPointMortA" x="0" y="168" font-size="10" fill="#2a78d6" font-weight="700" text-anchor="middle"></text>
+              <text id="boLabelPointMortA" x="0" y="-4" font-size="10" fill="#2a78d6" font-weight="700" text-anchor="middle"></text>
               <line id="boLignePointMortO" x1="0" y1="0" x2="0" y2="170" stroke="#eb6834" stroke-width="1.5" stroke-dasharray="3,3"></line>
-              <text id="boLabelPointMortO" x="0" y="168" font-size="10" fill="#eb6834" font-weight="700" text-anchor="middle"></text>
+              <text id="boLabelPointMortO" x="0" y="-4" font-size="10" fill="#eb6834" font-weight="700" text-anchor="middle"></text>
+              <circle id="boCurseurPointHalo" cx="0" cy="0" r="6" fill="#fcfcfb"></circle>
+              <circle id="boCurseurPoint" cx="0" cy="0" r="4" fill="#eb6834"></circle>
             </svg>
           </div>
           <div class="bascule-slider-labels">
@@ -548,6 +550,13 @@
 
         var caTotal = rA.ca + rO.ca;
         var netTotal = rA.net + rO.net;
+
+        if (courbeEchelle) {
+          document.getElementById("boCurseurPointHalo").setAttribute("cx", courbeEchelle.px(X));
+          document.getElementById("boCurseurPointHalo").setAttribute("cy", courbeEchelle.py(netTotal));
+          document.getElementById("boCurseurPoint").setAttribute("cx", courbeEchelle.px(X));
+          document.getElementById("boCurseurPoint").setAttribute("cy", courbeEchelle.py(netTotal));
+        }
 
         document.getElementById("boStatCA").textContent = eur(caTotal);
         document.getElementById("boStatCA_A").textContent = eur(rA.ca);
