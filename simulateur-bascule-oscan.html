@@ -59,9 +59,9 @@
     /* Panneau ancré tout à gauche de l'écran, sans fond assombri : le reste de la page
        (graphique, résultats) reste visible et cliquable pendant le réglage, pour voir
        l'effet en temps réel. */
-    #boHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #boHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
-    #boHypOverlay .modal__scroll { height: 100%; }
+    #boHypOverlay, #boHypOverlayO { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #boHypOverlay .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #boHypOverlay .modal__scroll, #boHypOverlayO .modal__scroll { height: 100%; }
     .bascule-range { display: flex; align-items: center; gap: .7rem; }
     .bascule-range input[type=range] { flex: 1; accent-color: var(--red); }
     .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; }
@@ -195,7 +195,10 @@
         </div>
 
         <div class="simulator__machine-box" data-slot="1" style="border-left-color:#eb6834">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" style="color:#eb6834">O-scan</h4>
+          <h4 class="simulator__machine-box-title simulator__swatch-text bascule-machine-title" data-slot="1" style="color:#eb6834">
+            <span>O-scan</span>
+            <button type="button" class="bascule-gear-btn" id="boBtnHypothesesO" aria-label="Modifier les plages d'ouverture de l'O-scan" title="Modifier les plages d'ouverture de l'O-scan">⚙</button>
+          </h4>
           <div class="field">
             <label for="boLoyerO">Loyer mensuel, SAV inclus (moyenné sur 7 ans)</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerO" value="12.000" style="width:6rem" /><span>€/mois</span></div>
@@ -392,6 +395,39 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="boHypOverlayO" role="dialog" aria-modal="true" aria-labelledby="boHypTitleO" hidden>
+    <div class="modal" style="width:min(480px, 100%); position:relative">
+      <button type="button" class="modal__close" id="boHypCloseO" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="bascule-hyp-body">
+          <h3 id="boHypTitleO">Plages d'ouverture de l'O-scan</h3>
+          <p class="simulator__hint">Par défaut, les mêmes plages que la Machine A — libre à toi de les
+          changer, ça n'affecte que la capacité maximale de l'O-scan (nombre d'examens/an qu'il peut
+          physiquement faire). Pas mémorisé : à ta prochaine visite, le simulateur repart des valeurs
+          par défaut.</p>
+          <div class="field">
+            <label for="boHypOHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypOHeuresSemaine" value="9" /><span>h/jour</span></div>
+          </div>
+          <div class="field">
+            <label for="boHypOHeuresSamedi">Amplitude d'ouverture, samedi</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypOHeuresSamedi" value="0" /><span>h/jour</span></div>
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="boHypOHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypOHeuresDimanche" value="0" /><span>h/jour</span></div>
+          </div>
+          <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde la
+          case "Résultat net total" changer pendant que tu ajustes.</p>
+          <div class="bascule-hyp-actions">
+            <button type="button" class="btn btn--ghost" id="boHypResetO">Valeurs par défaut</button>
+            <button type="button" class="btn" id="boHypDoneO">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       function fmt(n, dec) {
@@ -437,20 +473,31 @@
       var HEURES_LEGALES_MOIS = 151.67;
       // Amplitude d'ouverture par type de jour (h/jour) plutôt qu'un unique couple
       // heures/jour × jours/an — permet un samedi/dimanche différent de la semaine.
-      var AMPLITUDE_SEMAINE = 9;
-      var AMPLITUDE_SAMEDI = 0;
-      var AMPLITUDE_DIMANCHE = 0;
+      // Machine A et O-scan ont chacune leur propre amplitude, réglable séparément
+      // (roue crantée de chaque bloc) — mêmes valeurs par défaut au chargement, mais
+      // rien ne les garde synchronisées après coup si le visiteur en change une.
+      var AMPLITUDE_A_SEMAINE = 9;
+      var AMPLITUDE_A_SAMEDI = 0;
+      var AMPLITUDE_A_DIMANCHE = 0;
+      var AMPLITUDE_O_SEMAINE = 9;
+      var AMPLITUDE_O_SAMEDI = 0;
+      var AMPLITUDE_O_DIMANCHE = 0;
       var SEMAINES_PAR_AN = 52; // fixe, non éditable (pas de semaines de fermeture distinctes)
       var NOM_CLASSE = { t15: "1,5 T", sup15: "3 T" };
 
       function coutHoraireMerm() {
         return (NET_MERM / COEF_BRUT) * COEF_CHARGES / HEURES_LEGALES_MOIS;
       }
-      function heuresParSemaine() {
-        return 5 * AMPLITUDE_SEMAINE + AMPLITUDE_SAMEDI + AMPLITUDE_DIMANCHE;
+      function heuresParSemaine(semaine, samedi, dimanche) {
+        return 5 * semaine + samedi + dimanche;
       }
+      function heuresParSemaineO() {
+        return heuresParSemaine(AMPLITUDE_O_SEMAINE, AMPLITUDE_O_SAMEDI, AMPLITUDE_O_DIMANCHE);
+      }
+      // Seule la capacité de l'O-scan est contrainte par une amplitude d'ouverture
+      // dans ce simulateur — Machine A n'a pas de plafond physique modélisé ici.
       function capaciteAnnuelle(examensParHeure) {
-        return examensParHeure * heuresParSemaine() * SEMAINES_PAR_AN;
+        return examensParHeure * heuresParSemaineO() * SEMAINES_PAR_AN;
       }
       function resultat(classeKey, volumeAnnuel, nbManip, examensParHeure, loyerMensuel, kwh) {
         var ca = ftAnnuel(classeKey, volumeAnnuel);
@@ -642,12 +689,15 @@
       curseur.addEventListener("input", recalculer);
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
-      // Hypothèses communes aux deux machines, modifiables via la roue crantée du
-      // bloc Machine A. Pas de mémorisation (localStorage) : un rechargement de page
-      // repart des valeurs par défaut définies plus haut.
+      // Hypothèses de la Machine A, modifiables via sa roue crantée. Le salaire MERM
+      // et la base légale sont communs aux deux machines (un seul MERM au global) ;
+      // l'amplitude d'ouverture, elle, est propre à Machine A ici (l'O-scan a la
+      // sienne, réglable séparément via sa propre roue crantée plus bas). Pas de
+      // mémorisation (localStorage) : un rechargement de page repart des valeurs par
+      // défaut définies plus haut.
       var HYP_DEFAUTS = {
         netMerm: NET_MERM, heuresLegales: HEURES_LEGALES_MOIS,
-        heuresSemaine: AMPLITUDE_SEMAINE, heuresSamedi: AMPLITUDE_SAMEDI, heuresDimanche: AMPLITUDE_DIMANCHE
+        heuresSemaine: AMPLITUDE_A_SEMAINE, heuresSamedi: AMPLITUDE_A_SAMEDI, heuresDimanche: AMPLITUDE_A_DIMANCHE
       };
       var hypOverlay = document.getElementById("boHypOverlay");
 
@@ -699,21 +749,24 @@
         resume.innerHTML =
           "Salaire MERM net " + fmt(NET_MERM) + "&nbsp;€/mois (coût réel employeur estimé à " +
           fmt(coutHoraireMerm(), 2) + "&nbsp;€/h, base " + fmt(HEURES_LEGALES_MOIS, 2) + "&nbsp;h/mois légales) ; " +
-          elecTxt + " — pas de climatisation ni de socle électrique fixe dans cette version ; capacité maximale " +
-          "de l'O-scan déduite de son propre débit horaire × " + fmt(heuresParSemaine(), 1) +
-          "&nbsp;h/semaine (" + fmt(AMPLITUDE_SEMAINE, 1) + "&nbsp;h lun-ven, " + fmt(AMPLITUDE_SAMEDI, 1) +
-          "&nbsp;h samedi, " + fmt(AMPLITUDE_DIMANCHE, 1) + "&nbsp;h dimanche) × " + fmt(SEMAINES_PAR_AN) +
+          elecTxt + " — pas de climatisation ni de socle électrique fixe dans cette version ; amplitude de " +
+          "Machine A " + fmt(AMPLITUDE_A_SEMAINE, 1) + "&nbsp;h lun-ven / " + fmt(AMPLITUDE_A_SAMEDI, 1) +
+          "&nbsp;h samedi / " + fmt(AMPLITUDE_A_DIMANCHE, 1) + "&nbsp;h dimanche ; capacité maximale de l'O-scan " +
+          "déduite de sa propre amplitude (" + fmt(AMPLITUDE_O_SEMAINE, 1) + "&nbsp;h lun-ven / " +
+          fmt(AMPLITUDE_O_SAMEDI, 1) + "&nbsp;h samedi / " + fmt(AMPLITUDE_O_DIMANCHE, 1) + "&nbsp;h dimanche, " +
+          "réglable via la roue crantée du bloc O-scan) × son débit horaire × " + fmt(SEMAINES_PAR_AN) +
           "&nbsp;semaines/an. Forfait technique : barème dégressif réel UNCAM au 1ᵉʳ juillet 2026, zone Province, " +
           "hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison). " +
-          "Modifiable via l'icône ⚙ du bloc Machine A.";
+          "Modifiable via l'icône ⚙ de chaque bloc (Machine A pour le salaire/base légale/amplitude/modèle, " +
+          "O-scan pour sa propre amplitude).";
       }
 
       function ouvrirHypotheses() {
         document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
-        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_SEMAINE;
-        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_SAMEDI;
-        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_DIMANCHE;
+        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
+        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
+        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
         remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
@@ -734,9 +787,9 @@
         var heuresDimanche = parseFloat(document.getElementById("boHypHeuresDimanche").value.replace(",", "."));
         if (netMerm > 0) NET_MERM = netMerm;
         if (heuresLegales > 0) HEURES_LEGALES_MOIS = heuresLegales;
-        if (heuresSemaine >= 0) AMPLITUDE_SEMAINE = heuresSemaine;
-        if (heuresSamedi >= 0) AMPLITUDE_SAMEDI = heuresSamedi;
-        if (heuresDimanche >= 0) AMPLITUDE_DIMANCHE = heuresDimanche;
+        if (heuresSemaine >= 0) AMPLITUDE_A_SEMAINE = heuresSemaine;
+        if (heuresSamedi >= 0) AMPLITUDE_A_SAMEDI = heuresSamedi;
+        if (heuresDimanche >= 0) AMPLITUDE_A_DIMANCHE = heuresDimanche;
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         majResumeHypotheses();
         repositionnerCurseur();
@@ -757,19 +810,66 @@
       document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
-        AMPLITUDE_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_SAMEDI = HYP_DEFAUTS.heuresSamedi;
-        AMPLITUDE_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = "";
+        AMPLITUDE_A_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_A_SAMEDI = HYP_DEFAUTS.heuresSamedi;
+        AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = "";
         document.getElementById("boHypNetMerm").value = fmt(NET_MERM);
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
-        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_SEMAINE;
-        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_SAMEDI;
-        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_DIMANCHE;
+        document.getElementById("boHypHeuresSemaine").value = AMPLITUDE_A_SEMAINE;
+        document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
+        document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
         remplirModelesA();
         majResumeHypotheses();
         repositionnerCurseur();
       });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && hypOverlay.classList.contains("is-open")) fermerHypotheses();
+      });
+
+      // Panneau des plages d'ouverture de l'O-scan — même principe (ancré à gauche,
+      // application en direct) que celui de la Machine A, mais uniquement l'amplitude
+      // (le salaire MERM et la base légale restent communs, réglés côté Machine A).
+      var HYP_O_DEFAUTS = {
+        heuresSemaine: AMPLITUDE_O_SEMAINE, heuresSamedi: AMPLITUDE_O_SAMEDI, heuresDimanche: AMPLITUDE_O_DIMANCHE
+      };
+      var hypOverlayO = document.getElementById("boHypOverlayO");
+      function ouvrirHypothesesO() {
+        document.getElementById("boHypOHeuresSemaine").value = AMPLITUDE_O_SEMAINE;
+        document.getElementById("boHypOHeuresSamedi").value = AMPLITUDE_O_SAMEDI;
+        document.getElementById("boHypOHeuresDimanche").value = AMPLITUDE_O_DIMANCHE;
+        hypOverlayO.hidden = false;
+        hypOverlayO.classList.add("is-open");
+      }
+      function fermerHypothesesO() {
+        hypOverlayO.classList.remove("is-open");
+        hypOverlayO.hidden = true;
+      }
+      function appliquerHypothesesO() {
+        var heuresSemaine = parseFloat(document.getElementById("boHypOHeuresSemaine").value.replace(",", "."));
+        var heuresSamedi = parseFloat(document.getElementById("boHypOHeuresSamedi").value.replace(",", "."));
+        var heuresDimanche = parseFloat(document.getElementById("boHypOHeuresDimanche").value.replace(",", "."));
+        if (heuresSemaine >= 0) AMPLITUDE_O_SEMAINE = heuresSemaine;
+        if (heuresSamedi >= 0) AMPLITUDE_O_SAMEDI = heuresSamedi;
+        if (heuresDimanche >= 0) AMPLITUDE_O_DIMANCHE = heuresDimanche;
+        majResumeHypotheses();
+        repositionnerCurseur();
+      }
+      document.getElementById("boBtnHypothesesO").addEventListener("click", ouvrirHypothesesO);
+      document.getElementById("boHypCloseO").addEventListener("click", fermerHypothesesO);
+      document.getElementById("boHypDoneO").addEventListener("click", fermerHypothesesO);
+      ["boHypOHeuresSemaine", "boHypOHeuresSamedi", "boHypOHeuresDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", appliquerHypothesesO);
+      });
+      document.getElementById("boHypResetO").addEventListener("click", function () {
+        AMPLITUDE_O_SEMAINE = HYP_O_DEFAUTS.heuresSemaine; AMPLITUDE_O_SAMEDI = HYP_O_DEFAUTS.heuresSamedi;
+        AMPLITUDE_O_DIMANCHE = HYP_O_DEFAUTS.heuresDimanche;
+        document.getElementById("boHypOHeuresSemaine").value = AMPLITUDE_O_SEMAINE;
+        document.getElementById("boHypOHeuresSamedi").value = AMPLITUDE_O_SAMEDI;
+        document.getElementById("boHypOHeuresDimanche").value = AMPLITUDE_O_DIMANCHE;
+        majResumeHypotheses();
+        repositionnerCurseur();
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && hypOverlayO.classList.contains("is-open")) fermerHypothesesO();
       });
 
       function recalculer() {
@@ -850,7 +950,7 @@
           ligneDetail("Loyer O-scan (nouvelle charge)", gainLoyer);
 
         var volOSemaine = volO / SEMAINES_PAR_AN;
-        var capaciteSemaine = debitO * heuresParSemaine();
+        var capaciteSemaine = debitO * heuresParSemaineO();
         var capaciteAnnuelleO = capaciteAnnuelle(debitO);
         var volumeExtremitesDispo = volumeTotal * partExtremites;
         var capaciteNote = document.getElementById("boCapaciteNote");
@@ -863,7 +963,7 @@
           capaciteNote.textContent = "⚠ " + fmt(volO) + " ex./an sur l'O-scan dépasse le volume d'examens membres/extrémités réellement disponible (" + fmt(volumeExtremitesDispo) + " ex./an, " + fmt(partExtremites * 100, 0) + " % de l'activité totale) — l'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.";
         } else if (volO > capaciteAnnuelleO + 1e-6) {
           capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaine(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
+          capaciteNote.textContent = "⚠ " + fmt(volOSemaine, 1) + " ex./semaine sur l'O-scan dépasse ce que son débit permet physiquement (" + fmt(debitO, 1) + " ex./h × " + fmt(heuresParSemaineO(), 1) + " h/semaine = " + fmt(capaciteSemaine, 1) + " ex./semaine max) — il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.";
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
           capaciteNote.className = "bascule-capnote warn";
           capaciteNote.textContent = "◐ " + fmt(volO) + " ex./an sur l'O-scan, proche de sa limite (" + fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " ex./an — pour " + fmtExact(debitO) + " FT/h). Il est possible d'augmenter le nombre d'examens/h en démarrant une activité de post-opératoire, dont les séquences sont plus focalisées et plus courtes.";
