@@ -29,7 +29,7 @@
 <body class="tool-page">
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
-      <img src="assets/logo-esaote.svg" alt="Esaote" />
+      <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
     </a>
     <div class="document-viewer__title">
       <span>Outil de simulation</span>
@@ -53,7 +53,12 @@
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
         </div>
-        <p class="simulator__seuils" id="simSeuils"></p>
+        <div class="simulator__seuils" id="simSeuilsBox">
+          <table class="stats-table" id="simSeuilsTable" style="font-size:.78rem">
+            <thead><tr id="simSeuilsHead"></tr></thead>
+            <tbody id="simSeuilsBody"></tbody>
+          </table>
+        </div>
         <div class="field">
           <label for="simZone">Zone géographique</label>
           <select id="simZone">
@@ -858,23 +863,39 @@
       // chaque réforme), donc affiché une fois par date sélectionnée (couleur = même slot que
       // ses courbes/camemberts), sous les seuils en nombre d'examens de la classe elle-même
       // (ceux-là ne dépendent pas de la date).
+      // Présenté en tableau (au lieu d'un paragraphe à séparateurs "·") depuis le
+      // 04/09/2026, sur demande de Cédric — lignes = seuils de la classe (en
+      // examens/an, ne dépendent pas de la date), colonnes = une par date de
+      // forfait technique choisie (montant en €, couleur = même slot que ses
+      // courbes/camemberts). Seules les dates effectivement sélectionnées ont une
+      // colonne — même logique que le filtre `lignesMontants` d'origine.
       function afficherSeuils() {
         var classe = classeCourante();
-        var html = "<strong>Seuils de cette classe</strong> — activité de référence : " + seuilsEntiers.format(classe.REF) +
-          " · seuil 1 : " + seuilsEntiers.format(classe.SEUIL1) +
-          " · seuil 2 : " + seuilsEntiers.format(classe.SEUIL2) + " examens/an";
-        var lignesMontants = dateSelects.map(function (select, i) {
+        var lignesDates = dateSelects.map(function (select, i) {
           if (!select.value) return null;
           var ligne = classe.dates.filter(function (d) { return d.iso === select.value; })[0];
           if (!ligne) return null;
-          return "<span style=\"color:" + SLOT_COLORS[i] + "\">" + ligne.label + "</span> : seuil 1 " +
-            euros.format(ligne.reduits.seuil1) + " · seuil 2 " + euros.format(ligne.reduits.seuil2) +
-            " · plafond " + euros.format(ligne.reduits.plafond);
+          return { couleur: SLOT_COLORS[i], label: ligne.label, reduits: ligne.reduits };
         }).filter(Boolean);
-        if (lignesMontants.length) {
-          html += "<br><strong>Montant du forfait technique par seuil</strong> — " + lignesMontants.join(" &nbsp;·&nbsp; ");
+
+        var head = "<th>Seuil de cette classe</th><th>Jusqu'à</th>";
+        lignesDates.forEach(function (l) {
+          head += "<th style=\"color:" + l.couleur + "\">" + l.label + "</th>";
+        });
+        document.getElementById("simSeuilsHead").innerHTML = head;
+
+        function ligneTable(label, jusqua, champ) {
+          var tds = "<td>" + label + "</td><td>" + jusqua + "</td>";
+          lignesDates.forEach(function (l) {
+            tds += "<td>" + (champ ? euros.format(l.reduits[champ]) : "Tarif plein") + "</td>";
+          });
+          return "<tr>" + tds + "</tr>";
         }
-        document.getElementById("simSeuils").innerHTML = html;
+        document.getElementById("simSeuilsBody").innerHTML =
+          ligneTable("Activité de référence", seuilsEntiers.format(classe.REF) + " examens/an", null) +
+          ligneTable("Seuil 1", seuilsEntiers.format(classe.SEUIL1) + " examens/an", "seuil1") +
+          ligneTable("Seuil 2", seuilsEntiers.format(classe.SEUIL2) + " examens/an", "seuil2") +
+          ligneTable("Au-delà (plafond)", "—", "plafond");
       }
 
       remplirSelectsDates();
