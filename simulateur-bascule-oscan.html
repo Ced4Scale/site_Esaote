@@ -40,6 +40,7 @@
     #boForm .simulator__machine-box-title { margin: 0 0 .35rem; font-size: .95rem; }
     #boForm .field, #boForm .bascule-champ { margin-bottom: .35rem; }
     #boForm .field label, #boForm .bascule-champ label { margin-bottom: .15rem; font-size: .8rem; }
+    .bascule-sublabel { font-style: italic; font-size: .74rem; font-weight: 400; color: var(--muted); }
     #boForm .field input, #boForm .field select, #boForm .bascule-champ select,
     #boForm .simulator__field-suffix { padding: .35rem .6rem; }
     #boForm .simulator__hint { margin: -.1rem 0 .35rem; font-size: .76rem; }
@@ -123,7 +124,8 @@
     .bascule-capnote.warn { background: #fff2e0; color: #8a5a15; }
 
     .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
-    .bascule-mini h3 { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
+    .bascule-mini h3, .bascule-mini summary { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
+    .bascule-mini summary ~ * { margin-top: .6rem; }
     .bascule-mini-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
     .bascule-mini-table th, .bascule-mini-table td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
     .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
@@ -170,7 +172,7 @@
             </select>
           </div>
           <div class="field">
-            <label for="boLoyerA">Loyer mensuel, SAV inclus (moyenné sur 7 ans)</label>
+            <label for="boLoyerA">Loyer mensuel, SAV inclus<br><span class="bascule-sublabel">moyenné sur 7 ans</span></label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerA" value="25.000" style="width:6rem" /><span>€/mois</span></div>
           </div>
           <div class="field">
@@ -200,7 +202,7 @@
             <button type="button" class="bascule-gear-btn" id="boBtnHypothesesO" aria-label="Modifier les plages d'ouverture de l'O-scan" title="Modifier les plages d'ouverture de l'O-scan">⚙</button>
           </h4>
           <div class="field">
-            <label for="boLoyerO">Loyer mensuel, SAV inclus (moyenné sur 7 ans)</label>
+            <label for="boLoyerO">Loyer mensuel, SAV inclus<br><span class="bascule-sublabel">moyenné sur 7 ans</span></label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerO" value="12.000" style="width:6rem" /><span>€/mois</span></div>
           </div>
           <div class="field">
@@ -281,15 +283,15 @@
 
           <p class="bascule-capnote" id="boCapaciteNote"></p>
 
-          <div class="bascule-mini">
-            <h3>Forfait technique par palier</h3>
+          <details class="bascule-mini simulator__chart-card--collapsible" open>
+            <summary>Forfait technique par palier</summary>
             <div style="overflow-x:auto">
               <table class="bascule-mini-table">
                 <thead><tr><th>Palier</th><th>Jusqu'à</th><th><span id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th><th>Jusqu'à</th><th style="color:#eb6834">O-scan</th></tr></thead>
                 <tbody id="boBaremeMini"></tbody>
               </table>
             </div>
-          </div>
+          </details>
         </div>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
