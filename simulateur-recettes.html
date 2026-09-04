@@ -43,18 +43,26 @@
        colonne étroite du formulaire une fois ouvert — demandé par Cédric le
        04/09/2026 ("qu'il n'y ait qu'une ligne de texte dans chaque ligne du
        tableau"). Motif "popover qui s'adapte à la largeur de son texte" du
-       skill ced4scale-simulateur-web (déjà utilisé sur simulateur-bascule-
-       oscan.html) : le tableau sort du flux normal (position:absolute,
-       width:max-content) au lieu de rester contraint par la largeur de la
-       colonne, avec son propre fond + ombre puisqu'il flotte au-dessus du
-       reste de la page. */
+       skill ced4scale-simulateur-web, MAIS avec une variante indispensable ici :
+       `.simulator__form` (colonne de gauche) est en `position: sticky` (pour
+       rester visible au scroll) — un `position: sticky` crée son propre
+       contexte d'empilement, ce qui PIÈGE tout `z-index` posé sur un enfant : le
+       popover ne peut alors jamais s'afficher au-dessus du contenu de la
+       colonne de droite (`.simulator__results`, camemberts inclus), quel que
+       soit le z-index choisi (essayé jusqu'à 999, aucun effet — bug rencontré
+       et diagnostiqué le 04/09/2026, `filter`/`mix-blend-mode` soupçonnés à
+       tort avant ça). **Seule solution fiable : sortir le popover du DOM de
+       `.simulator__form` au moment de l'ouverture** (déplacé dans `<body>` en
+       JS, `position: fixed` positionnée par calcul de coordonnées) — voir
+       `positionnerSeuilsPopover()` plus bas. */
     .sim-seuils-details { position: relative; margin: -.4rem 0 1.1rem; }
-    .sim-seuils-details > summary { cursor: pointer; font-weight: 700; font-size: .95rem; list-style: none; }
-    .sim-seuils-details > summary::-webkit-details-marker { display: none; }
-    .sim-seuils-details > summary::before { content: "▸ "; }
-    .sim-seuils-details[open] > summary::before { content: "▾ "; }
-    .sim-seuils-details[open] .sim-seuils-popover {
-      position: absolute; top: 100%; left: 0; z-index: 6; margin: .3rem 0 0;
+    .sim-seuils-toggle {
+      all: unset; cursor: pointer; font-weight: 700; font-size: .95rem;
+    }
+    .sim-seuils-toggle::before { content: "▸ "; }
+    .sim-seuils-toggle[aria-expanded="true"]::before { content: "▾ "; }
+    .sim-seuils-popover {
+      position: fixed; z-index: 999;
       width: max-content; max-width: min(calc(100vw - 4.5rem), 640px); overflow-x: auto;
       background: var(--white); box-shadow: 0 8px 24px rgba(0,0,0,.18);
       border-radius: 8px; padding: .6rem 6rem .6rem .8rem;
@@ -106,15 +114,9 @@
           <label for="simMachine">Choix du champ / machine</label>
           <select id="simMachine"></select>
         </div>
-        <details class="sim-seuils-details" id="simSeuilsDetails">
-          <summary>Seuils de cette classe</summary>
-          <div class="simulator__seuils sim-seuils-popover" id="simSeuilsBox">
-            <table class="stats-table" id="simSeuilsTable">
-              <thead><tr id="simSeuilsHead"></tr></thead>
-              <tbody id="simSeuilsBody"></tbody>
-            </table>
-          </div>
-        </details>
+        <div class="sim-seuils-details" id="simSeuilsDetails">
+          <button type="button" class="sim-seuils-toggle" id="simSeuilsToggle" aria-expanded="false">Seuils de cette classe</button>
+        </div>
         <div class="field">
           <label for="simZone">Zone géographique</label>
           <select id="simZone">
@@ -234,6 +236,13 @@
       </div>
     </div>
   </main>
+
+  <div class="simulator__seuils sim-seuils-popover" id="simSeuilsBox" hidden>
+    <table class="stats-table" id="simSeuilsTable">
+      <thead><tr id="simSeuilsHead"></tr></thead>
+      <tbody id="simSeuilsBody"></tbody>
+    </table>
+  </div>
 
   <div class="modal-overlay" id="simHypOverlay" role="dialog" aria-modal="true" aria-labelledby="simHypTitle" hidden>
     <div class="modal" style="width:min(420px, 100%); position:relative">
@@ -1163,6 +1172,45 @@
       document.querySelectorAll('input[name="simInflation"]').forEach(function (radio) {
         radio.addEventListener("change", recalculer);
       });
+
+      // Popover "Seuils de cette classe" — voir le commentaire CSS de
+      // .sim-seuils-popover : `.simulator__form` (colonne de gauche) est en
+      // `position:sticky`, ce qui crée son propre contexte d'empilement et
+      // empêche tout `z-index` posé sur un enfant de jamais s'afficher au-dessus
+      // du contenu de la colonne de droite. Le popover vit donc déjà en dehors
+      // de `.simulator__form` dans le HTML (juste après `</main>`) — il ne reste
+      // qu'à le positionner en `position:fixed` par calcul de coordonnées à
+      // chaque ouverture (et pendant un scroll, puisque le bouton peut bouger
+      // sous le popover ouvert si la page défile).
+      var simSeuilsToggle = document.getElementById("simSeuilsToggle");
+      var simSeuilsBox = document.getElementById("simSeuilsBox");
+      function positionnerSeuilsPopover() {
+        var rect = simSeuilsToggle.getBoundingClientRect();
+        simSeuilsBox.style.top = (rect.bottom + 4) + "px";
+        simSeuilsBox.style.left = rect.left + "px";
+      }
+      function fermerSeuilsPopover() {
+        simSeuilsBox.hidden = true;
+        simSeuilsToggle.setAttribute("aria-expanded", "false");
+      }
+      simSeuilsToggle.addEventListener("click", function () {
+        if (simSeuilsToggle.getAttribute("aria-expanded") === "true") {
+          fermerSeuilsPopover();
+          return;
+        }
+        positionnerSeuilsPopover();
+        simSeuilsBox.hidden = false;
+        simSeuilsToggle.setAttribute("aria-expanded", "true");
+      });
+      document.addEventListener("click", function (e) {
+        if (!simSeuilsBox.hidden && e.target !== simSeuilsToggle && !simSeuilsBox.contains(e.target)) fermerSeuilsPopover();
+      });
+      window.addEventListener("resize", function () { if (!simSeuilsBox.hidden) positionnerSeuilsPopover(); });
+      window.addEventListener("scroll", function () { if (!simSeuilsBox.hidden) positionnerSeuilsPopover(); }, true);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && !simSeuilsBox.hidden) fermerSeuilsPopover();
+      });
+
       var simHypOverlay = document.getElementById("simHypOverlay");
       document.getElementById("simBtnHypotheses").addEventListener("click", function () {
         simHypOverlay.hidden = false;
