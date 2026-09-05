@@ -402,8 +402,10 @@
                même valeur que le curseur de la carte "Résultat à votre activité" — il n'y a
                qu'une seule activité, jamais une copie séparée. -->
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnZero">↺ 0 patient</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnPmA">↺ Point mort <span id="cvBtnPmANom"></span></button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnPmB">↺ Point mort <span id="cvBtnPmBNom"></span></button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnEgal">↺ Égaliser les résultats</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnMax">↺ Activité maximale</button>
           </div>
         </div>
@@ -1278,11 +1280,38 @@
           : Math.round(patientsJourCible * joursParMois * 12);
         recalculer();
       }
+      // Point d'activité où les 2 résultats par patient s'égalisent. Le résultat par patient
+      // suit toujours la même forme M - K/x (x = patients/jour) : M = recette + acte intellectuel
+      // - électricité variable (l'asymptote, atteinte à activité infinie), K = (loyer + RH +
+      // électricité fixe) / jours par mois (le poids des charges fixes, dilué par l'activité).
+      // Égaliser M_A - K_A/x = M_B - K_B/x donne x = (K_A - K_B) / (M_A - M_B) — une formule
+      // directe, pas de recherche par tâtonnement (demande de Cédric le 05/09/2026).
+      function trouverEgalisation() {
+        if (!derniers) return null;
+        var joursParMois = derniers.params.joursParMois;
+        var mk = derniers.resultats.map(function (r, i) {
+          return {
+            M: r.recette + r.acte - r.elecVariable,
+            K: (derniers.configs[i].loyer + r.rh + r.elecFixe) / joursParMois
+          };
+        });
+        var dM = mk[0].M - mk[1].M;
+        if (Math.abs(dM) < 1e-9) return null; // même asymptote : jamais d'égalité (ou toujours)
+        var x = (mk[0].K - mk[1].K) / dM;
+        return x > 0 && isFinite(x) ? x : null;
+      }
+      document.getElementById("cvBtnZero").addEventListener("click", function () {
+        allerAActivite(0);
+      });
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
       });
       document.getElementById("cvBtnPmB").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[1].pointMortJour);
+      });
+      document.getElementById("cvBtnEgal").addEventListener("click", function () {
+        var x = trouverEgalisation();
+        if (x != null) allerAActivite(x);
       });
       document.getElementById("cvBtnMax").addEventListener("click", function () {
         allerAActivite(capacitePatientsJourMax());
@@ -1424,6 +1453,9 @@
         btnPmA.title = btnPmA.disabled ? "Point mort jamais atteint avec ces réglages" : "";
         btnPmB.disabled = !isFinite(resultats[1].pointMortJour);
         btnPmB.title = btnPmB.disabled ? "Point mort jamais atteint avec ces réglages" : "";
+        var btnEgal = document.getElementById("cvBtnEgal");
+        btnEgal.disabled = trouverEgalisation() == null;
+        btnEgal.title = btnEgal.disabled ? "Les 2 résultats ne s'égalisent jamais avec ces réglages (l'écart se creuse ou se réduit sans jamais s'annuler)" : "";
 
         var tbody = document.getElementById("cvSyntheseBody");
         tbody.innerHTML = "";
