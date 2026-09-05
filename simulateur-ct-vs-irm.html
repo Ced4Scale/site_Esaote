@@ -50,7 +50,8 @@
        raisonne en jour ou en an. */
     .cv-activite-slider { display: flex; align-items: center; gap: .8rem; margin-top: 1rem; }
     .cv-activite-slider input[type=range] { flex: 1; accent-color: var(--red); }
-    .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); }
+    .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
+    .cv-activite-slider-equiv { font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: .1rem; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -137,10 +138,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="cvInstallA">Temps de prise en charge du patient</label>
+            <label for="cvInstallA">Nombre de patients par heure</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvInstallA" value="15" min="0" step="1" />
-              <span>min</span>
+              <input type="number" id="cvInstallA" value="4" min="0" step="0.5" />
+              <span>patients/h</span>
             </div>
           </div>
         </div>
@@ -167,10 +168,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="cvInstallB">Temps de prise en charge du patient</label>
+            <label for="cvInstallB">Nombre de patients par heure</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvInstallB" value="10" min="0" step="1" />
-              <span>min</span>
+              <input type="number" id="cvInstallB" value="6" min="0" step="0.5" />
+              <span>patients/h</span>
             </div>
           </div>
           <div class="field">
@@ -506,13 +507,24 @@
       reinitialiserMerm(selectA, mermA);
       reinitialiserMerm(selectB, mermB);
 
-      // Temps de prise en charge du patient : pré-rempli depuis assets/machines-energie-data.js
-      // (dureeTotalePriseEnChargeMinutes), mais éditable — demandé par Cédric le 11/08/2026, le
-      // chiffre par machine reste une estimation à ajuster selon le retour terrain.
-      function reinitialiserInstall(select, input) { input.value = machineParKey(select.value).dureeTotalePriseEnChargeMinutes; }
+      // Nombre de patients par heure : pré-rempli depuis assets/machines-energie-data.js
+      // (dureeTotalePriseEnChargeMinutes, convertie en patients/h), mais éditable — demandé par
+      // Cédric le 11/08/2026, le chiffre par machine reste une estimation à ajuster selon le
+      // retour terrain. Affiché en patients/h (plus parlant que des minutes) depuis le
+      // 05/09/2026 ; converti en minutes en interne partout où le calcul en a besoin.
+      function reinitialiserInstall(select, input) {
+        var minutes = machineParKey(select.value).dureeTotalePriseEnChargeMinutes;
+        input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+      }
       var installA = document.getElementById("cvInstallA"), installB = document.getElementById("cvInstallB");
       reinitialiserInstall(selectA, installA);
       reinitialiserInstall(selectB, installB);
+      // Conversion patients/h -> minutes de prise en charge, seule unité utilisée par les calculs
+      // internes (durée d'acquisition, capacité horaire...).
+      function minutesDepuisPatientsHeure(patientsHeure) {
+        var p = Math.max(0, parseFloat(patientsHeure) || 0);
+        return p > 0 ? 60 / p : Infinity; // 0 patient/h = capacité nulle, pas un temps nul
+      }
 
       // Loyer de base par machine (SAV inclus, moyenné sur 7 ans) — communiqué par Cédric le
       // 10/08/2026 pour les scanners Siemens go.All/go.Top ; réutilise les mêmes valeurs IRM
@@ -634,7 +646,7 @@
         warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
           depassements.map(function (r) {
             return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
-              " patients/jour au maximum (" + r.tempsInstallation + " min de prise en charge par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
+              " patients/jour au maximum (" + patientsFmt.format(60 / r.tempsInstallation) + " patients/h, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
           }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
       }
 
@@ -676,19 +688,36 @@
       // mode actuellement choisi.
       var cvActiviteSlider = document.getElementById("cvActiviteSlider");
       var cvActiviteSliderLabel = document.getElementById("cvActiviteSliderLabel");
-      var PLAFOND_PATIENTS_JOUR = 40; // ordre de grandeur large, jamais une vraie limite physique
+      // Plafond du curseur = capacité physique réellement réalisable, pas une valeur arbitraire
+      // (demandé par Cédric le 05/09/2026) : amplitude d'ouverture × patients/h de la machine la
+      // plus lente des deux (le goulot d'étranglement), même formule que verifierCapacite().
+      function capacitePatientsJourMax() {
+        var heuresParJour = Math.max(0, parseFloat(document.getElementById("cvHeures").value) || 0);
+        var patientsHeureA = Math.max(0, parseFloat(installA.value) || 0);
+        var patientsHeureB = Math.max(0, parseFloat(installB.value) || 0);
+        var patientsHeureGoulot = Math.min(patientsHeureA, patientsHeureB);
+        return heuresParJour * patientsHeureGoulot;
+      }
       function ajusterSliderActivite() {
         var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
         var joursParMois = Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1);
+        var plafondJour = Math.max(1, capacitePatientsJourMax());
         if (mode === "jour") {
-          cvActiviteSlider.min = 0; cvActiviteSlider.max = PLAFOND_PATIENTS_JOUR; cvActiviteSlider.step = 0.5;
+          cvActiviteSlider.min = 0; cvActiviteSlider.max = plafondJour; cvActiviteSlider.step = 0.5;
         } else {
-          cvActiviteSlider.min = 0; cvActiviteSlider.max = Math.round(PLAFOND_PATIENTS_JOUR * joursParMois * 12); cvActiviteSlider.step = 10;
+          cvActiviteSlider.min = 0; cvActiviteSlider.max = Math.round(plafondJour * joursParMois * 12); cvActiviteSlider.step = 10;
         }
         var activiteInput = document.getElementById("cvActivite");
         var valeur = Math.max(0, parseFloat(activiteInput.value) || 0);
         cvActiviteSlider.value = Math.min(valeur, +cvActiviteSlider.max);
-        cvActiviteSliderLabel.textContent = patientsFmt.format(valeur) + (mode === "jour" ? " patients/jour" : " patients/an");
+        // Équivalence dans l'autre unité (jour <-> an) affichée en dessous, en
+        // plus petit — demandé par Cédric le 05/09/2026.
+        var equivTxt = mode === "jour"
+          ? "≈ " + patientsFmt.format(Math.round(valeur * joursParMois * 12)) + " examens/an"
+          : "≈ " + patientsFmt.format(valeur / (joursParMois * 12)) + " examens/jour";
+        cvActiviteSliderLabel.innerHTML =
+          patientsFmt.format(valeur) + (mode === "jour" ? " patients/jour" : " patients/an") +
+          "<div class=\"cv-activite-slider-equiv\">" + equivTxt + "</div>";
       }
       cvActiviteSlider.addEventListener("input", function () {
         document.getElementById("cvActivite").value = cvActiviteSlider.value;
@@ -720,8 +749,8 @@
           : "≈ " + patientsFmt.format(params.activitePatientsJour) + "/jour";
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: Math.max(0, +installA.value || 0) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: Math.max(0, +installB.value || 0) }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: minutesDepuisPatientsHeure(installA.value) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value) }
         ];
 
         var resultats = configs.map(function (c) {
@@ -863,7 +892,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
-          { label: "Temps de prise en charge du patient", valeurs: resultats.map(function (r) { return r.tempsInstallation + " min"; }) },
+          { label: "Nombre de patients par heure", valeurs: resultats.map(function (r) { return patientsFmt.format(60 / r.tempsInstallation) + " patients/h"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
         ];
