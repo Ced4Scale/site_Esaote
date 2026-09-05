@@ -398,6 +398,15 @@
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
             <div class="simulator__tooltip" id="cvTooltip" hidden></div>
           </div>
+          <!-- Raccourcis pour placer directement "Votre activité" sur un point intéressant du
+               graphe, sans tâtonner au curseur (demande de Cédric le 05/09/2026). Déplacent la
+               même valeur que le curseur de la carte "Résultat à votre activité" — il n'y a
+               qu'une seule activité, jamais une copie séparée. -->
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnPmA">↺ Point mort <span id="cvBtnPmANom"></span></button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnPmB">↺ Point mort <span id="cvBtnPmBNom"></span></button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnMax">↺ Activité maximale</button>
+          </div>
         </div>
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
@@ -1262,6 +1271,28 @@
         recalculer();
       });
 
+      // Place l'activité (patients/jour) sur une valeur cible précise, quelle que soit
+      // l'unité actuellement affichée (jour ou an) — utilisé par les 3 boutons de raccourci
+      // sous le graphe (demande de Cédric le 05/09/2026).
+      function allerAActivite(patientsJourCible) {
+        if (!isFinite(patientsJourCible)) return;
+        var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var joursParMois = calculerJoursEtHeures().joursParMois;
+        document.getElementById("cvActivite").value = mode === "jour"
+          ? Math.round(patientsJourCible * 2) / 2
+          : Math.round(patientsJourCible * joursParMois * 12);
+        recalculer();
+      }
+      document.getElementById("cvBtnPmA").addEventListener("click", function () {
+        if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
+      });
+      document.getElementById("cvBtnPmB").addEventListener("click", function () {
+        if (derniers) allerAActivite(derniers.resultats[1].pointMortJour);
+      });
+      document.getElementById("cvBtnMax").addEventListener("click", function () {
+        allerAActivite(capacitePatientsJourMax());
+      });
+
       var derniers = null;
 
       function recalculer() {
@@ -1388,6 +1419,16 @@
         document.getElementById("cvSyntheseHeadB").textContent = resultats[1].machine.nomCourt;
         document.getElementById("cvSyntheseSousTitre").textContent =
           "Sur la base de votre activité renseignée plus haut : " + patientsFmt.format(patientsAnnuels) + " patients/an.";
+
+        // Raccourcis sous le graphe — libellés à jour avec les machines choisies, et boutons
+        // de point mort désactivés quand ce point mort n'est jamais atteint (isFinite).
+        document.getElementById("cvBtnPmANom").textContent = resultats[0].machine.nomCourt;
+        document.getElementById("cvBtnPmBNom").textContent = resultats[1].machine.nomCourt;
+        var btnPmA = document.getElementById("cvBtnPmA"), btnPmB = document.getElementById("cvBtnPmB");
+        btnPmA.disabled = !isFinite(resultats[0].pointMortJour);
+        btnPmA.title = btnPmA.disabled ? "Point mort jamais atteint avec ces réglages" : "";
+        btnPmB.disabled = !isFinite(resultats[1].pointMortJour);
+        btnPmB.title = btnPmB.disabled ? "Point mort jamais atteint avec ces réglages" : "";
 
         var tbody = document.getElementById("cvSyntheseBody");
         tbody.innerHTML = "";
