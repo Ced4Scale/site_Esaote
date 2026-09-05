@@ -81,6 +81,11 @@
        dimensions/couleur que le texte qu'ils remplacent, pas l'air d'un champ de formulaire
        classique (pas de bordure visible tant qu'on n'interagit pas). */
     .cv-horaire-label { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+    /* Le texte "Soit X h d'ouverture par jour" juste après "17:00", sur la même ligne (pas
+       en dessous) — demande de Cédric le 07/09/2026. */
+    .cv-horaire-row-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+    .cv-horaire-row-label .cv-horaire-label { margin-top: 0; }
+    .cv-horaire-row-label .simulator__hint { margin: 0; }
     /* Sélecteur renforcé (label > input, pas juste .cv-horaire-heure-txt) : la règle de base
        ".field input { width:100% }" (styles.css) a une spécificité plus grande qu'une classe
        seule et l'emporterait sinon, redonnant au champ heure toute la largeur du panneau. */
@@ -360,9 +365,11 @@
                 <input type="range" id="cvHeureFin1B" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
                 <input type="range" id="cvCoupurePositionB" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
               </div>
-              <div class="cv-horaire-label" id="cvHoraireLabel1B"></div>
+              <div class="cv-horaire-row-label">
+                <div class="cv-horaire-label" id="cvHoraireLabel1B"></div>
+                <p class="simulator__hint" id="cvHeuresTotalTxtB"></p>
+              </div>
             </div>
-            <p class="simulator__hint" id="cvHeuresTotalTxtB" style="margin-top:.5rem"></p>
           </div>
         </div>
 
@@ -547,9 +554,11 @@
                 <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
                 <input type="range" id="cvCoupurePosition" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
               </div>
-              <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
+              <div class="cv-horaire-row-label">
+                <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
+                <p class="simulator__hint" id="cvHeuresTotalTxt"></p>
+              </div>
             </div>
-            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.5rem"></p>
             <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
               <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
               <span>Y a-t-il une coupure dans la journée ?</span>
@@ -1262,8 +1271,12 @@
         // Décrit la ligne "semaine" elle-même (pas la moyenne pondérée tous jours confondus,
         // affichée séparément dans cvJoursTotalTxt) — sinon le nombre et le détail entre
         // parenthèses ne correspondent pas dès que le week-end a ses propres horaires.
+        // Le détail entre parenthèses (ex. "09:00–17:00") n'est repris que si une coupure
+        // existe (utile : montre la coupure) — sans coupure, il ferait doublon avec les 2
+        // champs heure juste à côté, retiré à la demande de Cédric le 07/09/2026.
         var heuresSemaine = horaireDureeAvecCoupure("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree");
-        var heuresTotalTxt = "Soit " + patientsFmt.format(heuresSemaine) + " h d'ouverture par jour (" + libelleHoraires() + ").";
+        var heuresTotalTxt = "Soit " + patientsFmt.format(heuresSemaine) + " h d'ouverture par jour" +
+          (document.getElementById("cvCoupureDejeuner").checked ? " (" + libelleHoraires() + ")" : "") + ".";
         document.getElementById("cvHeuresTotalTxt").textContent = heuresTotalTxt;
         document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
