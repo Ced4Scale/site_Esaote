@@ -1718,6 +1718,26 @@
         var barWidth = 120;
         var centers = [PAD.left + PLOT_W * 0.28, PAD.left + PLOT_W * 0.72];
 
+        // Taille commune aux 6 libellés des 2 barres (pas seulement aux 3 d'une même barre) —
+        // demande de Cédric le 05/09/2026 ("peux-tu faire mieux") : calculée une fois pour tout
+        // le graphe, au pas de 0.5 (plus fin qu'un pas entier) pour se rapprocher davantage du
+        // maximum réel qui tient, sur le libellé le plus contraint des 2 barres — un texte
+        // légèrement plus court sur l'autre barre ne doit jamais imposer une taille différente
+        // (repéré en vérifiant : les 2 barres affichaient parfois 2 tailles différentes,
+        // cohérent par barre mais pas d'une barre à l'autre, ce qui accrochait l'œil).
+        var mesure = svgEl("text", { x: -1000, y: -1000, "text-anchor": "middle", "font-weight": "800" });
+        svg.appendChild(mesure);
+        var tailleCommune = compos.reduce(function (taille, c) {
+          mesure.textContent = "Résultat : " + fmtMontant(c.resultat);
+          mesure.setAttribute("font-size", taille);
+          while (mesure.getBBox().width > barWidth - 10 && taille > 7) {
+            taille -= 0.5;
+            mesure.setAttribute("font-size", taille);
+          }
+          return taille;
+        }, 16);
+        svg.removeChild(mesure);
+
         compos.forEach(function (c, i) {
           var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
           var yZero = yAt(0), yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
@@ -1741,25 +1761,12 @@
           // Centré, le texte déborde pour moitié de chaque côté, ce qui tient largement dans la
           // marge laissée par l'écartement des 2 barres (05/09/2026).
 
-          // Les 3 libellés (Recette/Charges/Résultat) de cette barre partagent toujours la même
-          // taille (demande de Cédric le 05/09/2026) — déterminée par celle du Résultat, le plus
-          // contraint puisqu'il doit tenir DANS la largeur de la barre (mesuré via getBBox, pas
-          // une estimation) ; Recette et Charges, moins à l'étroit, s'alignent dessus.
-          // Taille optimisée dans les 2 sens (pas seulement réduite depuis une valeur fixe) —
-          // voir le skill ced4scale-simulateur-web, "Optimiser la taille de police d'un texte
-          // contraint" : on part du maximum lisible (16) et on ne descend que si besoin, pour
-          // qu'un résultat court (ex. "819 €") profite de toute la place disponible au lieu de
-          // rester bridé à une taille pensée pour le cas le plus défavorable.
+          // Les 6 libellés des 2 barres (Recette/Charges/Résultat × 2) partagent tous la même
+          // taille — tailleCommune, calculée une fois au-dessus pour tout le graphe.
           var texteResultat = "Résultat : " + fmtMontant(c.resultat);
-          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-weight": "800", fill: "#fff" });
-          var tailleCommune = 16;
-          labelResultat.setAttribute("font-size", tailleCommune);
+          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: "#fff" });
           labelResultat.textContent = texteResultat;
           svg.appendChild(labelResultat);
-          while (labelResultat.getBBox().width > barWidth - 10 && tailleCommune > 7) {
-            tailleCommune -= 1;
-            labelResultat.setAttribute("font-size", tailleCommune);
-          }
 
           // Recette totale, au-dessus de la barre.
           var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
