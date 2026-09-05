@@ -102,6 +102,21 @@
     .cv-horaire-gap { position: absolute; top: 0; height: 100%; background: #fff; }
     .cv-horaire-track-wrap input.cv-coupure-handle::-webkit-slider-thumb { background: var(--muted, #888); width: 14px; height: 14px; margin-top: -6px; }
     .cv-horaire-track-wrap input.cv-coupure-handle::-moz-range-thumb { background: var(--muted, #888); width: 14px; height: 14px; }
+    /* Colonne "Écart" un peu élargie pour ce tableau précis (demande de Cédric le 07/09/2026,
+       "+3,5 pat./j" tenait pas sur une ligne) — override local, .simulator__table--compare3
+       est partagé avec d'autres simulateurs. */
+    #cvSyntheseTable.simulator__table--compare3 th:last-child,
+    #cvSyntheseTable.simulator__table--compare3 td:last-child { width: 20%; }
+    #cvSyntheseTable.simulator__table--compare3 th:first-child,
+    #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 28%; }
+    /* Piège repéré en vérifiant ce tableau sur mobile étroit (iPhone SE réel, 375px) : le
+       conteneur "overflow-x:auto" existait déjà mais ne servait à rien tant que le tableau
+       lui-même (table-layout:fixed, width:100%) se contentait de rétrécir à la largeur du
+       conteneur — les colonnes devenaient si étroites (~60px) que le texte "nowrap" du site
+       débordait par-dessus la colonne voisine (chevauchement illisible), au lieu de
+       déclencher le défilement horizontal prévu. Un min-width force le tableau à garder une
+       largeur lisible, l'overflow-x:auto bascule alors vraiment en scroll sur mobile. */
+    #cvSyntheseTable { min-width: 480px; }
     /* Interlignes du formulaire de gauche resserrés au maximum (demande de Cédric le
        05/09/2026) — .field/.simulator__machine-box/.simulator__field-group sont des classes
        partagées avec les autres simulateurs (styles.css) : override local à cette page
@@ -1399,17 +1414,20 @@
         function fmtPatientsJour(v) { return isFinite(v) ? patientsFmt.format(v) + " patients/jour" : "jamais atteint"; }
         var trPm = document.createElement("tr");
         trPm.style.fontWeight = "700";
+        // Libellé et unité de l'écart raccourcis (demande de Cédric le 07/09/2026, tenir sur
+        // une seule ligne dans la colonne étroite "Écart") — le sous-titre "seuil de
+        // rentabilité" reste dit ailleurs (bandeau vert en haut), pas besoin de le répéter ici.
         var ecartPmTexte = (isFinite(pmA) && isFinite(pmB))
-          ? ((pmB - pmA >= 0 ? "+" : "") + patientsFmt.format(pmB - pmA) + " patients/jour")
+          ? ((pmB - pmA >= 0 ? "+" : "") + patientsFmt.format(pmB - pmA) + " pat./j")
           : "—";
-        ["Point mort (seuil de rentabilité)", fmtPatientsJour(pmA), fmtPatientsJour(pmB), ecartPmTexte].forEach(function (texte) {
+        ["Point mort", fmtPatientsJour(pmA), fmtPatientsJour(pmB), ecartPmTexte].forEach(function (texte) {
           var td = document.createElement("td");
           td.textContent = texte;
           trPm.appendChild(td);
         });
         tbody.appendChild(trPm);
 
-        ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
+        ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1, false, true);
         ligne("Recette moyenne acte intellectuel", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
         ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
