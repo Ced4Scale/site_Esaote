@@ -39,6 +39,14 @@
        demande de Cédric le 05/09/2026 : les mettre sur une seule ligne, en local à
        ce panneau (ne pas toucher .simulator__toggle globalement). */
     .cv-hyp-body .simulator__toggle { flex-direction: row; flex-wrap: wrap; column-gap: 1.1rem; }
+    /* .simulator__field-suffix pose display:flex sans variante [hidden] (piège déjà connu
+       du site, voir skill ced4scale-simulateur-web) — sans cette règle, la 2ᵉ plage horaire
+       (après-midi) reste visible même quand "Coupure déjeuner" est décochée. */
+    #cvHoraireApresMidi[hidden] { display: none; }
+    /* Les <input type="time"> natifs ont besoin de plus de place que les 3.6rem par défaut
+       de .simulator__field-suffix input (prévus pour un nombre court) pour afficher HH:MM
+       sans être coupés. */
+    .simulator__field-suffix input[type="time"] { width: 6rem; }
     .cv-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
     #cvHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
     #cvHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
@@ -111,8 +119,11 @@
           </div>
         </div>
 
-        <div class="simulator__field-group" style="border-left-color:#1baf7a">
-          <h3 style="margin:0 0 1.2rem">Votre activité</h3>
+        <!-- Bloc "Votre activité" retiré du formulaire visible (demande de Cédric le
+             05/09/2026) : l'activité se règle désormais uniquement via le curseur sous
+             "Résultat à votre activité" (#cvActiviteSlider, plus bas). #cvActivite reste
+             dans le DOM (masqué) car tout le calcul le lit encore ; ne pas le supprimer. -->
+        <div class="simulator__field-group" hidden>
           <div class="field">
             <label for="cvActivite" id="cvActiviteLabel">Patients par jour</label>
             <div class="simulator__field-suffix">
@@ -120,11 +131,13 @@
               <span>patients</span>
             </div>
           </div>
-          <p class="simulator__warning" id="cvCapaciteWarning" hidden></p>
         </div>
 
         <div class="simulator__machine-box" data-slot="0">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">IRM Esaote</h4>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" style="margin:0">IRM Esaote</h4>
+            <button type="button" class="cv-gear-btn" id="cvBtnHypothesesA" aria-label="Réglages avancés — IRM Esaote" title="Réglages avancés — IRM Esaote">⚙</button>
+          </div>
           <div class="field">
             <label for="cvMachineA">Modèle</label>
             <select id="cvMachineA"></select>
@@ -140,7 +153,7 @@
           <div class="field">
             <label for="cvMermA">Nombre de MERM en poste</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvMermA" value="1" min="0" step="1" />
+              <input type="number" id="cvMermA" value="1" min="0" step="0.1" />
               <span>MERM</span>
             </div>
           </div>
@@ -154,7 +167,10 @@
         </div>
 
         <div class="simulator__machine-box" data-slot="1">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Scanner (CT)</h4>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.9rem">
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" style="margin:0">Scanner (CT)</h4>
+            <button type="button" class="cv-gear-btn" id="cvBtnHypothesesB" aria-label="Réglages avancés — Scanner (CT)" title="Réglages avancés — Scanner (CT)">⚙</button>
+          </div>
           <div class="field">
             <label for="cvMachineB">Modèle</label>
             <select id="cvMachineB"></select>
@@ -170,22 +186,15 @@
           <div class="field">
             <label for="cvMermB">Nombre de MERM en poste</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvMermB" value="2" min="0" step="1" />
+              <input type="number" id="cvMermB" value="2" min="0" step="0.1" />
               <span>MERM</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" style="margin-bottom:0">
             <label for="cvInstallB">Nombre de patients par heure</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvInstallB" value="6" min="0" step="0.5" />
               <span>patients/h</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
-              <span>%</span>
             </div>
           </div>
         </div>
@@ -212,7 +221,22 @@
             <input type="range" id="cvActiviteSlider" min="0" max="40" step="0.5" value="15" aria-label="Activité (patients)" />
             <div class="cv-activite-slider-value" id="cvActiviteSliderLabel"></div>
           </div>
+          <!-- Déplacé ici depuis le bloc "Votre activité" (retiré du formulaire le
+               05/09/2026) : c'est maintenant le seul endroit où l'activité se règle. -->
+          <p class="simulator__warning" id="cvCapaciteWarning" style="margin-top:.6rem" hidden></p>
         </div>
+
+        <div class="simulator__chart-card">
+          <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
+          <div class="simulator__legend" id="cvLegend"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
+            <div class="simulator__tooltip" id="cvTooltip" hidden></div>
+          </div>
+        </div>
+
+        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Seuils du barème dégressif, par examen</summary>
@@ -229,18 +253,6 @@
           </table>
           </div>
         </details>
-
-        <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
-          <div class="simulator__legend" id="cvLegend"></div>
-          <div class="simulator__chart-wrap">
-            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
-            <div class="simulator__tooltip" id="cvTooltip" hidden></div>
-          </div>
-        </div>
-
-        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
           <summary>Voir le récapitulatif détaillé de la simulation</summary>
@@ -363,11 +375,21 @@
             </div>
           </div>
           <div class="field">
-            <label for="cvHeures">Amplitude d'ouverture par jour</label>
+            <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem">
+              <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
+              <span>Coupure déjeuner (horaires d'ouverture)</span>
+            </label>
             <div class="simulator__field-suffix">
-              <input type="number" id="cvHeures" value="8" min="1" max="24" step="0.5" />
-              <span>heures</span>
+              <input type="time" id="cvHeureDebut1" value="09:00" />
+              <span>à</span>
+              <input type="time" id="cvHeureFin1" value="17:00" />
             </div>
+            <div class="simulator__field-suffix" id="cvHoraireApresMidi" hidden style="margin-top:.4rem">
+              <input type="time" id="cvHeureDebut2" value="14:00" />
+              <span>à</span>
+              <input type="time" id="cvHeureFin2" value="18:00" />
+            </div>
+            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.4rem"></p>
           </div>
           <div class="field">
             <label for="cvJours">Jours d'ouverture par mois</label>
@@ -393,6 +415,47 @@
     </div>
   </div>
 
+  <!-- Roues crantées par machine (demande de Cédric le 05/09/2026) : reprennent le
+       gabarit modale par défaut (centré, fond assombri), plus léger que le panneau
+       ancré à gauche ci-dessus puisqu'elles n'ont qu'1 champ (Scanner) ou aucun
+       (IRM Esaote, ajoutée pour que les 2 blocs machine se ressemblent). -->
+  <div class="modal-overlay" id="cvHypOverlayA" role="dialog" aria-modal="true" aria-labelledby="cvHypTitleA" hidden>
+    <div class="modal" style="width:min(380px, 100%)">
+      <button type="button" class="modal__close" id="cvHypCloseA" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="cv-hyp-body">
+          <h3 id="cvHypTitleA">Réglages avancés — IRM Esaote</h3>
+          <p class="simulator__hint">Aucun réglage supplémentaire pour l'IRM Esaote pour l'instant.</p>
+          <div class="cv-hyp-actions">
+            <button type="button" class="btn" id="cvHypDoneA">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="cvHypOverlayB" role="dialog" aria-modal="true" aria-labelledby="cvHypTitleB" hidden>
+    <div class="modal" style="width:min(380px, 100%)">
+      <button type="button" class="modal__close" id="cvHypCloseB" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="cv-hyp-body">
+          <h3 id="cvHypTitleB">Réglages avancés — Scanner (CT)</h3>
+          <div class="field" style="margin-bottom:0">
+            <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
+          </div>
+          <p class="simulator__hint" style="margin-top:.6rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
+          <div class="cv-hyp-actions">
+            <button type="button" class="btn" id="cvHypDoneB">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function () {
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
@@ -411,6 +474,10 @@
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+      // Sans le "€" ni le signe — pour les postes de charge affichés entre parenthèses en
+      // rouge (convention comptable), demande de Cédric le 05/09/2026.
+      var eurosCentSansSigne = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      function eurosCharge(v) { return "<span style=\"color:var(--red)\">(" + eurosCentSansSigne.format(Math.abs(v)) + ")</span>"; }
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 
       document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
@@ -643,6 +710,33 @@
         return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
       }
 
+      // ---- Horaires d'ouverture (remplace l'ancien champ "Amplitude d'ouverture par jour"
+      // en heures, demande de Cédric le 05/09/2026) : 1 plage horaire, ou 2 si coupure
+      // déjeuner cochée. Seule la durée totale sert au calcul (electriciteMensuelle,
+      // verifierCapacite), pas d'heure de la journée précise (pas de tarif heures
+      // creuses/pleines dans ce simulateur).
+      function horaireDureeHeures(idDebut, idFin) {
+        var debut = document.getElementById(idDebut).value, fin = document.getElementById(idFin).value;
+        if (!debut || !fin) return 0;
+        var d = debut.split(":").map(Number), f = fin.split(":").map(Number);
+        var minutes = (f[0] * 60 + f[1]) - (d[0] * 60 + d[1]);
+        return minutes > 0 ? minutes / 60 : 0;
+      }
+      function amplitudeOuvertureHeures() {
+        var total = horaireDureeHeures("cvHeureDebut1", "cvHeureFin1");
+        if (document.getElementById("cvCoupureDejeuner").checked) {
+          total += horaireDureeHeures("cvHeureDebut2", "cvHeureFin2");
+        }
+        return total;
+      }
+      function libelleHoraires() {
+        var l = document.getElementById("cvHeureDebut1").value + "–" + document.getElementById("cvHeureFin1").value;
+        if (document.getElementById("cvCoupureDejeuner").checked) {
+          l += " puis " + document.getElementById("cvHeureDebut2").value + "–" + document.getElementById("cvHeureFin2").value;
+        }
+        return l;
+      }
+
       // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
       // machine = amplitude d'ouverture (en minutes) / temps de prise en charge total d'un
       // patient (installation + acquisition + sortie, déjà tout compris — ne pas
@@ -705,7 +799,7 @@
       // (demandé par Cédric le 05/09/2026) : amplitude d'ouverture × patients/h de la machine la
       // plus lente des deux (le goulot d'étranglement), même formule que verifierCapacite().
       function capacitePatientsJourMax() {
-        var heuresParJour = Math.max(0, parseFloat(document.getElementById("cvHeures").value) || 0);
+        var heuresParJour = amplitudeOuvertureHeures();
         var patientsHeureA = Math.max(0, parseFloat(installA.value) || 0);
         var patientsHeureB = Math.max(0, parseFloat(installB.value) || 0);
         var patientsHeureGoulot = Math.min(patientsHeureA, patientsHeureB);
@@ -747,7 +841,7 @@
           zone: document.getElementById("cvZone").value,
           amortiKey: document.querySelector('input[name="cvAmorti"]:checked').value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("cvKwh").value) || 0),
-          heuresParJour: Math.max(0, parseFloat(document.getElementById("cvHeures").value) || 0),
+          heuresParJour: amplitudeOuvertureHeures(),
           joursParMois: Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1)
         };
         var netMerm = valeurMilliers(document.getElementById("cvNetMerm"));
@@ -755,6 +849,8 @@
         document.getElementById("cvCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
+        document.getElementById("cvHeuresTotalTxt").textContent =
+          "Soit " + patientsFmt.format(params.heuresParJour) + " h d'ouverture par jour (" + libelleHoraires() + ").";
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
@@ -772,7 +868,8 @@
         derniers = { resultats: resultats, params: params, configs: configs };
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("cvCapaciteWarning"),
-          [document.getElementById("cvActivite"), document.getElementById("cvHeures")]);
+          [document.getElementById("cvActivite"), document.getElementById("cvHeureDebut1"), document.getElementById("cvHeureFin1"),
+            document.getElementById("cvHeureDebut2"), document.getElementById("cvHeureFin2")]);
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
 
@@ -844,7 +941,7 @@
           var ecart = signeEcart * (valA - valB);
           [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte) {
             var td = document.createElement("td");
-            td.textContent = texte;
+            td.innerHTML = texte;
             if (bold) td.style.fontWeight = "700";
             tr.appendChild(td);
           });
@@ -867,9 +964,9 @@
 
         ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1);
         ligne("Recette moyenne acte intellectuel", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
-        ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
-        ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
-        ligne("Personnel MERM", lignes[0].rhParPatient, lignes[1].rhParPatient, function (v) { return "-" + eurosCent.format(v); }, eurosCent.format, -1);
+        ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, eurosCharge, eurosCent.format, -1);
+        ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
+        ligne("Personnel MERM", lignes[0].rhParPatient, lignes[1].rhParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Résultat", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
         ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true);
         ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
@@ -909,7 +1006,7 @@
 
         var paramsCommuns = [
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
-          ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
+          ["Amplitude d'ouverture", libelleHoraires() + " (" + patientsFmt.format(params.heuresParJour) + " h/jour)"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
           ["Salaire MERM net avant impôt", euros.format(valeurMilliers(document.getElementById("cvNetMerm"))) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
@@ -1109,8 +1206,28 @@
         });
       }
 
-      ["cvZone", "cvKwh", "cvHeures", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB"].forEach(function (id) {
+      ["cvZone", "cvKwh", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
+        "cvHeureDebut1", "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      // Coupure déjeuner : affiche/masque la 2ᵉ plage horaire (après-midi) — demande de
+      // Cédric le 05/09/2026. Les horaires eux-mêmes n'ont pas de sens "heure réelle" pour
+      // le calcul (pas de tarif électrique heures creuses/pleines dans ce simulateur) : seule
+      // la durée totale (amplitudeOuvertureHeures()) compte, comme l'ancien champ en heures.
+      document.getElementById("cvCoupureDejeuner").addEventListener("change", function () {
+        var fin1 = document.getElementById("cvHeureFin1"), debut2 = document.getElementById("cvHeureDebut2");
+        if (this.checked) {
+          // Les 2 plages se chevauchaient forcément (l'ancienne plage unique allait jusqu'au
+          // soir) : ramener la fin de matinée à midi et demi par défaut, sauf si elle a déjà
+          // une valeur cohérente (avant le début d'après-midi).
+          if (fin1.value >= debut2.value) fin1.value = "12:30";
+        } else {
+          // Redevenir 1 seule plage continue en reprenant l'heure de fin d'après-midi, pour ne
+          // pas perdre silencieusement les heures d'ouverture de l'après-midi déjà réglées.
+          fin1.value = document.getElementById("cvHeureFin2").value;
+        }
+        document.getElementById("cvHoraireApresMidi").hidden = !this.checked;
+        recalculer();
       });
       ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
         var input = document.getElementById(id);
@@ -1119,20 +1236,27 @@
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="cvAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
 
-      var cvHypOverlay = document.getElementById("cvHypOverlay");
-      document.getElementById("cvBtnHypotheses").addEventListener("click", function () {
-        cvHypOverlay.hidden = false;
-        cvHypOverlay.classList.add("is-open");
-      });
-      function fermerCvHyp() {
-        cvHypOverlay.classList.remove("is-open");
-        cvHypOverlay.hidden = true;
+      // Câblage générique des 3 panneaux "Réglages avancés" (le principal + les 2 roues
+      // par machine ajoutées le 05/09/2026) — ouverture/fermeture identiques.
+      function wireHypOverlay(overlayId, btnId, closeId, doneId) {
+        var overlay = document.getElementById(overlayId);
+        document.getElementById(btnId).addEventListener("click", function () {
+          overlay.hidden = false;
+          overlay.classList.add("is-open");
+        });
+        function fermer() {
+          overlay.classList.remove("is-open");
+          overlay.hidden = true;
+        }
+        document.getElementById(closeId).addEventListener("click", fermer);
+        document.getElementById(doneId).addEventListener("click", fermer);
+        document.addEventListener("keydown", function (e) {
+          if (e.key === "Escape" && overlay.classList.contains("is-open")) fermer();
+        });
       }
-      document.getElementById("cvHypClose").addEventListener("click", fermerCvHyp);
-      document.getElementById("cvHypDone").addEventListener("click", fermerCvHyp);
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && cvHypOverlay.classList.contains("is-open")) fermerCvHyp();
-      });
+      wireHypOverlay("cvHypOverlay", "cvBtnHypotheses", "cvHypClose", "cvHypDone");
+      wireHypOverlay("cvHypOverlayA", "cvBtnHypothesesA", "cvHypCloseA", "cvHypDoneA");
+      wireHypOverlay("cvHypOverlayB", "cvBtnHypothesesB", "cvHypCloseB", "cvHypDoneB");
 
       recalculer();
 
