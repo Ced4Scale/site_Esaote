@@ -42,7 +42,8 @@
     /* .simulator__field-suffix pose display:flex sans variante [hidden] (piège déjà connu
        du site, voir skill ced4scale-simulateur-web) — sans cette règle, la 2ᵉ plage horaire
        (après-midi) reste visible même quand "Coupure déjeuner" est décochée. */
-    #cvHoraireApresMidi[hidden], #cvHoraireApresMidiB[hidden] { display: none; }
+    #cvHoraireApresMidi[hidden], #cvHoraireApresMidiB[hidden],
+    #cvHoraireSamedi[hidden], #cvHoraireDimanche[hidden] { display: none; }
     /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
        sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
        curseur laisse passer le clic vers l'autre en-dessous), motif classique pour simuler
@@ -480,12 +481,39 @@
             </label>
             <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.5rem"></p>
           </div>
+          <!-- Remplace l'ancien champ "Jours d'ouverture par mois" (saisi à la main) —
+               demande de Cédric le 05/09/2026 : le nombre de jours/mois est maintenant
+               calculé (5 jours de semaine implicites + samedi/dimanche si cochés) plutôt
+               que saisi. Chaque jour de week-end coché ajoute sa propre ligne d'horaires
+               (curseur simple, pas de coupure déjeuner pour rester simple). -->
           <div class="field">
-            <label for="cvJours">Jours d'ouverture par mois</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="cvJours" value="22" min="1" max="31" step="1" />
-              <span>jours</span>
+            <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
+              <input type="checkbox" id="cvOuvertSamedi" style="width:16px;height:16px;margin:0" />
+              <span>Ouvert le samedi</span>
+            </label>
+            <div class="cv-horaire-range" id="cvHoraireSamedi" hidden style="margin-top:.6rem">
+              <div class="cv-horaire-track-wrap">
+                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFillSamedi"></div></div>
+                <input type="range" id="cvHeureDebutSamedi" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le samedi" />
+                <input type="range" id="cvHeureFinSamedi" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le samedi" />
+              </div>
+              <div class="cv-horaire-label" id="cvHoraireLabelSamedi"></div>
             </div>
+          </div>
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
+              <input type="checkbox" id="cvOuvertDimanche" style="width:16px;height:16px;margin:0" />
+              <span>Ouvert le dimanche</span>
+            </label>
+            <div class="cv-horaire-range" id="cvHoraireDimanche" hidden style="margin-top:.6rem">
+              <div class="cv-horaire-track-wrap">
+                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFillDimanche"></div></div>
+                <input type="range" id="cvHeureDebutDimanche" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le dimanche" />
+                <input type="range" id="cvHeureFinDimanche" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le dimanche" />
+              </div>
+              <div class="cv-horaire-label" id="cvHoraireLabelDimanche"></div>
+            </div>
+            <p class="simulator__hint" id="cvJoursTotalTxt" style="margin-top:.6rem"></p>
           </div>
           <div class="field" style="margin-bottom:0">
             <label for="cvNetMerm">Salaire MERM net avant impôt</label>
@@ -829,6 +857,35 @@
         }
         return l;
       }
+      // ---- Jours d'ouverture par mois — calculé, plus saisi à la main (demande de Cédric
+      // le 05/09/2026) : 5 jours de semaine implicites (lundi-vendredi, horaires du curseur
+      // principal) + samedi/dimanche si cochés (chacun sa propre plage horaire, sans coupure
+      // déjeuner pour rester simple). joursParMois = jours/semaine × 52/12 (semaines/mois).
+      // heuresParJour redevient une MOYENNE PONDÉRÉE par jour ouvert (ex. 5j×8h + 1j×4h en
+      // ne comptant que le samedi ouvert, divisé par 6 jours) plutôt que la seule amplitude
+      // de semaine — préserve tel quel tout calcul en aval qui multiplie heuresParJour ×
+      // joursParMois (le produit reste le vrai total d'heures mensuel), y compris la
+      // vérification de capacité (qui devient une capacité "jour type", moyenne pondérée
+      // entre semaine et week-end — approximation assumée, la capacité reste un simple
+      // repère non bloquant).
+      var SEMAINES_PAR_MOIS = 52 / 12;
+      function calculerJoursEtHeures() {
+        var joursSemaine = 5, heuresSemaine = amplitudeOuvertureHeures();
+        var totalJours = joursSemaine, totalHeures = joursSemaine * heuresSemaine;
+        if (document.getElementById("cvOuvertSamedi").checked) {
+          totalJours += 1;
+          totalHeures += horaireDureeHeures("cvHeureDebutSamedi", "cvHeureFinSamedi");
+        }
+        if (document.getElementById("cvOuvertDimanche").checked) {
+          totalJours += 1;
+          totalHeures += horaireDureeHeures("cvHeureDebutDimanche", "cvHeureFinDimanche");
+        }
+        return {
+          joursParSemaine: totalJours,
+          joursParMois: totalJours * SEMAINES_PAR_MOIS,
+          heuresParJour: totalJours > 0 ? totalHeures / totalJours : 0
+        };
+      }
       // Pilotage visuel d'un curseur double (2 <input type="range"> superposés, voir CSS) :
       // empêche les 2 poignées de se croiser (écart minimal ECART_MIN_H), met à jour le
       // remplissage rouge entre les 2 poignées et le libellé "hh:mm–hh:mm" en dessous.
@@ -937,7 +994,7 @@
       document.querySelectorAll('input[name="cvActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
-          var joursParMois = Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1);
+          var joursParMois = calculerJoursEtHeures().joursParMois;
           var activiteInput = document.getElementById("cvActivite");
           var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
           document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Patients par jour" : "Patients par an";
@@ -970,7 +1027,7 @@
       }
       function ajusterSliderActivite() {
         var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
-        var joursParMois = Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1);
+        var joursParMois = calculerJoursEtHeures().joursParMois;
         var plafondJour = Math.max(1, capacitePatientsJourMax());
         if (mode === "jour") {
           cvActiviteSlider.min = 0; cvActiviteSlider.max = plafondJour; cvActiviteSlider.step = 0.5;
@@ -999,14 +1056,18 @@
       function recalculer() {
         ajusterSliderActivite();
         afficherSeuilsBareme();
+        var joursEtHeures = calculerJoursEtHeures();
         var params = {
           dateIso: dateSelect.value,
           zone: document.getElementById("cvZone").value,
           amortiKey: document.querySelector('input[name="cvAmorti"]:checked').value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("cvKwh").value) || 0),
-          heuresParJour: amplitudeOuvertureHeures(),
-          joursParMois: Math.max(1, parseFloat(document.getElementById("cvJours").value) || 1)
+          heuresParJour: joursEtHeures.heuresParJour,
+          joursParMois: joursEtHeures.joursParMois
         };
+        document.getElementById("cvJoursTotalTxt").textContent =
+          joursEtHeures.joursParSemaine + " jour" + (joursEtHeures.joursParSemaine > 1 ? "s" : "") +
+          " d'ouverture par semaine, soit " + patientsFmt.format(joursEtHeures.joursParMois) + " jours/mois en moyenne.";
         var netMerm = valeurMilliers(document.getElementById("cvNetMerm"));
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
         document.getElementById("cvCoutMermCalcule").innerHTML =
@@ -1370,9 +1431,23 @@
         });
       }
 
-      ["cvZone", "cvKwh", "cvJours", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
-        "cvHeureDebut1", "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2"].forEach(function (id) {
+      ["cvZone", "cvKwh", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
+        "cvHeureDebut1", "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2",
+        "cvHeureDebutSamedi", "cvHeureFinSamedi", "cvHeureDebutDimanche", "cvHeureFinDimanche"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      // Samedi/dimanche ouverts ou non : affiche/masque leur ligne d'horaires, recalcule
+      // (jours/mois et heures moyennes changent). Chacun a son propre curseur double, sans
+      // coupure déjeuner (simplifié — pas demandé pour le week-end).
+      wireHoraireRange("cvHeureDebutSamedi", "cvHeureFinSamedi", "cvHoraireFillSamedi", "cvHoraireLabelSamedi");
+      wireHoraireRange("cvHeureDebutDimanche", "cvHeureFinDimanche", "cvHoraireFillDimanche", "cvHoraireLabelDimanche");
+      document.getElementById("cvOuvertSamedi").addEventListener("change", function () {
+        document.getElementById("cvHoraireSamedi").hidden = !this.checked;
+        recalculer();
+      });
+      document.getElementById("cvOuvertDimanche").addEventListener("change", function () {
+        document.getElementById("cvHoraireDimanche").hidden = !this.checked;
+        recalculer();
       });
       // Curseurs doubles des 2 plages horaires — pilotage visuel (poignées, remplissage,
       // libellé), indépendant du recalcul du simulateur ci-dessus (les 2 écoutent le même
