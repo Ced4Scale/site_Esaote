@@ -43,10 +43,39 @@
        du site, voir skill ced4scale-simulateur-web) — sans cette règle, la 2ᵉ plage horaire
        (après-midi) reste visible même quand "Coupure déjeuner" est décochée. */
     #cvHoraireApresMidi[hidden] { display: none; }
-    /* Les <input type="time"> natifs ont besoin de plus de place que les 3.6rem par défaut
-       de .simulator__field-suffix input (prévus pour un nombre court) pour afficher HH:MM
-       sans être coupés. */
-    .simulator__field-suffix input[type="time"] { width: 6rem; }
+    /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
+       sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
+       curseur laisse passer le clic vers l'autre en-dessous), motif classique pour simuler
+       un slider à 2 poignées en HTML natif sans bibliothèque. */
+    .cv-horaire-range { margin-top: .6rem; }
+    /* Piste + poignées dans un conteneur dédié à part (hauteur fixe, position:relative) —
+       le libellé est un FRÈRE après ce conteneur, jamais un enfant : un enfant en flux normal
+       aurait sa margin-top qui "traverse" le conteneur vide (tous ses autres enfants sont en
+       position:absolute, donc ne comptent pas pour la hauteur) et se retrouve collée en haut,
+       superposée au curseur, au lieu d'apparaître en dessous. */
+    .cv-horaire-track-wrap { position: relative; height: 1.4rem; }
+    .cv-horaire-track-wrap input[type="range"] {
+      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
+    }
+    .cv-horaire-track-wrap input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+    .cv-horaire-track-wrap input[type="range"]::-moz-range-track { background: transparent; }
+    .cv-horaire-track-wrap input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none; pointer-events: auto; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 50%; background: var(--red);
+      border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
+      position: relative;
+    }
+    .cv-horaire-track-wrap input[type="range"]::-moz-range-thumb {
+      pointer-events: auto; cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--red); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+    .cv-horaire-track {
+      position: absolute; top: 50%; left: 9px; right: 9px; height: 4px;
+      background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
+    }
+    .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
+    .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
     .cv-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
     #cvHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
     #cvHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
@@ -375,21 +404,28 @@
             </div>
           </div>
           <div class="field">
-            <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:.5rem">
+            <label>Horaires d'ouverture</label>
+            <div class="cv-horaire-range" id="cvHoraireMatin">
+              <div class="cv-horaire-track-wrap">
+                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill1"></div></div>
+                <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture" />
+                <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
+              </div>
+              <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
+            </div>
+            <div class="cv-horaire-range" id="cvHoraireApresMidi" hidden style="margin-top:1rem">
+              <div class="cv-horaire-track-wrap">
+                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill2"></div></div>
+                <input type="range" id="cvHeureDebut2" min="6" max="22" step="0.25" value="14" aria-label="Heure de reprise l'après-midi" />
+                <input type="range" id="cvHeureFin2" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture l'après-midi" />
+              </div>
+              <div class="cv-horaire-label" id="cvHoraireLabel2"></div>
+            </div>
+            <label style="display:flex; align-items:center; gap:.5rem; margin-top:1.5rem; margin-bottom:0">
               <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
-              <span>Coupure déjeuner (horaires d'ouverture)</span>
+              <span>Coupure déjeuner</span>
             </label>
-            <div class="simulator__field-suffix">
-              <input type="time" id="cvHeureDebut1" value="09:00" />
-              <span>à</span>
-              <input type="time" id="cvHeureFin1" value="17:00" />
-            </div>
-            <div class="simulator__field-suffix" id="cvHoraireApresMidi" hidden style="margin-top:.4rem">
-              <input type="time" id="cvHeureDebut2" value="14:00" />
-              <span>à</span>
-              <input type="time" id="cvHeureFin2" value="18:00" />
-            </div>
-            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.4rem"></p>
+            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.5rem"></p>
           </div>
           <div class="field">
             <label for="cvJours">Jours d'ouverture par mois</label>
@@ -711,16 +747,20 @@
       }
 
       // ---- Horaires d'ouverture (remplace l'ancien champ "Amplitude d'ouverture par jour"
-      // en heures, demande de Cédric le 05/09/2026) : 1 plage horaire, ou 2 si coupure
-      // déjeuner cochée. Seule la durée totale sert au calcul (electriciteMensuelle,
-      // verifierCapacite), pas d'heure de la journée précise (pas de tarif heures
-      // creuses/pleines dans ce simulateur).
+      // en heures, demande de Cédric le 05/09/2026) : 1 curseur double (2 poignées) pour la
+      // plage horaire, ou 2 curseurs (matin + après-midi) si "Coupure déjeuner" est cochée,
+      // affiché SOUS la ligne de réglage (pas au-dessus). Seule la durée totale sert au
+      // calcul (electriciteMensuelle, verifierCapacite), pas d'heure de la journée précise
+      // (pas de tarif heures creuses/pleines dans ce simulateur).
+      function heureDecimale(id) { return parseFloat(document.getElementById(id).value) || 0; }
+      function decimalVersHeureLabel(h) {
+        var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
+        if (mm === 60) { mm = 0; hh += 1; }
+        return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
+      }
       function horaireDureeHeures(idDebut, idFin) {
-        var debut = document.getElementById(idDebut).value, fin = document.getElementById(idFin).value;
-        if (!debut || !fin) return 0;
-        var d = debut.split(":").map(Number), f = fin.split(":").map(Number);
-        var minutes = (f[0] * 60 + f[1]) - (d[0] * 60 + d[1]);
-        return minutes > 0 ? minutes / 60 : 0;
+        var d = heureDecimale(idDebut), f = heureDecimale(idFin);
+        return f > d ? f - d : 0;
       }
       function amplitudeOuvertureHeures() {
         var total = horaireDureeHeures("cvHeureDebut1", "cvHeureFin1");
@@ -730,11 +770,36 @@
         return total;
       }
       function libelleHoraires() {
-        var l = document.getElementById("cvHeureDebut1").value + "–" + document.getElementById("cvHeureFin1").value;
+        var l = decimalVersHeureLabel(heureDecimale("cvHeureDebut1")) + "–" + decimalVersHeureLabel(heureDecimale("cvHeureFin1"));
         if (document.getElementById("cvCoupureDejeuner").checked) {
-          l += " puis " + document.getElementById("cvHeureDebut2").value + "–" + document.getElementById("cvHeureFin2").value;
+          l += " puis " + decimalVersHeureLabel(heureDecimale("cvHeureDebut2")) + "–" + decimalVersHeureLabel(heureDecimale("cvHeureFin2"));
         }
         return l;
+      }
+      // Pilotage visuel d'un curseur double (2 <input type="range"> superposés, voir CSS) :
+      // empêche les 2 poignées de se croiser (écart minimal ECART_MIN_H), met à jour le
+      // remplissage rouge entre les 2 poignées et le libellé "hh:mm–hh:mm" en dessous.
+      var ECART_MIN_H = 0.5;
+      function wireHoraireRange(idDebut, idFin, idFill, idLabel) {
+        var debut = document.getElementById(idDebut), fin = document.getElementById(idFin);
+        var fill = document.getElementById(idFill), label = document.getElementById(idLabel);
+        var min = parseFloat(debut.min), max = parseFloat(debut.max);
+        function maj() {
+          var d = parseFloat(debut.value), f = parseFloat(fin.value);
+          if (d > f - ECART_MIN_H) {
+            // La poignée qui vient de bouger l'emporte, l'autre est repoussée du même écart.
+            if (document.activeElement === fin) { d = f - ECART_MIN_H; debut.value = d; }
+            else { f = d + ECART_MIN_H; fin.value = f; }
+          }
+          var pctD = ((d - min) / (max - min)) * 100, pctF = ((f - min) / (max - min)) * 100;
+          fill.style.left = pctD + "%";
+          fill.style.width = (pctF - pctD) + "%";
+          label.textContent = decimalVersHeureLabel(d) + "–" + decimalVersHeureLabel(f);
+        }
+        debut.addEventListener("input", maj);
+        fin.addEventListener("input", maj);
+        maj();
+        return maj;
       }
 
       // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
@@ -1210,22 +1275,29 @@
         "cvHeureDebut1", "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
-      // Coupure déjeuner : affiche/masque la 2ᵉ plage horaire (après-midi) — demande de
-      // Cédric le 05/09/2026. Les horaires eux-mêmes n'ont pas de sens "heure réelle" pour
-      // le calcul (pas de tarif électrique heures creuses/pleines dans ce simulateur) : seule
-      // la durée totale (amplitudeOuvertureHeures()) compte, comme l'ancien champ en heures.
+      // Curseurs doubles des 2 plages horaires — pilotage visuel (poignées, remplissage,
+      // libellé), indépendant du recalcul du simulateur ci-dessus (les 2 écoutent le même
+      // évènement "input", sans dépendance entre eux).
+      var majHoraireMatin = wireHoraireRange("cvHeureDebut1", "cvHeureFin1", "cvHoraireFill1", "cvHoraireLabel1");
+      var majHoraireApresMidi = wireHoraireRange("cvHeureDebut2", "cvHeureFin2", "cvHoraireFill2", "cvHoraireLabel2");
+      // Coupure déjeuner : affiche/masque le 2ᵉ curseur (après-midi) — demande de Cédric le
+      // 05/09/2026, curseur(s) affiché(s) sous la case, pas au-dessus. Les horaires eux-mêmes
+      // n'ont pas de sens "heure réelle" pour le calcul (pas de tarif électrique heures
+      // creuses/pleines dans ce simulateur) : seule la durée totale (amplitudeOuvertureHeures())
+      // compte, comme l'ancien champ en heures.
       document.getElementById("cvCoupureDejeuner").addEventListener("change", function () {
         var fin1 = document.getElementById("cvHeureFin1"), debut2 = document.getElementById("cvHeureDebut2");
         if (this.checked) {
           // Les 2 plages se chevauchaient forcément (l'ancienne plage unique allait jusqu'au
           // soir) : ramener la fin de matinée à midi et demi par défaut, sauf si elle a déjà
           // une valeur cohérente (avant le début d'après-midi).
-          if (fin1.value >= debut2.value) fin1.value = "12:30";
+          if (parseFloat(fin1.value) >= parseFloat(debut2.value)) fin1.value = "12.5";
         } else {
-          // Redevenir 1 seule plage continue en reprenant l'heure de fin d'après-midi, pour ne
-          // pas perdre silencieusement les heures d'ouverture de l'après-midi déjà réglées.
+          // Redevenir 1 seul curseur en reprenant l'heure de fin d'après-midi, pour ne pas
+          // perdre silencieusement les heures d'ouverture de l'après-midi déjà réglées.
           fin1.value = document.getElementById("cvHeureFin2").value;
         }
+        majHoraireMatin();
         document.getElementById("cvHoraireApresMidi").hidden = !this.checked;
         recalculer();
       });
