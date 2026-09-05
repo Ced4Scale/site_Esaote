@@ -1706,14 +1706,22 @@ var svg = document.getElementById("cvChart");
         // légèrement plus court sur l'autre barre ne doit jamais imposer une taille différente
         // (repéré en vérifiant : les 2 barres affichaient parfois 2 tailles différentes,
         // cohérent par barre mais pas d'une barre à l'autre, ce qui accrochait l'œil).
+        // Vérifie la largeur de "Résultat" ET de "Charges" (2ᵉ amélioration demandée) : seul
+        // "Résultat" était mesuré jusqu'ici, en supposant que c'était toujours le plus large des
+        // deux — vrai avec les montants vus jusqu'ici, mais pas garanti (des charges élevées avec
+        // un petit résultat peuvent inverser le cas) ; les deux sont maintenant mesurés, la
+        // taille retenue est celle qui fait tenir le plus large des deux dans la barre.
         var mesure = svgEl("text", { x: -1000, y: -1000, "text-anchor": "middle", "font-weight": "800" });
         svg.appendChild(mesure);
-        var tailleCommune = compos.reduce(function (taille, c) {
-          mesure.textContent = "Résultat : " + fmtMontant(c.resultat);
+        function tientDansLaBarre(taille, texte) {
+          mesure.textContent = texte;
           mesure.setAttribute("font-size", taille);
-          while (mesure.getBBox().width > barWidth - 10 && taille > 7) {
+          return mesure.getBBox().width <= barWidth - 10;
+        }
+        var tailleCommune = compos.reduce(function (taille, c) {
+          var textes = ["Résultat : " + fmtMontant(c.resultat), "Charges : " + fmtMontant(c.charges)];
+          while (taille > 7 && !textes.every(function (t) { return tientDansLaBarre(taille, t); })) {
             taille -= 0.5;
-            mesure.setAttribute("font-size", taille);
           }
           return taille;
         }, 16);
