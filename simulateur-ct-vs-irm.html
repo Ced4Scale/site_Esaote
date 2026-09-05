@@ -108,7 +108,9 @@
     #cvSyntheseTable.simulator__table--compare3 th:last-child,
     #cvSyntheseTable.simulator__table--compare3 td:last-child { width: 20%; }
     #cvSyntheseTable.simulator__table--compare3 th:first-child,
-    #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 28%; }
+    #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 38%; }
+    #cvSyntheseTable.simulator__table--compare3 th:not(:first-child):not(:last-child),
+    #cvSyntheseTable.simulator__table--compare3 td:not(:first-child):not(:last-child) { width: 21%; }
     /* Piège repéré en vérifiant ce tableau sur mobile étroit (iPhone SE réel, 375px) : le
        conteneur "overflow-x:auto" existait déjà mais ne servait à rien tant que le tableau
        lui-même (table-layout:fixed, width:100%) se contentait de rétrécir à la largeur du
@@ -116,7 +118,7 @@
        débordait par-dessus la colonne voisine (chevauchement illisible), au lieu de
        déclencher le défilement horizontal prévu. Un min-width force le tableau à garder une
        largeur lisible, l'overflow-x:auto bascule alors vraiment en scroll sur mobile. */
-    #cvSyntheseTable { min-width: 480px; }
+    #cvSyntheseTable { min-width: 540px; }
     /* Interlignes du formulaire de gauche resserrés au maximum (demande de Cédric le
        05/09/2026) — .field/.simulator__machine-box/.simulator__field-group sont des classes
        partagées avec les autres simulateurs (styles.css) : override local à cette page
@@ -390,7 +392,7 @@
 
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges. La zone colorée montre qui est devant à chaque niveau d'activité (bleu = IRM Esaote, orange = scanner).</p>
           <div class="simulator__legend" id="cvLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
@@ -1601,6 +1603,38 @@
 
         function xAt(patientsJour) { return PAD.left + (PLOT_W * patientsJour) / xMax; }
         function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * (v - yMin)) / (yMax - yMin); }
+
+        // Zone colorée entre les 2 courbes — bleu (couleur IRM) quand l'IRM est devant,
+        // orange (couleur scanner) quand le scanner est devant. Dessinée en premier (donc
+        // sous les lignes et le repère "Votre activité") pour qu'on voie d'un coup d'œil qui
+        // gagne à chaque niveau d'activité, sans devoir survoler le graphe (demande de
+        // Cédric le 05/09/2026 : le graphe précédent, 2 lignes fines, ne parlait pas assez).
+        if (series.length === 2) {
+          var sA = series[0], sB = series[1];
+          function ajouterZone(px0, va0, vb0, px1, va1, vb1, couleur) {
+            svg.appendChild(svgEl("polygon", {
+              points: px0 + "," + yAt(va0) + " " + px1 + "," + yAt(va1) + " " + px1 + "," + yAt(vb1) + " " + px0 + "," + yAt(vb0),
+              fill: couleur, opacity: "0.14", stroke: "none"
+            }));
+          }
+          for (var seg = 0; seg < NB_PAS; seg++) {
+            var xg0 = xAt((xMax * seg) / NB_PAS), xg1 = xAt((xMax * (seg + 1)) / NB_PAS);
+            var a0 = sA.pts[seg], b0 = sB.pts[seg], a1 = sA.pts[seg + 1], b1 = sB.pts[seg + 1];
+            var d0 = a0 - b0, d1 = a1 - b1;
+            if ((d0 >= 0 && d1 >= 0) || (d0 <= 0 && d1 <= 0)) {
+              ajouterZone(xg0, a0, b0, xg1, a1, b1, (d0 + d1) >= 0 ? sA.r.color : sB.r.color);
+            } else {
+              // Les 2 courbes se croisent dans ce segment : on coupe pile au croisement
+              // (interpolation linéaire, cohérente avec l'échantillonnage du tracé lui-même)
+              // pour que la couleur bascule au bon endroit, pas seulement au pas suivant.
+              var t = d0 / (d0 - d1);
+              var xm = xg0 + (xg1 - xg0) * t;
+              var ym = a0 + (a1 - a0) * t;
+              ajouterZone(xg0, a0, b0, xm, ym, ym, d0 >= 0 ? sA.r.color : sB.r.color);
+              ajouterZone(xm, ym, ym, xg1, a1, b1, d1 >= 0 ? sA.r.color : sB.r.color);
+            }
+          }
+        }
 
         for (var g = 0; g <= 4; g++) {
           var val = yMin + ((yMax - yMin) * g) / 4;
