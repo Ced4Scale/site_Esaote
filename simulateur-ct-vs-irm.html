@@ -589,11 +589,41 @@
       <div class="modal__scroll">
         <div class="cv-hyp-body">
           <h3 id="cvHypTitleB">Réglages avancés — Scanner (CT)</h3>
-          <div class="field" style="margin-bottom:0">
+          <div class="field">
             <label for="cvMultiRegionB">Part des examens multi-régions (TAP, corps entier…)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvMultiRegionB" value="16" min="0" max="100" step="5" />
               <span>%</span>
+            </div>
+          </div>
+          <!-- RSE : par défaut le modèle suppose le scanner sous tension 24h/24, 365j/an
+               (même "éteint" au sens du simulateur, qui reste en veille). Demande de Cédric
+               le 06/09/2026 : proposer de vraiment le couper la nuit, avec un délai
+               incompressible de remise en route (chauffe du tube, recalibration des
+               détecteurs, redémarrage de la console) avant le 1er patient — et un délai
+               symétrique à l'extinction. Contrairement à une IRM à aimant supraconducteur
+               (jamais coupée, cryostat), un scanner PEUT être réellement mis hors tension. -->
+          <div class="field">
+            <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
+              <input type="checkbox" id="cvScannerCoupureNuit" style="width:16px;height:16px;margin:0" />
+              <span>Coupez-vous l'alimentation du scanner la nuit ?</span>
+            </label>
+            <div id="cvScannerDelaisWrap" hidden style="margin-top:.6rem">
+              <div class="field">
+                <label for="cvScannerDelaiAllumage">Délai d'allumage avant le 1ᵉʳ patient</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvScannerDelaiAllumage" value="30" min="0" max="180" step="5" />
+                  <span>min</span>
+                </div>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="cvScannerDelaiExtinction">Délai avant extinction après le dernier patient</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvScannerDelaiExtinction" value="15" min="0" max="180" step="5" />
+                  <span>min</span>
+                </div>
+              </div>
+              <p class="simulator__hint" id="cvScannerSousTensionTxt" style="margin-top:.5rem"></p>
             </div>
           </div>
           <p class="simulator__hint" style="margin-top:.6rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
@@ -825,10 +855,17 @@
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
       // à l'ouverture), ramené à un coût FIXE mensuel + un coût VARIABLE par patient, pour que
       // le point mort reste une simple division (charges fixes / marge par patient).
-      function electriciteMensuelle(machine, heuresParJour, joursParMois, prixKwh) {
+      // `socleHeuresJours`, optionnel : { heuresParJour, joursParMois } sous tension réelle,
+      // pour une machine réellement coupée en dehors de ces heures (demande de Cédric le
+      // 06/09/2026, cas du scanner qui peut être mis hors tension la nuit — contrairement à
+      // une IRM à aimant supraconducteur, qui reste sous tension 24h/24 pour son cryostat).
+      // Sans ce paramètre, comportement inchangé : socle 24h/24, 365j/an (30 j/mois).
+      function electriciteMensuelle(machine, heuresParJour, joursParMois, prixKwh, socleHeuresJours) {
         var coeffLT = machine.coeffRefroidissementLT;
         var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
-        var socleMensuel = puissanceSocle * 24 * 30 * prixKwh;
+        var socleMensuel = socleHeuresJours
+          ? puissanceSocle * socleHeuresJours.heuresParJour * socleHeuresJours.joursParMois * prixKwh
+          : puissanceSocle * 24 * 30 * prixKwh;
 
         var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
         var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
@@ -842,7 +879,7 @@
       function calculerMachine(m, params) {
         var recette = recetteFT(m.machine, params.dateIso, params.zone, params.amortiKey);
         var acte = acteIntellectuelPatient(m.machine, m.pctMultiRegion);
-        var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
+        var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh, m.socleHeuresJours);
         var rh = m.nombreMerm * params.coutMermMensuel;
         var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
         var margeParPatient = recette + acte - elec.variablePatient;
@@ -1117,9 +1154,26 @@
         document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
+        // Scanner réellement coupé la nuit (case RSE) : le socle électrique ne compte plus
+        // 24h/24 mais seulement les heures réellement sous tension — l'amplitude d'ouverture
+        // + les 2 délais incompressibles de chauffe/recalibration/redémarrage, sur les seuls
+        // jours d'ouverture (les jours fermés, il reste éteint toute la journée).
+        var socleHeuresJoursScanner = null;
+        if (document.getElementById("cvScannerCoupureNuit").checked) {
+          var delaiAllumageH = Math.max(0, parseFloat(document.getElementById("cvScannerDelaiAllumage").value) || 0) / 60;
+          var delaiExtinctionH = Math.max(0, parseFloat(document.getElementById("cvScannerDelaiExtinction").value) || 0) / 60;
+          socleHeuresJoursScanner = {
+            heuresParJour: Math.min(24, joursEtHeures.heuresParJour + delaiAllumageH + delaiExtinctionH),
+            joursParMois: joursEtHeures.joursParMois
+          };
+        }
+        document.getElementById("cvScannerSousTensionTxt").textContent = socleHeuresJoursScanner
+          ? "Soit " + patientsFmt.format(socleHeuresJoursScanner.heuresParJour) + " h sous tension par jour ouvert (au lieu de 24 h/24, 365 j/an)."
+          : "";
+
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: minutesDepuisPatientsHeure(installA.value) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value) }
+          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value), socleHeuresJours: socleHeuresJoursScanner }
         ];
 
         var resultats = configs.map(function (c) {
@@ -1472,8 +1526,15 @@
       ["cvZone", "cvKwh", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
         "cvHeureDebut1", "cvHeureFin1", "cvCoupureDuree",
         "cvHeureDebutSamedi", "cvHeureFinSamedi", "cvCoupureDureeSamedi",
-        "cvHeureDebutDimanche", "cvHeureFinDimanche", "cvCoupureDureeDimanche"].forEach(function (id) {
+        "cvHeureDebutDimanche", "cvHeureFinDimanche", "cvCoupureDureeDimanche",
+        "cvScannerDelaiAllumage", "cvScannerDelaiExtinction"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      // RSE — coupure du scanner la nuit (demande de Cédric le 06/09/2026) : affiche/masque
+      // les 2 délais de remise en route, recalcule (impacte le socle électrique du scanner).
+      document.getElementById("cvScannerCoupureNuit").addEventListener("change", function () {
+        document.getElementById("cvScannerDelaisWrap").hidden = !this.checked;
+        recalculer();
       });
       // Curseurs de la ligne "semaine" — pilotage visuel (poignées, remplissage, libellé),
       // indépendant du recalcul du simulateur ci-dessus. Existe en double : la roue crantée
