@@ -1778,7 +1778,13 @@
           }
 
           // Résultat, juste au-dessus du bloc coloré, en gras — le chiffre qui compte.
-          var labelResultat = svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "12", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
+          // Le bloc coloré étant assez haut, le libellé s'écrit dedans, en blanc — sinon (bloc
+          // trop fin, ex. proche du point mort) il reste au-dessus, en couleur, comme avant
+          // (demande de Cédric le 05/09/2026 : mal placé quand la barre est haute).
+          var hauteurResultat = Math.abs(yZero - yResultat);
+          var labelResultat = hauteurResultat > 26
+            ? svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#fff" })
+            : svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
           labelResultat.textContent = "Résultat : " + eurosCent.format(c.resultat);
           svg.appendChild(labelResultat);
 
