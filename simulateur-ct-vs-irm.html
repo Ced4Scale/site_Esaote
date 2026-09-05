@@ -403,6 +403,7 @@
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
                (mêmes horizons que le tableau "Résultat à votre activité" juste au-dessus). -->
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizonPatient" aria-pressed="false">1 patient</button>
             <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true">Par jour</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false">1 an</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon5Ans" aria-pressed="false">5 ans</button>
@@ -1300,8 +1301,11 @@
       // les lignes "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus — 5 ans ajouté ici
       // uniquement pour ce graphe, absent du tableau).
       var horizonBarres = "jour";
-      // "annees" null = pas d'annualisation, on garde juste l'activité du jour telle quelle.
+      // "annees" null = pas d'annualisation (activité du jour telle quelle) ; "patient" = un
+      // seul patient, sans tenir compte de l'activité (ajouté le 05/09/2026 à la demande de
+      // Cédric, pour revoir le résultat par patient sans repasser par le tableau au-dessus).
       var HORIZONS = {
+        patient: { boutonId: "cvBtnHorizonPatient", annees: "patient" },
         jour: { boutonId: "cvBtnHorizonJour", annees: null },
         an: { boutonId: "cvBtnHorizon1An", annees: 1 },
         "5ans": { boutonId: "cvBtnHorizon5Ans", annees: 5 },
@@ -1665,13 +1669,16 @@ var svg = document.getElementById("cvChart");
           };
         });
 
-        // Passe les 3 montants par patient à l'échelle de temps choisie (jour/1 an/5 ans/7 ans) —
-        // demande de Cédric le 05/09/2026. "jour" = patients du jour tels quels, les autres =
-        // patients/jour × jours d'activité par an × nombre d'années (même base que "Résultat /
-        // an" et "Résultat / 7 ans" du tableau au-dessus).
+        // Passe les 3 montants par patient à l'échelle choisie (1 patient/jour/1 an/5 ans/7 ans)
+        // — demande de Cédric le 05/09/2026. "patient" = aucune mise à l'échelle (1 seul
+        // patient, indépendant de l'activité) ; "jour" = patients du jour tels quels ; les
+        // autres = patients/jour × jours d'activité par an × nombre d'années (même base que
+        // "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus).
         var horizon = HORIZONS[horizonBarres];
         compos.forEach(function (c) {
-          var mult = horizon.annees == null ? c.patientsJour : c.patientsJour * params.joursParMois * 12 * horizon.annees;
+          var mult = horizon.annees === "patient" ? 1
+            : horizon.annees == null ? c.patientsJour
+            : c.patientsJour * params.joursParMois * 12 * horizon.annees;
           c.recetteTotale *= mult; c.charges *= mult; c.resultat *= mult;
         });
         // Montants toujours arrondis à l'euro ici (euros.format), comme "Résultat / an" et
