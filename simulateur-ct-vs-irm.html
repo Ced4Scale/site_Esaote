@@ -391,12 +391,11 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges. La zone colorée montre qui est devant à chaque niveau d'activité (bleu = IRM Esaote, orange = scanner).</p>
+          <h3 style="margin-bottom:.6rem">D'où vient le résultat, par patient</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">Pour chaque patient (un forfait technique), la recette totale (FT + acte intellectuel) se répartit entre les charges (gris) et ce qu'il reste au final (couleur de la machine). À votre activité renseignée plus bas.</p>
           <div class="simulator__legend" id="cvLegend"></div>
           <div class="simulator__chart-wrap">
-            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel de l'IRM Esaote et du scanner selon le nombre de patients par jour, avec le point mort de chacun"></svg>
-            <div class="simulator__tooltip" id="cvTooltip" hidden></div>
+            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
           </div>
           <!-- Raccourcis pour placer directement "Votre activité" sur un point intéressant du
                graphe, sans tâtonner au curseur (demande de Cédric le 05/09/2026). Déplacent la
@@ -1007,10 +1006,6 @@
         };
       }
 
-      function resultatMensuel(res, patientsJour, joursParMois) {
-        return res.margeParPatient * patientsJour * joursParMois - res.chargesFixesMensuelles;
-      }
-
       // ---- Horaires d'ouverture (remplace l'ancien champ "Amplitude d'ouverture par jour"
       // en heures, demande de Cédric le 05/09/2026) : 1 curseur double (2 poignées) pour la
       // plage horaire, ou 2 curseurs (matin + après-midi) si "Coupure déjeuner" est cochée,
@@ -1282,22 +1277,6 @@
           ? Math.round(patientsJourCible * 2) / 2
           : Math.round(patientsJourCible * joursParMois * 12);
         recalculer();
-        afficherTooltipActivite();
-      }
-      // Affiche le cadre noir des valeurs (normalement réservé au survol du graphe) pile sur
-      // le repère "Votre activité", pour confirmer sans avoir à passer la souris dessus
-      // (demande de Cédric le 05/09/2026, suite aux 3 boutons de raccourci ci-dessus).
-      function afficherTooltipActivite() {
-        if (!derniers) return;
-        var patientsJour = derniers.params.activitePatientsJour;
-        var joursParMois = derniers.params.joursParMois;
-        var lignes = derniers.resultats.map(function (r) {
-          var v = resultatMensuel(r, patientsJour, joursParMois);
-          return '<div class="simulator__tooltip-row">' +
-            '<strong>' + euros.format(v) + '</strong> — <span style="color:' + r.color + ';font-weight:700">' + r.machine.nomCourt + '</span></div>';
-        }).join("");
-        tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + patientsFmt.format(patientsJour) + ' patients/jour</div>' + lignes;
-        tooltipEl.hidden = false;
       }
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
@@ -1406,7 +1385,7 @@
         dessinerRecap(resultats, configs, params);
 
         dessinerLegende(resultats);
-        dessinerGraphe(resultats, params.joursParMois, params.activitePatientsJour);
+        dessinerRepartition(resultats, lignesSynthese);
       }
 
       // ---- Tableau récapitulatif par patient / par an / sur 7 ans, avec écart — même structure
@@ -1614,7 +1593,6 @@
       }
 
       var svg = document.getElementById("cvChart");
-      var tooltipEl = document.getElementById("cvTooltip");
       var SVG_NS = "http://www.w3.org/2000/svg";
       function svgEl(tag, attrs) {
         var el = document.createElementNS(SVG_NS, tag);
@@ -1631,136 +1609,99 @@
         return niceN * pow;
       }
 
-      var PAD = { left: 92, right: 16, top: 18, bottom: 28 };
+      var PAD = { left: 70, right: 20, top: 34, bottom: 46 };
       var VIEWBOX_H = 320;
       var PLOT_W = 640 - PAD.left - PAD.right;
       var PLOT_H = VIEWBOX_H - PAD.top - PAD.bottom;
 
-      function dessinerGraphe(resultats, joursParMois, activitePatientsJour) {
+      // Remplace l'ancien graphe à 2 courbes (une par machine, selon l'activité) par 2 barres
+      // — une par machine, à votre activité renseignée — décomposant la recette par patient
+      // (un forfait technique) entre charges (gris) et résultat net (couleur de la machine).
+      // Message plus direct pour un client qui compare : d'où vient l'écart, pas seulement
+      // combien il vaut (demande de Cédric le 05/09/2026, remplace le graphe précédent jugé
+      // "pas très intéressant" en repartant des mêmes données que le tableau "Résultat à
+      // votre activité" juste au-dessus).
+      function dessinerRepartition(resultats, lignes) {
         svg.innerHTML = "";
 
-        var pointsMorts = resultats.filter(function (r) { return isFinite(r.pointMortJour); }).map(function (r) { return r.pointMortJour; });
-        var repereMax = Math.max(pointsMorts.length ? Math.max.apply(null, pointsMorts) : 0, activitePatientsJour || 0);
-        var xMax = niceCeil((repereMax || 20) * 1.6);
-        var NB_PAS = 40;
-
-        var series = resultats.map(function (r) {
-          var pts = [];
-          for (var i = 0; i <= NB_PAS; i++) {
-            var patientsJour = (xMax * i) / NB_PAS;
-            pts.push(resultatMensuel(r, patientsJour, joursParMois));
-          }
-          return { r: r, pts: pts };
+        var compos = lignes.map(function (l, i) {
+          return {
+            recetteTotale: l.recette + l.acte,
+            charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
+            resultat: l.resultatParPatient,
+            color: resultats[i].color,
+            nom: resultats[i].machine.nomCourt
+          };
         });
 
-        var yMin = 0, yMax = 0;
-        series.forEach(function (s) { s.pts.forEach(function (v) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }); });
-        var yAbsMax = niceCeil(Math.max(Math.abs(yMin), Math.abs(yMax)) * 1.05);
-        yMin = -yAbsMax; yMax = yAbsMax;
+        var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
+        var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
+        var yMax = niceCeil(top * 1.2);
+        var yMin = bottomBrut < 0 ? -niceCeil(Math.abs(bottomBrut) * 1.2) : 0;
 
-        function xAt(patientsJour) { return PAD.left + (PLOT_W * patientsJour) / xMax; }
         function yAt(v) { return PAD.top + PLOT_H - (PLOT_H * (v - yMin)) / (yMax - yMin); }
-
-        // Zone colorée entre les 2 courbes — bleu (couleur IRM) quand l'IRM est devant,
-        // orange (couleur scanner) quand le scanner est devant. Dessinée en premier (donc
-        // sous les lignes et le repère "Votre activité") pour qu'on voie d'un coup d'œil qui
-        // gagne à chaque niveau d'activité, sans devoir survoler le graphe (demande de
-        // Cédric le 05/09/2026 : le graphe précédent, 2 lignes fines, ne parlait pas assez).
-        if (series.length === 2) {
-          var sA = series[0], sB = series[1];
-          function ajouterZone(px0, va0, vb0, px1, va1, vb1, couleur) {
-            svg.appendChild(svgEl("polygon", {
-              points: px0 + "," + yAt(va0) + " " + px1 + "," + yAt(va1) + " " + px1 + "," + yAt(vb1) + " " + px0 + "," + yAt(vb0),
-              fill: couleur, opacity: "0.14", stroke: "none"
-            }));
-          }
-          for (var seg = 0; seg < NB_PAS; seg++) {
-            var xg0 = xAt((xMax * seg) / NB_PAS), xg1 = xAt((xMax * (seg + 1)) / NB_PAS);
-            var a0 = sA.pts[seg], b0 = sB.pts[seg], a1 = sA.pts[seg + 1], b1 = sB.pts[seg + 1];
-            var d0 = a0 - b0, d1 = a1 - b1;
-            if ((d0 >= 0 && d1 >= 0) || (d0 <= 0 && d1 <= 0)) {
-              ajouterZone(xg0, a0, b0, xg1, a1, b1, (d0 + d1) >= 0 ? sA.r.color : sB.r.color);
-            } else {
-              // Les 2 courbes se croisent dans ce segment : on coupe pile au croisement
-              // (interpolation linéaire, cohérente avec l'échantillonnage du tracé lui-même)
-              // pour que la couleur bascule au bon endroit, pas seulement au pas suivant.
-              var t = d0 / (d0 - d1);
-              var xm = xg0 + (xg1 - xg0) * t;
-              var ym = a0 + (a1 - a0) * t;
-              ajouterZone(xg0, a0, b0, xm, ym, ym, d0 >= 0 ? sA.r.color : sB.r.color);
-              ajouterZone(xm, ym, ym, xg1, a1, b1, d1 >= 0 ? sA.r.color : sB.r.color);
-            }
-          }
-        }
 
         for (var g = 0; g <= 4; g++) {
           var val = yMin + ((yMax - yMin) * g) / 4;
           var y = yAt(val);
           svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: y, y2: y, class: "simulator__gridline" }));
           var labelY = svgEl("text", { x: PAD.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
-          labelY.textContent = euros.format(val);
+          labelY.textContent = eurosCent.format(val);
           svg.appendChild(labelY);
         }
         svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
 
-        if (activitePatientsJour != null && activitePatientsJour > 0 && activitePatientsJour <= xMax) {
-          var xAct = xAt(activitePatientsJour);
-          svg.appendChild(svgEl("line", { x1: xAct, x2: xAct, y1: PAD.top, y2: PAD.top + PLOT_H, stroke: "#8a8578", "stroke-width": "1.2", "stroke-dasharray": "4,3" }));
-          var labelAct = svgEl("text", { x: xAct, y: PAD.top - 4, class: "simulator__axis-label", "text-anchor": "middle" });
-          labelAct.textContent = "Votre activité";
-          svg.appendChild(labelAct);
-        }
+        var barWidth = 120;
+        var centers = [PAD.left + PLOT_W * 0.28, PAD.left + PLOT_W * 0.72];
 
-        for (var p = 0; p <= 4; p++) {
-          var xv = (xMax * p) / 4;
-          var lx = svgEl("text", { x: xAt(xv), y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
-          lx.textContent = patientsFmt.format(xv);
-          svg.appendChild(lx);
-        }
+        compos.forEach(function (c, i) {
+          var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
+          var yZero = yAt(0), yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
 
-        series.forEach(function (s) {
-          var points = s.pts.map(function (v, i) { return xAt((xMax * i) / NB_PAS) + "," + yAt(v); }).join(" ");
-          svg.appendChild(svgEl("polyline", {
-            points: points, fill: "none", stroke: s.r.color, "stroke-width": "2",
-            "stroke-linejoin": "round", "stroke-linecap": "round"
+          // Bloc charges (gris) : toujours entre le sommet de la recette totale et le niveau
+          // du résultat, que le résultat soit positif ou négatif.
+          svg.appendChild(svgEl("rect", {
+            x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#cfcabd"
           }));
-          if (isFinite(s.r.pointMortJour) && s.r.pointMortJour <= xMax) {
-            var cx = xAt(s.r.pointMortJour), cy = yAt(0);
-            svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 6, fill: "#fcfcfb" }));
-            svg.appendChild(svgEl("circle", { cx: cx, cy: cy, r: 4, fill: s.r.color }));
+          // Bloc résultat net : couleur de la machine s'il est positif, rouge d'alerte sinon
+          // (perte — l'activité est en dessous du point mort).
+          svg.appendChild(svgEl("rect", {
+            x: x0, y: Math.min(yZero, yResultat), width: barWidth,
+            height: Math.max(0, Math.abs(yResultat - yZero)), fill: c.resultat >= 0 ? c.color : "#c0392b"
+          }));
+          svg.appendChild(svgEl("line", { x1: x0, x2: x1, y1: yTop, y2: yTop, stroke: "#8a8578", "stroke-width": "1" }));
+
+          // Tous les libellés sont centrés sur l'axe de la barre (jamais en callout latéral) —
+          // piège repéré à la vérification mobile : un callout à droite de la 2ᵉ barre débordait
+          // du viewBox et se faisait couper net, la 2ᵉ barre étant déjà proche du bord droit.
+          // Centré, le texte déborde pour moitié de chaque côté, ce qui tient largement dans la
+          // marge laissée par l'écartement des 2 barres (05/09/2026).
+
+          // Recette totale, au-dessus de la barre.
+          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelRecette.textContent = "Recette : " + eurosCent.format(c.recetteTotale);
+          svg.appendChild(labelRecette);
+
+          // Charges, centrées dans le bloc gris — seulement s'il est assez haut pour rester
+          // lisible, sinon le chiffre reste implicite (recette totale moins résultat).
+          if (c.charges > 0 && (yResultat - yTop) > 40) {
+            var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": "9", fill: "#5c5a52" });
+            labelCharges.textContent = "Charges : " + eurosCent.format(c.charges);
+            svg.appendChild(labelCharges);
           }
-          if (activitePatientsJour != null && activitePatientsJour <= xMax) {
-            var cxAct = xAt(activitePatientsJour), cyAct = yAt(resultatMensuel(s.r, activitePatientsJour, joursParMois));
-            svg.appendChild(svgEl("circle", { cx: cxAct, cy: cyAct, r: 5, fill: "#fcfcfb", stroke: s.r.color, "stroke-width": "2" }));
-          }
-        });
 
-        var crosshair = svgEl("line", { x1: 0, x2: 0, y1: PAD.top, y2: PAD.top + PLOT_H, class: "simulator__crosshair", visibility: "hidden" });
-        svg.appendChild(crosshair);
-        var hitArea = svgEl("rect", { x: PAD.left, y: PAD.top, width: PLOT_W, height: PLOT_H, fill: "transparent" });
-        svg.appendChild(hitArea);
+          // Résultat, juste au-dessus du bloc coloré, en gras — le chiffre qui compte.
+          var labelResultat = svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "12", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
+          labelResultat.textContent = "Résultat : " + eurosCent.format(c.resultat);
+          svg.appendChild(labelResultat);
 
-        function survol(evt) {
-          var rect = svg.getBoundingClientRect();
-          var scaleX = 640 / rect.width;
-          var xViewBox = (evt.clientX - rect.left) * scaleX;
-          var patientsJour = Math.max(0, Math.min(xMax, ((xViewBox - PAD.left) / PLOT_W) * xMax));
-          crosshair.setAttribute("x1", xAt(patientsJour));
-          crosshair.setAttribute("x2", xAt(patientsJour));
-          crosshair.setAttribute("visibility", "visible");
-
-          var lignes = series.map(function (s) {
-            var v = resultatMensuel(s.r, patientsJour, joursParMois);
-            return '<div class="simulator__tooltip-row">' +
-              '<strong>' + euros.format(v) + '</strong> — <span style="color:' + s.r.color + ';font-weight:700">' + s.r.machine.nomCourt + '</span></div>';
-          }).join("");
-          tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + patientsFmt.format(patientsJour) + ' patients/jour</div>' + lignes;
-          tooltipEl.hidden = false;
-        }
-        hitArea.addEventListener("pointermove", survol);
-        hitArea.addEventListener("pointerleave", function () {
-          crosshair.setAttribute("visibility", "hidden");
-          tooltipEl.hidden = true;
+          // Nom de la machine sous la barre.
+          var labelNom = svgEl("text", { x: centers[i], y: VIEWBOX_H - 24, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
+          labelNom.textContent = c.nom;
+          svg.appendChild(labelNom);
+          var labelParFt = svgEl("text", { x: centers[i], y: VIEWBOX_H - 10, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelParFt.textContent = "par patient (FT)";
+          svg.appendChild(labelParFt);
         });
       }
 
