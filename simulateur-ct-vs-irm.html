@@ -119,6 +119,10 @@
        déclencher le défilement horizontal prévu. Un min-width force le tableau à garder une
        largeur lisible, l'overflow-x:auto bascule alors vraiment en scroll sur mobile. */
     #cvSyntheseTable { min-width: 540px; }
+    /* En-têtes de colonnes des tableaux (.stats-table, partagée avec les autres simulateurs) —
+       trop petits et trop clairs pour être lisibles confortablement (demande de Cédric le
+       05/09/2026) : agrandis et foncés, override local à cette page uniquement. */
+    .stats-table th { font-size: .78rem; color: var(--ink-soft); }
     /* Interlignes du formulaire de gauche resserrés au maximum (demande de Cédric le
        05/09/2026) — .field/.simulator__machine-box/.simulator__field-group sont des classes
        partagées avec les autres simulateurs (styles.css) : override local à cette page
@@ -1423,8 +1427,8 @@
           var ecart7ans = lignesSynthese[meilleur.slot].resultat7ans - lignesSynthese[pire.slot].resultat7ans;
           heroEl.innerHTML =
             "<table style=\"width:100%;border-collapse:collapse;font-size:.8rem\">" +
-            "<tr><th style=\"text-align:left;padding:.1rem .5rem .25rem 0;font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75\">Machine</th>" +
-            "<th style=\"text-align:left;padding:.1rem 0 .25rem;font-size:.62rem;letter-spacing:.04em;text-transform:uppercase;opacity:.75\">Point mort</th></tr>" +
+            "<tr><th style=\"text-align:left;padding:.1rem .5rem .25rem 0;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;font-weight:800\">Machine</th>" +
+            "<th style=\"text-align:left;padding:.1rem 0 .25rem;font-size:.72rem;letter-spacing:.03em;text-transform:uppercase;font-weight:800\">Point mort</th></tr>" +
             "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">" + meilleur.machine.nomCourt + "</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(meilleur.pointMortJour) + " patients/jour</td></tr>" +
             "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">" + pire.machine.nomCourt + "</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(pire.pointMortJour) + " patients/jour</td></tr>" +
             "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">Écart</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(ecartPm) + " patient(s)/jour</td></tr>" +
