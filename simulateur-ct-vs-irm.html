@@ -408,6 +408,13 @@
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnEgal">↺ Égaliser les résultats</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnMax">↺ Activité maximale</button>
           </div>
+          <!-- Bouton à bascule, pas un raccourci comme les 5 ci-dessus : change la façon dont
+               les 2 barres sont calculées (activité partagée vs capacité propre à chaque
+               machine), sans déplacer "Votre activité" — demande de Cédric le 05/09/2026. -->
+          <div style="margin-top:.5rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnModeDebit" aria-pressed="false">⇄ Chacune à son débit</button>
+            <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
+          </div>
         </div>
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
@@ -1303,6 +1310,13 @@
       document.getElementById("cvBtnZero").addEventListener("click", function () {
         allerAActivite(0);
       });
+      document.getElementById("cvBtnModeDebit").addEventListener("click", function () {
+        modeChacuneSaCapacite = !modeChacuneSaCapacite;
+        this.classList.toggle("btn--ghost", !modeChacuneSaCapacite);
+        this.setAttribute("aria-pressed", String(modeChacuneSaCapacite));
+        document.getElementById("cvModeDebitTxt").hidden = !modeChacuneSaCapacite;
+        recalculer();
+      });
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
       });
@@ -1414,7 +1428,7 @@
         dessinerRecap(resultats, configs, params);
 
         dessinerLegende(resultats);
-        dessinerRepartition(resultats, lignesSynthese);
+        dessinerRepartition(resultats, configs, lignesSynthese, params);
       }
 
       // ---- Tableau récapitulatif par patient / par an / sur 7 ans, avec écart — même structure
@@ -1653,16 +1667,41 @@
       // combien il vaut (demande de Cédric le 05/09/2026, remplace le graphe précédent jugé
       // "pas très intéressant" en repartant des mêmes données que le tableau "Résultat à
       // votre activité" juste au-dessus).
-      function dessinerRepartition(resultats, lignes) {
+      // Mode "chacune à son propre débit" (bouton à bascule, demande de Cédric le 05/09/2026) :
+      // par défaut, les 2 machines reçoivent le même nombre de patients (le curseur "Votre
+      // activité" partagé) — un scénario où la demande dépasse toujours la capacité, donc le
+      // scanner (plus rapide) est artificiellement freiné au rythme de l'IRM. Ce mode remplace
+      // l'activité partagée par la capacité propre de chaque machine (patients/h × même plage
+      // horaire) : le scanner traite alors plus de patients que l'IRM, ce qui dilue mieux ses
+      // charges fixes et rapproche les 2 résultats — un comparatif moins tranché, plus réaliste
+      // si les 2 machines tournent chacune à plein régime plutôt qu'à activité imposée égale.
+      // N'affecte que ces 2 barres (pas le tableau ni la bannière, qui restent sur l'activité
+      // partagée du curseur, seule référence affichée ailleurs sur la page).
+      var modeChacuneSaCapacite = false;
+      function dessinerRepartition(resultats, configs, lignes, params) {
         svg.innerHTML = "";
 
-        var compos = lignes.map(function (l, i) {
+        var compos = resultats.map(function (r, i) {
+          if (modeChacuneSaCapacite) {
+            var patientsHeure = r.tempsInstallation > 0 ? 60 / r.tempsInstallation : 0;
+            var patientsJourPropre = params.heuresParJour * patientsHeure;
+            var patientsAnnuelsPropre = Math.max(patientsJourPropre * params.joursParMois * 12, 0.0001);
+            var loyerParPatient = (configs[i].loyer * 12) / patientsAnnuelsPropre;
+            var elecParPatient = (r.elecFixe * 12) / patientsAnnuelsPropre + r.elecVariable;
+            var rhParPatient = (r.rh * 12) / patientsAnnuelsPropre;
+            return {
+              recetteTotale: r.recette + r.acte,
+              charges: loyerParPatient + elecParPatient + rhParPatient,
+              resultat: r.recette + r.acte - loyerParPatient - elecParPatient - rhParPatient,
+              color: r.color, nom: r.machine.nomCourt, patientsJour: patientsJourPropre
+            };
+          }
+          var l = lignes[i];
           return {
             recetteTotale: l.recette + l.acte,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
             resultat: l.resultatParPatient,
-            color: resultats[i].color,
-            nom: resultats[i].machine.nomCourt
+            color: r.color, nom: r.machine.nomCourt
           };
         });
 
@@ -1727,10 +1766,17 @@
           labelResultat.textContent = "Résultat : " + eurosCent.format(c.resultat);
           svg.appendChild(labelResultat);
 
-          // Nom de la machine sous la barre.
-          var labelNom = svgEl("text", { x: centers[i], y: VIEWBOX_H - 14, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
+          // Nom de la machine sous la barre — avec son propre débit en mode "chacune à sa
+          // capacité" (les 2 machines ne reçoivent alors plus le même nombre de patients, il
+          // faut le dire explicitement pour ne pas laisser croire à une activité partagée).
+          var labelNom = svgEl("text", { x: centers[i], y: VIEWBOX_H - (modeChacuneSaCapacite ? 22 : 14), "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
           labelNom.textContent = c.nom;
           svg.appendChild(labelNom);
+          if (modeChacuneSaCapacite) {
+            var labelDebit = svgEl("text", { x: centers[i], y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+            labelDebit.textContent = patientsFmt.format(c.patientsJour) + " patients/jour";
+            svg.appendChild(labelDebit);
+          }
         });
       }
 
