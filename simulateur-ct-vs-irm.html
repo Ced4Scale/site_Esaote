@@ -1757,26 +1757,21 @@
             svg.appendChild(labelCharges);
           }
 
-          // Résultat, en gras — le chiffre qui compte. Écrit en blanc à l'intérieur du bloc
-          // coloré quand il est assez haut, sinon au-dessus en couleur (bloc trop fin, ex. proche
-          // du point mort) — demande de Cédric le 05/09/2026. Piège trouvé en testant l'échelle
-          // "7 ans" (gros montants, texte long) : le texte blanc dépassait de la largeur de la
-          // barre et devenait invisible sur le fond blanc de la page — on mesure maintenant sa
-          // largeur réelle (getBBox, seule mesure fiable pour du texte SVG) et on bascule
-          // au-dessus si ça ne rentre pas, plutôt que de se fier à une estimation.
+          // Résultat, en gras, toujours en blanc à l'intérieur du bloc coloré — dans tous les
+          // cas, y compris les gros montants (échelles 1/5/7 ans) qui débordaient encore de la
+          // largeur de la barre et retombaient en couleur au-dessus (demande de Cédric le
+          // 05/09/2026 : "il faut le faire pour tous les cas"). On réduit la taille de police
+          // (mesurée réellement via getBBox, pas une estimation) jusqu'à ce que le texte tienne
+          // dans la largeur de la barre, plutôt que de le déplacer ailleurs.
           var texteResultat = "Résultat : " + fmtMontant(c.resultat);
-          var hauteurResultat = Math.abs(yZero - yResultat);
-          var labelResultat = null;
-          if (hauteurResultat > 26) {
-            labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#fff" });
-            labelResultat.textContent = texteResultat;
-            svg.appendChild(labelResultat);
-            if (labelResultat.getBBox().width > barWidth - 10) { svg.removeChild(labelResultat); labelResultat = null; }
-          }
-          if (!labelResultat) {
-            labelResultat = svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
-            labelResultat.textContent = texteResultat;
-            svg.appendChild(labelResultat);
+          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-weight": "800", fill: "#fff" });
+          labelResultat.setAttribute("font-size", 13);
+          labelResultat.textContent = texteResultat;
+          svg.appendChild(labelResultat);
+          var tailleResultat = 13;
+          while (labelResultat.getBBox().width > barWidth - 10 && tailleResultat > 7) {
+            tailleResultat -= 1;
+            labelResultat.setAttribute("font-size", tailleResultat);
           }
 
           // Nom de la machine sous la barre — avec son propre débit en mode "chacune à sa
