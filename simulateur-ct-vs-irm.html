@@ -1740,8 +1740,18 @@ var svg = document.getElementById("cvChart");
         // (slot 1, toujours le scanner — selectB n'affiche que des modèles CT) uniquement en
         // mode "100% de la capacité" : dans ce mode les 2 machines ne reçoivent plus le même
         // nombre de patients, utile de dire directement combien de plus (demande de Cédric le
-        // 05/09/2026). Absent en mode "Même activité" (l'écart y est toujours nul).
-        var ecartPatientsJour = modeChacuneSaCapacite ? compos[1].patientsJour - compos[0].patientsJour : null;
+        // 05/09/2026). Absent en mode "Même activité" (l'écart y est toujours nul) et en
+        // horizon "1 patient" (pas de notion de nombre de patients sur un seul patient).
+        // Ramené à la même échelle de temps que les montants (an/5 ans/7 ans, demande de
+        // Cédric le 05/09/2026 aussi) : l'écart en patients/jour est constant, seule l'unité
+        // affichée change selon l'échelle choisie.
+        var ECARTS_UNITES = { jour: "patients/jour", an: "patients/an", "5ans": "patients sur 5 ans", "7ans": "patients sur 7 ans" };
+        var ecartPatientsJour = null, ecartUnite = null;
+        if (modeChacuneSaCapacite && horizon.annees !== "patient") {
+          var ecartBase = compos[1].patientsJour - compos[0].patientsJour;
+          ecartPatientsJour = horizon.annees == null ? ecartBase : ecartBase * params.joursParMois * 12 * horizon.annees;
+          ecartUnite = ECARTS_UNITES[horizonBarres];
+        }
 
         compos.forEach(function (c, i) {
           var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
@@ -1781,7 +1791,7 @@ var svg = document.getElementById("cvChart");
           // Écart de patients (mode "100% de la capacité" uniquement), encore au-dessus.
           if (i === 1 && ecartPatientsJour != null) {
             var labelEcart = svgEl("text", { x: centers[i], y: yTop - 10 - (tailleCommune + 6), "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: c.color });
-            labelEcart.textContent = patientsFmt.format(Math.abs(ecartPatientsJour)) + " patients/jour de " + (ecartPatientsJour >= 0 ? "plus" : "moins");
+            labelEcart.textContent = patientsFmt.format(Math.abs(ecartPatientsJour)) + " " + ecartUnite + " de " + (ecartPatientsJour >= 0 ? "plus" : "moins");
             svg.appendChild(labelEcart);
           }
 
