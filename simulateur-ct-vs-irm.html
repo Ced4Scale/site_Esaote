@@ -1395,16 +1395,18 @@
         // signeEcart : +1 pour une ligne de recette (écart positif = avantage IRM), -1 pour une
         // ligne de charge (valA/valB sont des montants positifs affichés avec un "-" ; l'écart
         // doit malgré tout suivre la même convention "positif = avantage IRM", donc on inverse).
-        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold, espaceAvant) {
+        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold, espaceAvant, nowrapLabel) {
           var tr = document.createElement("tr");
           var ecart = signeEcart * (valA - valB);
-          [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte) {
+          [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte, i) {
             var td = document.createElement("td");
             td.innerHTML = texte;
             if (bold) td.style.fontWeight = "700";
             // Ligne vide avant "Résultat / an" (demande de Cédric le 07/09/2026) — un espace
             // top plutôt qu'une vraie ligne vide en plus dans le tableau.
             if (espaceAvant) td.style.paddingTop = "1.6rem";
+            // Libellé forcé sur une seule ligne (demande de Cédric le 07/09/2026).
+            if (nowrapLabel && i === 0) td.style.whiteSpace = "nowrap";
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -1427,7 +1429,7 @@
         });
         tbody.appendChild(trPm);
 
-        ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1, false, true);
+        ligne("Recette moyenne du FT", lignes[0].recette, lignes[1].recette, eurosCent.format, eurosCent.format, 1, false, true, true);
         ligne("Recette moyenne acte intellectuel", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
         ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
