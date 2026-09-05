@@ -1743,35 +1743,32 @@
           // Centré, le texte déborde pour moitié de chaque côté, ce qui tient largement dans la
           // marge laissée par l'écartement des 2 barres (05/09/2026).
 
-          // Recette totale, au-dessus de la barre — taille propre (pas la classe partagée
-          // simulator__axis-label, 7px, jugée trop petite par Cédric le 05/09/2026).
-          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": "13", "font-weight": "700", fill: "#7a776c" });
+          // Les 3 libellés (Recette/Charges/Résultat) de cette barre partagent toujours la même
+          // taille (demande de Cédric le 05/09/2026) — déterminée par celle du Résultat, le plus
+          // contraint puisqu'il doit tenir DANS la largeur de la barre (mesuré via getBBox, pas
+          // une estimation) ; Recette et Charges, moins à l'étroit, s'alignent dessus.
+          var texteResultat = "Résultat : " + fmtMontant(c.resultat);
+          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-weight": "800", fill: "#fff" });
+          labelResultat.setAttribute("font-size", 13);
+          labelResultat.textContent = texteResultat;
+          svg.appendChild(labelResultat);
+          var tailleCommune = 13;
+          while (labelResultat.getBBox().width > barWidth - 10 && tailleCommune > 7) {
+            tailleCommune -= 1;
+            labelResultat.setAttribute("font-size", tailleCommune);
+          }
+
+          // Recette totale, au-dessus de la barre.
+          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
           labelRecette.textContent = "Recette : " + fmtMontant(c.recetteTotale);
           svg.appendChild(labelRecette);
 
           // Charges, centrées dans le bloc gris — seulement s'il est assez haut pour rester
           // lisible, sinon le chiffre reste implicite (recette totale moins résultat).
           if (c.charges > 0 && (yResultat - yTop) > 40) {
-            var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": "9", "font-weight": "700", fill: "#5c5a52" });
+            var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
             labelCharges.textContent = "Charges : " + fmtMontant(c.charges);
             svg.appendChild(labelCharges);
-          }
-
-          // Résultat, en gras, toujours en blanc à l'intérieur du bloc coloré — dans tous les
-          // cas, y compris les gros montants (échelles 1/5/7 ans) qui débordaient encore de la
-          // largeur de la barre et retombaient en couleur au-dessus (demande de Cédric le
-          // 05/09/2026 : "il faut le faire pour tous les cas"). On réduit la taille de police
-          // (mesurée réellement via getBBox, pas une estimation) jusqu'à ce que le texte tienne
-          // dans la largeur de la barre, plutôt que de le déplacer ailleurs.
-          var texteResultat = "Résultat : " + fmtMontant(c.resultat);
-          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-weight": "800", fill: "#fff" });
-          labelResultat.setAttribute("font-size", 13);
-          labelResultat.textContent = texteResultat;
-          svg.appendChild(labelResultat);
-          var tailleResultat = 13;
-          while (labelResultat.getBBox().width > barWidth - 10 && tailleResultat > 7) {
-            tailleResultat -= 1;
-            labelResultat.setAttribute("font-size", tailleResultat);
           }
 
           // Nom de la machine sous la barre — avec son propre débit en mode "chacune à sa
