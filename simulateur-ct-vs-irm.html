@@ -395,8 +395,8 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">D'où vient le résultat, par patient</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Pour chaque patient (un forfait technique), la recette totale (FT + acte intellectuel) se répartit entre les charges (gris) et ce qu'il reste au final (couleur de la machine). À votre activité renseignée plus bas.</p>
+          <h3 style="margin-bottom:.6rem">D'où vient le résultat</h3>
+          <p class="simulator__hint" style="margin:0 0 .6rem">La recette totale (FT + acte intellectuel) se répartit entre les charges (gris) et ce qu'il reste au final (couleur de la machine) — à votre activité renseignée plus bas, ramenée à l'échelle de temps choisie ci-dessous.</p>
           <div class="simulator__legend" id="cvLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
@@ -411,6 +411,16 @@
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnPmB">↺ Point mort <span id="cvBtnPmBNom"></span></button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnEgal">↺ Égaliser les résultats</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnMax">↺ Activité maximale</button>
+          </div>
+          <!-- Échelle de temps des 2 barres — 4 boutons exclusifs (un seul actif à la fois),
+               demande de Cédric le 05/09/2026 : au lieu de rester bloqué sur le résultat par
+               patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
+               (mêmes horizons que le tableau "Résultat à votre activité" juste au-dessus). -->
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+            <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true">Par jour</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false">1 an</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon5Ans" aria-pressed="false">5 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon7Ans" aria-pressed="false">7 ans</button>
           </div>
           <!-- Paire de boutons exclusifs (pas des raccourcis comme les 5 ci-dessus) : changent
                la façon dont les 2 barres sont calculées (activité partagée vs capacité propre à
@@ -1332,6 +1342,31 @@
       }
       document.getElementById("cvBtnModeActivite").addEventListener("click", function () { choisirModeActivite(false); });
       document.getElementById("cvBtnModeDebit").addEventListener("click", function () { choisirModeActivite(true); });
+
+      // Échelle de temps des 2 barres — 4 boutons exclusifs (demande de Cédric le 05/09/2026) :
+      // "jour" (l'activité du jour telle quelle), "an"/"5ans"/"7ans" (mêmes multiplicateurs que
+      // les lignes "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus — 5 ans ajouté ici
+      // uniquement pour ce graphe, absent du tableau).
+      var horizonBarres = "jour";
+      // "annees" null = pas d'annualisation, on garde juste l'activité du jour telle quelle.
+      var HORIZONS = {
+        jour: { boutonId: "cvBtnHorizonJour", annees: null },
+        an: { boutonId: "cvBtnHorizon1An", annees: 1 },
+        "5ans": { boutonId: "cvBtnHorizon5Ans", annees: 5 },
+        "7ans": { boutonId: "cvBtnHorizon7Ans", annees: 7 }
+      };
+      function choisirHorizon(cle) {
+        horizonBarres = cle;
+        Object.keys(HORIZONS).forEach(function (k) {
+          var btn = document.getElementById(HORIZONS[k].boutonId);
+          btn.classList.toggle("btn--ghost", k !== cle);
+          btn.setAttribute("aria-pressed", String(k === cle));
+        });
+        recalculer();
+      }
+      Object.keys(HORIZONS).forEach(function (k) {
+        document.getElementById(HORIZONS[k].boutonId).addEventListener("click", function () { choisirHorizon(k); });
+      });
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
       });
@@ -1716,9 +1751,23 @@
             recetteTotale: l.recette + l.acte,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
             resultat: l.resultatParPatient,
-            color: r.color, nom: r.machine.nomCourt
+            color: r.color, nom: r.machine.nomCourt, patientsJour: params.activitePatientsJour
           };
         });
+
+        // Passe les 3 montants par patient à l'échelle de temps choisie (jour/1 an/5 ans/7 ans) —
+        // demande de Cédric le 05/09/2026. "jour" = patients du jour tels quels, les autres =
+        // patients/jour × jours d'activité par an × nombre d'années (même base que "Résultat /
+        // an" et "Résultat / 7 ans" du tableau au-dessus).
+        var horizon = HORIZONS[horizonBarres];
+        compos.forEach(function (c) {
+          var mult = horizon.annees == null ? c.patientsJour : c.patientsJour * params.joursParMois * 12 * horizon.annees;
+          c.recetteTotale *= mult; c.charges *= mult; c.resultat *= mult;
+        });
+        // Montants toujours arrondis à l'euro ici (euros.format), comme "Résultat / an" et
+        // "Résultat / 7 ans" dans le tableau au-dessus — les cents n'ont plus de sens une fois
+        // sorti de l'échelle "par patient".
+        var fmtMontant = euros.format;
 
         var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
         var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
@@ -1732,7 +1781,7 @@
           var y = yAt(val);
           svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: y, y2: y, class: "simulator__gridline" }));
           var labelY = svgEl("text", { x: PAD.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
-          labelY.textContent = eurosCent.format(val);
+          labelY.textContent = fmtMontant(val);
           svg.appendChild(labelY);
         }
         svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
@@ -1766,27 +1815,38 @@
           // Recette totale, au-dessus de la barre — taille propre (pas la classe partagée
           // simulator__axis-label, 7px, jugée trop petite par Cédric le 05/09/2026).
           var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": "13", fill: "#7a776c" });
-          labelRecette.textContent = "Recette : " + eurosCent.format(c.recetteTotale);
+          labelRecette.textContent = "Recette : " + fmtMontant(c.recetteTotale);
           svg.appendChild(labelRecette);
 
           // Charges, centrées dans le bloc gris — seulement s'il est assez haut pour rester
           // lisible, sinon le chiffre reste implicite (recette totale moins résultat).
           if (c.charges > 0 && (yResultat - yTop) > 40) {
             var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": "9", fill: "#5c5a52" });
-            labelCharges.textContent = "Charges : " + eurosCent.format(c.charges);
+            labelCharges.textContent = "Charges : " + fmtMontant(c.charges);
             svg.appendChild(labelCharges);
           }
 
-          // Résultat, juste au-dessus du bloc coloré, en gras — le chiffre qui compte.
-          // Le bloc coloré étant assez haut, le libellé s'écrit dedans, en blanc — sinon (bloc
-          // trop fin, ex. proche du point mort) il reste au-dessus, en couleur, comme avant
-          // (demande de Cédric le 05/09/2026 : mal placé quand la barre est haute).
+          // Résultat, en gras — le chiffre qui compte. Écrit en blanc à l'intérieur du bloc
+          // coloré quand il est assez haut, sinon au-dessus en couleur (bloc trop fin, ex. proche
+          // du point mort) — demande de Cédric le 05/09/2026. Piège trouvé en testant l'échelle
+          // "7 ans" (gros montants, texte long) : le texte blanc dépassait de la largeur de la
+          // barre et devenait invisible sur le fond blanc de la page — on mesure maintenant sa
+          // largeur réelle (getBBox, seule mesure fiable pour du texte SVG) et on bascule
+          // au-dessus si ça ne rentre pas, plutôt que de se fier à une estimation.
+          var texteResultat = "Résultat : " + fmtMontant(c.resultat);
           var hauteurResultat = Math.abs(yZero - yResultat);
-          var labelResultat = hauteurResultat > 26
-            ? svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#fff" })
-            : svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
-          labelResultat.textContent = "Résultat : " + eurosCent.format(c.resultat);
-          svg.appendChild(labelResultat);
+          var labelResultat = null;
+          if (hauteurResultat > 26) {
+            labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#fff" });
+            labelResultat.textContent = texteResultat;
+            svg.appendChild(labelResultat);
+            if (labelResultat.getBBox().width > barWidth - 10) { svg.removeChild(labelResultat); labelResultat = null; }
+          }
+          if (!labelResultat) {
+            labelResultat = svgEl("text", { x: centers[i], y: Math.min(yZero, yResultat) - 6, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: c.resultat >= 0 ? c.color : "#c0392b" });
+            labelResultat.textContent = texteResultat;
+            svg.appendChild(labelResultat);
+          }
 
           // Nom de la machine sous la barre — avec son propre débit en mode "chacune à sa
           // capacité" (les 2 machines ne reçoivent alors plus le même nombre de patients, il
