@@ -1380,13 +1380,16 @@
         // signeEcart : +1 pour une ligne de recette (écart positif = avantage IRM), -1 pour une
         // ligne de charge (valA/valB sont des montants positifs affichés avec un "-" ; l'écart
         // doit malgré tout suivre la même convention "positif = avantage IRM", donc on inverse).
-        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold) {
+        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold, espaceAvant) {
           var tr = document.createElement("tr");
           var ecart = signeEcart * (valA - valB);
           [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte) {
             var td = document.createElement("td");
             td.innerHTML = texte;
             if (bold) td.style.fontWeight = "700";
+            // Ligne vide avant "Résultat / an" (demande de Cédric le 07/09/2026) — un espace
+            // top plutôt qu'une vraie ligne vide en plus dans le tableau.
+            if (espaceAvant) td.style.paddingTop = "1.6rem";
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -1412,7 +1415,7 @@
         ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Personnel MERM", lignes[0].rhParPatient, lignes[1].rhParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Résultat", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
-        ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true);
+        ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true, true);
         ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
         return lignes;
       }
