@@ -43,11 +43,17 @@
     #cvHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
     #cvHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
     #cvHypOverlay .modal__scroll { height: 100%; }
-    /* Colonne étroite du formulaire (~250px) : le tableau "Votre activité" a
-       besoin d'un padding resserré (pas juste une police réduite, qui ne
-       change rien au padding fixé en rem par .stats-table) pour tenir sur une
-       seule ligne par entrée sans dépasser — demandé par Cédric le 05/09/2026. */
-    #cvActiviteTable td { padding: .3rem .3rem .3rem 0; }
+    /* Colonne de formulaire élargie à 350px (desktop seulement, la règle mobile
+       "1 colonne" de styles.css reste intacte car cette règle ne s'applique
+       qu'au-dessus de 780px) — les 300px partagés avec les autres simulateurs
+       ne laissaient pas assez de place pour que "Paramètres communs", "Nombre
+       de MERM en poste" et "Nombre de patients par heure" tiennent sur une
+       seule ligne (ils repassaient à la ligne). Demande de Cédric le
+       05/09/2026 ; scoping voir skill ced4scale-simulateur-web (redéfinir une
+       règle avec variante @media). */
+    @media (min-width: 781px) {
+      .simulator__layout { grid-template-columns: 350px minmax(0, 1fr); }
+    }
     /* Curseur sous "Résultat à votre activité" (motif repris de
        simulateur-bascule-oscan.html, .bascule-range) — change directement le
        nombre de patients par jour ou par an, selon la bascule choisie dans la
@@ -113,11 +119,6 @@
               <input type="number" id="cvActivite" value="15" min="0" step="0.5" />
               <span>patients</span>
             </div>
-          </div>
-          <div style="overflow-x:auto; margin:.4rem 0 0">
-            <table class="stats-table" id="cvActiviteTable" style="max-width:420px; white-space:nowrap; font-size:.78rem">
-              <tbody id="cvActiviteTableBody"></tbody>
-            </table>
           </div>
           <p class="simulator__warning" id="cvCapaciteWarning" hidden></p>
         </div>
@@ -755,10 +756,6 @@
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
-        var modeActiviteCourant = document.querySelector('input[name="cvActiviteMode"]:checked').value;
-        var activiteEquivalenteTxt = modeActiviteCourant === "jour"
-          ? "≈ " + patientsFmt.format(params.activitePatientsJour * params.joursParMois * 12) + "/an"
-          : "≈ " + patientsFmt.format(params.activitePatientsJour) + "/jour";
 
         var configs = [
           { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: minutesDepuisPatientsHeure(installA.value) },
@@ -776,14 +773,6 @@
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("cvCapaciteWarning"),
           [document.getElementById("cvActivite"), document.getElementById("cvHeures")]);
-
-        var lignesResultatActivite = resultats.map(function (r) {
-          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
-          return "<tr><td style=\"color:" + r.color + "\"><strong>" + r.machine.nomCourt + "</strong></td><td>" + (res >= 0 ? "+" : "") + euros.format(res) + "</td></tr>";
-        }).join("");
-        document.getElementById("cvActiviteTableBody").innerHTML =
-          "<tr><td>Équivalent</td><td>" + activiteEquivalenteTxt + "</td></tr>" +
-          lignesResultatActivite;
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
 
