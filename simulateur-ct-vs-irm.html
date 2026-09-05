@@ -408,11 +408,15 @@
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnEgal">↺ Égaliser les résultats</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnMax">↺ Activité maximale</button>
           </div>
-          <!-- Bouton à bascule, pas un raccourci comme les 5 ci-dessus : change la façon dont
-               les 2 barres sont calculées (activité partagée vs capacité propre à chaque
-               machine), sans déplacer "Votre activité" — demande de Cédric le 05/09/2026. -->
+          <!-- Paire de boutons exclusifs (pas des raccourcis comme les 5 ci-dessus) : changent
+               la façon dont les 2 barres sont calculées (activité partagée vs capacité propre à
+               chaque machine), sans déplacer "Votre activité" — demande de Cédric le 05/09/2026,
+               reformulée en 2 boutons mutuellement exclusifs le même jour. -->
           <div style="margin-top:.5rem">
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnModeDebit" aria-pressed="false">⇄ Chacune à son débit</button>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+              <button type="button" class="btn btn--sm" id="cvBtnModeActivite" aria-pressed="true">Même activité</button>
+              <button type="button" class="btn btn--sm btn--ghost" id="cvBtnModeDebit" aria-pressed="false">100% de la capacité</button>
+            </div>
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
           </div>
         </div>
@@ -1310,13 +1314,20 @@
       document.getElementById("cvBtnZero").addEventListener("click", function () {
         allerAActivite(0);
       });
-      document.getElementById("cvBtnModeDebit").addEventListener("click", function () {
-        modeChacuneSaCapacite = !modeChacuneSaCapacite;
-        this.classList.toggle("btn--ghost", !modeChacuneSaCapacite);
-        this.setAttribute("aria-pressed", String(modeChacuneSaCapacite));
-        document.getElementById("cvModeDebitTxt").hidden = !modeChacuneSaCapacite;
+      // Paire de boutons exclusifs "Même activité" / "100% de la capacité" (demande de Cédric
+      // le 05/09/2026) : celui sur lequel on clique passe en couleur pleine, l'autre repasse en
+      // contour — jamais les deux en même temps.
+      function choisirModeActivite(capacitePropre) {
+        modeChacuneSaCapacite = capacitePropre;
+        document.getElementById("cvBtnModeActivite").classList.toggle("btn--ghost", capacitePropre);
+        document.getElementById("cvBtnModeActivite").setAttribute("aria-pressed", String(!capacitePropre));
+        document.getElementById("cvBtnModeDebit").classList.toggle("btn--ghost", !capacitePropre);
+        document.getElementById("cvBtnModeDebit").setAttribute("aria-pressed", String(capacitePropre));
+        document.getElementById("cvModeDebitTxt").hidden = !capacitePropre;
         recalculer();
-      });
+      }
+      document.getElementById("cvBtnModeActivite").addEventListener("click", function () { choisirModeActivite(false); });
+      document.getElementById("cvBtnModeDebit").addEventListener("click", function () { choisirModeActivite(true); });
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
       });
