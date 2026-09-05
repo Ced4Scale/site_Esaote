@@ -1736,6 +1736,13 @@ var svg = document.getElementById("cvChart");
         }, 16);
         svg.removeChild(mesure);
 
+        // Écart de patients entre les 2 machines, affiché au-dessus de la barre du scanner
+        // (slot 1, toujours le scanner — selectB n'affiche que des modèles CT) uniquement en
+        // mode "100% de la capacité" : dans ce mode les 2 machines ne reçoivent plus le même
+        // nombre de patients, utile de dire directement combien de plus (demande de Cédric le
+        // 05/09/2026). Absent en mode "Même activité" (l'écart y est toujours nul).
+        var ecartPatientsJour = modeChacuneSaCapacite ? compos[1].patientsJour - compos[0].patientsJour : null;
+
         compos.forEach(function (c, i) {
           var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
           var yZero = yAt(0), yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
@@ -1770,6 +1777,13 @@ var svg = document.getElementById("cvChart");
           var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
           labelRecette.textContent = "Recette : " + fmtMontant(c.recetteTotale);
           svg.appendChild(labelRecette);
+
+          // Écart de patients (mode "100% de la capacité" uniquement), encore au-dessus.
+          if (i === 1 && ecartPatientsJour != null) {
+            var labelEcart = svgEl("text", { x: centers[i], y: yTop - 10 - (tailleCommune + 6), "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: c.color });
+            labelEcart.textContent = patientsFmt.format(Math.abs(ecartPatientsJour)) + " patients/jour de " + (ecartPatientsJour >= 0 ? "plus" : "moins");
+            svg.appendChild(labelEcart);
+          }
 
           // Charges, centrées dans le bloc gris — seulement s'il est assez haut pour rester
           // lisible, sinon le chiffre reste implicite (recette totale moins résultat).
