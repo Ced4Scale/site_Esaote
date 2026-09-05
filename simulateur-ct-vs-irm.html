@@ -1282,6 +1282,22 @@
           ? Math.round(patientsJourCible * 2) / 2
           : Math.round(patientsJourCible * joursParMois * 12);
         recalculer();
+        afficherTooltipActivite();
+      }
+      // Affiche le cadre noir des valeurs (normalement réservé au survol du graphe) pile sur
+      // le repère "Votre activité", pour confirmer sans avoir à passer la souris dessus
+      // (demande de Cédric le 05/09/2026, suite aux 3 boutons de raccourci ci-dessus).
+      function afficherTooltipActivite() {
+        if (!derniers) return;
+        var patientsJour = derniers.params.activitePatientsJour;
+        var joursParMois = derniers.params.joursParMois;
+        var lignes = derniers.resultats.map(function (r) {
+          var v = resultatMensuel(r, patientsJour, joursParMois);
+          return '<div class="simulator__tooltip-row">' +
+            '<strong>' + euros.format(v) + '</strong> — <span style="color:' + r.color + ';font-weight:700">' + r.machine.nomCourt + '</span></div>';
+        }).join("");
+        tooltipEl.innerHTML = '<div class="simulator__tooltip-title">' + patientsFmt.format(patientsJour) + ' patients/jour</div>' + lignes;
+        tooltipEl.hidden = false;
       }
       document.getElementById("cvBtnPmA").addEventListener("click", function () {
         if (derniers) allerAActivite(derniers.resultats[0].pointMortJour);
