@@ -896,14 +896,12 @@
       // 05/09/2026 ; converti en minutes en interne partout où le calcul en a besoin.
       function reinitialiserInstall(select, input) {
         var machine = machineParKey(select.value);
-        // Pour les IRM Esaote, valeur de base fixée à 3 patients/h par Cédric le
-        // 05/09/2026 (repère générique volontairement identique sur les 4 modèles,
-        // plutôt que la conversion du temps de prise en charge partagé dans
-        // assets/machines-energie-data.js, qui lui reste inchangé et sert aussi aux
-        // autres simulateurs) — reste éditable ensuite.
-        if (machine.type !== "ct") { input.value = 3; return; }
-        var minutes = machine.dureeTotalePriseEnChargeMinutes;
-        input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+        // Valeur de base fixée par Cédric (3 patients/h pour l'IRM le 05/09/2026, 5 pour le
+        // scanner le 05/09/2026) — repère générique volontairement identique sur les modèles
+        // d'un même type, plutôt que la conversion du temps de prise en charge partagé dans
+        // assets/machines-energie-data.js, qui lui reste inchangé et sert aussi aux autres
+        // simulateurs — reste éditable ensuite.
+        input.value = machine.type !== "ct" ? 3 : 5;
       }
       var installA = document.getElementById("cvInstallA"), installB = document.getElementById("cvInstallB");
       reinitialiserInstall(selectA, installA);
