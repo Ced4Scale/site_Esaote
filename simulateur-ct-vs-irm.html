@@ -1747,12 +1747,17 @@
           // taille (demande de Cédric le 05/09/2026) — déterminée par celle du Résultat, le plus
           // contraint puisqu'il doit tenir DANS la largeur de la barre (mesuré via getBBox, pas
           // une estimation) ; Recette et Charges, moins à l'étroit, s'alignent dessus.
+          // Taille optimisée dans les 2 sens (pas seulement réduite depuis une valeur fixe) —
+          // voir le skill ced4scale-simulateur-web, "Optimiser la taille de police d'un texte
+          // contraint" : on part du maximum lisible (16) et on ne descend que si besoin, pour
+          // qu'un résultat court (ex. "819 €") profite de toute la place disponible au lieu de
+          // rester bridé à une taille pensée pour le cas le plus défavorable.
           var texteResultat = "Résultat : " + fmtMontant(c.resultat);
           var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-weight": "800", fill: "#fff" });
-          labelResultat.setAttribute("font-size", 13);
+          var tailleCommune = 16;
+          labelResultat.setAttribute("font-size", tailleCommune);
           labelResultat.textContent = texteResultat;
           svg.appendChild(labelResultat);
-          var tailleCommune = 13;
           while (labelResultat.getBBox().width > barWidth - 10 && tailleCommune > 7) {
             tailleCommune -= 1;
             labelResultat.setAttribute("font-size", tailleCommune);
