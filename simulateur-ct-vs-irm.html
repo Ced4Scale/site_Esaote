@@ -1763,8 +1763,9 @@
           // Centré, le texte déborde pour moitié de chaque côté, ce qui tient largement dans la
           // marge laissée par l'écartement des 2 barres (05/09/2026).
 
-          // Recette totale, au-dessus de la barre.
-          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          // Recette totale, au-dessus de la barre — taille propre (pas la classe partagée
+          // simulator__axis-label, 7px, jugée trop petite par Cédric le 05/09/2026).
+          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": "13", fill: "#7a776c" });
           labelRecette.textContent = "Recette : " + eurosCent.format(c.recetteTotale);
           svg.appendChild(labelRecette);
 
@@ -1788,7 +1789,7 @@
           labelNom.textContent = c.nom;
           svg.appendChild(labelNom);
           if (modeChacuneSaCapacite) {
-            var labelDebit = svgEl("text", { x: centers[i], y: VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+            var labelDebit = svgEl("text", { x: centers[i], y: VIEWBOX_H - 8, "text-anchor": "middle", "font-size": "13", fill: "#7a776c" });
             labelDebit.textContent = patientsFmt.format(c.patientsJour) + " patients/jour";
             svg.appendChild(labelDebit);
           }
