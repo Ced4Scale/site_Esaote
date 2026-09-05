@@ -395,9 +395,6 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">D'où vient le résultat</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">La recette totale (FT + acte intellectuel) se répartit entre les charges (gris) et ce qu'il reste au final (couleur de la machine) — à votre activité renseignée plus bas, ramenée à l'échelle de temps choisie ci-dessous.</p>
-          <div class="simulator__legend" id="cvLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
           </div>
@@ -1419,7 +1416,6 @@
 
         dessinerRecap(resultats, configs, params);
 
-        dessinerLegende(resultats);
         dessinerRepartition(resultats, configs, lignesSynthese, params);
       }
 
@@ -1602,22 +1598,7 @@
         remplirTableau2Col("cvRecapParamsBody", d.paramsMachines);
       }
 
-      function dessinerLegende(resultats) {
-        var legendEl = document.getElementById("cvLegend");
-        legendEl.innerHTML = "";
-        resultats.forEach(function (r) {
-          var item = document.createElement("span");
-          item.className = "simulator__legend-item";
-          var text = document.createElement("span");
-          text.style.color = r.color;
-          text.style.fontWeight = "700";
-          text.textContent = r.machine.nomCourt;
-          item.appendChild(text);
-          legendEl.appendChild(item);
-        });
-      }
-
-      var svg = document.getElementById("cvChart");
+var svg = document.getElementById("cvChart");
       var SVG_NS = "http://www.w3.org/2000/svg";
       function svgEl(tag, attrs) {
         var el = document.createElementNS(SVG_NS, tag);
