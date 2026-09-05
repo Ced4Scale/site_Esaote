@@ -77,6 +77,19 @@
     }
     .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
     .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
+    /* Champs heure éditables dans le label (demande de Cédric le 06/09/2026) — mêmes
+       dimensions/couleur que le texte qu'ils remplacent, pas l'air d'un champ de formulaire
+       classique (pas de bordure visible tant qu'on n'interagit pas). */
+    .cv-horaire-label { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
+    /* Sélecteur renforcé (label > input, pas juste .cv-horaire-heure-txt) : la règle de base
+       ".field input { width:100% }" (styles.css) a une spécificité plus grande qu'une classe
+       seule et l'emporterait sinon, redonnant au champ heure toute la largeur du panneau. */
+    .cv-horaire-label input.cv-horaire-heure-txt {
+      font: inherit; font-weight: 600; color: var(--ink); border: 1px solid transparent;
+      border-radius: 4px; padding: 0 .1rem; background: transparent; width: 8.5em;
+    }
+    .cv-horaire-label input.cv-horaire-heure-txt:hover,
+    .cv-horaire-label input.cv-horaire-heure-txt:focus { border-color: var(--line-2); background: #fff; }
     /* Encoche de coupure — modèle simplifié du 06/09/2026 : plus une 2ᵉ plage indépendante,
        juste un "trou" blanc dans le remplissage rouge, à la position de la coupure, avec sa
        propre poignée de déplacement (.cv-coupure-handle, un 3ᵉ <input type=range> superposé
@@ -103,8 +116,7 @@
     .simulator__form .simulator__machine-box .field { margin-bottom: .15rem; }
     .simulator__form .simulator__machine-box .field label { margin-bottom: .05rem; }
     .simulator__form .simulator__machine-box .field input,
-    .simulator__form .simulator__machine-box .field select,
-    .simulator__form .simulator__machine-box .simulator__field-suffix { padding-top: .3rem; padding-bottom: .3rem; }
+    .simulator__form .simulator__machine-box .field select { padding-top: .15rem; padding-bottom: .15rem; }
     /* Le vrai frein n'était pas le padding (déjà réduit ci-dessus) mais la hauteur NATIVE
        du contrôle (`<input>`/`<select>`) elle-même — un `<input type="number">` garde une
        hauteur mini d'environ 32px à cause des flèches +/- natives, même à line-height
@@ -115,10 +127,13 @@
     .simulator__form .simulator__machine-box .simulator__field-suffix input,
     .simulator__form .simulator__machine-box .simulator__field-suffix span { line-height: 1.1; }
     .simulator__form .simulator__machine-box .simulator__field-suffix input { height: 1.15rem; }
-    /* <select> a besoin d'un peu plus de place que les <input> pour son texte (rendu natif
-       du contrôle, pas seulement police+ligne) — une hauteur identique le rognait
-       visuellement (texte du modèle coupé en haut). */
-    .simulator__form .simulator__machine-box .field select { height: 1.6rem; padding-top: .15rem; padding-bottom: .15rem; }
+    /* Les 6 cases (Loyer/MERM/Patients-heure × 2 machines) alignées sur la même hauteur que
+       "Modèle" (un <select>, qui a besoin d'un peu plus de marge verticale que les <input>
+       pour son texte — rendu natif du contrôle, pas seulement police+ligne) — demande de
+       Cédric le 06/09/2026 : les 6 cases avaient une hauteur légèrement différente de celle
+       du <select>. Même height + même padding vertical sur les 2. */
+    .simulator__form .simulator__machine-box .field select,
+    .simulator__form .simulator__machine-box .simulator__field-suffix { height: 1.6rem; padding-top: .15rem; padding-bottom: .15rem; box-sizing: border-box; }
     .simulator__form .simulator__machine-box input[type="number"] { -moz-appearance: textfield; }
     .simulator__form .simulator__machine-box input[type="number"]::-webkit-outer-spin-button,
     .simulator__form .simulator__machine-box input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -944,6 +959,12 @@
         if (mm === 60) { mm = 0; hh += 1; }
         return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
       }
+      // Sens inverse — lit un <input type="time"> ("HH:MM") pour piloter le curseur
+      // correspondant (demande de Cédric le 06/09/2026 : pouvoir aussi taper l'heure).
+      function hhmmVersDecimal(hhmm) {
+        var p = hhmm.split(":");
+        return parseInt(p[0], 10) + parseInt(p[1], 10) / 60;
+      }
       function horaireDureeHeures(idDebut, idFin) {
         var d = heureDecimale(idDebut), f = heureDecimale(idFin);
         return f > d ? f - d : 0;
@@ -1037,6 +1058,12 @@
         var debut = document.getElementById(idDebut), fin = document.getElementById(idFin);
         var fill = document.getElementById(idFill), label = document.getElementById(idLabel);
         var min = parseFloat(debut.min), max = parseFloat(debut.max);
+        // 2 champs "heure" éditables au clavier, en plus du glisser-déposer (demande de
+        // Cédric le 06/09/2026) — construits une fois dans le label (en bas à gauche de la
+        // ligne de temps), synchronisés dans les 2 sens avec les poignées du curseur.
+        label.innerHTML = '<input type="time" class="cv-horaire-heure-txt" aria-label="Heure de début" />' +
+          '<span> – </span><input type="time" class="cv-horaire-heure-txt" aria-label="Heure de fin" />';
+        var txtDebut = label.children[0], txtFin = label.children[2];
         function maj(quiBouge) {
           var d = parseFloat(debut.value), f = parseFloat(fin.value);
           if (d > f - ECART_MIN_H) {
@@ -1047,10 +1074,21 @@
           var pctD = ((d - min) / (max - min)) * 100, pctF = ((f - min) / (max - min)) * 100;
           fill.style.left = pctD + "%";
           fill.style.width = (pctF - pctD) + "%";
-          label.textContent = decimalVersHeureLabel(d) + "–" + decimalVersHeureLabel(f);
+          txtDebut.value = decimalVersHeureLabel(d);
+          txtFin.value = decimalVersHeureLabel(f);
         }
         debut.addEventListener("input", function () { maj(debut); });
         fin.addEventListener("input", function () { maj(fin); });
+        txtDebut.addEventListener("change", function () {
+          if (!this.value) return;
+          debut.value = hhmmVersDecimal(this.value);
+          debut.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+        txtFin.addEventListener("change", function () {
+          if (!this.value) return;
+          fin.value = hhmmVersDecimal(this.value);
+          fin.dispatchEvent(new Event("input", { bubbles: true }));
+        });
         maj();
         return maj;
       }
