@@ -1469,6 +1469,34 @@
       // compte, comme l'ancien champ en heures.
       lierMiroirCoupure("cvCoupureDejeuner", "cvHoraireApresMidi", majHoraireMatin,
         "cvCoupureDejeunerB", "cvHoraireApresMidiB", majHoraireMatinB);
+      // Empêche l'après-midi de commencer avant la fin de la matinée (et réciproquement) —
+      // signalé par Cédric le 06/09/2026 : rien n'empêchait sinon, par ex., une coupure à
+      // 13h suivie d'une reprise à 11h. Les 2 poignées concernées (fin de matinée, début
+      // d'après-midi) sont chacune indépendantes de l'autre PAIRE (qui ne clampe qu'en son
+      // sein, matin avec matin / après-midi avec après-midi) — ce garde-fou clampe entre les
+      // 2 paires. Appliqué aux 2 côtés (canonique + miroir) à chaque poignée concernée.
+      function limiterChevauchementCoupure(quiBouge) {
+        var fin1 = document.getElementById("cvHeureFin1"), fin1B = document.getElementById("cvHeureFin1B");
+        var debut2 = document.getElementById("cvHeureDebut2"), debut2B = document.getElementById("cvHeureDebut2B");
+        var f1 = parseFloat(fin1.value), d2 = parseFloat(debut2.value);
+        if (d2 < f1 + ECART_MIN_H) {
+          if (quiBouge === "debut2") {
+            f1 = d2 - ECART_MIN_H;
+            fin1.value = f1; fin1B.value = f1;
+            majHoraireMatin(fin1); majHoraireMatinB(fin1B);
+          } else {
+            d2 = f1 + ECART_MIN_H;
+            debut2.value = d2; debut2B.value = d2;
+            majHoraireApresMidi(debut2); majHoraireApresMidiB(debut2B);
+          }
+        }
+      }
+      ["cvHeureFin1", "cvHeureFin1B"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", function () { limiterChevauchementCoupure("fin1"); });
+      });
+      ["cvHeureDebut2", "cvHeureDebut2B"].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", function () { limiterChevauchementCoupure("debut2"); });
+      });
       ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
         var input = document.getElementById(id);
         input.addEventListener("blur", function () { formaterMilliers(input); });
