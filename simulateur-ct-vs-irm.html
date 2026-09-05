@@ -42,7 +42,7 @@
     /* .simulator__field-suffix pose display:flex sans variante [hidden] (piège déjà connu
        du site, voir skill ced4scale-simulateur-web) — sans cette règle, la 2ᵉ plage horaire
        (après-midi) reste visible même quand "Coupure déjeuner" est décochée. */
-    #cvHoraireApresMidi[hidden] { display: none; }
+    #cvHoraireApresMidi[hidden], #cvHoraireApresMidiB[hidden] { display: none; }
     /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
        sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
        curseur laisse passer le clic vers l'autre en-dessous), motif classique pour simuler
@@ -76,6 +76,11 @@
     }
     .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
     .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
+    /* Matin et après-midi sur une seule ligne, côte à côte, plutôt que l'un sous l'autre —
+       demande de Cédric le 05/09/2026. #cvHoraireApresMidi[hidden] (déjà en place plus haut)
+       reste nécessaire : sans lui .cv-horaire-row (flex) l'afficherait quand même. */
+    .cv-horaire-row { display: flex; gap: 1.2rem; }
+    .cv-horaire-row .cv-horaire-range { flex: 1; min-width: 0; }
     /* Interlignes du formulaire de gauche resserrés au maximum (demande de Cédric le
        05/09/2026) — .field/.simulator__machine-box/.simulator__field-group sont des classes
        partagées avec les autres simulateurs (styles.css) : override local à cette page
@@ -264,6 +269,37 @@
           <!-- Déplacé ici depuis le bloc "Votre activité" (retiré du formulaire le
                05/09/2026) : c'est maintenant le seul endroit où l'activité se règle. -->
           <p class="simulator__warning" id="cvCapaciteWarning" style="margin-top:.6rem" hidden></p>
+          <!-- Copie miroir de la roue crantée "Réglages avancés" (demande de Cédric le
+               05/09/2026) : reste réglable aussi ici, juste sous l'activité, puisque les
+               horaires influent sur la capacité affichée plus haut. Ids suffixés "B",
+               synchronisés dans les 2 sens avec les ids canoniques de la roue crantée
+               (lierMiroirPaire()/lierMiroirCoupure() dans le script). -->
+          <div class="field" style="margin-top:1rem; margin-bottom:0">
+            <label>Horaires d'ouverture</label>
+            <div class="cv-horaire-row">
+              <div class="cv-horaire-range" id="cvHoraireMatinB">
+                <div class="cv-horaire-track-wrap">
+                  <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill1B"></div></div>
+                  <input type="range" id="cvHeureDebut1B" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture" />
+                  <input type="range" id="cvHeureFin1B" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
+                </div>
+                <div class="cv-horaire-label" id="cvHoraireLabel1B"></div>
+              </div>
+              <div class="cv-horaire-range" id="cvHoraireApresMidiB" hidden>
+                <div class="cv-horaire-track-wrap">
+                  <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill2B"></div></div>
+                  <input type="range" id="cvHeureDebut2B" min="6" max="22" step="0.25" value="14" aria-label="Heure de reprise l'après-midi" />
+                  <input type="range" id="cvHeureFin2B" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture l'après-midi" />
+                </div>
+                <div class="cv-horaire-label" id="cvHoraireLabel2B"></div>
+              </div>
+            </div>
+            <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
+              <input type="checkbox" id="cvCoupureDejeunerB" style="width:16px;height:16px;margin:0" />
+              <span>Coupure déjeuner</span>
+            </label>
+            <p class="simulator__hint" id="cvHeuresTotalTxtB" style="margin-top:.5rem"></p>
+          </div>
         </div>
 
         <div class="simulator__chart-card">
@@ -414,25 +450,31 @@
               <span>€ TTC</span>
             </div>
           </div>
+          <!-- Miroir de la copie sous "Résultat à votre activité" (demande de Cédric le
+               05/09/2026, même principe que l'activité elle-même) : les 2 jeux de curseurs
+               (ids canoniques ici, ids suffixés "B" là-bas) sont synchronisés dans les 2 sens
+               par lierMiroirPaire()/lierMiroirCoupure() plus bas dans le script. -->
           <div class="field">
             <label>Horaires d'ouverture</label>
-            <div class="cv-horaire-range" id="cvHoraireMatin">
-              <div class="cv-horaire-track-wrap">
-                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill1"></div></div>
-                <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture" />
-                <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
+            <div class="cv-horaire-row">
+              <div class="cv-horaire-range" id="cvHoraireMatin">
+                <div class="cv-horaire-track-wrap">
+                  <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill1"></div></div>
+                  <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture" />
+                  <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="17" aria-label="Heure de fermeture" />
+                </div>
+                <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
               </div>
-              <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
-            </div>
-            <div class="cv-horaire-range" id="cvHoraireApresMidi" hidden style="margin-top:1rem">
-              <div class="cv-horaire-track-wrap">
-                <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill2"></div></div>
-                <input type="range" id="cvHeureDebut2" min="6" max="22" step="0.25" value="14" aria-label="Heure de reprise l'après-midi" />
-                <input type="range" id="cvHeureFin2" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture l'après-midi" />
+              <div class="cv-horaire-range" id="cvHoraireApresMidi" hidden>
+                <div class="cv-horaire-track-wrap">
+                  <div class="cv-horaire-track"><div class="cv-horaire-fill" id="cvHoraireFill2"></div></div>
+                  <input type="range" id="cvHeureDebut2" min="6" max="22" step="0.25" value="14" aria-label="Heure de reprise l'après-midi" />
+                  <input type="range" id="cvHeureFin2" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture l'après-midi" />
+                </div>
+                <div class="cv-horaire-label" id="cvHoraireLabel2"></div>
               </div>
-              <div class="cv-horaire-label" id="cvHoraireLabel2"></div>
             </div>
-            <label style="display:flex; align-items:center; gap:.5rem; margin-top:1.5rem; margin-bottom:0">
+            <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
               <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
               <span>Coupure déjeuner</span>
             </label>
@@ -790,16 +832,19 @@
       // Pilotage visuel d'un curseur double (2 <input type="range"> superposés, voir CSS) :
       // empêche les 2 poignées de se croiser (écart minimal ECART_MIN_H), met à jour le
       // remplissage rouge entre les 2 poignées et le libellé "hh:mm–hh:mm" en dessous.
+      // `quiBouge` (l'élément DOM déplacé) est passé explicitement plutôt que déduit de
+      // document.activeElement — nécessaire pour la copie miroir plus bas, où la valeur est
+      // recopiée par script (aucun élément n'a le focus au moment du recalcul).
       var ECART_MIN_H = 0.5;
       function wireHoraireRange(idDebut, idFin, idFill, idLabel) {
         var debut = document.getElementById(idDebut), fin = document.getElementById(idFin);
         var fill = document.getElementById(idFill), label = document.getElementById(idLabel);
         var min = parseFloat(debut.min), max = parseFloat(debut.max);
-        function maj() {
+        function maj(quiBouge) {
           var d = parseFloat(debut.value), f = parseFloat(fin.value);
           if (d > f - ECART_MIN_H) {
             // La poignée qui vient de bouger l'emporte, l'autre est repoussée du même écart.
-            if (document.activeElement === fin) { d = f - ECART_MIN_H; debut.value = d; }
+            if (quiBouge === fin) { d = f - ECART_MIN_H; debut.value = d; }
             else { f = d + ECART_MIN_H; fin.value = f; }
           }
           var pctD = ((d - min) / (max - min)) * 100, pctF = ((f - min) / (max - min)) * 100;
@@ -807,10 +852,52 @@
           fill.style.width = (pctF - pctD) + "%";
           label.textContent = decimalVersHeureLabel(d) + "–" + decimalVersHeureLabel(f);
         }
-        debut.addEventListener("input", maj);
-        fin.addEventListener("input", maj);
+        debut.addEventListener("input", function () { maj(debut); });
+        fin.addEventListener("input", function () { maj(fin); });
         maj();
         return maj;
+      }
+      // Miroir bidirectionnel entre la roue crantée et la copie sous "Résultat à votre
+      // activité" (demande de Cédric le 05/09/2026, même principe que le champ Activité) :
+      // déplacer une poignée d'un côté recopie sa valeur de l'autre côté, rafraîchit son
+      // rendu (maj), puis relance le calcul — dans les 2 sens.
+      function lierMiroirPoignee(idA, majA, idB, majB) {
+        var a = document.getElementById(idA), b = document.getElementById(idB);
+        a.addEventListener("input", function () { b.value = a.value; majB(b); recalculer(); });
+        b.addEventListener("input", function () { a.value = b.value; majA(a); recalculer(); });
+      }
+      // Idem pour la case "Coupure déjeuner" : cochée d'un côté, elle se coche aussi de
+      // l'autre, avec le même ajustement de chevauchement et le même affichage/masquage de
+      // la plage après-midi.
+      function lierMiroirCoupure(idCheckA, idApresMidiA, majMatinA, idCheckB, idApresMidiB, majMatinB) {
+        function appliquer(checked, fin1IdA, debut2IdA, fin2IdA, apresMidiElA, majA,
+                            fin1IdB, debut2IdB, fin2IdB, apresMidiElB, majB) {
+          var fin1A = document.getElementById(fin1IdA), fin1B = document.getElementById(fin1IdB);
+          var debut2 = document.getElementById(debut2IdA);
+          if (checked) {
+            if (parseFloat(fin1A.value) >= parseFloat(debut2.value)) { fin1A.value = "12.5"; fin1B.value = "12.5"; }
+          } else {
+            var finApresMidi = document.getElementById(fin2IdA).value;
+            fin1A.value = finApresMidi; fin1B.value = finApresMidi;
+          }
+          majA(); majB();
+          apresMidiElA.hidden = !checked;
+          apresMidiElB.hidden = !checked;
+        }
+        var checkA = document.getElementById(idCheckA), checkB = document.getElementById(idCheckB);
+        var apresMidiA = document.getElementById(idApresMidiA), apresMidiB = document.getElementById(idApresMidiB);
+        checkA.addEventListener("change", function () {
+          checkB.checked = this.checked;
+          appliquer(this.checked, "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2", apresMidiA, majMatinA,
+            "cvHeureFin1B", "cvHeureDebut2B", "cvHeureFin2B", apresMidiB, majMatinB);
+          recalculer();
+        });
+        checkB.addEventListener("change", function () {
+          checkA.checked = this.checked;
+          appliquer(this.checked, "cvHeureFin1B", "cvHeureDebut2B", "cvHeureFin2B", apresMidiB, majMatinB,
+            "cvHeureFin1", "cvHeureDebut2", "cvHeureFin2", apresMidiA, majMatinA);
+          recalculer();
+        });
       }
 
       // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
@@ -925,8 +1012,9 @@
         document.getElementById("cvCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
-        document.getElementById("cvHeuresTotalTxt").textContent =
-          "Soit " + patientsFmt.format(params.heuresParJour) + " h d'ouverture par jour (" + libelleHoraires() + ").";
+        var heuresTotalTxt = "Soit " + patientsFmt.format(params.heuresParJour) + " h d'ouverture par jour (" + libelleHoraires() + ").";
+        document.getElementById("cvHeuresTotalTxt").textContent = heuresTotalTxt;
+        document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
 
         var configs = [
@@ -1288,30 +1376,24 @@
       });
       // Curseurs doubles des 2 plages horaires — pilotage visuel (poignées, remplissage,
       // libellé), indépendant du recalcul du simulateur ci-dessus (les 2 écoutent le même
-      // évènement "input", sans dépendance entre eux).
+      // évènement "input", sans dépendance entre eux). Chaque plage existe en double : la
+      // roue crantée (ids canoniques, lus par le calcul) et la copie miroir sous "Résultat
+      // à votre activité" (ids suffixés "B") — synchronisées dans les 2 sens.
       var majHoraireMatin = wireHoraireRange("cvHeureDebut1", "cvHeureFin1", "cvHoraireFill1", "cvHoraireLabel1");
       var majHoraireApresMidi = wireHoraireRange("cvHeureDebut2", "cvHeureFin2", "cvHoraireFill2", "cvHoraireLabel2");
+      var majHoraireMatinB = wireHoraireRange("cvHeureDebut1B", "cvHeureFin1B", "cvHoraireFill1B", "cvHoraireLabel1B");
+      var majHoraireApresMidiB = wireHoraireRange("cvHeureDebut2B", "cvHeureFin2B", "cvHoraireFill2B", "cvHoraireLabel2B");
+      lierMiroirPoignee("cvHeureDebut1", majHoraireMatin, "cvHeureDebut1B", majHoraireMatinB);
+      lierMiroirPoignee("cvHeureFin1", majHoraireMatin, "cvHeureFin1B", majHoraireMatinB);
+      lierMiroirPoignee("cvHeureDebut2", majHoraireApresMidi, "cvHeureDebut2B", majHoraireApresMidiB);
+      lierMiroirPoignee("cvHeureFin2", majHoraireApresMidi, "cvHeureFin2B", majHoraireApresMidiB);
       // Coupure déjeuner : affiche/masque le 2ᵉ curseur (après-midi) — demande de Cédric le
       // 05/09/2026, curseur(s) affiché(s) sous la case, pas au-dessus. Les horaires eux-mêmes
       // n'ont pas de sens "heure réelle" pour le calcul (pas de tarif électrique heures
       // creuses/pleines dans ce simulateur) : seule la durée totale (amplitudeOuvertureHeures())
       // compte, comme l'ancien champ en heures.
-      document.getElementById("cvCoupureDejeuner").addEventListener("change", function () {
-        var fin1 = document.getElementById("cvHeureFin1"), debut2 = document.getElementById("cvHeureDebut2");
-        if (this.checked) {
-          // Les 2 plages se chevauchaient forcément (l'ancienne plage unique allait jusqu'au
-          // soir) : ramener la fin de matinée à midi et demi par défaut, sauf si elle a déjà
-          // une valeur cohérente (avant le début d'après-midi).
-          if (parseFloat(fin1.value) >= parseFloat(debut2.value)) fin1.value = "12.5";
-        } else {
-          // Redevenir 1 seul curseur en reprenant l'heure de fin d'après-midi, pour ne pas
-          // perdre silencieusement les heures d'ouverture de l'après-midi déjà réglées.
-          fin1.value = document.getElementById("cvHeureFin2").value;
-        }
-        majHoraireMatin();
-        document.getElementById("cvHoraireApresMidi").hidden = !this.checked;
-        recalculer();
-      });
+      lierMiroirCoupure("cvCoupureDejeuner", "cvHoraireApresMidi", majHoraireMatin,
+        "cvCoupureDejeunerB", "cvHoraireApresMidiB", majHoraireMatinB);
       ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
         var input = document.getElementById(id);
         input.addEventListener("blur", function () { formaterMilliers(input); });
