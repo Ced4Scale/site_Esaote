@@ -95,10 +95,42 @@
     .simulator__form .simulator__machine-box-title,
     .simulator__form .simulator__field-group h3 { margin-bottom: .5rem; }
     .simulator__form .simulator__hint { margin-top: .2rem; margin-bottom: 0; }
+    /* Resserré encore une fois, spécifiquement pour "IRM Esaote"/"Scanner (CT)" (demande de
+       Cédric le 06/09/2026, -30% de hauteur) : padding vertical des champs réduit (plus gros
+       levier que les marges), en plus des marges déjà resserrées ci-dessus. */
+    .simulator__form .simulator__machine-box { padding-top: .35rem; padding-bottom: .35rem; }
+    .simulator__form .simulator__machine-box > div:first-child { margin-bottom: .2rem; }
+    .simulator__form .simulator__machine-box .field { margin-bottom: .15rem; }
+    .simulator__form .simulator__machine-box .field label { margin-bottom: .05rem; }
+    .simulator__form .simulator__machine-box .field input,
+    .simulator__form .simulator__machine-box .field select,
+    .simulator__form .simulator__machine-box .simulator__field-suffix { padding-top: .3rem; padding-bottom: .3rem; }
+    /* Le vrai frein n'était pas le padding (déjà réduit ci-dessus) mais la hauteur NATIVE
+       du contrôle (`<input>`/`<select>`) elle-même — un `<input type="number">` garde une
+       hauteur mini d'environ 32px à cause des flèches +/- natives, même à line-height
+       réduite. Retirer ces flèches (jamais utilisées ici, la saisie se fait au clavier ou
+       via les curseurs) libère la place pour une vraie hauteur explicite plus petite. */
+    .simulator__form .simulator__machine-box .field input,
+    .simulator__form .simulator__machine-box .field select,
+    .simulator__form .simulator__machine-box .simulator__field-suffix input,
+    .simulator__form .simulator__machine-box .simulator__field-suffix span { line-height: 1.1; }
+    .simulator__form .simulator__machine-box .simulator__field-suffix input { height: 1.15rem; }
+    /* <select> a besoin d'un peu plus de place que les <input> pour son texte (rendu natif
+       du contrôle, pas seulement police+ligne) — une hauteur identique le rognait
+       visuellement (texte du modèle coupé en haut). */
+    .simulator__form .simulator__machine-box .field select { height: 1.6rem; padding-top: .15rem; padding-bottom: .15rem; }
+    .simulator__form .simulator__machine-box input[type="number"] { -moz-appearance: textfield; }
+    .simulator__form .simulator__machine-box input[type="number"]::-webkit-outer-spin-button,
+    .simulator__form .simulator__machine-box input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     .cv-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
-    #cvHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #cvHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
-    #cvHypOverlay .modal__scroll { height: 100%; }
+    /* Les 3 panneaux "Réglages avancés" (principal + les 2 roues par machine) ancrés à
+       gauche, sans fond assombri — demande de Cédric le 06/09/2026 : les 2 roues par
+       machine utilisaient le gabarit modal par défaut (centré), incohérent avec le panneau
+       principal déjà ancré à gauche depuis le 04/09/2026 (voir skill
+       ced4scale-simulateur-web, "panneau ancré à gauche"). */
+    #cvHypOverlay, #cvHypOverlayA, #cvHypOverlayB { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #cvHypOverlay .modal, #cvHypOverlayA .modal, #cvHypOverlayB .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #cvHypOverlay .modal__scroll, #cvHypOverlayA .modal__scroll, #cvHypOverlayB .modal__scroll { height: 100%; }
     /* Colonne de formulaire élargie à 350px (desktop seulement, la règle mobile
        "1 colonne" de styles.css reste intacte car cette règle ne s'applique
        qu'au-dessus de 780px) — les 300px partagés avec les autres simulateurs
@@ -117,7 +149,11 @@
        `ajusterSliderActivite()`), pas fixes, pour rester cohérentes que l'on
        raisonne en jour ou en an. */
     .cv-activite-slider { display: flex; align-items: center; gap: .8rem; margin-top: 1rem; }
-    .cv-activite-slider input[type=range] { flex: 1; accent-color: var(--red); }
+    /* Piste fine (comme les curseurs d'horaires) plutôt que la grosse barre grise native —
+       demande de Cédric le 06/09/2026 ("la barre grise ... est à effacer"). */
+    .cv-activite-slider input[type=range] { flex: 1; accent-color: var(--red); height: 4px; }
+    .cv-activite-slider input[type=range]::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; }
+    .cv-activite-slider input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; }
     .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
     .cv-activite-slider-equiv { font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: .1rem; }
   </style>
@@ -469,6 +505,7 @@
               </div>
               <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
             </div>
+            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.5rem"></p>
             <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
               <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
               <span>Y a-t-il une coupure dans la journée ?</span>
@@ -480,7 +517,6 @@
                 <span>heures</span>
               </div>
             </div>
-            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin-top:.5rem"></p>
           </div>
           <!-- Remplace l'ancien champ "Jours d'ouverture par mois" (saisi à la main) —
                demande de Cédric le 05/09/2026 : le nombre de jours/mois est maintenant
