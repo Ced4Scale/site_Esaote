@@ -1476,7 +1476,9 @@
         }
         // Point mort : plus bas = meilleur (comme une charge), d'où l'écart inversé (B - A).
         var pmA = resultats[0].pointMortJour, pmB = resultats[1].pointMortJour;
-        function fmtPatientsJour(v) { return isFinite(v) ? patientsFmt.format(v) + " patients/jour" : "jamais atteint"; }
+        // "pat./j" (pas "patients/jour" en toutes lettres) pour tenir sur une seule ligne dans
+        // la colonne, même motif que l'écart juste en dessous (demande de Cédric le 05/09/2026).
+        function fmtPatientsJour(v) { return isFinite(v) ? patientsFmt.format(v) + " pat./j" : "jamais atteint"; }
         var trPm = document.createElement("tr");
         trPm.style.fontWeight = "700";
         // Libellé et unité de l'écart raccourcis (demande de Cédric le 07/09/2026, tenir sur
