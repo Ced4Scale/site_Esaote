@@ -781,6 +781,10 @@
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Tarif moyen du forfait technique selon le volume</summary>
           <p class="simulator__hint">Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils).</p>
+          <div style="overflow-x:auto">
+            <svg id="cvFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour l'IRM Esaote et le scanner"></svg>
+          </div>
+          <p class="simulator__hint">Traits pointillés : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</p>
           <div class="cv-ftmoy-slider">
             <div class="cv-ftmoy-track-wrap">
               <div class="cv-ftmoy-track"><div class="cv-ftmoy-fill" id="cvFtMoyFill"></div></div>
@@ -1242,7 +1246,6 @@
         });
         majFtMoyen();
       }
-      afficherSeuilsBareme();
 
       // ---- Tarif moyen du forfait technique selon le volume (demande de Cédric le
       // 06/09/2026) — moyenne PONDÉRÉE sur les tranches du barème dégressif, pas le
@@ -1262,6 +1265,87 @@
         });
         return total / n;
       }
+      // ---- Graphe "Tarif moyen selon le volume" — 2 courbes (IRM Esaote / Scanner CT)
+      // + les seuils du barème en pointillé (demande de Cédric le 06/09/2026, au-dessus
+      // du curseur). Constantes dédiées (FT_MOY_*) plutôt que PAD/VIEWBOX_H/etc. déjà
+      // utilisées par le graphe de composition plus bas dans le fichier — pas de
+      // dépendance à NICE_STEPS/niceCeil (définis plus loin dans le script, var non
+      // encore assignée au moment du tout 1er appel via afficherSeuilsBareme() ci-dessus).
+      var FT_MOY_PAD = { left: 62, right: 16, top: 20, bottom: 34 };
+      var FT_MOY_VIEWBOX_H = 300;
+      var FT_MOY_PLOT_W = 640 - FT_MOY_PAD.left - FT_MOY_PAD.right;
+      var FT_MOY_PLOT_H = FT_MOY_VIEWBOX_H - FT_MOY_PAD.top - FT_MOY_PAD.bottom;
+      var FT_MOY_X_MAX = 15000; // même plage que le curseur cvFtMoySlider (0 à 15.000)
+      function arrondiSup5(v) { return Math.ceil(v / 5) * 5; }
+      function dessinerGrapheFtMoyen(trIrm, trCt) {
+        var svg = document.getElementById("cvFtMoyChart");
+        svg.innerHTML = "";
+
+        var NB_PAS = 100;
+        function serie(tranches) {
+          var pts = [];
+          for (var i = 0; i <= NB_PAS; i++) pts.push(tarifMoyenPourVolume(tranches, (FT_MOY_X_MAX * i) / NB_PAS));
+          return pts;
+        }
+        var serieIrm = serie(trIrm), serieCt = serie(trCt);
+
+        // Le point le plus haut de chaque courbe est toujours le tarif plein (N→0) — la
+        // moyenne pondérée ne peut jamais dépasser le tarif de la 1ʳᵉ tranche.
+        var yMax = arrondiSup5(Math.max(trIrm[0].montant, trCt[0].montant) * 1.05);
+        var yMin = 0;
+        function xAt(n) { return FT_MOY_PAD.left + (FT_MOY_PLOT_W * n) / FT_MOY_X_MAX; }
+        function yAt(v) { return FT_MOY_PAD.top + FT_MOY_PLOT_H - (FT_MOY_PLOT_H * (v - yMin)) / (yMax - yMin); }
+
+        for (var g = 0; g <= 4; g++) {
+          var val = yMin + ((yMax - yMin) * g) / 4;
+          var y = yAt(val);
+          svg.appendChild(svgEl("line", { x1: FT_MOY_PAD.left, x2: 640 - FT_MOY_PAD.right, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = svgEl("text", { x: FT_MOY_PAD.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = eurosCent.format(val);
+          svg.appendChild(labelY);
+        }
+        for (var p = 0; p <= 4; p++) {
+          var xv = (FT_MOY_X_MAX * p) / 4;
+          var lx = svgEl("text", { x: xAt(xv), y: FT_MOY_VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          lx.textContent = seuilsEntiers.format(xv) + (p === 4 ? " pat./an" : "");
+          svg.appendChild(lx);
+        }
+
+        // Seuils du barème en pointillé, colorés par machine (REF/SEUIL1/SEUIL2 — pas la
+        // dernière tranche "au-delà", qui n'a pas de seuil de fin).
+        function traceSeuils(tranches, couleur) {
+          tranches.forEach(function (t, i) {
+            if (i === tranches.length - 1 || t.fin == null || t.fin > FT_MOY_X_MAX) return;
+            var x = xAt(t.fin);
+            svg.appendChild(svgEl("line", {
+              x1: x, x2: x, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H,
+              stroke: couleur, "stroke-width": "1.2", "stroke-dasharray": "4,3", opacity: "0.55"
+            }));
+          });
+        }
+        traceSeuils(trIrm, SLOT_COLORS[0]);
+        traceSeuils(trCt, SLOT_COLORS[1]);
+
+        [[serieIrm, SLOT_COLORS[0]], [serieCt, SLOT_COLORS[1]]].forEach(function (s) {
+          var points = s[0].map(function (v, i) { return xAt((FT_MOY_X_MAX * i) / NB_PAS) + "," + yAt(v); }).join(" ");
+          svg.appendChild(svgEl("polyline", { points: points, fill: "none", stroke: s[1], "stroke-width": "2.4", "stroke-linejoin": "round", "stroke-linecap": "round" }));
+        });
+
+        // Repère vertical = volume actuellement choisi sur le curseur juste en dessous.
+        var nActuel = Math.max(0, Math.min(FT_MOY_X_MAX, parseFloat(document.getElementById("cvFtMoySlider").value) || 0));
+        var xActuel = xAt(nActuel);
+        svg.appendChild(svgEl("line", { id: "cvFtMoyMarker", x1: xActuel, x2: xActuel, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H, stroke: "#8a8578", "stroke-width": "1.2" }));
+
+        // Nom de chaque courbe écrit dans sa couleur à son extrémité droite (identifier
+        // une courbe par son nom coloré, pas par une légende séparée — convention du site).
+        var labelIrm = svgEl("text", { x: 640 - FT_MOY_PAD.right - 4, y: yAt(serieIrm[NB_PAS]) - 7, "text-anchor": "end", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[0] });
+        labelIrm.textContent = "IRM Esaote";
+        svg.appendChild(labelIrm);
+        var labelCt = svgEl("text", { x: 640 - FT_MOY_PAD.right - 4, y: yAt(serieCt[NB_PAS]) + 15, "text-anchor": "end", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[1] });
+        labelCt.textContent = "Scanner (CT)";
+        svg.appendChild(labelCt);
+      }
+
       function majFtMoyen() {
         var dateIso = dateSelect.value;
         var zone = document.getElementById("cvZone").value;
@@ -1275,8 +1359,17 @@
         var slider = document.getElementById("cvFtMoySlider");
         var pct = (n - +slider.min) / (+slider.max - +slider.min) * 100;
         document.getElementById("cvFtMoyFill").style.width = pct + "%";
+        dessinerGrapheFtMoyen(trIrm, trCt);
       }
       document.getElementById("cvFtMoySlider").addEventListener("input", majFtMoyen);
+      // Appel initial déplacé ici (après les déclarations FT_MOY_*/majFtMoyen/
+      // dessinerGrapheFtMoyen ci-dessus) — afficherSeuilsBareme() appelle majFtMoyen()
+      // en son sein, qui a besoin de ces fonctions/constantes déjà assignées ; les
+      // appeler avant leur définition textuelle plantait au tout 1er rendu
+      // ("Cannot read properties of undefined (reading 'top')", FT_MOY_PAD encore
+      // undefined — même piège que NICE_STEPS documenté plus haut, volontairement
+      // évité pour lui mais reproduit ici avec mes propres constantes).
+      afficherSeuilsBareme();
 
       // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
       // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
