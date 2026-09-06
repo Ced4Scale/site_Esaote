@@ -1972,10 +1972,13 @@ var svg = document.getElementById("cvChart");
             group.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.texte, "stroke-width": "1.2" }));
             var cosA = Math.cos(midAngle);
             var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+            // Libellé + montant sur une seule ligne (demande de Cédric le 07/09/2026,
+            // "comme il y a de la place autour des camemberts") — tenait sur 2 lignes
+            // (tspans empilés) depuis le départ, plus nécessaire une fois l'écart entre
+            // les 2 rangées de camemberts agrandi.
             var lx3 = cx + rayon * 1.24 * Math.cos(midAngle), ly3 = cy + rayon * 1.24 * Math.sin(midAngle);
-            var label = svgEl("text", { x: lx3, y: ly3, "text-anchor": anchor, "font-size": "9", "font-weight": "700", fill: p.texte });
-            var t1 = svgEl("tspan", { x: lx3, dy: "0" }); t1.textContent = p.label; label.appendChild(t1);
-            var t2 = svgEl("tspan", { x: lx3, dy: "11" }); t2.textContent = fmtMontant(part); label.appendChild(t2);
+            var label = svgEl("text", { x: lx3, y: ly3 + 3, "text-anchor": anchor, "font-size": "9", "font-weight": "700", fill: p.texte });
+            label.textContent = p.label + " : " + fmtMontant(part);
             group.appendChild(label);
             startAngle = endAngle;
           });
