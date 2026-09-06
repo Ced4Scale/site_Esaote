@@ -300,6 +300,15 @@
        marquée + léger soulèvement (`translateY`) au survol, aplatie (`translateY`
        inversé + ombre réduite) au clic — donne l'impression d'un bouton qu'on enfonce. */
     .cv-btn-row .btn {
+      /* `.btn` (styles.css) est en display:flex avec `text-align:center` mais SANS
+         `justify-content` — sur une ligne de texte unique ça ne centre rien : text-align
+         ne joue que sur le contenu inline À L'INTÉRIEUR d'une ligne, jamais sur la
+         position d'un enfant flex. Invisible tant que le bouton fait à peu près la
+         largeur de son texte, mais dès qu'il devient plus large (largeur commune par
+         famille, ou flex:1 en plein écran), le texte reste collé à gauche au lieu de se
+         centrer. Repéré le 07/09/2026 par Cédric — justify-content:center posé ici,
+         scopé à .cv-btn-row pour ne pas toucher le reste du site. */
+      justify-content: center;
       border-width: 0; border-radius: 999px; box-shadow: 0 3px 0 rgba(0,0,0,.09), 0 4px 10px rgba(0,0,0,.08);
       transition: transform .12s ease, box-shadow .12s ease, background .15s ease, color .15s ease;
     }
