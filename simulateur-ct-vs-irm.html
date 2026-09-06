@@ -201,6 +201,13 @@
        mobile (déjà 1 colonne) ; en desktop il faut aussi repasser la grille à 1 colonne,
        sinon .simulator__form masqué laisse un vide de 350px inutilisé à gauche. */
     .simulator__layout.cv-panel-hidden .simulator__form { display: none; }
+    /* #cvBtnShowPanel a la classe .btn (display:inline-flex, styles.css) — cette règle
+       gagne sur le [hidden] natif du navigateur à spécificité égale (piège déjà connu du
+       site, voir skill ced4scale-simulateur-web) : sans cette ligne, le bouton "Afficher
+       les paramètres" restait visible en PERMANENCE, avant même le premier clic sur ⏴
+       (repéré le 07/09/2026 en testant réellement sur mobile, `hidden` valait bien true
+       en JS mais `display` calculé restait "inline-flex"). */
+    #cvBtnShowPanel[hidden] { display: none; }
     @media (min-width: 781px) {
       .simulator__layout.cv-panel-hidden { grid-template-columns: 1fr; }
     }
@@ -271,6 +278,20 @@
     .cv-btn-ai:hover { background: #b8e4cc; border-color: #b8e4cc; }
     .cv-btn-ai.btn--ghost { --btn-bg: transparent; --btn-fg: #3d8560; --btn-bd: #b8e4cc; }
     .cv-btn-ai.btn--ghost:hover { --btn-fg: #1f6b47; background: #eefaf3; border-color: #b8e4cc; }
+    /* Mémoires de simulation (demande de Cédric le 07/09/2026) — 4ᵉ famille pastel
+       (violet, couleur déjà utilisée pour le bord de "Paramètres communs" sur cette
+       page). Un emplacement REMPLI perd .btn--ghost (fond violet plein) comme les autres
+       familles ; la petite croix "×" pour vider n'apparaît qu'à ce moment-là (JS). */
+    .cv-memoire-slot { display: inline-flex; align-items: center; gap: .2rem; }
+    .cv-btn-memoire { --btn-bg: #ded4f2; --btn-fg: #4a3a78; --btn-bd: #ded4f2; }
+    .cv-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
+    .cv-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
+    .cv-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
+    .cv-memoire-clear {
+      border: 0; background: transparent; color: #9a8fc2; font-size: 1rem; line-height: 1;
+      width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
+    }
+    .cv-memoire-clear:hover { background: #f4f0fb; color: #4a3a78; }
     /* Répartition des 2 rangées de boutons sous le graphe de la marge gauche à la marge
        droite (demande de Cédric le 07/09/2026) — plutôt que collés à gauche avec un
        espace fixe entre eux. Réservé au desktop (>780px, même seuil que le reste du
@@ -559,6 +580,28 @@
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeSansAITxt" hidden>Recette de l'acte intellectuel du radiologue retirée des 2 barres — ne montre plus que la recette du forfait technique.</p>
           </div>
+          <!-- Mémoires de simulation (demande de Cédric le 07/09/2026) : jusqu'à 3
+               emplacements. Cliquer sur un emplacement VIDE y enregistre les paramètres
+               actuels (Paramètres communs + IRM Esaote + Scanner CT — pas l'activité ni
+               l'échelle de temps, qui restent partagées) ; cliquer sur un emplacement
+               REMPLI les rappelle dans le formulaire. Le petit "×" vide l'emplacement pour
+               pouvoir l'enregistrer à nouveau. Mémoire 1 sert de référence dans le tableau
+               d'écarts du PDF envoyé par e-mail (voir genererPdfBase64). -->
+          <div class="cv-btn-row" style="margin-top:.5rem">
+            <span class="cv-memoire-slot" data-slot="0">
+              <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire1Clear" hidden aria-label="Effacer la mémoire 1" title="Effacer la mémoire 1">×</button>
+            </span>
+            <span class="cv-memoire-slot" data-slot="1">
+              <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire2" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire2Clear" hidden aria-label="Effacer la mémoire 2" title="Effacer la mémoire 2">×</button>
+            </span>
+            <span class="cv-memoire-slot" data-slot="2">
+              <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire3" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire3Clear" hidden aria-label="Effacer la mémoire 3" title="Effacer la mémoire 3">×</button>
+            </span>
+          </div>
+          <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt">Enregistrez jusqu'à 3 simulations pour les comparer dans le PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</p>
         </div>
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
@@ -2326,6 +2369,139 @@ var svg = document.getElementById("cvChart");
         });
       }
 
+      // ---- Mémoires de simulation (demande de Cédric le 07/09/2026) ----
+      // Jusqu'à 3 emplacements, chacun une PHOTO complète des paramètres "Paramètres
+      // communs" + "IRM Esaote" + "Scanner (CT)" — jamais l'activité ni l'échelle de
+      // temps du graphe, qui restent partagées (voir la note dans le HTML). Chaque champ
+      // porte son événement de restauration (input/change, selon ce que le reste du
+      // script écoute déjà) et un indicateur "comparer" (false pour les champs purement
+      // visuels — la position de l'encoche de coupure — qui n'ont pas de sens seuls dans
+      // le tableau d'écarts du PDF).
+      var CV_MEMOIRE_FIELDS = [
+        { id: "cvDate", evt: "change", label: "Date de forfait technique", type: "select" },
+        { id: "cvZone", evt: "change", label: "Zone géographique", type: "select" },
+        { id: "cvKwh", evt: "input", label: "Coût du kWh", type: "kwh" },
+        { id: "cvHeureDebut1", evt: "input", label: "Heure d'ouverture (semaine)", type: "heure" },
+        { id: "cvHeureFin1", evt: "input", label: "Heure de fermeture (semaine)", type: "heure" },
+        { id: "cvCoupureDejeuner", evt: "change", label: "Coupure déjeuner (semaine)", type: "checkbox" },
+        { id: "cvCoupureDuree", evt: "input", label: "Durée de la coupure (semaine)", suffixe: " h" },
+        { id: "cvCoupurePosition", evt: "input", comparer: false },
+        { id: "cvOuvertSamedi", evt: "change", label: "Ouvert le samedi", type: "checkbox" },
+        { id: "cvHeureDebutSamedi", evt: "input", label: "Heure d'ouverture (samedi)", type: "heure" },
+        { id: "cvHeureFinSamedi", evt: "input", label: "Heure de fermeture (samedi)", type: "heure" },
+        { id: "cvCoupureSamedi", evt: "change", label: "Coupure le samedi", type: "checkbox" },
+        { id: "cvCoupureDureeSamedi", evt: "input", label: "Durée de la coupure (samedi)", suffixe: " h" },
+        { id: "cvCoupurePositionSamedi", evt: "input", comparer: false },
+        { id: "cvOuvertDimanche", evt: "change", label: "Ouvert le dimanche", type: "checkbox" },
+        { id: "cvHeureDebutDimanche", evt: "input", label: "Heure d'ouverture (dimanche)", type: "heure" },
+        { id: "cvHeureFinDimanche", evt: "input", label: "Heure de fermeture (dimanche)", type: "heure" },
+        { id: "cvCoupureDimanche", evt: "change", label: "Coupure le dimanche", type: "checkbox" },
+        { id: "cvCoupureDureeDimanche", evt: "input", label: "Durée de la coupure (dimanche)", suffixe: " h" },
+        { id: "cvCoupurePositionDimanche", evt: "input", comparer: false },
+        { id: "cvNetMerm", evt: "input", label: "Salaire MERM net avant impôt", type: "montant" },
+        // IRM Esaote — cvMachineA en premier (reinitialise loyer/MERM/débit à son
+        // changement, voir restaurerParametres() plus bas qui le rejoue avant le reste).
+        { id: "cvMachineA", evt: "change", label: "Modèle IRM Esaote", type: "select" },
+        { id: "cvLoyerA", evt: "input", label: "Loyer de l'IRM", type: "montant" },
+        { id: "cvMermA", evt: "input", label: "Nombre de MERM (IRM)" },
+        { id: "cvInstallA", evt: "input", label: "Patients par heure (IRM)" },
+        // Scanner (CT) — cvMachineB en premier, même raison.
+        { id: "cvMachineB", evt: "change", label: "Modèle Scanner", type: "select" },
+        { id: "cvLoyerB", evt: "input", label: "Loyer du scanner", type: "montant" },
+        { id: "cvMermB", evt: "input", label: "Nombre de MERM (scanner)" },
+        { id: "cvInstallB", evt: "input", label: "Patients par heure (scanner)" },
+        { id: "cvMultiRegionB", evt: "input", label: "% de patients hors zone (scanner)", suffixe: " %" },
+        { id: "cvScannerCoupureNuit", evt: "change", label: "Coupure du scanner la nuit", type: "checkbox" },
+        { id: "cvScannerDelaiAllumage", evt: "input", label: "Délai d'allumage (scanner)", suffixe: " min" },
+        { id: "cvScannerDelaiExtinction", evt: "input", label: "Délai d'extinction (scanner)", suffixe: " min" }
+      ];
+
+      function capturerParametres() {
+        var etat = {};
+        CV_MEMOIRE_FIELDS.forEach(function (f) {
+          var el = document.getElementById(f.id);
+          if (!el) return;
+          var valeur = f.type === "checkbox" ? el.checked : el.value;
+          var texte;
+          if (f.type === "select") texte = el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : String(valeur);
+          else if (f.type === "checkbox") texte = valeur ? "Oui" : "Non";
+          else if (f.type === "heure") texte = decimalVersHeureLabel(parseFloat(valeur) || 0);
+          else if (f.type === "kwh") texte = eurosCent.format(parseFloat(valeur) || 0);
+          else if (f.type === "montant") texte = euros.format(valeurMilliers({ value: valeur }));
+          else texte = String(valeur) + (f.suffixe || "");
+          etat[f.id] = { valeur: valeur, texte: texte };
+        });
+        return etat;
+      }
+
+      // Restaure une photo enregistrée dans le formulaire — en 2 passes : d'abord les
+      // sélecteurs de machine (qui réinitialisent loyer/MERM/débit à leurs valeurs par
+      // défaut au changement), puis tous les autres champs, qui écrasent ces valeurs par
+      // défaut avec celles réellement enregistrées. Chaque champ redéclenche l'événement
+      // déjà écouté ailleurs dans le script (recalculer(), miroirs d'horaires...) — aucune
+      // logique de calcul dupliquée ici.
+      function definirChamp(f, valeur) {
+        var el = document.getElementById(f.id);
+        if (!el) return;
+        if (f.type === "checkbox") {
+          if (el.checked === valeur) return;
+          el.checked = valeur;
+        } else {
+          el.value = valeur;
+        }
+        el.dispatchEvent(new Event(f.evt, { bubbles: true }));
+      }
+      function restaurerParametres(etat) {
+        ["cvMachineA", "cvMachineB"].forEach(function (id) {
+          var f = CV_MEMOIRE_FIELDS.filter(function (x) { return x.id === id; })[0];
+          if (f && etat[id]) definirChamp(f, etat[id].valeur);
+        });
+        CV_MEMOIRE_FIELDS.forEach(function (f) {
+          if (f.id === "cvMachineA" || f.id === "cvMachineB") return;
+          if (etat[f.id] === undefined) return;
+          definirChamp(f, etat[f.id].valeur);
+        });
+        // Les champs "montant" (loyer, salaire) ne se reformatent qu'au blur (voir
+        // formaterMilliers) — jamais déclenché par un Event synthétique, donc appelé ici
+        // explicitement pour un affichage cohérent immédiatement après restauration.
+        ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
+          formaterMilliers(document.getElementById(id));
+        });
+        recalculer();
+      }
+
+      // 3 emplacements ; null = vide. cvBtnMemoireN vide -> enregistre, rempli -> rappelle.
+      var memoires = [null, null, null];
+      function majBoutonMemoire(i) {
+        var btn = document.getElementById("cvBtnMemoire" + (i + 1));
+        var clear = document.getElementById("cvBtnMemoire" + (i + 1) + "Clear");
+        var rempli = memoires[i] !== null;
+        btn.classList.toggle("btn--ghost", !rempli);
+        btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
+        btn.title = rempli
+          ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
+          : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
+        btn.setAttribute("data-tip", btn.title);
+        clear.hidden = !rempli;
+      }
+      [0, 1, 2].forEach(function (i) {
+        document.getElementById("cvBtnMemoire" + (i + 1)).addEventListener("click", function () {
+          if (memoires[i] === null) {
+            memoires[i] = capturerParametres();
+            document.getElementById("cvMemoireTxt").textContent = "Mémoire " + (i + 1) + " enregistrée.";
+          } else {
+            restaurerParametres(memoires[i]);
+            document.getElementById("cvMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
+          }
+          majBoutonMemoire(i);
+        });
+        document.getElementById("cvBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
+          memoires[i] = null;
+          majBoutonMemoire(i);
+          document.getElementById("cvMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
+        });
+      });
+
       var CED4SCALE_CONTACT = {
         nom: "Cédric Goillot",
         role: "Consultant — Esaote Medical France",
@@ -2413,6 +2589,60 @@ var svg = document.getElementById("cvChart");
           drawRow("Point mort", derniers.resultats.map(function (r) {
             return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./jour" : "jamais atteint";
           }), true);
+
+          // ---- Tableau d'écarts entre mémoires, sous le graphe (demande de Cédric le
+          // 07/09/2026) — seulement si au moins 2 des 3 mémoires sont enregistrées ;
+          // Mémoire 1 sert de référence (choix validé par Cédric), une seule ligne par
+          // paramètre qui diffère RÉELLEMENT de Mémoire 1 (jamais la liste complète).
+          // Sans au moins 2 mémoires, ce bloc est sauté et le PDF reste identique à avant
+          // cette fonctionnalité.
+          var memoiresPresentes = [1, 2].filter(function (i) { return memoires[i] !== null; });
+          if (memoires[0] !== null && memoiresPresentes.length > 0) {
+            function ensureSpace(neededMm) {
+              if (y + neededMm > 198) { doc.addPage(); y = 20; }
+            }
+            var lignesEcart = CV_MEMOIRE_FIELDS.filter(function (f) {
+              if (f.comparer === false || !f.label) return false;
+              var ref = memoires[0][f.id];
+              return memoiresPresentes.some(function (i) {
+                var v = memoires[i][f.id];
+                return v && (!ref || v.texte !== ref.texte);
+              });
+            });
+            if (lignesEcart.length > 0) {
+              y += 4;
+              ensureSpace(16);
+              doc.setFontSize(11);
+              doc.setFont(undefined, "bold");
+              doc.setTextColor(0);
+              doc.text("Écarts entre les simulations mémorisées (référence : Mémoire 1)", x0, y);
+              y += 7;
+              var colsEcart = [{ label: "Mémoire 1", i: 0 }].concat(memoiresPresentes.map(function (i) { return { label: "Mémoire " + (i + 1), i: i }; }));
+              var labelWEcart = 75, colWEcart = (x0 + labelWidth + colWidth * 2 - x0 - labelWEcart) / colsEcart.length;
+              doc.setFontSize(8);
+              doc.setFont(undefined, "bold");
+              doc.setTextColor(0);
+              var xh = x0 + labelWEcart;
+              doc.text("Paramètre", x0, y);
+              colsEcart.forEach(function (c) { doc.text(c.label, xh, y); xh += colWEcart; });
+              y += 5;
+              doc.setDrawColor(200);
+              doc.line(x0, y - 3.5, x0 + labelWEcart + colWEcart * colsEcart.length, y - 3.5);
+              lignesEcart.forEach(function (f) {
+                ensureSpace(6);
+                doc.setFont(undefined, "normal");
+                doc.setTextColor(60);
+                doc.text(f.label, x0, y);
+                var xr = x0 + labelWEcart;
+                colsEcart.forEach(function (c) {
+                  var v = memoires[c.i][f.id];
+                  doc.text(v ? v.texte : "—", xr, y);
+                  xr += colWEcart;
+                });
+                y += 5.5;
+              });
+            }
+          }
 
           // ---- Page 2 : récapitulatif complet (équipements, FT + acte, paramètres saisis) ----
           doc.addPage();
