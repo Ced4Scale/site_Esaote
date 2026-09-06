@@ -694,9 +694,10 @@
           </div>
           <!-- Mémoires de simulation (demande de Cédric le 07/09/2026) : jusqu'à 3
                emplacements. Cliquer sur un emplacement VIDE y enregistre les paramètres
-               actuels (Paramètres communs + IRM Esaote + Scanner CT — pas l'activité ni
+               actuels (Paramètres communs + IRM Esaote + Scanner CT + le mode d'affichage
+               barres/camembert du graphe depuis le 06/09/2026 — pas l'activité ni
                l'échelle de temps, qui restent partagées) ; cliquer sur un emplacement
-               REMPLI les rappelle dans le formulaire. Le petit "×" vide l'emplacement pour
+               REMPLI les rappelle dans le formulaire. Le cadenas vide l'emplacement pour
                pouvoir l'enregistrer à nouveau. Mémoire 1 sert de référence dans le tableau
                d'écarts du PDF envoyé par e-mail (voir genererPdfBase64). -->
           <div class="cv-btn-row cv-memoire-row">
@@ -2677,6 +2678,11 @@ var svg = document.getElementById("cvChart");
           else texte = String(valeur) + (f.suffixe || "");
           etat[f.id] = { valeur: valeur, texte: texte };
         });
+        // Le graphe barres <-> camembert (demande de Cédric le 06/09/2026, suite) n'est
+        // pas un champ du formulaire mais une simple variable JS (bascule au clic
+        // direct sur le graphe, voir modeCamembert) — capturé à part, hors du mécanisme
+        // CV_MEMOIRE_FIELDS qui suppose un élément DOM avec un événement à redéclencher.
+        etat.__modeCamembert = modeCamembert;
         return etat;
       }
 
@@ -2713,6 +2719,10 @@ var svg = document.getElementById("cvChart");
         ["cvNetMerm", "cvLoyerA", "cvLoyerB"].forEach(function (id) {
           formaterMilliers(document.getElementById(id));
         });
+        // Remet le graphe dans le mode (barres ou camembert) où il était au moment de
+        // l'enregistrement — voir la note dans capturerParametres(). Avant recalculer(),
+        // qui lit modeCamembert pour choisir quoi dessiner.
+        modeCamembert = etat.__modeCamembert === true;
         recalculer();
       }
 
