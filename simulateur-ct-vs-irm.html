@@ -117,9 +117,14 @@
     #cvSyntheseTable.simulator__table--compare3 th:last-child,
     #cvSyntheseTable.simulator__table--compare3 td:last-child { width: 20%; }
     #cvSyntheseTable.simulator__table--compare3 th:first-child,
-    #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 38%; }
+    #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 30%; }
+    /* Colonnes machine élargies (21% -> 25%, demande de Cédric le 07/09/2026) — "Esaote
+       O-scan" en nowrap (voir plus bas) a besoin d'environ 131px, 21% de la largeur
+       d'origine (540px) n'en offrait que 113px. Repris sur le "Recette moyenne acte
+       intellectuel" (1ʳᵉ colonne) et "Écart" (dernière), qui contiennent des libellés/
+       nombres plus courts et supportent très bien de perdre un peu de largeur. */
     #cvSyntheseTable.simulator__table--compare3 th:not(:first-child):not(:last-child),
-    #cvSyntheseTable.simulator__table--compare3 td:not(:first-child):not(:last-child) { width: 21%; }
+    #cvSyntheseTable.simulator__table--compare3 td:not(:first-child):not(:last-child) { width: 25%; }
     /* Piège repéré en vérifiant ce tableau sur mobile étroit (iPhone SE réel, 375px) : le
        conteneur "overflow-x:auto" existait déjà mais ne servait à rien tant que le tableau
        lui-même (table-layout:fixed, width:100%) se contentait de rétrécir à la largeur du
@@ -127,7 +132,20 @@
        débordait par-dessus la colonne voisine (chevauchement illisible), au lieu de
        déclencher le défilement horizontal prévu. Un min-width force le tableau à garder une
        largeur lisible, l'overflow-x:auto bascule alors vraiment en scroll sur mobile. */
-    #cvSyntheseTable { min-width: 540px; }
+    /* Le nom d'une machine (constructeur + modèle, ex. "Esaote O-scan") ne se coupe
+       jamais en 2 lignes (demande de Cédric le 07/09/2026 — "O-scan" se coupait en 2
+       dans ce tableau) : nowrap sur le libellé. Piège rencontré en le posant seul :
+       `table-layout:fixed` (.simulator__table--compare3) donne des colonnes RIGIDES —
+       un nowrap qui ne rentre plus dans sa colonne DÉBORDE PAR-DESSUS la colonne
+       voisine (chevauchement illisible), il ne l'élargit jamais tout seul. Corrigé en 2
+       temps : les colonnes machine élargies (voir plus haut, 21% -> 25%) ET le
+       `min-width` du tableau relevé un peu (540 -> 600px) — élargir seulement le
+       `min-width` sans toucher aux %, essayé en premier, poussait le tableau à 720px de
+       large et le faisait déborder de la carte sur desktop (colonne "Écart" qui sortait
+       du cadre, repéré visuellement) ; combiner les deux corrections modestes évite ce
+       débordement tout en donnant assez de place à "Esaote O-scan"/"Siemens go.Top". */
+    #cvSyntheseTable { min-width: 600px; }
+    #cvSyntheseTable th .simulator__swatch-text { white-space: nowrap; }
     /* En-têtes de colonnes des tableaux (.stats-table, partagée avec les autres simulateurs) —
        trop petits et trop clairs pour être lisibles confortablement (demande de Cédric le
        05/09/2026) : agrandis et foncés, override local à cette page uniquement. */
@@ -210,6 +228,15 @@
     #cvBtnShowPanel[hidden] { display: none; }
     @media (min-width: 781px) {
       .simulator__layout.cv-panel-hidden { grid-template-columns: 1fr; }
+      /* Boutons au choix agrandis en plein écran desktop (demande de Cédric le
+         07/09/2026 : "en mode plein écran, il faut réadapter la taille des boutons") —
+         la colonne de résultats gagne ~350px de large une fois le panneau masqué, les
+         petits boutons .btn--sm d'origine paraissent alors perdus dans l'espace. La
+         largeur commune par famille (JS, egaliserTousLesBoutons()) est recalculée juste
+         après ce changement de taille, sinon elle resterait celle d'avant. */
+      .simulator__layout.cv-panel-hidden .cv-btn-row .btn {
+        font-size: .95rem; padding: .7rem 1.4rem;
+      }
     }
     /* Curseur sous "Résultat à votre activité" (motif repris de
        simulateur-bascule-oscan.html, .bascule-range) — change directement le
@@ -350,10 +377,17 @@
        seul bloc, pas 2 rubans distincts. */
     .cv-ligne-verte td { background: var(--success-bg); color: var(--success-tx); border-bottom-color: var(--success-bg); }
     .cv-ligne-verte td:first-child { color: var(--success-tx); }
-    .cv-ligne-verte--haut td { padding-top: 1rem; }
+    /* Bordure verte tout autour du cadre (demande de Cédric le 07/09/2026 : même style
+       que le cadre bleu "Écart de résultat" au-dessus du graphe) — gauche/droite sur les
+       2 lignes, haut sur la 1ʳᵉ ligne seulement, bas sur la dernière seulement (le
+       "border-collapse" du tableau fusionne la frontière interne entre les 2 lignes avec
+       la couleur déjà posée juste au-dessus, qui reste donc invisible comme avant). */
+    .cv-ligne-verte td:first-child { border-left: 2px solid var(--success-bd); }
+    .cv-ligne-verte td:last-child { border-right: 2px solid var(--success-bd); }
+    .cv-ligne-verte--haut td { padding-top: 1rem; border-top: 2px solid var(--success-bd); }
     .cv-ligne-verte--haut td:first-child { border-top-left-radius: var(--radius); }
     .cv-ligne-verte--haut td:last-child { border-top-right-radius: var(--radius); }
-    .cv-ligne-verte--bas td { padding-bottom: 1rem; }
+    .cv-ligne-verte--bas td { padding-bottom: 1rem; border-bottom: 2px solid var(--success-bd); }
     .cv-ligne-verte--bas td:first-child { border-bottom-left-radius: var(--radius); }
     .cv-ligne-verte--bas td:last-child { border-bottom-right-radius: var(--radius); }
     /* Bascule barres <-> camembert au clic (demande de Cédric le 07/09/2026) — curseur
@@ -2333,6 +2367,31 @@ var svg = document.getElementById("cvChart");
       // donc avec lui, piège vécu le 07/09/2026 : plus aucun moyen de rouvrir une fois
       // masqué) ET cvBtnShowPanel (dans la colonne de résultats, jamais masqué, visible
       // seulement quand le panneau l'est). Une seule fonction centralise l'état des 2.
+      // Largeur commune aux boutons d'une même famille (demande de Cédric le 07/09/2026 :
+      // "les boutons au choix d'une même famille doivent avoir la même dimension") —
+      // mesurée en JS (pas en flex:1, qui imposerait une largeur égale AVANT de savoir si
+      // le texte le plus long y tient, au risque de le faire déborder) : chaque bouton
+      // est d'abord remis à sa largeur naturelle, puis tous reçoivent min-width = la plus
+      // large des largeurs naturelles de la famille. Rejoué à chaque fois qu'un texte de
+      // bouton change (mémoires) ou que l'espace disponible change (panneau masqué/
+      // affiché, voir plus bas).
+      var CV_FAMILLES_BOUTONS = {
+        horizon: ["cvBtnHorizonPatient", "cvBtnHorizonJour", "cvBtnHorizon1An", "cvBtnHorizon5Ans", "cvBtnHorizon7Ans"],
+        activite: ["cvBtnModeActivite", "cvBtnModeDebit"],
+        ai: ["cvBtnAvecAI", "cvBtnSansAI"],
+        memoire: ["cvBtnMemoire1", "cvBtnMemoire2", "cvBtnMemoire3"]
+      };
+      function egaliserLargeurFamille(ids) {
+        var boutons = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
+        if (!boutons.length) return;
+        boutons.forEach(function (b) { b.style.minWidth = ""; });
+        var max = Math.max.apply(null, boutons.map(function (b) { return b.getBoundingClientRect().width; }));
+        boutons.forEach(function (b) { b.style.minWidth = max + "px"; });
+      }
+      function egaliserTousLesBoutons() {
+        Object.keys(CV_FAMILLES_BOUTONS).forEach(function (k) { egaliserLargeurFamille(CV_FAMILLES_BOUTONS[k]); });
+      }
+
       function appliquerVisibilitePanel(masque) {
         document.querySelector(".simulator__layout").classList.toggle("cv-panel-hidden", masque);
         var btnHide = document.getElementById("cvBtnTogglePanel");
@@ -2341,6 +2400,10 @@ var svg = document.getElementById("cvChart");
         btnHide.setAttribute("aria-label", btnHide.title);
         btnHide.setAttribute("aria-pressed", String(masque));
         document.getElementById("cvBtnShowPanel").hidden = !masque;
+        // Boutons plus grands en plein écran desktop (règle CSS .cv-panel-hidden .cv-btn-row
+        // .btn plus haut) — la largeur commune par famille doit être recalculée après coup,
+        // le texte le plus long de chaque famille n'occupant plus la même largeur naturelle.
+        egaliserTousLesBoutons();
       }
       document.getElementById("cvBtnTogglePanel").addEventListener("click", function () {
         appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("cv-panel-hidden"));
@@ -2350,6 +2413,11 @@ var svg = document.getElementById("cvChart");
       });
 
       recalculer();
+      egaliserTousLesBoutons();
+      // Une police web (Montserrat) tout juste chargée peut légèrement changer la largeur
+      // naturelle du texte après la 1ʳᵉ mesure — on rejoue une fois le chargement terminé,
+      // pour ne pas rester sur une largeur calculée avec la police de repli du navigateur.
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(egaliserTousLesBoutons);
 
       document.getElementById("cvClose").addEventListener("click", function () {
         if (document.referrer) history.back(); else window.location.href = "index.html";
@@ -2533,6 +2601,9 @@ var svg = document.getElementById("cvChart");
           : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
         btn.setAttribute("data-tip", btn.title);
         clear.hidden = !rempli;
+        // Le texte change ("Mémoire 1" <-> "✓ Mémoire 1") donc sa largeur naturelle
+        // aussi — la largeur commune à toute la famille "mémoire" doit se recalculer.
+        egaliserLargeurFamille(CV_FAMILLES_BOUTONS.memoire);
       }
       [0, 1, 2].forEach(function (i) {
         document.getElementById("cvBtnMemoire" + (i + 1)).addEventListener("click", function () {
