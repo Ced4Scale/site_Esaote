@@ -341,6 +341,26 @@
       width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
     }
     .cv-memoire-clear:hover { background: #f4f0fb; color: #4a3a78; }
+    /* Onglet mémoire "affiché" (demande de Cédric le 07/09/2026, suite) : lequel des 3
+       emplacements a produit le récapitulatif actuellement visible sous le graphe —
+       distinct de "rempli/vide" (.btn--ghost géré en JS), un anneau en plus. Retiré
+       dès qu'on enregistre/efface/rappelle un AUTRE emplacement (un seul actif à la
+       fois), jamais dès qu'on modifie un champ à la main (la mémoire reste "affichée"
+       tant qu'on n'a pas cliqué un autre onglet). */
+    .cv-btn-memoire.is-affichee { box-shadow: 0 0 0 3px #b8a6e8, 0 2px 0 rgba(0,0,0,.06); }
+    /* Badge "Mémoire X" dans l'intitulé du récapitulatif détaillé — dit explicitement
+       quelle mémoire a produit le contenu affiché en dessous, sans avoir à comparer les
+       chiffres au formulaire. */
+    .cv-recap-badge {
+      display: inline-block; font-size: .68rem; font-weight: 700; vertical-align: middle;
+      background: #ded4f2; color: #4a3a78; border-radius: 999px; padding: .15rem .6rem; margin-left: .5rem;
+    }
+    .cv-recap-badge[hidden] { display: none; }
+    /* Séparation demandée entre les boutons de choix (échelle de temps, activité, AI) et
+       les boutons Mémoire, qui font une tout autre chose (enregistrer/rappeler une
+       simulation entière) — 5 lignes de blanc pour ne plus laisser croire qu'ils
+       appartiennent au même groupe. */
+    .cv-memoire-row { margin-top: 5.6rem; }
     /* Répartition des 2 rangées de boutons sous le graphe de la marge gauche à la marge
        droite (demande de Cédric le 07/09/2026) — plutôt que collés à gauche avec un
        espace fixe entre eux. Réservé au desktop (>780px, même seuil que le reste du
@@ -657,7 +677,7 @@
                REMPLI les rappelle dans le formulaire. Le petit "×" vide l'emplacement pour
                pouvoir l'enregistrer à nouveau. Mémoire 1 sert de référence dans le tableau
                d'écarts du PDF envoyé par e-mail (voir genererPdfBase64). -->
-          <div class="cv-btn-row" style="margin-top:.5rem">
+          <div class="cv-btn-row cv-memoire-row">
             <span class="cv-memoire-slot" data-slot="0">
               <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
               <button type="button" class="cv-memoire-clear" id="cvBtnMemoire1Clear" hidden aria-label="Effacer la mémoire 1" title="Effacer la mémoire 1">×</button>
@@ -693,7 +713,7 @@
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
-          <summary>Voir le récapitulatif détaillé de la simulation</summary>
+          <summary>Voir le récapitulatif détaillé de la simulation <span class="cv-recap-badge" id="cvRecapBadge" hidden></span></summary>
           <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
@@ -2676,6 +2696,23 @@ var svg = document.getElementById("cvChart");
 
       // 3 emplacements ; null = vide. cvBtnMemoireN vide -> enregistre, rempli -> rappelle.
       var memoires = [null, null, null];
+      // Laquelle des 3 a produit le récapitulatif actuellement affiché sous le graphe
+      // (demande de Cédric le 07/09/2026, suite : "que les affichages s'adaptent à
+      // l'onglet mémoire") — null si aucune (état par défaut, ou après une modification
+      // manuelle du formulaire qui s'écarte de toutes les mémoires enregistrées).
+      var memoireAffichee = null;
+      function majIndicateurMemoireAffichee() {
+        [0, 1, 2].forEach(function (i) {
+          document.getElementById("cvBtnMemoire" + (i + 1)).classList.toggle("is-affichee", memoireAffichee === i);
+        });
+        var badge = document.getElementById("cvRecapBadge");
+        if (memoireAffichee === null) {
+          badge.hidden = true;
+        } else {
+          badge.hidden = false;
+          badge.textContent = "Mémoire " + (memoireAffichee + 1);
+        }
+      }
       function majBoutonMemoire(i) {
         var btn = document.getElementById("cvBtnMemoire" + (i + 1));
         var clear = document.getElementById("cvBtnMemoire" + (i + 1) + "Clear");
@@ -2700,11 +2737,17 @@ var svg = document.getElementById("cvChart");
             restaurerParametres(memoires[i]);
             document.getElementById("cvMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
           }
+          // Enregistrer ou rappeler affiche cette mémoire — un seul onglet "affiché" à
+          // la fois, jamais un mode mixte entre 2 emplacements.
+          memoireAffichee = i;
           majBoutonMemoire(i);
+          majIndicateurMemoireAffichee();
         });
         document.getElementById("cvBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
           memoires[i] = null;
+          if (memoireAffichee === i) memoireAffichee = null;
           majBoutonMemoire(i);
+          majIndicateurMemoireAffichee();
           document.getElementById("cvMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
         });
       });
