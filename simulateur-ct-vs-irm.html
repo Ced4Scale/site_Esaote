@@ -1315,8 +1315,17 @@
         }
 
         // Seuils du barème en pointillé, colorés par machine (REF/SEUIL1/SEUIL2 — pas la
-        // dernière tranche "au-delà", qui n'a pas de seuil de fin).
-        function traceSeuils(tranches, couleur) {
+        // dernière tranche "au-delà", qui n'a pas de seuil de fin), avec un petit
+        // libellé vertical en haut de chaque trait (demande de Cédric le 06/09/2026:
+        // "dit si c'est CT ou MR, si c'est seuil 1 ou autre") — sans lui, impossible de
+        // savoir à quelle machine/quel seuil un trait pointillé correspond. Texte tourné
+        // (lecture de haut en bas) pour tenir dans le peu d'espace horizontal entre 2
+        // seuils proches (ex. IRM 8.000 et CT 6.700, à peine 50px d'écart à l'échelle du
+        // graphe) ; décalé à gauche pour l'IRM et à droite pour le scanner, y compris
+        // quand les 2 seuils tombent exactement à la même valeur (ex. IRM 3ᵉ seuil et CT
+        // 2ᵉ seuil, tous deux à 11.000).
+        function traceSeuils(tranches, couleur, nomCourt, decalageX) {
+          var numero = 1;
           tranches.forEach(function (t, i) {
             if (i === tranches.length - 1 || t.fin == null || t.fin > FT_MOY_X_MAX) return;
             var x = xAt(t.fin);
@@ -1324,10 +1333,18 @@
               x1: x, x2: x, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H,
               stroke: couleur, "stroke-width": "1.2", "stroke-dasharray": "4,3", opacity: "0.55"
             }));
+            var lx = x + decalageX, ly = FT_MOY_PAD.top + 3;
+            var label = svgEl("text", {
+              x: lx, y: ly, "font-size": "8", "font-weight": "700", fill: couleur, "text-anchor": "start",
+              transform: "rotate(90 " + lx + " " + ly + ")"
+            });
+            label.textContent = nomCourt + " — seuil " + numero;
+            svg.appendChild(label);
+            numero++;
           });
         }
-        traceSeuils(trIrm, SLOT_COLORS[0]);
-        traceSeuils(trCt, SLOT_COLORS[1]);
+        traceSeuils(trIrm, SLOT_COLORS[0], "IRM", -6);
+        traceSeuils(trCt, SLOT_COLORS[1], "CT", 6);
 
         [[serieIrm, SLOT_COLORS[0]], [serieCt, SLOT_COLORS[1]]].forEach(function (s) {
           var points = s[0].map(function (v, i) { return xAt((FT_MOY_X_MAX * i) / NB_PAS) + "," + yAt(v); }).join(" ");
@@ -1339,12 +1356,13 @@
         var xActuel = xAt(nActuel);
         svg.appendChild(svgEl("line", { id: "cvFtMoyMarker", x1: xActuel, x2: xActuel, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H, stroke: "#8a8578", "stroke-width": "1.2" }));
 
-        // Nom de chaque courbe écrit dans sa couleur à son extrémité droite (identifier
-        // une courbe par son nom coloré, pas par une légende séparée — convention du site).
-        var labelIrm = svgEl("text", { x: 640 - FT_MOY_PAD.right - 4, y: yAt(serieIrm[NB_PAS]) - 7, "text-anchor": "end", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[0] });
+        // Nom de chaque courbe écrit dans sa couleur à son DÉBUT (demande de Cédric le
+        // 06/09/2026 — déplacé depuis l'extrémité droite, où les 2 courbes convergent et
+        // se chevauchaient ; au début, les tarifs pleins sont nettement plus séparés).
+        var labelIrm = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieIrm[0]) - 7, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[0] });
         labelIrm.textContent = "IRM Esaote";
         svg.appendChild(labelIrm);
-        var labelCt = svgEl("text", { x: 640 - FT_MOY_PAD.right - 4, y: yAt(serieCt[NB_PAS]) + 15, "text-anchor": "end", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[1] });
+        var labelCt = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieCt[0]) + 15, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[1] });
         labelCt.textContent = "Scanner (CT)";
         svg.appendChild(labelCt);
       }
