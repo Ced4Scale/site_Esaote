@@ -223,24 +223,36 @@
     .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
     .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
     .cv-activite-slider-equiv { font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: .1rem; }
-    /* Couleur par famille de boutons sous le graphe (demande de Cédric le 07/09/2026) — les
-       3 groupes indépendants (échelle de temps / mode d'activité / mode AI) se ressemblaient
-       tous en rouge (couleur de marque par défaut de .btn), ce qui ne montrait pas qu'ils
-       agissent séparément. L'échelle de temps garde le rouge par défaut (pas de classe) ;
-       les 2 autres groupes ont chacun leur propre couleur, en réutilisant le mécanisme de
-       variables CSS déjà prévu par .btn (--btn-bg/--btn-fg/--btn-bd) — même motif que
-       .btn--ghost/.btn--light dans styles.css, en local à cette page uniquement.
-       :hover est réécrit explicitement (pas juste via les variables) car .btn:hover de
-       styles.css fixe background/border-color en dur sur --red-crimson, qui l'emporterait
-       sinon sur les couleurs de famille. */
-    .cv-btn-activite { --btn-bg: #2a4d78; --btn-bd: #2a4d78; }
-    .cv-btn-activite:hover { background: #1d3a5c; border-color: #1d3a5c; }
-    .cv-btn-activite.btn--ghost { --btn-bg: transparent; --btn-fg: #2a4d78; }
-    .cv-btn-activite.btn--ghost:hover { --btn-fg: #fff; background: #2a4d78; border-color: #2a4d78; }
-    .cv-btn-ai { --btn-bg: #1f7a5c; --btn-bd: #1f7a5c; }
-    .cv-btn-ai:hover { background: #175f47; border-color: #175f47; }
-    .cv-btn-ai.btn--ghost { --btn-bg: transparent; --btn-fg: #1f7a5c; }
-    .cv-btn-ai.btn--ghost:hover { --btn-fg: #fff; background: #1f7a5c; border-color: #1f7a5c; }
+    /* Couleur par famille de boutons sous le graphe (demande de Cédric le 07/09/2026,
+       repassée en pastel + relief le même jour : "couleurs trop classiques", "des formes
+       de 3D ou d'ombre pour les boutons") — les 3 groupes indépendants (échelle de temps
+       / mode d'activité / mode AI) ont chacun leur teinte pastel (rose / bleu / vert),
+       fond plein + texte foncé assorti quand actif, fond blanc + bordure/texte pastel
+       sinon (`.btn--ghost`). Local à cette page uniquement : la couleur de marque rouge
+       vive du site (`.btn` par défaut, CTA "Recevoir ce comparatif") n'est pas touchée —
+       ces règles ne visent que les boutons DANS .cv-btn-row, jamais `.btn` seul.
+       Relief façon "bouton physique" : ombre portée douce à l'état normal, un peu plus
+       marquée + léger soulèvement (`translateY`) au survol, aplatie (`translateY`
+       inversé + ombre réduite) au clic — donne l'impression d'un bouton qu'on enfonce. */
+    .cv-btn-row .btn {
+      border-width: 0; border-radius: 999px; box-shadow: 0 3px 0 rgba(0,0,0,.09), 0 4px 10px rgba(0,0,0,.08);
+      transition: transform .12s ease, box-shadow .12s ease, background .15s ease, color .15s ease;
+    }
+    .cv-btn-row .btn--ghost { border-width: 2px; box-shadow: 0 2px 0 rgba(0,0,0,.05); }
+    .cv-btn-row .btn:hover { transform: translateY(-1px); box-shadow: 0 4px 0 rgba(0,0,0,.1), 0 7px 14px rgba(0,0,0,.1); }
+    .cv-btn-row .btn:active { transform: translateY(1px); box-shadow: 0 1px 0 rgba(0,0,0,.08), 0 2px 5px rgba(0,0,0,.08); }
+    .cv-btn-horizon { --btn-bg: #ffd3d6; --btn-fg: #9c2b34; --btn-bd: #ffd3d6; }
+    .cv-btn-horizon:hover { background: #ffc2c6; border-color: #ffc2c6; }
+    .cv-btn-horizon.btn--ghost { --btn-bg: transparent; --btn-fg: #c05a63; --btn-bd: #ffc2c6; }
+    .cv-btn-horizon.btn--ghost:hover { --btn-fg: #9c2b34; background: #fff0f1; border-color: #ffc2c6; }
+    .cv-btn-activite { --btn-bg: #cfe0f7; --btn-fg: #274a75; --btn-bd: #cfe0f7; }
+    .cv-btn-activite:hover { background: #bcd4f2; border-color: #bcd4f2; }
+    .cv-btn-activite.btn--ghost { --btn-bg: transparent; --btn-fg: #4d6e97; --btn-bd: #bcd4f2; }
+    .cv-btn-activite.btn--ghost:hover { --btn-fg: #274a75; background: #eef4fc; border-color: #bcd4f2; }
+    .cv-btn-ai { --btn-bg: #cdecdc; --btn-fg: #1f6b47; --btn-bd: #cdecdc; }
+    .cv-btn-ai:hover { background: #b8e4cc; border-color: #b8e4cc; }
+    .cv-btn-ai.btn--ghost { --btn-bg: transparent; --btn-fg: #3d8560; --btn-bd: #b8e4cc; }
+    .cv-btn-ai.btn--ghost:hover { --btn-fg: #1f6b47; background: #eefaf3; border-color: #b8e4cc; }
     /* Répartition des 2 rangées de boutons sous le graphe de la marge gauche à la marge
        droite (demande de Cédric le 07/09/2026) — plutôt que collés à gauche avec un
        espace fixe entre eux. Réservé au desktop (>780px, même seuil que le reste du
@@ -490,11 +502,11 @@
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
                (mêmes horizons que le tableau "Résultat à votre activité" juste au-dessus). -->
           <div class="cv-btn-row" style="margin-top:.7rem">
-            <button type="button" class="btn btn--sm btn--ghost cv-tip-left" id="cvBtnHorizonPatient" aria-pressed="false" data-tip="Résultat pour un seul patient, sans tenir compte de votre activité.">1 patient</button>
-            <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true" data-tip="Résultat ramené à votre activité du jour, telle que renseignée plus haut.">Par jour</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false" data-tip="Résultat annualisé sur votre activité du jour.">1 an</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon5Ans" aria-pressed="false" data-tip="Résultat cumulé sur 5 ans, à activité identique.">5 ans</button>
-            <button type="button" class="btn btn--sm btn--ghost cv-tip-right" id="cvBtnHorizon7Ans" aria-pressed="false" data-tip="Résultat cumulé sur 7 ans (durée du loyer), à activité identique.">7 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon cv-tip-left" id="cvBtnHorizonPatient" aria-pressed="false" data-tip="Résultat pour un seul patient, sans tenir compte de votre activité.">1 patient</button>
+            <button type="button" class="btn btn--sm cv-btn-horizon" id="cvBtnHorizonJour" aria-pressed="true" data-tip="Résultat ramené à votre activité du jour, telle que renseignée plus haut.">Par jour</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnHorizon1An" aria-pressed="false" data-tip="Résultat annualisé sur votre activité du jour.">1 an</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnHorizon5Ans" aria-pressed="false" data-tip="Résultat cumulé sur 5 ans, à activité identique.">5 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon cv-tip-right" id="cvBtnHorizon7Ans" aria-pressed="false" data-tip="Résultat cumulé sur 7 ans (durée du loyer), à activité identique.">7 ans</button>
           </div>
           <!-- Paire de boutons exclusifs (pas des raccourcis comme les 5 ci-dessus) : changent
                la façon dont les 2 barres sont calculées (activité partagée vs capacité propre à
