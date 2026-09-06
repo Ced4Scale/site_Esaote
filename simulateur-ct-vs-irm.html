@@ -2683,6 +2683,15 @@ var svg = document.getElementById("cvChart");
         // direct sur le graphe, voir modeCamembert) — capturé à part, hors du mécanisme
         // CV_MEMOIRE_FIELDS qui suppose un élément DOM avec un événement à redéclencher.
         etat.__modeCamembert = modeCamembert;
+        // Les 3 groupes de boutons de choix sous le graphe ("Même activité"/"100% de la
+        // capacité", "Avec AI"/"Sans AI", échelle de temps) sont eux aussi de simples
+        // variables JS pilotées par choisirModeActivite()/choisirModeAI()/choisirHorizon()
+        // — pas des champs du formulaire — oubliés lors du premier passage du 06/09/2026
+        // (repéré par Cédric le 06/09/2026, "les boutons de choix ne reviennent pas à la
+        // bonne place"), corrigés ici sur le même modèle que modeCamembert ci-dessus.
+        etat.__modeChacuneSaCapacite = modeChacuneSaCapacite;
+        etat.__modeSansAI = modeSansAI;
+        etat.__horizonBarres = horizonBarres;
         return etat;
       }
 
@@ -2723,6 +2732,30 @@ var svg = document.getElementById("cvChart");
         // l'enregistrement — voir la note dans capturerParametres(). Avant recalculer(),
         // qui lit modeCamembert pour choisir quoi dessiner.
         modeCamembert = etat.__modeCamembert === true;
+        // Remet aussi les 3 groupes de boutons de choix ET leur couleur (repéré par
+        // Cédric le 06/09/2026, voir la note dans capturerParametres()) — on rejoue la
+        // logique de choisirModeActivite()/choisirModeAI()/choisirHorizon() sans leur
+        // recalculer() propre (un seul recalculer() fait tout à la fin, juste en dessous).
+        modeChacuneSaCapacite = etat.__modeChacuneSaCapacite === true;
+        document.getElementById("cvBtnModeActivite").classList.toggle("btn--ghost", modeChacuneSaCapacite);
+        document.getElementById("cvBtnModeActivite").setAttribute("aria-pressed", String(!modeChacuneSaCapacite));
+        document.getElementById("cvBtnModeDebit").classList.toggle("btn--ghost", !modeChacuneSaCapacite);
+        document.getElementById("cvBtnModeDebit").setAttribute("aria-pressed", String(modeChacuneSaCapacite));
+        document.getElementById("cvModeDebitTxt").hidden = !modeChacuneSaCapacite;
+
+        modeSansAI = etat.__modeSansAI === true;
+        document.getElementById("cvBtnAvecAI").classList.toggle("btn--ghost", modeSansAI);
+        document.getElementById("cvBtnAvecAI").setAttribute("aria-pressed", String(!modeSansAI));
+        document.getElementById("cvBtnSansAI").classList.toggle("btn--ghost", !modeSansAI);
+        document.getElementById("cvBtnSansAI").setAttribute("aria-pressed", String(modeSansAI));
+        document.getElementById("cvModeSansAITxt").hidden = !modeSansAI;
+
+        horizonBarres = HORIZONS[etat.__horizonBarres] ? etat.__horizonBarres : "jour";
+        Object.keys(HORIZONS).forEach(function (k) {
+          var btn = document.getElementById(HORIZONS[k].boutonId);
+          btn.classList.toggle("btn--ghost", k !== horizonBarres);
+          btn.setAttribute("aria-pressed", String(k === horizonBarres));
+        });
         recalculer();
       }
 
