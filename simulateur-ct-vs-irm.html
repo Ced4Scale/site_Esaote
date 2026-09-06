@@ -1410,9 +1410,60 @@
           var padX = 6, padY = 4;
           return { largeur: bbox.width + padX * 2, hauteur: bbox.height + padY * 2, texteHauteur: bbox.height };
         }
-        function dessinerBulle(p, m, decalageY) {
-          var by = Math.max(FT_MOY_PAD.top + m.hauteur / 2 + 1, Math.min(FT_MOY_PAD.top + FT_MOY_PLOT_H - m.hauteur / 2 - 1, p.y + decalageY));
+        // Valeur (donc position Y) de la courbe DE L'AUTRE MACHINE à 3 abscisses
+        // (gauche/centre/droite de la bulle) — sert à vérifier qu'une bulle ne reste
+        // pas traversée par l'autre courbe sur sa LARGEUR, pas seulement à son point
+        // d'ancrage exact. Seulement l'AUTRE courbe, jamais la sienne propre : une bulle
+        // est censée rester tout près de SA courbe (c'est le but du trait qui les
+        // relie) — la comparer aussi à sa propre courbe la faisait fuir inutilement
+        // dès le mode "intérieur" (repéré par un chevauchement des 2 bulles entre elles
+        // sur tout le début de la plage, 0 à ~4.500, en testant systématiquement).
+        function plageCourbeAutreY(tranches, x1, x2) {
+          var ys = [];
+          [x1, (x1 + x2) / 2, x2].forEach(function (x) {
+            var n = Math.max(0, Math.min(FT_MOY_X_MAX, ((x - FT_MOY_PAD.left) / FT_MOY_PLOT_W) * FT_MOY_X_MAX));
+            ys.push(yAt(tarifMoyenPourVolume(tranches, n)));
+          });
+          return { min: Math.min.apply(null, ys), max: Math.max.apply(null, ys) };
+        }
+        function dessinerBulle(p, m, decalageY, trAutre) {
           var bx = Math.max(FT_MOY_PAD.left + m.largeur / 2 + 1, Math.min(640 - FT_MOY_PAD.right - m.largeur / 2 - 1, p.x));
+          // Écarte la bulle par petits pas supplémentaires, dans le même sens que le
+          // décalage de départ, tant qu'une des 2 courbes traverse encore sa largeur —
+          // un simple décalage vertical fixe (±20) ne suffit pas près d'un croisement
+          // de courbes en pente : les 2 lignes restent proches sur toute la largeur de
+          // la bulle, pas seulement pile à son point d'ancrage (demande de Cédric le
+          // 06/09/2026 : "au seuil 3 du CT les bulles ne s'écartent pas des courbes").
+          // Marge généreuse (8px, pas 2-3) — un écart techniquement non nul mais trop
+          // fin (quelques px) reste perçu comme "collé à la courbe" à l'œil, repéré en
+          // testant précisément le cas signalé par Cédric (seuil 3 du CT, ~13.000
+          // patients/an) où un 1er essai à 3px de marge ne se voyait quasiment pas.
+          var sens = decalageY < 0 ? -1 : 1, margeCourbe = 8, by;
+          // Bornes verticales des bulles plus larges que celles du graphe lui-même
+          // (FT_MOY_PAD.top/FT_MOY_PLOT_H) — l'axe Y démarre volontairement au ras du
+          // minimum des courbes (demande de Cédric du 06/09/2026, "enlever le blanc
+          // sous les courbes"), ce qui ne laissait quasiment plus de place en bas pour
+          // écarter une bulle avec la marge ci-dessus : la boucle restait bloquée contre
+          // le bord du graphe sans jamais atteindre la marge voulue. Les bulles peuvent
+          // déborder dans la bande réservée aux repères de l'axe X (34px de marge basse,
+          // FT_MOY_PAD.bottom) sans jamais toucher le texte de ces repères (qui reste
+          // proche du tout dernier px du viewBox).
+          var bulleYMin = FT_MOY_PAD.top + m.hauteur / 2 + 1;
+          var bulleYMax = FT_MOY_VIEWBOX_H - 24 - m.hauteur / 2;
+          // Zone de test resserrée (±10px autour du centre de la bulle, jamais toute sa
+          // largeur) — près d'un coude du barème (changement brusque de pente, ex.
+          // juste après un seuil), tester sur toute la largeur de la bulle fait
+          // grimper en flèche la plage min/max des courbes et déclenche des poussées
+          // démesurées qui finissent par faire se croiser les 2 bulles. Testé sur toute
+          // la plage 0-15.000 tous les 200 patients après ce correctif.
+          var demiZoneTest = Math.min(10, m.largeur / 2);
+          for (var essai = 0; essai < 6; essai++) {
+            by = Math.max(bulleYMin, Math.min(bulleYMax, p.y + decalageY));
+            var plage = plageCourbeAutreY(trAutre, bx - demiZoneTest, bx + demiZoneTest);
+            var chevauche = (by - m.hauteur / 2) < (plage.max + margeCourbe) && (by + m.hauteur / 2) > (plage.min - margeCourbe);
+            if (!chevauche) break;
+            decalageY += sens * 5;
+          }
 
           svg.appendChild(svgEl("line", { x1: p.x, y1: p.y, x2: bx, y2: by, stroke: p.couleur, "stroke-width": "1" }));
           svg.appendChild(svgEl("rect", { x: bx - m.largeur / 2, y: by - m.hauteur / 2, width: m.largeur, height: m.hauteur, rx: 4, fill: p.couleur }));
@@ -1425,6 +1476,10 @@
         var haut = ptIrm.y <= ptCt.y ? ptIrm : ptCt; // point du haut = le plus petit y (SVG : y croît vers le bas)
         var bas = haut === ptIrm ? ptCt : ptIrm;
         var mHaut = haut === ptIrm ? mIrm : mCt, mBas = haut === ptIrm ? mCt : mIrm;
+        // Tranches de l'AUTRE machine que "haut"/"bas" respectivement (voir
+        // plageCourbeAutreY ci-dessus) — jamais les siennes propres.
+        var trAutreHaut = haut === ptIrm ? trCt : trIrm;
+        var trAutreBas = haut === ptIrm ? trIrm : trCt;
 
         // Seuil de bascule : la HAUTEUR TOTALE des 2 bulles (pas leur demi-hauteur —
         // piège vécu ici, un 1er calcul en demi-hauteurs laissait les 2 bulles se
@@ -1437,12 +1492,12 @@
 
         if (placeSuffisantePourInterieur) {
           // Bulles nichées dans l'écart, chacune contre sa propre courbe côté intérieur.
-          dessinerBulle(haut, mHaut, padProprecourbe + mHaut.hauteur / 2);
-          dessinerBulle(bas, mBas, -(padProprecourbe + mBas.hauteur / 2));
+          dessinerBulle(haut, mHaut, padProprecourbe + mHaut.hauteur / 2, trAutreHaut);
+          dessinerBulle(bas, mBas, -(padProprecourbe + mBas.hauteur / 2), trAutreBas);
         } else {
           // Pas assez de place entre les 2 courbes : bulles écartées côté extérieur.
-          dessinerBulle(haut, mHaut, -20);
-          dessinerBulle(bas, mBas, 20);
+          dessinerBulle(haut, mHaut, -20, trAutreHaut);
+          dessinerBulle(bas, mBas, 20, trAutreBas);
         }
 
         // Nom de chaque courbe écrit dans sa couleur à son DÉBUT (demande de Cédric le
