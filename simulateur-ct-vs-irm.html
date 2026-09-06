@@ -2488,7 +2488,13 @@ var svg = document.getElementById("cvChart");
       // Une police web (Montserrat) tout juste chargée peut légèrement changer la largeur
       // naturelle du texte après la 1ʳᵉ mesure — on rejoue une fois le chargement terminé,
       // pour ne pas rester sur une largeur calculée avec la police de repli du navigateur.
-      if (document.fonts && document.fonts.ready) document.fonts.ready.then(egaliserTousLesBoutons);
+      // Même piège pour le cadre vert (voir positionnerCadreVert()) : la police web
+      // (Montserrat) tout juste chargée peut légèrement changer la largeur du tableau
+      // après le calcul initial du cadre — sans ce rappel, le cadre reste figé sur la
+      // largeur mesurée avec la police de repli et se retrouve décalé une fois la vraie
+      // police en place (repéré le 07/09/2026 : "le cadre vert en plein écran est
+      // décalé sur la droite").
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { egaliserTousLesBoutons(); positionnerCadreVert(); });
 
       document.getElementById("cvClose").addEventListener("click", function () {
         if (document.referrer) history.back(); else window.location.href = "index.html";
