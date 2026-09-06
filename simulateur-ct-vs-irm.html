@@ -635,7 +635,7 @@
               <button type="button" class="cv-memoire-clear" id="cvBtnMemoire3Clear" hidden aria-label="Effacer la mémoire 3" title="Effacer la mémoire 3">×</button>
             </span>
           </div>
-          <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt">Enregistrez jusqu'à 3 simulations pour les comparer dans le PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</p>
+          <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt">Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</p>
         </div>
 
         <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</p>
@@ -1960,15 +1960,20 @@ var svg = document.getElementById("cvChart");
       // barres, comme avant.
       function dessinerCamemberts(compos, fmtMontant) {
         var centers = [PAD.left + PLOT_W * 0.27, PAD.left + PLOT_W * 0.73];
-        var rayon = 42;
-        var cyHaut = PAD.top + 76, cyBas = cyHaut + 130;
+        // Écart vertical entre les 2 lignes de camemberts agrandi de 2 lignes de texte
+        // environ (demande de Cédric le 07/09/2026) — rayon légèrement réduit (42 -> 38)
+        // pour faire de la place à ce plus grand espacement sans dépasser la hauteur du
+        // graphe (VIEWBOX_H = 320), et le nom de la machine tout en bas redescendu (314
+        // au lieu de VIEWBOX_H-14) pour garder une marge sous le 2ᵉ camembert.
+        var rayon = 38;
+        var cyHaut = PAD.top + 60, cyBas = cyHaut + 160;
         compos.forEach(function (c, i) {
           var cx = centers[i];
           var group = svgEl("g", { class: "cv-camembert-clic" });
           svg.appendChild(group);
           dessinerUnCamembert(cx, cyHaut, rayon, CV_PARTS_RECETTE, c, c.recette + c.acte, fmtMontant, "Recette", group);
           dessinerUnCamembert(cx, cyBas, rayon, CV_PARTS_CHARGE, c, c.loyer + c.elec + c.rh, fmtMontant, "Charges", group);
-          var labelNom = svgEl("text", { x: cx, y: VIEWBOX_H - 14, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
+          var labelNom = svgEl("text", { x: cx, y: 314, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
           labelNom.textContent = c.nom;
           svg.appendChild(labelNom);
           group.addEventListener("click", function () { modeCamembert = false; recalculer(); });
