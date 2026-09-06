@@ -317,6 +317,9 @@
     .cv-ligne-verte--bas td { padding-bottom: 1rem; }
     .cv-ligne-verte--bas td:first-child { border-bottom-left-radius: var(--radius); }
     .cv-ligne-verte--bas td:last-child { border-bottom-right-radius: var(--radius); }
+    /* Bascule barres <-> camembert au clic (demande de Cédric le 07/09/2026) — curseur
+       "cliquable" sur les 2 groupes concernés (voir dessinerRepartition/dessinerCamemberts). */
+    .cv-histo-clic, .cv-camembert-clic { cursor: pointer; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -497,6 +500,9 @@
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
           </div>
+          <!-- Bascule barres <-> camembert (demande de Cédric le 07/09/2026) : rempli en JS
+               à chaque dessinerRepartition(), change de texte selon le mode actuel. -->
+          <p class="simulator__hint" id="cvCamembertHint" style="margin:.4rem 0 0"></p>
           <!-- Échelle de temps des 2 barres — 4 boutons exclusifs (un seul actif à la fois),
                demande de Cédric le 05/09/2026 : au lieu de rester bloqué sur le résultat par
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
@@ -1747,6 +1753,76 @@ var svg = document.getElementById("cvChart");
       // N'affecte que ces 2 barres (pas le tableau ni la bannière, qui restent sur l'activité
       // partagée du curseur, seule référence affichée ailleurs sur la page).
       var modeChacuneSaCapacite = false;
+      // Bascule barres <-> camembert du détail des charges (demande de Cédric le
+      // 07/09/2026) : cliquer sur une des 2 barres affiche à sa place un camembert
+      // (loyer / électricité / personnel MERM), cliquer sur un camembert revient aux
+      // barres. Mode global aux 2 machines (pas par barre) — un clic sur l'une bascule
+      // les 2 en même temps, cohérent avec "les barres deviennent des camemberts".
+      var modeCamembert = false;
+
+      // Même tracé d'un secteur de camembert que sur simulateur-recettes.html (motif déjà
+      // éprouvé sur ce site) — dupliqué ici plutôt que partagé, ces 2 fichiers HTML
+      // n'important aucun JS commun.
+      function pieSlicePath(cx, cy, r, startAngle, endAngle) {
+        var largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
+        var x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
+        var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
+        return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
+      }
+
+      // Palette fixe des 3 postes de charge — LA MÊME pour les 2 camemberts (motif déjà
+      // établi sur simulateur-recettes.html : une couleur = un poste, jamais une couleur
+      // par machine, pour ne pas confondre avec le bleu/orange des machines elles-mêmes).
+      var CV_PARTS_CHARGE = [
+        { key: "loyer", label: "Loyer", color: "#6b5b95" },
+        { key: "elec", label: "Électricité", color: "#c9a227" },
+        { key: "rh", label: "Personnel MERM", color: "#4a90a4" }
+      ];
+      function dessinerCamemberts(compos, fmtMontant) {
+        var cy = PAD.top + PLOT_H / 2 + 10;
+        var rayon = 72;
+        var centers = [PAD.left + PLOT_W * 0.27, PAD.left + PLOT_W * 0.73];
+        compos.forEach(function (c, i) {
+          var cx = centers[i];
+          var total = c.loyer + c.elec + c.rh;
+          var group = svgEl("g", { class: "cv-camembert-clic" });
+          svg.appendChild(group);
+          if (total > 0) {
+            var startAngle = -Math.PI / 2;
+            CV_PARTS_CHARGE.forEach(function (p) {
+              var part = c[p.key];
+              if (!(part > 0)) return;
+              var fraction = part / total;
+              var endAngle = startAngle + fraction * 2 * Math.PI;
+              group.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, rayon, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+              var midAngle = (startAngle + endAngle) / 2;
+              var lx1 = cx + rayon * 1.03 * Math.cos(midAngle), ly1 = cy + rayon * 1.03 * Math.sin(midAngle);
+              var lx2 = cx + rayon * 1.16 * Math.cos(midAngle), ly2 = cy + rayon * 1.16 * Math.sin(midAngle);
+              group.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.color, "stroke-width": "1.3" }));
+              var cosA = Math.cos(midAngle);
+              var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+              var lx3 = cx + rayon * 1.22 * Math.cos(midAngle), ly3 = cy + rayon * 1.22 * Math.sin(midAngle);
+              var label = svgEl("text", { x: lx3, y: ly3, "text-anchor": anchor, "font-size": "10", "font-weight": "700", fill: "#5c5a52" });
+              var t1 = svgEl("tspan", { x: lx3, dy: "0" }); t1.textContent = p.label; label.appendChild(t1);
+              var t2 = svgEl("tspan", { x: lx3, dy: "12" }); t2.textContent = fmtMontant(part); label.appendChild(t2);
+              group.appendChild(label);
+              startAngle = endAngle;
+            });
+          } else {
+            group.appendChild(svgEl("circle", { cx: cx, cy: cy, r: rayon, fill: "#e5e2d8" }));
+            var vide = svgEl("text", { x: cx, y: cy + 4, "text-anchor": "middle", "font-size": "11", fill: "#9a968a" });
+            vide.textContent = "Aucune charge";
+            group.appendChild(vide);
+          }
+          var titre = svgEl("text", { x: cx, y: cy - rayon - 24, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#5c5a52" });
+          titre.textContent = "Charges : " + fmtMontant(total);
+          svg.appendChild(titre);
+          var labelNom = svgEl("text", { x: cx, y: VIEWBOX_H - 14, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
+          labelNom.textContent = c.nom;
+          svg.appendChild(labelNom);
+          group.addEventListener("click", function () { modeCamembert = false; recalculer(); });
+        });
+      }
 
       // Composition brute (recette/charges/résultat par patient) selon le mode capacité et
       // le mode AI, avant mise à l'échelle temporelle — factorisée pour être rejouée avec
@@ -1765,6 +1841,7 @@ var svg = document.getElementById("cvChart");
             return {
               recetteTotale: r.recette + actePart,
               charges: loyerParPatient + elecParPatient + rhParPatient,
+              loyer: loyerParPatient, elec: elecParPatient, rh: rhParPatient,
               resultat: r.recette + actePart - loyerParPatient - elecParPatient - rhParPatient,
               color: r.color, nom: r.machine.nomCourt, patientsJour: patientsJourPropre
             };
@@ -1774,6 +1851,7 @@ var svg = document.getElementById("cvChart");
           return {
             recetteTotale: l.recette + actePart,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
+            loyer: l.loyerParPatient, elec: l.elecParPatient, rh: l.rhParPatient,
             resultat: l.recette + actePart - l.loyerParPatient - l.elecParPatient - l.rhParPatient,
             color: r.color, nom: r.machine.nomCourt, patientsJour: params.activitePatientsJour
           };
@@ -1791,6 +1869,7 @@ var svg = document.getElementById("cvChart");
             : c.patientsJour * params.joursParMois * 12 * horizon.annees;
           return {
             recetteTotale: c.recetteTotale * mult, charges: c.charges * mult, resultat: c.resultat * mult,
+            loyer: c.loyer * mult, elec: c.elec * mult, rh: c.rh * mult,
             color: c.color, nom: c.nom, patientsJour: c.patientsJour
           };
         });
@@ -1836,6 +1915,16 @@ var svg = document.getElementById("cvChart");
           ecartFrame.style.background = enTete.color + "1a";
           ecartFrame.style.color = "var(--ink)";
         }
+
+        // Bascule barres <-> camembert (voir modeCamembert plus haut) : en mode camembert,
+        // on saute tout le dessin des barres (grille, axes...) qui n'a plus de sens ici.
+        var camembertHint = document.getElementById("cvCamembertHint");
+        if (modeCamembert) {
+          dessinerCamemberts(compos, fmtMontant);
+          if (camembertHint) camembertHint.textContent = "Cliquez sur un camembert pour revenir aux barres.";
+          return;
+        }
+        if (camembertHint) camembertHint.textContent = "Cliquez sur une barre pour voir le détail des charges (loyer, électricité, personnel).";
 
         var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
         var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
@@ -1916,18 +2005,26 @@ var svg = document.getElementById("cvChart");
           var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
           var yZero = yAt(0), yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
 
+          // Les 2 rects + la ligne de séparation regroupés dans un <g> cliquable (demande
+          // de Cédric le 07/09/2026) : cliquer sur une barre bascule les 2 machines en
+          // camembert du détail des charges (voir modeCamembert/dessinerCamemberts
+          // plus haut) — un clic sur n'importe laquelle des 2 barres suffit.
+          var barGroup = svgEl("g", { class: "cv-histo-clic" });
+          svg.appendChild(barGroup);
+          barGroup.addEventListener("click", function () { modeCamembert = true; recalculer(); });
+
           // Bloc charges (gris) : toujours entre le sommet de la recette totale et le niveau
           // du résultat, que le résultat soit positif ou négatif.
-          svg.appendChild(svgEl("rect", {
+          barGroup.appendChild(svgEl("rect", {
             x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#cfcabd"
           }));
           // Bloc résultat net : couleur de la machine s'il est positif, rouge d'alerte sinon
           // (perte — l'activité est en dessous du point mort).
-          svg.appendChild(svgEl("rect", {
+          barGroup.appendChild(svgEl("rect", {
             x: x0, y: Math.min(yZero, yResultat), width: barWidth,
             height: Math.max(0, Math.abs(yResultat - yZero)), fill: c.resultat >= 0 ? c.color : "#c0392b"
           }));
-          svg.appendChild(svgEl("line", { x1: x0, x2: x1, y1: yTop, y2: yTop, stroke: "#8a8578", "stroke-width": "1" }));
+          barGroup.appendChild(svgEl("line", { x1: x0, x2: x1, y1: yTop, y2: yTop, stroke: "#8a8578", "stroke-width": "1" }));
 
           // Tous les libellés sont centrés sur l'axe de la barre (jamais en callout latéral) —
           // piège repéré à la vérification mobile : un callout à droite de la 2ᵉ barre débordait
