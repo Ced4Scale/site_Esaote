@@ -241,6 +241,16 @@
     .cv-btn-ai:hover { background: #175f47; border-color: #175f47; }
     .cv-btn-ai.btn--ghost { --btn-bg: transparent; --btn-fg: #1f7a5c; }
     .cv-btn-ai.btn--ghost:hover { --btn-fg: #fff; background: #1f7a5c; border-color: #1f7a5c; }
+    /* Répartition des 2 rangées de boutons sous le graphe de la marge gauche à la marge
+       droite (demande de Cédric le 07/09/2026) — plutôt que collés à gauche avec un
+       espace fixe entre eux. Réservé au desktop (>780px, même seuil que le reste du
+       site) : sous ce seuil, les boutons passent sur plusieurs lignes (flex-wrap), et
+       "space-between" y écarterait bizarrement les 1-2 boutons d'une ligne incomplète —
+       on garde alors le comportement d'origine (collés à gauche, espace fixe). */
+    .cv-btn-row { display: flex; gap: .5rem; flex-wrap: wrap; }
+    @media (min-width: 781px) {
+      .cv-btn-row { justify-content: space-between; }
+    }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -420,7 +430,7 @@
                demande de Cédric le 05/09/2026 : au lieu de rester bloqué sur le résultat par
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
                (mêmes horizons que le tableau "Résultat à votre activité" juste au-dessus). -->
-          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-top:.7rem">
+          <div class="cv-btn-row" style="margin-top:.7rem">
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizonPatient" aria-pressed="false" title="Résultat pour un seul patient, sans tenir compte de votre activité.">1 patient</button>
             <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true" title="Résultat ramené à votre activité du jour, telle que renseignée plus haut.">Par jour</button>
             <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false" title="Résultat annualisé sur votre activité du jour.">1 an</button>
@@ -432,7 +442,7 @@
                chaque machine), sans déplacer "Votre activité" — demande de Cédric le 05/09/2026,
                reformulée en 2 boutons mutuellement exclusifs le même jour. -->
           <div style="margin-top:.5rem">
-            <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+            <div class="cv-btn-row">
               <button type="button" class="btn btn--sm cv-btn-activite" id="cvBtnModeActivite" aria-pressed="true" title="Les 2 machines reçoivent le même nombre de patients (votre activité renseignée plus haut).">Même activité</button>
               <button type="button" class="btn btn--sm btn--ghost cv-btn-activite" id="cvBtnModeDebit" aria-pressed="false" title="Chaque machine reçoit son propre nombre maximum de patients, sur la même plage horaire.">100% de la capacité</button>
               <button type="button" class="btn btn--sm cv-btn-ai" id="cvBtnAvecAI" aria-pressed="true" title="Inclut la recette de l'acte intellectuel du radiologue dans les 2 barres.">Avec AI</button>
