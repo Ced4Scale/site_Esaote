@@ -1279,6 +1279,12 @@
       var FT_MOY_PLOT_W = 640 - FT_MOY_PAD.left - FT_MOY_PAD.right;
       var FT_MOY_PLOT_H = FT_MOY_VIEWBOX_H - FT_MOY_PAD.top - FT_MOY_PAD.bottom;
       var FT_MOY_X_MAX = 15000; // même plage que le curseur cvFtMoySlider (0 à 15.000)
+      // Le curseur démarre, une seule fois au tout 1er calcul, sur le volume annuel réel
+      // de l'activité déjà renseignée plus haut (demande de Cédric le 06/09/2026) — voir
+      // le réglage effectif dans recalculer(), juste après params.activitePatientsJour.
+      // Ce drapeau évite de réécraser un déplacement manuel du curseur à chaque recalcul
+      // (loyer, kWh...) qui n'a aucun rapport avec l'activité elle-même.
+      var ftMoySliderInitialise = false;
       function arrondiSup5(v) { return Math.ceil(v / 5) * 5; }
       function arrondiInf5(v) { return Math.floor(v / 5) * 5; }
       function dessinerGrapheFtMoyen(trIrm, trCt) {
@@ -2031,6 +2037,18 @@
         document.getElementById("cvHeuresTotalTxt").textContent = heuresTotalTxt;
         document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
+
+        // Curseur "Tarif moyen du forfait technique selon le volume" (voir plus haut) :
+        // réglé une seule fois, au tout 1er calcul, sur le volume annuel réel de
+        // l'activité déjà renseignée (patients/jour × jours/mois × 12) — jamais réécrasé
+        // ensuite, pour laisser Cédric explorer une autre valeur au curseur sans qu'un
+        // changement de loyer/kWh/etc. la remette à zéro.
+        if (!ftMoySliderInitialise) {
+          ftMoySliderInitialise = true;
+          var patientsAnnuelsDefaut = Math.max(0, Math.min(FT_MOY_X_MAX, Math.round(params.activitePatientsJour * params.joursParMois * 12)));
+          document.getElementById("cvFtMoySlider").value = patientsAnnuelsDefaut;
+          majFtMoyen();
+        }
 
         // Scanner réellement coupé la nuit (case RSE) : le socle électrique ne compte plus
         // 24h/24 mais seulement les heures réellement sous tension — l'amplitude d'ouverture
