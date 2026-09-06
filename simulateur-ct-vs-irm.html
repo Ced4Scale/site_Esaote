@@ -1389,32 +1389,61 @@
           svg.appendChild(svgEl("circle", { cx: p.x, cy: p.y, r: 3.5, fill: "#fff", stroke: p.couleur, "stroke-width": "2" }));
         });
 
-        // Chaque bulle est poussée du côté OPPOSÉ à l'autre point (celle du point le plus
-        // haut monte, celle du point le plus bas descend) — garantit un écart minimum
-        // entre les 2 bulles même quand les 2 courbes se frôlent ou se croisent, plutôt
-        // que de compter sur un espacement naturel qui peut s'annuler à cet endroit
-        // précis (motif "empiler ailleurs" déjà utilisé plus haut sur ce site).
-        function dessinerBulle(p, decalageY) {
+        // Emplacement des 2 bulles : demande de Cédric le 06/09/2026 — quand les 2
+        // courbes sont bien séparées (ex. début de plage, avant leurs seuils), les
+        // mettre À L'INTÉRIEUR de l'écart entre les 2 courbes (chacune contre sa propre
+        // ligne, tournée vers l'autre) ; dès que l'écart devient trop étroit pour les 2
+        // bulles sans qu'elles se touchent, les écarter À L'EXTÉRIEUR (chacune tournée
+        // à l'opposé de l'autre) et les relier à leur point par un trait de la couleur
+        // de la bulle — seul ce dernier cas a vraiment besoin d'un trait visible, mais
+        // le mécanisme (voir dessinerBulle) en dessine toujours un, même très court.
+        // Calculé dynamiquement à partir de l'écart RÉEL en pixels à ce volume précis
+        // (pas un seuil de volume fixe en dur, qui se déréglerait au moindre changement
+        // de tarif/zone/date) : mesure la hauteur réelle des 2 bulles, compare à
+        // l'écart vertical réel entre les 2 points de la courbe à ce volume.
+        function mesurerBulle(texte) {
           var mesure = svgEl("text", { "font-size": "10", "font-weight": "700" });
-          mesure.textContent = p.texte;
+          mesure.textContent = texte;
           svg.appendChild(mesure);
           var bbox = mesure.getBBox();
           svg.removeChild(mesure);
-
           var padX = 6, padY = 4;
-          var largeur = bbox.width + padX * 2, hauteur = bbox.height + padY * 2;
-          var by = Math.max(FT_MOY_PAD.top + hauteur / 2 + 1, Math.min(FT_MOY_PAD.top + FT_MOY_PLOT_H - hauteur / 2 - 1, p.y + decalageY));
-          var bx = Math.max(FT_MOY_PAD.left + largeur / 2 + 1, Math.min(640 - FT_MOY_PAD.right - largeur / 2 - 1, p.x));
+          return { largeur: bbox.width + padX * 2, hauteur: bbox.height + padY * 2, texteHauteur: bbox.height };
+        }
+        function dessinerBulle(p, m, decalageY) {
+          var by = Math.max(FT_MOY_PAD.top + m.hauteur / 2 + 1, Math.min(FT_MOY_PAD.top + FT_MOY_PLOT_H - m.hauteur / 2 - 1, p.y + decalageY));
+          var bx = Math.max(FT_MOY_PAD.left + m.largeur / 2 + 1, Math.min(640 - FT_MOY_PAD.right - m.largeur / 2 - 1, p.x));
 
           svg.appendChild(svgEl("line", { x1: p.x, y1: p.y, x2: bx, y2: by, stroke: p.couleur, "stroke-width": "1" }));
-          svg.appendChild(svgEl("rect", { x: bx - largeur / 2, y: by - hauteur / 2, width: largeur, height: hauteur, rx: 4, fill: p.couleur }));
-          var texte = svgEl("text", { x: bx, y: by + bbox.height / 2 - 1, "text-anchor": "middle", "font-size": "10", "font-weight": "700", fill: "#fff" });
+          svg.appendChild(svgEl("rect", { x: bx - m.largeur / 2, y: by - m.hauteur / 2, width: m.largeur, height: m.hauteur, rx: 4, fill: p.couleur }));
+          var texte = svgEl("text", { x: bx, y: by + m.texteHauteur / 2 - 1, "text-anchor": "middle", "font-size": "10", "font-weight": "700", fill: "#fff" });
           texte.textContent = p.texte;
           svg.appendChild(texte);
         }
-        var ordonnes = [ptIrm, ptCt].sort(function (a, b) { return a.y - b.y; });
-        dessinerBulle(ordonnes[0], -20);
-        dessinerBulle(ordonnes[1], 20);
+
+        var mIrm = mesurerBulle(ptIrm.texte), mCt = mesurerBulle(ptCt.texte);
+        var haut = ptIrm.y <= ptCt.y ? ptIrm : ptCt; // point du haut = le plus petit y (SVG : y croît vers le bas)
+        var bas = haut === ptIrm ? ptCt : ptIrm;
+        var mHaut = haut === ptIrm ? mIrm : mCt, mBas = haut === ptIrm ? mCt : mIrm;
+
+        // Seuil de bascule : la HAUTEUR TOTALE des 2 bulles (pas leur demi-hauteur —
+        // piège vécu ici, un 1er calcul en demi-hauteurs laissait les 2 bulles se
+        // chevaucher presque totalement autour de 6.000 patients/an, repéré seulement
+        // en testant plusieurs volumes) + le petit espace propre à chaque bulle contre
+        // sa courbe (`padProprecourbe`, des 2 côtés) + la marge voulue entre les 2.
+        var ecartReel = bas.y - haut.y;
+        var padProprecourbe = 3, margeEntreBulles = 6;
+        var placeSuffisantePourInterieur = ecartReel >= (mHaut.hauteur + mBas.hauteur + 2 * padProprecourbe + margeEntreBulles);
+
+        if (placeSuffisantePourInterieur) {
+          // Bulles nichées dans l'écart, chacune contre sa propre courbe côté intérieur.
+          dessinerBulle(haut, mHaut, padProprecourbe + mHaut.hauteur / 2);
+          dessinerBulle(bas, mBas, -(padProprecourbe + mBas.hauteur / 2));
+        } else {
+          // Pas assez de place entre les 2 courbes : bulles écartées côté extérieur.
+          dessinerBulle(haut, mHaut, -20);
+          dessinerBulle(bas, mBas, 20);
+        }
 
         // Nom de chaque courbe écrit dans sa couleur à son DÉBUT (demande de Cédric le
         // 06/09/2026 — déplacé depuis l'extrémité droite, où les 2 courbes convergent et
