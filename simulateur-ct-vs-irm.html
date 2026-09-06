@@ -372,32 +372,24 @@
     /* Cadre à fond vert pour les 2 lignes "Résultat / an" / "Résultat / 7 ans" du tableau
        récapitulatif (demande de Cédric le 07/09/2026, reprend la couleur "succès" déjà
        utilisée ailleurs sur le site — var(--success-*), même palette que l'ancienne
-       bannière verte retirée en haut de page). --haut/--bas arrondissent chacun leur coin
-       (haut = 1ʳᵉ ligne du cadre, bas = 2ᵉ et dernière) pour lire les 2 lignes comme un
-       seul bloc, pas 2 rubans distincts. */
+       bannière verte retirée en haut de page). Seul le FOND vert vient des <td> ; la
+       bordure/les coins arrondis viennent d'un <div> séparé posé par-dessus (voir
+       .cv-cadre-overlay plus bas et positionnerCadreVert() en JS) — piège trouvé le
+       07/09/2026 en comparant au cadre bleu "Écart de résultat" ("il n'est pas pareil") :
+       border-radius sur des <td> en border-collapse:collapse ne se découpe pas
+       proprement (coins droits carrés malgré la règle CSS), un vrai <div> évite le
+       problème entièrement plutôt que de le corriger cellule par cellule. */
     .cv-ligne-verte td { background: var(--success-bg); color: var(--success-tx); border-bottom-color: var(--success-bg); }
     .cv-ligne-verte td:first-child { color: var(--success-tx); }
-    /* Bordure verte tout autour du cadre (demande de Cédric le 07/09/2026 : même style
-       que le cadre bleu "Écart de résultat" au-dessus du graphe) — gauche/droite sur les
-       2 lignes, haut sur la 1ʳᵉ ligne seulement, bas sur la dernière seulement (le
-       "border-collapse" du tableau fusionne la frontière interne entre les 2 lignes avec
-       la couleur déjà posée juste au-dessus, qui reste donc invisible comme avant).
-       Bordure du bas scopée par l'id de la table (#cvSyntheseTable ...) — piège trouvé
-       après publication ("bordure verte tout nul", 07/09/2026) : la règle partagée
-       `.stats-table tr:last-child td { border-bottom: none; }` (styles.css) a une
-       spécificité plus grande qu'une simple classe et gagnait sur `border-bottom: 2px
-       solid`, donc le bas du cadre restait sans bordure malgré la règle posée ici — un
-       sélecteur préfixé par l'id (poids d'un id > n'importe quel nombre de classes)
-       était nécessaire pour reprendre la main. */
-    .cv-ligne-verte td:first-child { border-left: 2px solid var(--success-bd); }
-    .cv-ligne-verte td:last-child { border-right: 2px solid var(--success-bd); }
-    .cv-ligne-verte--haut td { padding-top: 1rem; border-top: 2px solid var(--success-bd); }
-    .cv-ligne-verte--haut td:first-child { border-top-left-radius: var(--radius); }
-    .cv-ligne-verte--haut td:last-child { border-top-right-radius: var(--radius); }
+    .cv-ligne-verte--haut td { padding-top: 1rem; }
     .cv-ligne-verte--bas td { padding-bottom: 1rem; }
-    #cvSyntheseTable .cv-ligne-verte--bas td { border-bottom: 2px solid var(--success-bd); }
-    .cv-ligne-verte--bas td:first-child { border-bottom-left-radius: var(--radius); }
-    .cv-ligne-verte--bas td:last-child { border-bottom-right-radius: var(--radius); }
+    /* Le <div> par-dessus, dimensionné/positionné en JS pour coller exactement aux 2
+       lignes vertes — mêmes valeurs de bordure/rayon que .cv-ecart-frame ci-dessus, pour
+       un rendu identique aux deux cadres du graphe. */
+    .cv-cadre-overlay {
+      position: absolute; border: 2px solid var(--success-bd); border-radius: var(--radius);
+      pointer-events: none;
+    }
     /* Bascule barres <-> camembert au clic (demande de Cédric le 07/09/2026) — curseur
        "cliquable" sur les 2 groupes concernés (voir dessinerRepartition/dessinerCamemberts). */
     .cv-histo-clic, .cv-camembert-clic { cursor: pointer; }
@@ -530,10 +522,24 @@
              colonne de résultats, jamais masquée, cachée par défaut (`hidden`) et montrée
              uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
         <button type="button" class="btn btn--sm" id="cvBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="cvSyntheseCard">
           <h3 style="margin-bottom:.6rem">Résultat à votre activité</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
-          <div style="overflow-x:auto">
+          <!-- Cadre vert dessiné par-dessus les 2 lignes vertes du tableau, en JS (voir
+               positionnerCadreVert()) — pas de border-radius directement sur les <td> :
+               piège trouvé le 07/09/2026 ("bordure pas pareil que le cadre bleu") —
+               border-radius sur des cellules de tableau en border-collapse:collapse ne
+               se découpe pas proprement dans les navigateurs (coins droits restés
+               carrés alors que border-top-right-radius/border-bottom-right-radius
+               était bien posé). Un vrai <div> positionné par-dessus, exactement comme
+               .cv-ecart-frame (même bordure/coins arrondis), contourne cette limite au
+               lieu d'essayer de la corriger cellule par cellule. DANS le conteneur
+               overflow-x:auto (pas à côté) — 2ᵉ piège trouvé en testant sur mobile : le
+               tableau fait 600px de large en permanence (min-width), et un <div> posé en
+               dehors de ce conteneur défilant déborde de toute la page au lieu de
+               scroller avec le tableau. -->
+          <div style="overflow-x:auto; position:relative" id="cvSyntheseScroll">
+            <div class="cv-cadre-overlay" id="cvVerteOverlay" hidden></div>
             <table class="stats-table simulator__table simulator__table--compare3" id="cvSyntheseTable">
             <thead>
               <tr>
@@ -1738,8 +1744,30 @@
         ligne("Résultat", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
         ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true, true, false, "haut");
         ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true, false, false, "bas");
+        positionnerCadreVert();
         return lignes;
       }
+
+      // Positionne le <div class="cv-cadre-overlay"> exactement par-dessus les 2 lignes
+      // vertes du tableau (voir commentaire CSS .cv-cadre-overlay) — recalculé à chaque
+      // reconstruction du tableau (dessinerSynthese) puisque son contenu peut changer de
+      // hauteur (ex. le libellé "Recette moyenne acte intellectuel" repasse à la ligne ou
+      // non selon la largeur), et au redimensionnement de la fenêtre (voir plus bas).
+      function positionnerCadreVert() {
+        var lignesVertes = document.querySelectorAll("#cvSyntheseTable .cv-ligne-verte");
+        var overlay = document.getElementById("cvVerteOverlay");
+        if (!lignesVertes.length) { overlay.hidden = true; return; }
+        var conteneur = document.getElementById("cvSyntheseScroll");
+        var conteneurRect = conteneur.getBoundingClientRect();
+        var premiere = lignesVertes[0].getBoundingClientRect();
+        var derniere = lignesVertes[lignesVertes.length - 1].getBoundingClientRect();
+        overlay.style.left = (premiere.left - conteneurRect.left) + "px";
+        overlay.style.top = (premiere.top - conteneurRect.top) + "px";
+        overlay.style.width = premiere.width + "px";
+        overlay.style.height = (derniere.bottom - premiere.top) + "px";
+        overlay.hidden = false;
+      }
+      window.addEventListener("resize", positionnerCadreVert);
 
       // ---- Récapitulatif complet — demandé par Cédric le 10/08/2026 : reprendre en un seul
       // endroit les données techniques des équipements, les valeurs calculées (FT + acte
@@ -2417,6 +2445,9 @@ var svg = document.getElementById("cvChart");
         // .btn plus haut) — la largeur commune par famille doit être recalculée après coup,
         // le texte le plus long de chaque famille n'occupant plus la même largeur naturelle.
         egaliserTousLesBoutons();
+        // Le tableau "Résultat à votre activité" change de largeur avec la colonne —
+        // le cadre vert superposé doit suivre.
+        positionnerCadreVert();
       }
       document.getElementById("cvBtnTogglePanel").addEventListener("click", function () {
         appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("cv-panel-hidden"));
