@@ -2885,12 +2885,79 @@ var svg = document.getElementById("cvChart");
           drawSectionTitle("Forfait technique et acte intellectuel — valeurs calculées");
           drawRecapRow("", [derniers.resultats[0].machine.nomCourt, derniers.resultats[1].machine.nomCourt], true);
           d.recettes.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+
+          // ---- Page 3 : Paramètres saisis avant de lancer la simulation (demande de
+          // Cédric le 07/09/2026) — reprend les 3 blocs de la colonne de gauche
+          // (Paramètres communs, IRM Esaote, Scanner CT), sur sa propre page plutôt que
+          // partagée avec Équipements/Forfait technique sur la page 2.
+          doc.addPage();
+          py = 18;
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Paramètres saisis avant de lancer la simulation", px0, py); py += 8;
+
+          drawSectionTitle("Paramètres communs");
+          d.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
           py += 3;
 
-          drawSectionTitle("Paramètres saisis avant de lancer la simulation");
-          d.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
+          drawSectionTitle("IRM Esaote et Scanner (CT)");
           drawRecapRow("", [derniers.resultats[0].machine.nomCourt, derniers.resultats[1].machine.nomCourt], true);
           d.paramsMachines.forEach(function (l) { drawRecapRow(l.label, l.valeurs); });
+
+          // ---- Page 3 : Seuils du barème dégressif, par examen (demande de Cédric le
+          // 07/09/2026) — reprend à l'identique le tableau informatif affiché à l'écran
+          // (afficherSeuilsBareme/tranchesAvecMontant), jamais présent dans le PDF avant
+          // cette page. Purement informatif : le calcul réel utilise toujours le tarif
+          // plein (voir memory/site-web/simulateur-ct-vs-irm.md).
+          doc.addPage();
+          var sy = 18, sx0 = 15, slabelW = 60, scolW = 100;
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Seuils du barème dégressif, par examen", sx0, sy); sy += 6;
+          doc.setFontSize(8.5);
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(110);
+          doc.text("Informatif uniquement : le calcul ci-dessus utilise toujours le tarif plein.", sx0, sy); sy += 9;
+
+          var trIrm = tranchesAvecMontant(FT_CLASSES.le05, derniers.params.dateIso, derniers.params.zone, derniers.params.amortiKey);
+          var trCt = tranchesAvecMontant(FT_CLASSES.ct, derniers.params.dateIso, derniers.params.zone, derniers.params.amortiKey);
+          var seuilsLabels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
+          function plageTexte(t) {
+            return (t.fin != null
+              ? "de " + seuilsEntiers.format(t.debut) + " à " + seuilsEntiers.format(t.fin)
+              : "au-delà de " + seuilsEntiers.format(t.debut - 1)) + " examens/an";
+          }
+
+          doc.setFontSize(9);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("", sx0, sy);
+          doc.text(derniers.resultats[0].machine.nomCourt, sx0 + slabelW, sy);
+          doc.text(derniers.resultats[1].machine.nomCourt, sx0 + slabelW + scolW, sy);
+          sy += 5;
+          doc.setDrawColor(200);
+          doc.line(sx0, sy - 3.5, sx0 + slabelW + scolW * 2, sy - 3.5);
+
+          seuilsLabels.forEach(function (label, i) {
+            doc.setFontSize(9);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(label, sx0, sy);
+            [trIrm[i], trCt[i]].forEach(function (t, ci) {
+              var xc = sx0 + slabelW + scolW * ci;
+              doc.setFontSize(8.5);
+              doc.setFont(undefined, "normal");
+              doc.setTextColor(110);
+              doc.text(plageTexte(t), xc, sy);
+              doc.setFontSize(9);
+              doc.setFont(undefined, "bold");
+              doc.setTextColor(0);
+              doc.text(eurosCent.format(t.montant), xc, sy + 4.5);
+            });
+            sy += 11;
+          });
 
           return doc.output("datauristring").split(",")[1];
         });
