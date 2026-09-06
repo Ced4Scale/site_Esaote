@@ -293,8 +293,11 @@
        documenté dans le skill ced4scale-simulateur-web : <input type=range> transparent
        + remplissage piloté en JS), classes dédiées pour ne pas interférer avec le
        curseur d'activité. */
-    .cv-ftmoy-slider { display: flex; align-items: center; gap: .8rem; margin-top: .9rem; }
-    .cv-ftmoy-track-wrap { position: relative; height: 1.4rem; flex: 1; }
+    /* Barre pleine largeur (demande de Cédric le 06/09/2026, suite : "la ligne avec
+       curseur, mettre entière") — la valeur passe au-dessus au lieu de partager la
+       ligne avec la piste, qui ne perd ainsi plus aucune largeur au profit du texte. */
+    .cv-ftmoy-slider { margin-top: .9rem; }
+    .cv-ftmoy-track-wrap { position: relative; height: 1.4rem; width: 100%; margin-top: .3rem; }
     .cv-ftmoy-track-wrap input[type=range] {
       position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0;
       -webkit-appearance: none; appearance: none; background: transparent;
@@ -786,11 +789,11 @@
           </div>
           <p class="simulator__hint">Traits pointillés : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</p>
           <div class="cv-ftmoy-slider">
+            <div class="cv-ftmoy-slider-value" id="cvFtMoySliderLabel"></div>
             <div class="cv-ftmoy-track-wrap">
               <div class="cv-ftmoy-track"><div class="cv-ftmoy-fill" id="cvFtMoyFill"></div></div>
               <input type="range" id="cvFtMoySlider" min="0" max="15000" step="100" value="6000" aria-label="Volume annuel (patients)" />
             </div>
-            <div class="cv-ftmoy-slider-value" id="cvFtMoySliderLabel"></div>
           </div>
           <div class="cv-ftmoy-resultats">
             <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span><span class="cv-ftmoy-montant" id="cvFtMoyIrm"></span></div>
