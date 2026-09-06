@@ -1180,6 +1180,18 @@ ul { margin: 0; padding: 0; list-style: none; }
 }
 .document-viewer__close:hover,
 .document-viewer__close:focus-visible { background: var(--red-crimson); transform: rotate(90deg); outline: none; }
+/* iPhone en paysage (demande de Cédric le 06/09/2026, simulateur IRM Esaote vs scanner) :
+   la bande du haut avec le logo ced4scale prend ~68px sur une hauteur d'écran déjà très
+   réduite (~350-400px en paysage), ce qui empêche de voir le graphe ET les boutons de
+   réglage/mémoire en dessous sans défiler. Cachée uniquement quand la hauteur disponible
+   est petite ET l'écran en paysage (`max-height:500px` exclut les tablettes/desktop en
+   paysage, qui ont largement la hauteur pour la garder) — jamais en portrait, où elle
+   reste utile (retour au site, titre de l'outil). Partagée par .document-viewer__bar,
+   donc s'applique à tous les outils "tool-page" du site, pas seulement ce simulateur. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .document-viewer__bar { display: none; }
+  .simulator { padding-top: 1.2rem; }
+}
 .document-viewer {
   position: fixed; inset: 68px 0 0; height: auto; padding-top: 0; overflow: hidden;
 }
