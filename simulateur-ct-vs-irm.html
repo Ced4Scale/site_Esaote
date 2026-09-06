@@ -288,6 +288,43 @@
     .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
     .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
     .cv-activite-slider-equiv { font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+    /* Curseur "Tarif moyen du forfait technique selon le volume" (demande de Cédric le
+       06/09/2026) — même motif que .cv-activite-* ci-dessus (piège accent-color déjà
+       documenté dans le skill ced4scale-simulateur-web : <input type=range> transparent
+       + remplissage piloté en JS), classes dédiées pour ne pas interférer avec le
+       curseur d'activité. */
+    .cv-ftmoy-slider { display: flex; align-items: center; gap: .8rem; margin-top: .9rem; }
+    .cv-ftmoy-track-wrap { position: relative; height: 1.4rem; flex: 1; }
+    .cv-ftmoy-track-wrap input[type=range] {
+      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent;
+    }
+    .cv-ftmoy-track-wrap input[type=range]::-webkit-slider-runnable-track { background: transparent; }
+    .cv-ftmoy-track-wrap input[type=range]::-moz-range-track { background: transparent; }
+    .cv-ftmoy-track-wrap input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 50%; background: var(--red);
+      border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
+    }
+    .cv-ftmoy-track-wrap input[type=range]::-moz-range-thumb {
+      cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
+      background: var(--red); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+    .cv-ftmoy-track {
+      position: absolute; top: 50%; left: 9px; right: 9px; height: 4px;
+      background: transparent; border-radius: 2px; transform: translateY(-50%);
+    }
+    .cv-ftmoy-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
+    .cv-ftmoy-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink); font-size: .82rem; text-align: right; }
+    /* IRM Esaote au-dessus, Scanner CT en dessous (ordre demandé par Cédric) — même ordre
+       vertical que partout ailleurs sur cette page (slot 0 = IRM, slot 1 = scanner). */
+    .cv-ftmoy-resultats { margin-top: .7rem; }
+    .cv-ftmoy-ligne {
+      display: flex; justify-content: space-between; align-items: baseline;
+      padding: .4rem 0; border-bottom: 1px solid var(--line);
+    }
+    .cv-ftmoy-ligne:last-child { border-bottom: none; }
+    .cv-ftmoy-montant { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     /* Couleur par famille de boutons sous le graphe (demande de Cédric le 07/09/2026,
        repassée en pastel + relief le même jour : "couleurs trop classiques", "des formes
        de 3D ou d'ombre pour les boutons") — les 3 groupes indépendants (échelle de temps
@@ -732,6 +769,28 @@
             </thead>
             <tbody id="cvSeuilsBody"></tbody>
           </table>
+          </div>
+        </details>
+
+        <!-- "Tarif moyen du forfait technique selon le volume" (demande de Cédric le
+             06/09/2026) — curseur 0 à 15.000 patients/an, affiche le tarif MOYEN
+             réellement obtenu compte tenu du barème dégressif (voir
+             tarifMoyenPourVolume()/majFtMoyen()), pas le tarif de la seule tranche où
+             tombe ce volume. Distinct du tableau des seuils ci-dessus (qui liste les
+             tarifs PAR TRANCHE) — les 2 se complètent, placés l'un sous l'autre. -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible">
+          <summary>Tarif moyen du forfait technique selon le volume</summary>
+          <p class="simulator__hint">Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils).</p>
+          <div class="cv-ftmoy-slider">
+            <div class="cv-ftmoy-track-wrap">
+              <div class="cv-ftmoy-track"><div class="cv-ftmoy-fill" id="cvFtMoyFill"></div></div>
+              <input type="range" id="cvFtMoySlider" min="0" max="15000" step="100" value="6000" aria-label="Volume annuel (patients)" />
+            </div>
+            <div class="cv-ftmoy-slider-value" id="cvFtMoySliderLabel"></div>
+          </div>
+          <div class="cv-ftmoy-resultats">
+            <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span><span class="cv-ftmoy-montant" id="cvFtMoyIrm"></span></div>
+            <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span><span class="cv-ftmoy-montant" id="cvFtMoyCt"></span></div>
           </div>
         </details>
 
@@ -1181,8 +1240,43 @@
           });
           tbody.appendChild(tr);
         });
+        majFtMoyen();
       }
       afficherSeuilsBareme();
+
+      // ---- Tarif moyen du forfait technique selon le volume (demande de Cédric le
+      // 06/09/2026) — moyenne PONDÉRÉE sur les tranches du barème dégressif, pas le
+      // tarif de la seule tranche où tombe N (ex. à 5.000 patients sur l'IRM Esaote :
+      // les 3.500 premiers au tarif plein + les 1.500 suivants au tarif de la 2ᵉ
+      // tranche, divisé par 5.000) — cohérent avec la logique "coût marginal jamais une
+      // moyenne arbitraire" déjà en vigueur sur ce site, ici appliquée à une recette.
+      function tarifMoyenPourVolume(tranches, n) {
+        if (n <= 0) return tranches[0].montant;
+        var reste = n, total = 0;
+        tranches.forEach(function (t) {
+          if (reste <= 0) return;
+          var largeurTranche = t.fin != null ? (t.fin - t.debut + 1) : reste;
+          var qte = Math.min(reste, largeurTranche);
+          total += qte * t.montant;
+          reste -= qte;
+        });
+        return total / n;
+      }
+      function majFtMoyen() {
+        var dateIso = dateSelect.value;
+        var zone = document.getElementById("cvZone").value;
+        var amortiKey = document.querySelector('input[name="cvAmorti"]:checked').value;
+        var n = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
+        var trIrm = tranchesAvecMontant(FT_CLASSES.le05, dateIso, zone, amortiKey);
+        var trCt = tranchesAvecMontant(FT_CLASSES.ct, dateIso, zone, amortiKey);
+        document.getElementById("cvFtMoyIrm").textContent = eurosCent.format(tarifMoyenPourVolume(trIrm, n));
+        document.getElementById("cvFtMoyCt").textContent = eurosCent.format(tarifMoyenPourVolume(trCt, n));
+        document.getElementById("cvFtMoySliderLabel").textContent = seuilsEntiers.format(n) + " patients/an";
+        var slider = document.getElementById("cvFtMoySlider");
+        var pct = (n - +slider.min) / (+slider.max - +slider.min) * 100;
+        document.getElementById("cvFtMoyFill").style.width = pct + "%";
+      }
+      document.getElementById("cvFtMoySlider").addEventListener("input", majFtMoyen);
 
       // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
       // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
@@ -3077,6 +3171,30 @@ var svg = document.getElementById("cvChart");
               doc.text(eurosCent.format(t.montant), xc, sy + 4.5);
             });
             sy += 11;
+          });
+
+          // ---- Tarif moyen du forfait technique selon le volume (demande de Cédric le
+          // 06/09/2026) — reprend le curseur affiché à l'écran, à la valeur où Cédric
+          // l'a laissé au moment de l'envoi (pas une valeur fixe arbitraire dans le
+          // PDF). Voir tarifMoyenPourVolume()/majFtMoyen() plus haut dans le script.
+          sy += 5;
+          var ftMoyN = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
+          doc.setFontSize(13);
+          doc.setFont(undefined, "bold");
+          doc.setTextColor(0);
+          doc.text("Tarif moyen du forfait technique selon le volume", sx0, sy); sy += 6;
+          doc.setFontSize(8.5);
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(110);
+          doc.text("Pour " + seuilsEntiers.format(ftMoyN) + " patients/an, moyenne pondérée sur le barème dégressif.", sx0, sy); sy += 9;
+
+          [["IRM Esaote", trIrm], ["Scanner (CT)", trCt]].forEach(function (pair) {
+            doc.setFontSize(9);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(pair[0], sx0, sy);
+            doc.text(eurosCent.format(tarifMoyenPourVolume(pair[1], ftMoyN)), sx0 + slabelW, sy);
+            sy += 6.5;
           });
 
           return doc.output("datauristring").split(",")[1];
