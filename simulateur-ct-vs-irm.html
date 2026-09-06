@@ -461,6 +461,12 @@
       </div>
 
       <div class="simulator__results">
+        <!-- Bouton de réaffichage des paramètres (corrige un piège vécu le 07/09/2026 :
+             le bouton ⏴ qui masque le panneau est LUI-MÊME dans .simulator__form, donc
+             disparaît avec lui — plus aucun moyen de le rouvrir). Cette copie vit dans la
+             colonne de résultats, jamais masquée, cachée par défaut (`hidden`) et montrée
+             uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
+        <button type="button" class="btn btn--sm" id="cvBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Résultat à votre activité</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
@@ -2230,13 +2236,24 @@ var svg = document.getElementById("cvChart");
       // Masquer/réafficher la colonne de gauche (demande de Cédric le 07/09/2026) — voir
       // règles CSS .cv-panel-hidden plus haut. N'affecte que l'affichage, aucun paramètre
       // ni calcul (le formulaire masqué reste dans le DOM avec ses valeurs intactes).
+      // 2 boutons pilotent le même état : cvBtnTogglePanel (dans le panneau — se masque
+      // donc avec lui, piège vécu le 07/09/2026 : plus aucun moyen de rouvrir une fois
+      // masqué) ET cvBtnShowPanel (dans la colonne de résultats, jamais masqué, visible
+      // seulement quand le panneau l'est). Une seule fonction centralise l'état des 2.
+      function appliquerVisibilitePanel(masque) {
+        document.querySelector(".simulator__layout").classList.toggle("cv-panel-hidden", masque);
+        var btnHide = document.getElementById("cvBtnTogglePanel");
+        btnHide.textContent = masque ? "⏵" : "⏴";
+        btnHide.title = masque ? "Afficher les paramètres" : "Masquer les paramètres";
+        btnHide.setAttribute("aria-label", btnHide.title);
+        btnHide.setAttribute("aria-pressed", String(masque));
+        document.getElementById("cvBtnShowPanel").hidden = !masque;
+      }
       document.getElementById("cvBtnTogglePanel").addEventListener("click", function () {
-        var layout = document.querySelector(".simulator__layout");
-        var masque = layout.classList.toggle("cv-panel-hidden");
-        this.textContent = masque ? "⏵" : "⏴";
-        this.title = masque ? "Afficher les paramètres" : "Masquer les paramètres";
-        this.setAttribute("aria-label", this.title);
-        this.setAttribute("aria-pressed", String(masque));
+        appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("cv-panel-hidden"));
+      });
+      document.getElementById("cvBtnShowPanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(false);
       });
 
       recalculer();
