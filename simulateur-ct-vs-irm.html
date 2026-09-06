@@ -1666,21 +1666,21 @@ var svg = document.getElementById("cvChart");
       // N'affecte que ces 2 barres (pas le tableau ni la bannière, qui restent sur l'activité
       // partagée du curseur, seule référence affichée ailleurs sur la page).
       var modeChacuneSaCapacite = false;
-      function dessinerRepartition(resultats, configs, lignes, params) {
-        svg.innerHTML = "";
 
-        // Recette de l'acte intellectuel retirée si "Sans AI" est actif (voir choisirModeAI
-        // ci-dessus) — actePart vaut l'acte réel ou 0, jamais l'acte lui-même modifié, pour
-        // ne jamais toucher au tableau/à la bannière qui restent lus depuis r.acte/l.acte.
-        var compos = resultats.map(function (r, i) {
-          if (modeChacuneSaCapacite) {
+      // Composition brute (recette/charges/résultat par patient) selon le mode capacité et
+      // le mode AI, avant mise à l'échelle temporelle — factorisée pour être rejouée avec
+      // TOUTES les combinaisons possibles lors du calcul de la taille de police commune
+      // ci-dessous, pas seulement avec les réglages actuellement affichés.
+      function calculerCompos(resultats, configs, lignes, params, capacitePropreFlag, sansAIFlag) {
+        return resultats.map(function (r, i) {
+          if (capacitePropreFlag) {
             var patientsHeure = r.tempsInstallation > 0 ? 60 / r.tempsInstallation : 0;
             var patientsJourPropre = params.heuresParJour * patientsHeure;
             var patientsAnnuelsPropre = Math.max(patientsJourPropre * params.joursParMois * 12, 0.0001);
             var loyerParPatient = (configs[i].loyer * 12) / patientsAnnuelsPropre;
             var elecParPatient = (r.elecFixe * 12) / patientsAnnuelsPropre + r.elecVariable;
             var rhParPatient = (r.rh * 12) / patientsAnnuelsPropre;
-            var actePart = modeSansAI ? 0 : r.acte;
+            var actePart = sansAIFlag ? 0 : r.acte;
             return {
               recetteTotale: r.recette + actePart,
               charges: loyerParPatient + elecParPatient + rhParPatient,
@@ -1689,7 +1689,7 @@ var svg = document.getElementById("cvChart");
             };
           }
           var l = lignes[i];
-          var actePart = modeSansAI ? 0 : l.acte;
+          var actePart = sansAIFlag ? 0 : l.acte;
           return {
             recetteTotale: l.recette + actePart,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
@@ -1697,19 +1697,39 @@ var svg = document.getElementById("cvChart");
             color: r.color, nom: r.machine.nomCourt, patientsJour: params.activitePatientsJour
           };
         });
+      }
 
-        // Passe les 3 montants par patient à l'échelle choisie (1 patient/jour/1 an/5 ans/7 ans)
-        // — demande de Cédric le 05/09/2026. "patient" = aucune mise à l'échelle (1 seul
-        // patient, indépendant de l'activité) ; "jour" = patients du jour tels quels ; les
-        // autres = patients/jour × jours d'activité par an × nombre d'années (même base que
-        // "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus).
-        var horizon = HORIZONS[horizonBarres];
-        compos.forEach(function (c) {
+      // Applique le multiplicateur d'une échelle de temps (voir HORIZONS) à une composition
+      // déjà calculée — renvoie une COPIE (ne modifie jamais l'original), nécessaire pour
+      // pouvoir rejouer les 5 échelles sans écraser la composition affichée à l'écran.
+      function appliquerHorizonCompos(compos, params, cle) {
+        var horizon = HORIZONS[cle];
+        return compos.map(function (c) {
           var mult = horizon.annees === "patient" ? 1
             : horizon.annees == null ? c.patientsJour
             : c.patientsJour * params.joursParMois * 12 * horizon.annees;
-          c.recetteTotale *= mult; c.charges *= mult; c.resultat *= mult;
+          return {
+            recetteTotale: c.recetteTotale * mult, charges: c.charges * mult, resultat: c.resultat * mult,
+            color: c.color, nom: c.nom, patientsJour: c.patientsJour
+          };
         });
+      }
+
+      function dessinerRepartition(resultats, configs, lignes, params) {
+        svg.innerHTML = "";
+
+        // Recette de l'acte intellectuel retirée si "Sans AI" est actif (voir choisirModeAI
+        // ci-dessus) — n'affecte jamais le tableau/la bannière, qui restent lus depuis
+        // r.acte/l.acte directement (calculerCompos n'y touche pas).
+        // Passe ensuite les 3 montants par patient à l'échelle choisie (1 patient/jour/1 an/
+        // 5 ans/7 ans) — demande de Cédric le 05/09/2026. "patient" = aucune mise à l'échelle
+        // (1 seul patient, indépendant de l'activité) ; "jour" = patients du jour tels quels ;
+        // les autres = patients/jour × jours d'activité par an × nombre d'années (même base
+        // que "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus).
+        var compos = appliquerHorizonCompos(
+          calculerCompos(resultats, configs, lignes, params, modeChacuneSaCapacite, modeSansAI),
+          params, horizonBarres
+        );
         // Montants toujours arrondis à l'euro ici (euros.format), comme "Résultat / an" et
         // "Résultat / 7 ans" dans le tableau au-dessus — les cents n'ont plus de sens une fois
         // sorti de l'échelle "par patient".
@@ -1732,21 +1752,23 @@ var svg = document.getElementById("cvChart");
         }
         svg.appendChild(svgEl("line", { x1: PAD.left, x2: 640 - PAD.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
 
-        var barWidth = 120;
-        var centers = [PAD.left + PLOT_W * 0.28, PAD.left + PLOT_W * 0.72];
+        // Barres élargies (150, au lieu de 120) — demande de Cédric le 06/09/2026 : plus de
+        // place pour les 6 libellés, pour que la police n'ait besoin de réduire que dans des
+        // cas vraiment extrêmes.
+        var barWidth = 150;
+        var centers = [PAD.left + PLOT_W * 0.27, PAD.left + PLOT_W * 0.73];
 
-        // Taille commune aux 6 libellés des 2 barres (pas seulement aux 3 d'une même barre) —
-        // demande de Cédric le 05/09/2026 ("peux-tu faire mieux") : calculée une fois pour tout
-        // le graphe, au pas de 0.5 (plus fin qu'un pas entier) pour se rapprocher davantage du
-        // maximum réel qui tient, sur le libellé le plus contraint des 2 barres — un texte
-        // légèrement plus court sur l'autre barre ne doit jamais imposer une taille différente
-        // (repéré en vérifiant : les 2 barres affichaient parfois 2 tailles différentes,
-        // cohérent par barre mais pas d'une barre à l'autre, ce qui accrochait l'œil).
-        // Vérifie la largeur de "Résultat" ET de "Charges" (2ᵉ amélioration demandée) : seul
-        // "Résultat" était mesuré jusqu'ici, en supposant que c'était toujours le plus large des
-        // deux — vrai avec les montants vus jusqu'ici, mais pas garanti (des charges élevées avec
-        // un petit résultat peuvent inverser le cas) ; les deux sont maintenant mesurés, la
-        // taille retenue est celle qui fait tenir le plus large des deux dans la barre.
+        // ---- Taille de police commune à TOUS les cas de figure (pas seulement à l'échelle/
+        // au mode actuellement affichés) — demande de Cédric le 06/09/2026 ("que les polices
+        // de tous les cas de figure soient les mêmes réglages") : jusqu'ici la taille était
+        // recalculée à chaque dessin en ne mesurant QUE les 2 barres affichées à l'instant T,
+        // donc passer d'un bouton à l'autre (échelle de temps, mode d'activité, mode AI)
+        // pouvait faire changer la taille du texte, ce qui accrochait l'œil. On mesure
+        // maintenant les 6 libellés ("Résultat"/"Charges" × 2 barres) sur LES 20 COMBINAISONS
+        // possibles (5 échelles × 2 modes d'activité × 2 modes AI, via calculerCompos/
+        // appliquerHorizonCompos ci-dessus) et on retient la plus petite taille qui fait tenir
+        // le libellé le plus contraint de tous ces cas — une fois calculée, cette taille ne
+        // bouge plus jamais en changeant de bouton, seuls les montants affichés changent.
         var mesure = svgEl("text", { x: -1000, y: -1000, "text-anchor": "middle", "font-weight": "800" });
         svg.appendChild(mesure);
         function tientDansLaBarre(taille, texte) {
@@ -1754,13 +1776,20 @@ var svg = document.getElementById("cvChart");
           mesure.setAttribute("font-size", taille);
           return mesure.getBBox().width <= barWidth - 10;
         }
-        var tailleCommune = compos.reduce(function (taille, c) {
-          var textes = ["Résultat : " + fmtMontant(c.resultat), "Charges : " + fmtMontant(c.charges)];
-          while (taille > 7 && !textes.every(function (t) { return tientDansLaBarre(taille, t); })) {
-            taille -= 0.5;
-          }
-          return taille;
-        }, 16);
+        var tailleCommune = 16;
+        [false, true].forEach(function (capaciteFlag) {
+          [false, true].forEach(function (aiFlag) {
+            var composBase = calculerCompos(resultats, configs, lignes, params, capaciteFlag, aiFlag);
+            Object.keys(HORIZONS).forEach(function (cle) {
+              appliquerHorizonCompos(composBase, params, cle).forEach(function (c) {
+                var textes = ["Résultat : " + fmtMontant(c.resultat), "Charges : " + fmtMontant(c.charges)];
+                while (tailleCommune > 7 && !textes.every(function (t) { return tientDansLaBarre(tailleCommune, t); })) {
+                  tailleCommune -= 0.5;
+                }
+              });
+            });
+          });
+        });
         svg.removeChild(mesure);
 
         // Écart de patients entre les 2 machines, affiché au-dessus de la barre du scanner
@@ -1774,9 +1803,10 @@ var svg = document.getElementById("cvChart");
         // affichée change selon l'échelle choisie.
         var ECARTS_UNITES = { jour: "patients/jour", an: "patients/an", "5ans": "patients sur 5 ans", "7ans": "patients sur 7 ans" };
         var ecartPatientsJour = null, ecartUnite = null;
-        if (modeChacuneSaCapacite && horizon.annees !== "patient") {
+        var horizonActuel = HORIZONS[horizonBarres];
+        if (modeChacuneSaCapacite && horizonActuel.annees !== "patient") {
           var ecartBase = compos[1].patientsJour - compos[0].patientsJour;
-          ecartPatientsJour = horizon.annees == null ? ecartBase : ecartBase * params.joursParMois * 12 * horizon.annees;
+          ecartPatientsJour = horizonActuel.annees == null ? ecartBase : ecartBase * params.joursParMois * 12 * horizonActuel.annees;
           ecartUnite = ECARTS_UNITES[horizonBarres];
         }
 
@@ -1810,24 +1840,42 @@ var svg = document.getElementById("cvChart");
           labelResultat.textContent = texteResultat;
           svg.appendChild(labelResultat);
 
-          // Recette totale, au-dessus de la barre.
-          var labelRecette = svgEl("text", { x: centers[i], y: yTop - 10, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
+          // Recette totale, au-dessus de la barre — 1ʳᵉ ligne de la pile de libellés empilés
+          // au-dessus de la barre (voir "Charges" et "Écart" juste en dessous, qui s'empilent
+          // par-dessus celle-ci quand ils ne peuvent pas s'afficher ailleurs).
+          var yPile = yTop - 10;
+          var labelRecette = svgEl("text", { x: centers[i], y: yPile, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
           labelRecette.textContent = "Recette : " + fmtMontant(c.recetteTotale);
           svg.appendChild(labelRecette);
 
-          // Écart de patients (mode "100% de la capacité" uniquement), encore au-dessus.
-          if (i === 1 && ecartPatientsJour != null) {
-            var labelEcart = svgEl("text", { x: centers[i], y: yTop - 10 - (tailleCommune + 6), "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: c.color });
-            labelEcart.textContent = patientsFmt.format(Math.abs(ecartPatientsJour)) + " " + ecartUnite + " de " + (ecartPatientsJour >= 0 ? "plus" : "moins");
-            svg.appendChild(labelEcart);
+          // Charges : centrées dans le bloc gris si celui-ci est assez haut pour le texte
+          // (mesuré sur tailleCommune, pas un seuil fixe en dur) ; **sinon empilées au-dessus
+          // de la barre** plutôt que rendues invisibles — bug signalé par Cédric le
+          // 06/09/2026 ("il arrive que les charges ne s'affichent pas"), le seuil fixe de 40px
+          // d'origine ne suivait pas la taille réelle du texte et cachait le libellé dès que
+          // le bloc gris devenait trop court (petits montants, échelle "1 patient"...).
+          if (c.charges > 0) {
+            var texteCharges = "Charges : " + fmtMontant(c.charges);
+            if ((yResultat - yTop) > tailleCommune * 1.6) {
+              var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
+              labelCharges.textContent = texteCharges;
+              svg.appendChild(labelCharges);
+            } else {
+              yPile -= (tailleCommune + 6);
+              var labelCharges = svgEl("text", { x: centers[i], y: yPile, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
+              labelCharges.textContent = texteCharges;
+              svg.appendChild(labelCharges);
+            }
           }
 
-          // Charges, centrées dans le bloc gris — seulement s'il est assez haut pour rester
-          // lisible, sinon le chiffre reste implicite (recette totale moins résultat).
-          if (c.charges > 0 && (yResultat - yTop) > 40) {
-            var labelCharges = svgEl("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
-            labelCharges.textContent = "Charges : " + fmtMontant(c.charges);
-            svg.appendChild(labelCharges);
+          // Écart de patients (mode "100% de la capacité" uniquement) : toujours la ligne la
+          // plus haute de la pile, au-dessus de "Recette" et de "Charges" si celle-ci a dû
+          // être empilée elle aussi.
+          if (i === 1 && ecartPatientsJour != null) {
+            yPile -= (tailleCommune + 6);
+            var labelEcart = svgEl("text", { x: centers[i], y: yPile, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: c.color });
+            labelEcart.textContent = patientsFmt.format(Math.abs(ecartPatientsJour)) + " " + ecartUnite + " de " + (ecartPatientsJour >= 0 ? "plus" : "moins");
+            svg.appendChild(labelEcart);
           }
 
           // Nom de la machine sous la barre — avec son propre débit en mode "chacune à sa
