@@ -1069,7 +1069,25 @@
       <div class="modal__scroll">
         <div class="cv-hyp-body">
           <h3 id="cvHypTitleA">Réglages avancés — IRM Esaote</h3>
-          <p class="simulator__hint">Aucun réglage supplémentaire pour l'IRM Esaote pour l'instant.</p>
+          <!-- Recette de l'acte intellectuel du radiologue (voir acteIntellectuelPatient()) :
+               moyenne pondérée entre le tarif "membre" (55€) et "autres régions" (69€) —
+               réglable par machine, pas fixé en dur, pour que Cédric puisse ajuster à un
+               retour terrain différent. Valeurs de base reprises telles quelles du calcul
+               déjà en place : 0% pour l'O-scan (machine dédiée aux membres, quasi 100% de
+               ce tarif), 75% pour les autres modèles Esaote plus généralistes (S-scan,
+               G-scan, Magnifico — moyenne 25% membre / 75% autres régions communiquée par
+               Esaote, voir le commentaire complet à côté de TARIF_IRM_MEMBRE plus bas dans
+               le script). Remise à cette valeur par défaut à chaque changement de modèle
+               (voir reinitialiserActeRegion()), modifiable ensuite librement. -->
+          <div class="field">
+            <label for="cvActeRegionA">Part des examens hors membres (acte intellectuel)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="cvActeRegionA" value="75" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="cvActeRegionHintA"></p>
+          <p class="simulator__hint" style="margin-top:.6rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
           <div class="cv-hyp-actions">
             <button type="button" class="btn" id="cvHypDoneA">Fermer</button>
           </div>
@@ -1576,6 +1594,65 @@
         return p > 0 ? 60 / p : Infinity; // 0 patient/h = capacité nulle, pas un temps nul
       }
 
+      // ---- Recette de l'acte intellectuel du radiologue, par patient — c'est ce poste qui
+      // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
+      // le forfait technique seul sous-estime l'écart réel de rentabilité. Tarifs CCAM secteur 1
+      // usuels (base de remboursement, hors majorations) : 55€ pour un examen IRM "membre",
+      // 69€ pour les autres régions — vérifiés sur ameli.fr le 10/08/2026. Pour une IRM Esaote
+      // généraliste (S-scan/G-scan/Magnifico), moyenne pondérée à 65,50€ (25% membre / 75% autre)
+      // plutôt qu'un simple 69€ : la répartition des examens IRM par application communiquée par
+      // Esaote ("MRI Exam by Application", présentation CHU Nîmes avril 2025 — Joints 25%,
+      // Head&Neck 30%, Spine 30%, MRA/Cardio 6%, Abdominal/Other 9%) donne "Joints" = 25% au
+      // tarif "membre", le reste (75%) aux autres régions : 0,25×55 + 0,75×69 = 65,50€.
+      // **O-scan traité à part (corrigé le 05/09/2026, signalé par Cédric)** : cette répartition
+      // 25%/75% est celle du PORTEFEUILLE ESAOTE GLOBAL (toutes IRM confondues), pas de l'O-scan
+      // spécifiquement — l'O-scan est justement la machine dédiée aux membres/extrémités
+      // (contrairement aux autres modèles, plus généralistes), donc sa vraie part "membre" est
+      // bien plus proche de 100% que de 25%. Lui appliquer 65,50€ sous-estimait son avantage
+      // réel face au scanner. Tarif "membre" pur (55€) retenu pour l'O-scan uniquement.
+      // **Rendu réglable le 07/09/2026** (demande de Cédric, suite à sa question "pourquoi
+      // le G-scan et l'O-scan n'ont pas les mêmes recettes") — champ "Part des examens hors
+      // membres" dans la roue crantée IRM (`cvActeRegionA`), remis à sa valeur par défaut à
+      // chaque changement de modèle (voir reinitialiserActeRegion()) : 0% pour l'O-scan,
+      // 75% pour les autres — reproduit exactement l'ancien comportement en dur, modifiable
+      // ensuite si un retour terrain diffère.
+      // Scanner : 25,27€ pour un examen mono-région (thorax ou abdomen-pelvis), 50,54€ pour un
+      // examen multi-région (TAP...) — pondérés selon la part saisie par le visiteur (16% par
+      // défaut, d'après le rapport SFPM n°39 (2020) sur 6610 examens nationaux : TAP 11% + corps
+      // entier 5% = 16% multi-région). Nuance MSK : un arthroscanner d'un membre (plus proche de
+      // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
+      // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
+      // sous le tableau récapitulatif).
+      var TARIF_IRM_MEMBRE = 55, TARIF_IRM_AUTRES_REGIONS = 69;
+      var TARIF_CT_MONO_REGION = 25.27, TARIF_CT_MULTI_REGION = 50.54;
+      // pctAutre : % d'examens au tarif "haut" (autres régions pour l'IRM, multi-région pour
+      // le scanner) — même mécanique de moyenne pondérée pour les 2 machines, un seul champ
+      // générique plutôt que 2 fonctions séparées.
+      function acteIntellectuelPatient(machine, pctAutre) {
+        var p = Math.max(0, Math.min(100, pctAutre || 0)) / 100;
+        if (machine.type !== "ct") return (1 - p) * TARIF_IRM_MEMBRE + p * TARIF_IRM_AUTRES_REGIONS;
+        return (1 - p) * TARIF_CT_MONO_REGION + p * TARIF_CT_MULTI_REGION;
+      }
+
+      // Part des examens "hors membres" pour la recette de l'acte intellectuel (voir
+      // acteIntellectuelPatient() plus bas) : 0% pour l'O-scan (machine dédiée aux membres,
+      // quasi 100% de ce tarif), 75% pour les autres modèles Esaote plus généralistes —
+      // reproduit exactement l'ancien calcul en dur, réglable depuis le 07/09/2026 (demande
+      // de Cédric, suite à sa question sur l'écart de recette entre O-scan et G-scan).
+      function acteRegionParDefaut(machine) { return machine.key === "esaote-o-scan" ? 0 : 75; }
+      function reinitialiserActeRegion(select, input, hintEl) {
+        input.value = acteRegionParDefaut(machineParKey(select.value));
+        majActeRegionHint(input, hintEl);
+      }
+      function majActeRegionHint(input, hintEl) {
+        var p = Math.max(0, Math.min(100, +input.value || 0)) / 100;
+        var tarif = (1 - p) * TARIF_IRM_MEMBRE + p * TARIF_IRM_AUTRES_REGIONS;
+        hintEl.textContent = "Soit " + eurosCent.format(tarif) + " en moyenne (" + eurosCent.format(TARIF_IRM_MEMBRE) + " membre / " + eurosCent.format(TARIF_IRM_AUTRES_REGIONS) + " autres régions).";
+      }
+      var acteRegionA = document.getElementById("cvActeRegionA"), acteRegionHintA = document.getElementById("cvActeRegionHintA");
+      reinitialiserActeRegion(selectA, acteRegionA, acteRegionHintA);
+      acteRegionA.addEventListener("input", function () { majActeRegionHint(acteRegionA, acteRegionHintA); recalculer(); });
+
       // Loyer de base par machine (SAV inclus, moyenné sur 7 ans) — communiqué par Cédric le
       // 10/08/2026 pour les scanners Siemens go.All/go.Top ; réutilise les mêmes valeurs IRM
       // Esaote que le comparateur IRM vs IRM (fichier propriétaire de cette page, ce sont des
@@ -1600,7 +1677,7 @@
       reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA);
       reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB);
 
-      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA); recalculer(); });
+      selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("cvLoyerA"), loyerHintA); reinitialiserActeRegion(selectA, acteRegionA, acteRegionHintA); recalculer(); });
       selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("cvLoyerB"), loyerHintB); recalculer(); });
       [mermA, mermB].forEach(function (input) { input.addEventListener("input", recalculer); });
 
@@ -1610,37 +1687,6 @@
         var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
         var plein = ligne.plein[zone];
         return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
-      }
-
-      // ---- Recette de l'acte intellectuel du radiologue, par patient — c'est ce poste qui
-      // creuse l'écart entre IRM et scanner (signalé explicitement par Cédric le 10/08/2026) :
-      // le forfait technique seul sous-estime l'écart réel de rentabilité. Tarifs CCAM secteur 1
-      // usuels (base de remboursement, hors majorations) : 55€ pour un examen IRM "membre",
-      // 69€ pour les autres régions — vérifiés sur ameli.fr le 10/08/2026. Pour une IRM Esaote
-      // généraliste (S-scan/G-scan/Magnifico), moyenne pondérée à 65,50€ (25% membre / 75% autre)
-      // plutôt qu'un simple 69€ : la répartition des examens IRM par application communiquée par
-      // Esaote ("MRI Exam by Application", présentation CHU Nîmes avril 2025 — Joints 25%,
-      // Head&Neck 30%, Spine 30%, MRA/Cardio 6%, Abdominal/Other 9%) donne "Joints" = 25% au
-      // tarif "membre", le reste (75%) aux autres régions : 0,25×55 + 0,75×69 = 65,50€.
-      // **O-scan traité à part (corrigé le 05/09/2026, signalé par Cédric)** : cette répartition
-      // 25%/75% est celle du PORTEFEUILLE ESAOTE GLOBAL (toutes IRM confondues), pas de l'O-scan
-      // spécifiquement — l'O-scan est justement la machine dédiée aux membres/extrémités
-      // (contrairement aux autres modèles, plus généralistes), donc sa vraie part "membre" est
-      // bien plus proche de 100% que de 25%. Lui appliquer 65,50€ sous-estimait son avantage
-      // réel face au scanner. Tarif "membre" pur (55€) retenu pour l'O-scan uniquement.
-      // Scanner : 25,27€ pour un examen mono-région (thorax ou abdomen-pelvis), 50,54€ pour un
-      // examen multi-région (TAP...) — pondérés selon la part saisie par le visiteur (16% par
-      // défaut, d'après le rapport SFPM n°39 (2020) sur 6610 examens nationaux : TAP 11% + corps
-      // entier 5% = 16% multi-région). Nuance MSK : un arthroscanner d'un membre (plus proche de
-      // l'activité réelle d'un Esaote ouvert) grimpe à 79,80-93,10€ — non retenu par défaut ici
-      // car ce simulateur vise une comparaison générale, mais à garder en tête (voir le texte
-      // sous le tableau récapitulatif).
-      var TARIF_IRM_MEMBRE = 55, TARIF_IRM_AUTRES_REGIONS = 69, TARIF_IRM_MOYENNE_GENERALISTE = 65.50;
-      var TARIF_CT_MONO_REGION = 25.27, TARIF_CT_MULTI_REGION = 50.54;
-      function acteIntellectuelPatient(machine, pctMultiRegion) {
-        if (machine.type !== "ct") return machine.key === "esaote-o-scan" ? TARIF_IRM_MEMBRE : TARIF_IRM_MOYENNE_GENERALISTE;
-        var p = Math.max(0, Math.min(100, pctMultiRegion || 0)) / 100;
-        return (1 - p) * TARIF_CT_MONO_REGION + p * TARIF_CT_MULTI_REGION;
       }
 
       // ---- Électricité : même modèle que le simulateur énergie (socle + surconsommation liée
@@ -1669,7 +1715,7 @@
 
       function calculerMachine(m, params) {
         var recette = recetteFT(m.machine, params.dateIso, params.zone, params.amortiKey);
-        var acte = acteIntellectuelPatient(m.machine, m.pctMultiRegion);
+        var acte = acteIntellectuelPatient(m.machine, m.pctActeAutre);
         var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh, m.socleHeuresJours);
         var rh = m.nombreMerm * params.coutMermMensuel;
         var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel;
@@ -2074,8 +2120,8 @@
           : "";
 
         var configs = [
-          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), tempsInstallation: minutesDepuisPatientsHeure(installA.value) },
-          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctMultiRegion: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value), socleHeuresJours: socleHeuresJoursScanner }
+          { slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")), nombreMerm: Math.max(0, +mermA.value || 0), pctActeAutre: Math.max(0, Math.min(100, +document.getElementById("cvActeRegionA").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installA.value) },
+          { slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")), nombreMerm: Math.max(0, +mermB.value || 0), pctActeAutre: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value), socleHeuresJours: socleHeuresJoursScanner }
         ];
 
         var resultats = configs.map(function (c) {
@@ -3042,6 +3088,7 @@ var svg = document.getElementById("cvChart");
         { id: "cvLoyerA", evt: "input", label: "Loyer de l'IRM", type: "montant" },
         { id: "cvMermA", evt: "input", label: "Nombre de MERM (IRM)" },
         { id: "cvInstallA", evt: "input", label: "Patients par heure (IRM)" },
+        { id: "cvActeRegionA", evt: "input", label: "Part des examens hors membres (IRM)", suffixe: " %" },
         // Scanner (CT) — cvMachineB en premier, même raison.
         { id: "cvMachineB", evt: "change", label: "Modèle Scanner", type: "select" },
         { id: "cvLoyerB", evt: "input", label: "Loyer du scanner", type: "montant" },
