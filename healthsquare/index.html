@@ -331,6 +331,11 @@
   }
   .map-visual .drop svg{width:34px;height:34px;fill:var(--plum);filter:drop-shadow(0 6px 8px rgba(0,0,0,0.25));}
   .map-card__foot{padding:16px 20px;font-size:0.86rem;color:var(--ink-soft);border-top:1px solid var(--line);}
+  .itineraire{
+    padding:20px 20px 6px;display:flex;flex-direction:column;gap:14px;
+    border-top:1px solid var(--line);
+  }
+  .itineraire strong{font-family:'Fraunces',serif;font-size:1.05rem;font-weight:600;color:var(--ink);}
   .contact-form-note{
     margin-top:26px;padding:18px 20px;border:1px dashed var(--line);border-radius:6px;
     font-size:0.88rem;color:var(--ink-soft);
@@ -431,7 +436,7 @@
         <div class="why-item">
           <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3M12 2v3M16 3v3"/><path d="M6 8h12l-1 8a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4z"/></svg>
           <h3>Douche sur place</h3>
-          <p>Venu à vélo ou en courant ? Une douche est à ta disposition dans le centre.</p>
+          <p>Pour les sportifs venant en courant ou à vélo, ou ceux qui font du sport sur leur pause déjeuner : une douche est à disposition dans le centre.</p>
         </div>
       </div>
     </div>
@@ -454,6 +459,7 @@
             <ul>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>12 postes disponibles en open space</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Engagement trimestriel, 1 mois de préavis</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Réglé par virement bancaire, fin du mois précédent la location</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1ère journée offerte pour essayer</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Location à la semaine possible — 60&nbsp;€/poste, sans poste fixe garanti d'une semaine à l'autre</li>
             </ul>
@@ -469,6 +475,7 @@
             <ul>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Jusqu'à 5 personnes, porte fermante</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Une seule zone disponible actuellement</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Réglé par virement bancaire, fin du mois précédent la location</li>
               <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Location à la semaine possible (+15&nbsp;% du prorata mensuel)</li>
             </ul>
             <a class="btn btn--line" href="https://outlook.office.com/book/HealthSquareCoworking@ced4scale.fr/" target="_blank" rel="noopener">Réserver une visite</a>
@@ -593,7 +600,7 @@
 
           <label class="devis-kbis">
             <input type="checkbox" id="devisKbis">
-            <span>Ma société a un Kbis de moins d'un an <strong>— 30&nbsp;% de réduction</strong></span>
+            <span>Ma société a un Kbis de moins d'un an <strong>— 30&nbsp;% de réduction</strong><br><small style="font-weight:400;color:var(--ink-soft);">Kbis à fournir avant la signature du contrat</small></span>
           </label>
         </div>
 
@@ -713,6 +720,25 @@
         <div class="map-card">
           <div class="map-visual">
             <div class="drop"><svg viewBox="0 0 24 24"><path d="M12 22s8-7.4 8-13a8 8 0 0 0-16 0c0 5.6 8 13 8 13z"/></svg></div>
+          </div>
+          <div class="itineraire">
+            <strong>Comment se rendre au centre ?</strong>
+            <label class="devis-field">
+              <span>Votre adresse de départ</span>
+              <input type="text" id="itiAdresse" placeholder="Ex. 12 rue Sainte-Catherine, Bordeaux">
+            </label>
+            <label class="devis-field">
+              <span>Moyen de transport</span>
+              <select id="itiMode">
+                <option value="driving">Voiture</option>
+                <option value="driving">Moto</option>
+                <option value="bicycling">Vélo</option>
+                <option value="walking">À pied</option>
+                <option value="transit">Transports en commun</option>
+              </select>
+            </label>
+            <a class="btn btn--solid" id="itiBtn" href="#" target="_blank" rel="noopener" style="justify-content:center;">Voir l'itinéraire et le temps de trajet</a>
+            <p class="devis-result__note" style="color:var(--ink-soft);">Ouvre Google Maps dans un nouvel onglet, avec le temps de trajet réel.</p>
           </div>
           <div class="map-card__foot">Carte interactive Google Maps — active sur le site en ligne, remplacée ici par un repère simplifié pour l'aperçu.</div>
         </div>
@@ -921,6 +947,23 @@
 
   showGroup();
   compute();
+
+  // Itinéraire — ouvre Google Maps avec l'adresse du visiteur et le mode choisi, aucune clé API nécessaire.
+  var DESTINATION = '229 Rue Judaïque, 33000 Bordeaux';
+  var itiAdresse = document.getElementById('itiAdresse');
+  var itiMode = document.getElementById('itiMode');
+  var itiBtn = document.getElementById('itiBtn');
+  function updateItiLink(){
+    var origin = itiAdresse.value.trim();
+    var url = 'https://www.google.com/maps/dir/?api=1'
+      + '&destination=' + encodeURIComponent(DESTINATION)
+      + '&travelmode=' + encodeURIComponent(itiMode.value);
+    if (origin) { url += '&origin=' + encodeURIComponent(origin); }
+    itiBtn.href = url;
+  }
+  itiAdresse.addEventListener('input', updateItiLink);
+  itiMode.addEventListener('change', updateItiLink);
+  updateItiLink();
 })();
 </script>
 
