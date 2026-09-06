@@ -281,6 +281,30 @@
        tablette — alignée sur le bord du bouton correspondant à la place. */
     .cv-btn-row button[data-tip].cv-tip-left::after { left: 0; transform: none; }
     .cv-btn-row button[data-tip].cv-tip-right::after { left: auto; right: 0; transform: none; }
+    /* Cadre d'écart de résultat au-dessus du graphe à barres (demande de Cédric le
+       07/09/2026) — rempli dynamiquement en JS (voir dessinerRepartition), couleur de
+       fond neutre par défaut, remplacée par la couleur de la machine en tête une fois
+       calculée. */
+    .cv-ecart-frame {
+      border: 2px solid var(--line-2); border-radius: var(--radius); padding: .7rem 1rem;
+      margin-bottom: .9rem; text-align: center; font-size: .92rem; font-weight: 700;
+      color: var(--ink); background: var(--wash-2); transition: border-color .15s ease, background .15s ease;
+    }
+    .cv-ecart-frame strong { font-size: 1.25rem; }
+    /* Cadre à fond vert pour les 2 lignes "Résultat / an" / "Résultat / 7 ans" du tableau
+       récapitulatif (demande de Cédric le 07/09/2026, reprend la couleur "succès" déjà
+       utilisée ailleurs sur le site — var(--success-*), même palette que l'ancienne
+       bannière verte retirée en haut de page). --haut/--bas arrondissent chacun leur coin
+       (haut = 1ʳᵉ ligne du cadre, bas = 2ᵉ et dernière) pour lire les 2 lignes comme un
+       seul bloc, pas 2 rubans distincts. */
+    .cv-ligne-verte td { background: var(--success-bg); color: var(--success-tx); border-bottom-color: var(--success-bg); }
+    .cv-ligne-verte td:first-child { color: var(--success-tx); }
+    .cv-ligne-verte--haut td { padding-top: 1rem; }
+    .cv-ligne-verte--haut td:first-child { border-top-left-radius: var(--radius); }
+    .cv-ligne-verte--haut td:last-child { border-top-right-radius: var(--radius); }
+    .cv-ligne-verte--bas td { padding-bottom: 1rem; }
+    .cv-ligne-verte--bas td:first-child { border-bottom-left-radius: var(--radius); }
+    .cv-ligne-verte--bas td:last-child { border-bottom-right-radius: var(--radius); }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -452,6 +476,12 @@
         </div>
 
         <div class="simulator__chart-card">
+          <!-- Cadre d'écart de résultat, au-dessus du graphe à barres (demande de Cédric le
+               07/09/2026) — reprend l'écart déjà visible en comparant les 2 barres, mais en
+               un chiffre unique lisible d'un coup d'œil, qui suit les 3 groupes de boutons
+               sous le graphe (échelle de temps, mode d'activité, mode AI) puisqu'il est
+               recalculé dans dessinerRepartition() à partir de la même donnée "compos". -->
+          <div class="cv-ecart-frame" id="cvEcartFrame"></div>
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
           </div>
@@ -1515,8 +1545,12 @@
         // signeEcart : +1 pour une ligne de recette (écart positif = avantage IRM), -1 pour une
         // ligne de charge (valA/valB sont des montants positifs affichés avec un "-" ; l'écart
         // doit malgré tout suivre la même convention "positif = avantage IRM", donc on inverse).
-        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold, espaceAvant, nowrapLabel) {
+        function ligne(label, valA, valB, fmt, fmtEcart, signeEcart, bold, espaceAvant, nowrapLabel, vertPosition) {
           var tr = document.createElement("tr");
+          // Cadre à fond vert pour "Résultat / an" et "Résultat / 7 ans" (demande de Cédric
+          // le 07/09/2026) — vertPosition "haut"/"bas" arrondit le bon coin de chaque ligne
+          // pour que les 2 lignes se lisent comme UN seul cadre, pas 2 rubans séparés.
+          if (vertPosition) tr.className = "cv-ligne-verte cv-ligne-verte--" + vertPosition;
           var ecart = signeEcart * (valA - valB);
           [label, fmt(valA), fmt(valB), fmtEcart(ecart)].forEach(function (texte, i) {
             var td = document.createElement("td");
@@ -1557,8 +1591,8 @@
         ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Personnel MERM", lignes[0].rhParPatient, lignes[1].rhParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Résultat", lignes[0].resultatParPatient, lignes[1].resultatParPatient, eurosCent.format, eurosCent.format, 1, true);
-        ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true, true);
-        ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true);
+        ligne("Résultat / an", lignes[0].resultatAn, lignes[1].resultatAn, euros.format, euros.format, 1, true, true, false, "haut");
+        ligne("Résultat / 7 ans", lignes[0].resultat7ans, lignes[1].resultat7ans, euros.format, euros.format, 1, true, false, false, "bas");
         return lignes;
       }
 
@@ -1769,6 +1803,27 @@ var svg = document.getElementById("cvChart");
         // "Résultat / 7 ans" dans le tableau au-dessus — les cents n'ont plus de sens une fois
         // sorti de l'échelle "par patient".
         var fmtMontant = euros.format;
+
+        // Cadre d'écart de résultat au-dessus du graphe (demande de Cédric le 07/09/2026) —
+        // lit directement compos (déjà à l'échelle de temps + mode d'activité + mode AI
+        // choisis), donc suit automatiquement les 3 groupes de boutons sous le graphe sans
+        // calcul séparé. Couleur du cadre = couleur de la machine en tête (teinte à 10 %
+        // d'opacité en fond, couleur pleine en bordure).
+        var ECART_LABELS_HORIZON = { patient: "pour ce patient", jour: "par jour", an: "par an", "5ans": "sur 5 ans", "7ans": "sur 7 ans" };
+        var ecartResultat = compos[0].resultat - compos[1].resultat;
+        var enTete = ecartResultat >= 0 ? compos[0] : compos[1];
+        var ecartFrame = document.getElementById("cvEcartFrame");
+        if (Math.abs(ecartResultat) < 0.5) {
+          ecartFrame.innerHTML = "Résultat quasiment identique entre les 2 machines " + ECART_LABELS_HORIZON[horizonBarres] + ".";
+          ecartFrame.style.borderColor = "var(--line-2)";
+          ecartFrame.style.background = "var(--wash-2)";
+          ecartFrame.style.color = "var(--ink)";
+        } else {
+          ecartFrame.innerHTML = "Écart de résultat : <strong>" + fmtMontant(Math.abs(ecartResultat)) + "</strong> de plus pour " + enTete.nom + " " + ECART_LABELS_HORIZON[horizonBarres] + ".";
+          ecartFrame.style.borderColor = enTete.color;
+          ecartFrame.style.background = enTete.color + "1a";
+          ecartFrame.style.color = "var(--ink)";
+        }
 
         var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
         var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
