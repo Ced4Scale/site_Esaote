@@ -233,10 +233,23 @@
          la colonne de résultats gagne ~350px de large une fois le panneau masqué, les
          petits boutons .btn--sm d'origine paraissent alors perdus dans l'espace. La
          largeur commune par famille (JS, egaliserTousLesBoutons()) est recalculée juste
-         après ce changement de taille, sinon elle resterait celle d'avant. */
+         après ce changement de taille, sinon elle resterait celle d'avant.
+         `flex: 1 1 0` en plus (demande de Cédric le 07/09/2026, suite : une 1ʳᵉ version
+         se contentait d'agrandir le texte/padding sans changer la répartition — avec
+         `justify-content: space-between` déjà posé sur .cv-btn-row, ça laissait un grand
+         vide entre des boutons toujours petits plutôt que de le combler). Chaque bouton
+         grandit maintenant pour se partager toute la largeur de la rangée, sans jamais
+         descendre sous son `min-width` déjà posé par famille (JS) qui empêche toute
+         troncature de texte. */
       .simulator__layout.cv-panel-hidden .cv-btn-row .btn {
-        font-size: .95rem; padding: .7rem 1.4rem;
+        font-size: .95rem; padding: .7rem 1.4rem; flex: 1 1 0;
       }
+      /* Les boutons "Mémoire" ne sont pas des enfants directs de .cv-btn-row (ils sont
+         dans .cv-memoire-slot, avec la petite croix "×" à côté) — flex:1 sur .btn seul
+         n'a donc aucun effet là, il faut faire grandir le SLOT dans la rangée, puis le
+         bouton DANS le slot (la croix, elle, garde sa taille fixe). */
+      .simulator__layout.cv-panel-hidden .cv-btn-row .cv-memoire-slot { flex: 1 1 0; }
+      .simulator__layout.cv-panel-hidden .cv-btn-row .cv-memoire-slot .cv-btn-memoire { flex: 1 1 0; }
     }
     /* Curseur sous "Résultat à votre activité" (motif repris de
        simulateur-bascule-oscan.html, .bascule-range) — change directement le
@@ -2428,9 +2441,20 @@ var svg = document.getElementById("cvChart");
       function egaliserLargeurFamille(ids) {
         var boutons = ids.map(function (id) { return document.getElementById(id); }).filter(Boolean);
         if (!boutons.length) return;
-        boutons.forEach(function (b) { b.style.minWidth = ""; });
+        // "flex: none" pendant la mesure UNIQUEMENT (piège trouvé le 07/09/2026, en plein
+        // écran) : en plein écran, .cv-btn-row .btn a aussi `flex: 1 1 0` (voir plus haut,
+        // "effacer le vide") — remettre juste min-width à "" ne suffit pas à révéler la
+        // largeur NATURELLE du texte, puisque flex-grow reste actif et fait grandir le
+        // bouton pour occuper sa part de la rangée quel que soit min-width. La largeur
+        // mesurée était donc "part égale de la rangée", pas "largeur du texte" — un
+        // arrondi de quelques pixels en plus (à cause des `gap`) suffisait à dépasser la
+        // largeur totale disponible et faisait passer le dernier bouton seul à la ligne
+        // suivante, où il explosait à 100% de la largeur (flex-grow sur une ligne à lui
+        // seul). "flex: none" pendant la mesure fige temporairement le bouton à sa vraie
+        // largeur de contenu, immunisée contre cette boucle.
+        boutons.forEach(function (b) { b.style.minWidth = ""; b.style.flex = "none"; });
         var max = Math.max.apply(null, boutons.map(function (b) { return b.getBoundingClientRect().width; }));
-        boutons.forEach(function (b) { b.style.minWidth = max + "px"; });
+        boutons.forEach(function (b) { b.style.minWidth = max + "px"; b.style.flex = ""; });
       }
       function egaliserTousLesBoutons() {
         Object.keys(CV_FAMILLES_BOUTONS).forEach(function (k) { egaliserLargeurFamille(CV_FAMILLES_BOUTONS[k]); });
