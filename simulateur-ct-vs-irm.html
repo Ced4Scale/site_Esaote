@@ -1280,6 +1280,7 @@
       var FT_MOY_PLOT_H = FT_MOY_VIEWBOX_H - FT_MOY_PAD.top - FT_MOY_PAD.bottom;
       var FT_MOY_X_MAX = 15000; // même plage que le curseur cvFtMoySlider (0 à 15.000)
       function arrondiSup5(v) { return Math.ceil(v / 5) * 5; }
+      function arrondiInf5(v) { return Math.floor(v / 5) * 5; }
       function dessinerGrapheFtMoyen(trIrm, trCt) {
         var svg = document.getElementById("cvFtMoyChart");
         svg.innerHTML = "";
@@ -1295,7 +1296,14 @@
         // Le point le plus haut de chaque courbe est toujours le tarif plein (N→0) — la
         // moyenne pondérée ne peut jamais dépasser le tarif de la 1ʳᵉ tranche.
         var yMax = arrondiSup5(Math.max(trIrm[0].montant, trCt[0].montant) * 1.05);
-        var yMin = 0;
+        // Le point le plus BAS de chaque courbe est toujours au volume maximum affiché
+        // (15.000, dernier échantillon) — la moyenne pondérée décroît tout du long,
+        // jamais un creux ailleurs sur la courbe. Axe qui démarre à ce plancher (arrondi
+        // au multiple de 5 inférieur, pas 0) pour ne plus laisser de bande blanche sous
+        // les 2 courbes — demande de Cédric le 06/09/2026 ("commencer le graphe à 57 €").
+        // Calculé dynamiquement plutôt que figé à 57 : cette valeur dépend de la
+        // date/zone/statut amorti choisis, qui changent les tarifs du barème.
+        var yMin = Math.max(0, arrondiInf5(Math.min(serieIrm[NB_PAS], serieCt[NB_PAS])));
         function xAt(n) { return FT_MOY_PAD.left + (FT_MOY_PLOT_W * n) / FT_MOY_X_MAX; }
         function yAt(v) { return FT_MOY_PAD.top + FT_MOY_PLOT_H - (FT_MOY_PLOT_H * (v - yMin)) / (yMax - yMin); }
 
@@ -1316,15 +1324,20 @@
 
         // Seuils du barème en pointillé, colorés par machine (REF/SEUIL1/SEUIL2 — pas la
         // dernière tranche "au-delà", qui n'a pas de seuil de fin), avec un petit
-        // libellé vertical en haut de chaque trait (demande de Cédric le 06/09/2026:
-        // "dit si c'est CT ou MR, si c'est seuil 1 ou autre") — sans lui, impossible de
-        // savoir à quelle machine/quel seuil un trait pointillé correspond. Texte tourné
-        // (lecture de haut en bas) pour tenir dans le peu d'espace horizontal entre 2
-        // seuils proches (ex. IRM 8.000 et CT 6.700, à peine 50px d'écart à l'échelle du
-        // graphe) ; décalé à gauche pour l'IRM et à droite pour le scanner, y compris
-        // quand les 2 seuils tombent exactement à la même valeur (ex. IRM 3ᵉ seuil et CT
-        // 2ᵉ seuil, tous deux à 11.000).
-        function traceSeuils(tranches, couleur, nomCourt, decalageX) {
+        // libellé en haut de chaque trait (demande de Cédric le 06/09/2026: "dit si
+        // c'est CT ou MR, si c'est seuil 1 ou autre") — sans lui, impossible de savoir à
+        // quelle machine/quel seuil un trait pointillé correspond. Texte horizontal,
+        // PERPENDICULAIRE à la ligne (suite de la demande, 06/09/2026 : la 1ʳᵉ version
+        // tournait le texte pour lire de haut en bas, ce qui le rendait parallèle à la
+        // ligne plutôt que perpendiculaire). Les libellés sont d'abord tous collectés
+        // puis triés par position X, pour alterner 2 hauteurs entre voisins immédiats —
+        // seul moyen fiable d'éviter que 2 titres se touchent quand leurs seuils sont
+        // proches (ex. IRM 8.000 et CT 6.700, à peine 50px d'écart à l'échelle du
+        // graphe) ou identiques (IRM 3ᵉ seuil et CT 2ᵉ seuil, tous deux à 11.000 — 2
+        // entrées consécutives une fois triées, donc automatiquement sur 2 hauteurs
+        // différentes).
+        var seuilsListe = [];
+        function collecterSeuils(tranches, couleur, nomCourt) {
           var numero = 1;
           tranches.forEach(function (t, i) {
             if (i === tranches.length - 1 || t.fin == null || t.fin > FT_MOY_X_MAX) return;
@@ -1333,18 +1346,21 @@
               x1: x, x2: x, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H,
               stroke: couleur, "stroke-width": "1.2", "stroke-dasharray": "4,3", opacity: "0.55"
             }));
-            var lx = x + decalageX, ly = FT_MOY_PAD.top + 3;
-            var label = svgEl("text", {
-              x: lx, y: ly, "font-size": "8", "font-weight": "700", fill: couleur, "text-anchor": "start",
-              transform: "rotate(90 " + lx + " " + ly + ")"
-            });
-            label.textContent = nomCourt + " — seuil " + numero;
-            svg.appendChild(label);
+            seuilsListe.push({ x: x, texte: nomCourt + " — seuil " + numero, couleur: couleur });
             numero++;
           });
         }
-        traceSeuils(trIrm, SLOT_COLORS[0], "IRM", -6);
-        traceSeuils(trCt, SLOT_COLORS[1], "CT", 6);
+        collecterSeuils(trIrm, SLOT_COLORS[0], "IRM");
+        collecterSeuils(trCt, SLOT_COLORS[1], "CT");
+        seuilsListe.sort(function (a, b) { return a.x - b.x; });
+        seuilsListe.forEach(function (s, i) {
+          var label = svgEl("text", {
+            x: s.x, y: FT_MOY_PAD.top + (i % 2 === 0 ? 9 : 21),
+            "font-size": "8", "font-weight": "700", fill: s.couleur, "text-anchor": "middle"
+          });
+          label.textContent = s.texte;
+          svg.appendChild(label);
+        });
 
         [[serieIrm, SLOT_COLORS[0]], [serieCt, SLOT_COLORS[1]]].forEach(function (s) {
           var points = s[0].map(function (v, i) { return xAt((FT_MOY_X_MAX * i) / NB_PAS) + "," + yAt(v); }).join(" ");
