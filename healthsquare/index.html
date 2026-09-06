@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="HealthSquare Coworking Bordeaux — postes de coworking, bureau privé et salle de réunion au 229 rue Judaïque, quartier Judaïque, Bordeaux.">
+<title>HealthSquare Coworking</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600;700&display=swap');
+
+  :root{
+    --paper:#f6f0e4;
+    --paper-raised:#fffaf0;
+    --ink:#26201a;
+    --ink-soft:#5c5044;
+    --line:#e0d3bd;
+    --terracotta:#c1622a;
+    --terracotta-deep:#9c4c1f;
+    --plum:#9c1457;
+    --plum-soft:#f1d9e4;
+    --floor:#2a2420;
+    --floor-text:#f0e6d6;
+    --shadow: 0 18px 40px -20px rgba(38,32,26,0.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#1d1815;
+      --paper-raised:#262019;
+      --ink:#f1e8da;
+      --ink-soft:#c3b6a3;
+      --line:#3a322a;
+      --terracotta:#e07f42;
+      --terracotta-deep:#f3975c;
+      --plum:#e8578f;
+      --plum-soft:#3a1f2b;
+      --floor:#100d0b;
+      --floor-text:#f0e6d6;
+      --shadow: 0 18px 40px -20px rgba(0,0,0,0.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#1d1815;
+    --paper-raised:#262019;
+    --ink:#f1e8da;
+    --ink-soft:#c3b6a3;
+    --line:#3a322a;
+    --terracotta:#e07f42;
+    --terracotta-deep:#f3975c;
+    --plum:#e8578f;
+    --plum-soft:#3a1f2b;
+    --floor:#100d0b;
+    --floor-text:#f0e6d6;
+    --shadow: 0 18px 40px -20px rgba(0,0,0,0.6);
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    line-height:1.55;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces', Georgia, serif;
+    font-weight:600;
+    text-wrap:balance;
+    margin:0;
+    color:var(--ink);
+  }
+  a{color:inherit;}
+  img{display:block;}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 28px;}
+  .eyebrow{
+    font-size:0.72rem;
+    letter-spacing:0.16em;
+    text-transform:uppercase;
+    color:var(--terracotta-deep);
+    font-weight:700;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:13px 26px;
+    border-radius:3px;
+    font-weight:600;
+    font-size:0.95rem;
+    text-decoration:none;
+    border:1.5px solid transparent;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn:focus-visible{outline:3px solid var(--plum);outline-offset:2px;}
+  .btn--solid{background:var(--terracotta);color:#fff8f0;}
+  .btn--solid:hover{background:var(--terracotta-deep);}
+  .btn--ghost{background:transparent;border-color:currentColor;color:var(--floor-text);}
+  .btn--line{background:transparent;border-color:var(--terracotta);color:var(--terracotta-deep);}
+
+  /* header */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 28px;max-width:1180px;margin:0 auto;
+  }
+  .brand{display:flex;align-items:center;gap:12px;text-decoration:none;}
+  .brand img{height:38px;width:auto;}
+  .brand span{font-family:'Fraunces',serif;font-weight:600;font-size:1.15rem;letter-spacing:0.01em;}
+  nav.links{display:flex;gap:28px;font-size:0.92rem;font-weight:500;}
+  nav.links a{text-decoration:none;color:var(--ink-soft);border-bottom:2px solid transparent;padding-bottom:3px;}
+  nav.links a:hover{color:var(--terracotta-deep);border-color:var(--terracotta);}
+  .nav-cta{display:flex;gap:10px;}
+  @media (max-width:860px){ nav.links{display:none;} }
+
+  /* hero */
+  .hero{position:relative;overflow:hidden;}
+  .hero__media{position:relative;height:min(78vh, 620px);min-height:420px;}
+  .hero__media img{width:100%;height:100%;object-fit:cover;}
+  .hero__scrim{
+    position:absolute;inset:0;
+    background:linear-gradient(100deg, rgba(20,15,11,0.82) 5%, rgba(20,15,11,0.45) 48%, rgba(20,15,11,0.15) 75%);
+  }
+  .hero__content{
+    position:absolute;inset:0;display:flex;align-items:flex-end;
+  }
+  .hero__inner{max-width:1180px;margin:0 auto;padding:0 28px 52px;width:100%;color:#fbf3e6;}
+  .hero__pin{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(251,243,230,0.12);
+    border:1px solid rgba(251,243,230,0.35);
+    padding:7px 14px;border-radius:100px;
+    font-size:0.82rem;font-weight:600;letter-spacing:0.02em;
+    margin-bottom:20px;
+  }
+  .hero h1{
+    font-size:clamp(2.1rem, 4.6vw, 3.6rem);
+    line-height:1.05;
+    max-width:15ch;
+    color:#fff9ef;
+  }
+  .hero p.lede{
+    max-width:46ch;margin-top:18px;font-size:1.08rem;color:#e9dfcf;
+  }
+  .hero__ctas{display:flex;gap:14px;margin-top:30px;flex-wrap:wrap;}
+
+  section{padding:88px 0;}
+  .section-head{max-width:640px;margin-bottom:48px;}
+  .section-head h2{font-size:clamp(1.7rem,3vw,2.3rem);margin-top:10px;}
+  .section-head p{color:var(--ink-soft);margin-top:14px;font-size:1.02rem;}
+
+  /* pourquoi */
+  .why{background:var(--paper-raised);border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .why-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:var(--line);border:1px solid var(--line);border-radius:4px;overflow:hidden;}
+  .why-item{background:var(--paper-raised);padding:30px 26px;display:flex;flex-direction:column;gap:12px;}
+  .why-item svg{width:26px;height:26px;stroke:var(--terracotta-deep);flex-shrink:0;}
+  .why-item h3{font-size:1.02rem;font-family:'Work Sans',sans-serif;font-weight:700;}
+  .why-item p{margin:0;color:var(--ink-soft);font-size:0.92rem;}
+  @media (max-width:760px){.why-grid{grid-template-columns:1fr 1fr;} }
+  @media (max-width:520px){.why-grid{grid-template-columns:1fr;} }
+
+  /* offres */
+  .offers{display:flex;flex-direction:column;gap:22px;}
+  .offer-card{
+    position:relative;
+    background:var(--paper-raised);
+    border:1px solid var(--line);
+    border-radius:6px;
+    overflow:hidden;
+    display:flex;flex-direction:row-reverse;
+    align-items:stretch;
+    box-shadow:var(--shadow);
+  }
+  .promo-corner{
+    position:absolute;top:0;right:0;width:120px;height:120px;
+    overflow:hidden;z-index:4;pointer-events:none;
+  }
+  .promo-corner .promo-ribbon{
+    position:absolute;top:25px;right:-34px;
+    width:170px;text-align:center;
+    transform:rotate(45deg);
+    background:var(--plum);color:#fff6fa;
+    font-size:0.7rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
+    padding:6px 0;
+    box-shadow:0 3px 8px rgba(0,0,0,0.28);
+  }
+  .promo-pill{
+    position:absolute;top:14px;right:14px;
+    background:var(--plum);color:#fff6fa;
+    font-size:0.72rem;font-weight:700;letter-spacing:0.03em;text-transform:uppercase;
+    padding:6px 12px;border-radius:100px;
+    box-shadow:0 3px 8px rgba(0,0,0,0.28);
+    z-index:4;
+  }
+  .promo-panel{position:relative;overflow:hidden;border-radius:6px;}
+  .priv-table-panel{
+    padding:46px 22px 20px;
+    background:rgba(240,230,214,0.05);
+    border:1px solid rgba(240,230,214,0.16);
+  }
+  .offer-card__media{width:270px;aspect-ratio:1/1;flex-shrink:0;position:relative;overflow:hidden;}
+  .offer-card__media img{width:100%;height:100%;object-fit:cover;}
+  .offer-card__body{padding:30px 32px;display:flex;flex-direction:column;gap:14px;flex:1;min-width:0;}
+  .offer-card__tag{
+    align-self:flex-start;
+    background:var(--plum-soft);color:var(--plum);
+    font-size:0.72rem;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;
+    padding:4px 10px;border-radius:100px;
+  }
+  .offer-card h3{font-size:1.32rem;}
+  .offer-card__price{display:flex;align-items:baseline;gap:6px;font-family:'Fraunces',serif;}
+  .offer-card__price .num{font-size:2.1rem;font-weight:600;color:var(--terracotta-deep);font-variant-numeric:tabular-nums;}
+  .offer-card__price .unit{color:var(--ink-soft);font-size:0.95rem;font-family:'Work Sans',sans-serif;}
+  .offer-card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:9px;font-size:0.92rem;color:var(--ink-soft);}
+  .offer-card ul li{display:flex;gap:9px;align-items:flex-start;}
+  .offer-card ul li svg{width:15px;height:15px;flex-shrink:0;margin-top:3px;stroke:var(--terracotta-deep);}
+  .offer-card .btn{margin-top:auto;align-self:flex-start;}
+  .offer-card--room ul{border-top:1px dashed var(--line);padding-top:14px;margin-top:2px;gap:6px;}
+  @media (max-width:640px){
+    .offer-card{flex-direction:column;}
+    .offer-card__media{width:100%;}
+  }
+
+  /* devis */
+  .devis-box{
+    display:grid;grid-template-columns:1.2fr 0.8fr;gap:0;
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;
+    background:var(--paper);box-shadow:var(--shadow);
+  }
+  .devis-form{padding:32px;display:flex;flex-direction:column;gap:20px;}
+  .devis-group{display:flex;flex-wrap:wrap;gap:20px;}
+  .devis-field{display:flex;flex-direction:column;gap:7px;font-size:0.85rem;font-weight:600;color:var(--ink-soft);flex:1;min-width:180px;}
+  .devis-field--num{min-width:140px;}
+  .devis-field select, .devis-field input{
+    font:inherit;font-size:1rem;font-weight:500;color:var(--ink);
+    padding:11px 13px;border:1px solid var(--line);border-radius:4px;background:var(--paper-raised);
+  }
+  .devis-field select:focus, .devis-field input:focus{outline:2px solid var(--terracotta);outline-offset:1px;}
+  .devis-kbis{
+    display:flex;align-items:center;gap:10px;
+    padding:14px 16px;border:1px dashed var(--terracotta);border-radius:5px;
+    background:var(--plum-soft);font-size:0.88rem;color:var(--ink);cursor:pointer;
+  }
+  .devis-kbis input{width:17px;height:17px;accent-color:var(--terracotta-deep);flex-shrink:0;}
+  .devis-kbis strong{color:var(--plum);}
+  .devis-result{
+    background:var(--floor);color:var(--floor-text);
+    padding:32px;display:flex;flex-direction:column;gap:16px;
+  }
+  .devis-result__lines{display:flex;flex-direction:column;gap:8px;font-size:0.9rem;color:#c9bda9;min-height:24px;}
+  .devis-result__lines .line{display:flex;justify-content:space-between;gap:12px;}
+  .devis-result__lines .line span:last-child{font-variant-numeric:tabular-nums;}
+  .devis-result__total{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-top:1px solid rgba(240,230,214,0.18);padding-top:16px;
+    font-family:'Fraunces',serif;font-size:1.05rem;
+  }
+  .devis-result__total .num{font-size:1.9rem;font-weight:600;color:var(--terracotta);font-variant-numeric:tabular-nums;}
+  .devis-result__note{margin:0;font-size:0.78rem;color:#a7987f;}
+  @media (max-width:820px){.devis-box{grid-template-columns:1fr;}}
+
+  /* privatisation */
+  .priv{background:var(--floor);color:var(--floor-text);}
+  .priv .section-head p{color:#c9bda9;}
+  .priv .eyebrow{color:var(--terracotta);}
+  .priv-grid{display:grid;grid-template-columns:1.1fr 0.9fr;gap:48px;align-items:start;}
+  table.priv-table{width:100%;border-collapse:collapse;font-size:0.95rem;}
+  table.priv-table caption{text-align:left;font-size:0.78rem;letter-spacing:0.06em;text-transform:uppercase;color:#a7987f;margin-bottom:10px;}
+  table.priv-table th,table.priv-table td{padding:13px 14px;text-align:left;border-bottom:1px solid rgba(240,230,214,0.14);}
+  table.priv-table th{font-family:'Work Sans',sans-serif;font-weight:600;color:#d8cbb5;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.04em;}
+  table.priv-table td.num, table.priv-table th.num{font-variant-numeric:tabular-nums;text-align:right;}
+  table.priv-table tr:last-child td{border-bottom:none;}
+  .priv-note{
+    background:rgba(240,230,214,0.06);
+    border:1px solid rgba(240,230,214,0.16);
+    border-radius:6px;padding:22px 24px;
+    font-size:0.92rem;color:#d8cbb5;
+    display:flex;flex-direction:column;gap:12px;
+  }
+  .priv-note strong{color:var(--floor-text);}
+  .priv-side{display:flex;flex-direction:column;gap:20px;}
+  .priv-clean{
+    display:flex;justify-content:space-between;gap:16px;
+    border-top:1px solid rgba(240,230,214,0.14);padding-top:14px;
+  }
+  @media (max-width:860px){.priv-grid{grid-template-columns:1fr;}}
+
+  /* galerie */
+  .gallery-group{margin-bottom:44px;}
+  .gallery-group:last-child{margin-bottom:0;}
+  .gallery-group h3{
+    font-family:'Work Sans',sans-serif;font-weight:700;font-size:0.95rem;
+    text-transform:uppercase;letter-spacing:0.06em;color:var(--ink-soft);
+    margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--line);
+  }
+  .gallery-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+  .gallery-grid a{border-radius:5px;overflow:hidden;aspect-ratio:4/3;background:var(--line);}
+  .gallery-grid img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease;}
+  .gallery-grid a:hover img{transform:scale(1.045);}
+  @media (max-width:900px){.gallery-grid{grid-template-columns:repeat(2,1fr);}}
+
+  /* contact */
+  .contact-grid{display:grid;grid-template-columns:0.9fr 1.1fr;gap:56px;align-items:start;}
+  .contact-list{display:flex;flex-direction:column;gap:22px;}
+  .contact-item{display:flex;gap:16px;align-items:flex-start;}
+  .contact-item svg{width:22px;height:22px;stroke:var(--terracotta-deep);flex-shrink:0;margin-top:2px;}
+  .contact-item h4{margin:0 0 4px;font-family:'Work Sans',sans-serif;font-size:0.98rem;font-weight:700;}
+  .contact-item p, .contact-item a{margin:0;color:var(--ink-soft);text-decoration:none;font-size:0.96rem;}
+  .contact-item a:hover{color:var(--terracotta-deep);}
+  .map-card{
+    border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--paper-raised);
+    box-shadow:var(--shadow);
+  }
+  .map-visual{
+    height:230px;position:relative;
+    background:
+      linear-gradient(0deg, rgba(38,32,26,0.08), rgba(38,32,26,0.08)),
+      repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 34px),
+      var(--paper);
+  }
+  .map-visual .drop{
+    position:absolute;left:52%;top:46%;transform:translate(-50%,-100%);
+    display:flex;flex-direction:column;align-items:center;
+  }
+  .map-visual .drop svg{width:34px;height:34px;fill:var(--plum);filter:drop-shadow(0 6px 8px rgba(0,0,0,0.25));}
+  .map-card__foot{padding:16px 20px;font-size:0.86rem;color:var(--ink-soft);border-top:1px solid var(--line);}
+  .contact-form-note{
+    margin-top:26px;padding:18px 20px;border:1px dashed var(--line);border-radius:6px;
+    font-size:0.88rem;color:var(--ink-soft);
+  }
+  @media (max-width:860px){.contact-grid{grid-template-columns:1fr;}}
+
+  footer{background:var(--floor);color:#a7987f;padding:44px 0 30px;font-size:0.85rem;}
+  .footer-grid{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;flex-wrap:wrap;}
+  footer .brand span{color:var(--floor-text);}
+  footer .legal{max-width:520px;line-height:1.7;}
+  footer .legal strong{color:var(--floor-text);}
+</style>
+
+<header>
+  <div class="nav">
+    <a class="brand" href="#top">
+      <img src="assets/logo.png" alt="Logo HealthSquare">
+      <span>HealthSquare</span>
+    </a>
+    <nav class="links">
+      <a href="#top">Accueil</a>
+      <a href="#coworking">Coworking</a>
+      <a href="#reunion">Salle de réunion</a>
+      <a href="#bureau">Bureau privé</a>
+      <a href="#galerie">Galerie</a>
+      <a href="#contact">Contact</a>
+    </nav>
+    <div class="nav-cta">
+      <a class="btn btn--solid" href="#devis">Générer votre devis</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" style="padding:0;">
+    <div class="hero__media">
+      <img src="assets/salle-reunion-2.jpg" alt="Salle de réunion équipée de HealthSquare, table bois et vidéoprojecteur">
+      <div class="hero__scrim"></div>
+      <div class="hero__content">
+        <div class="hero__inner">
+          <span class="hero__pin">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            229 rue Judaïque, 33000 Bordeaux
+          </span>
+          <h1>Un espace de travail au vrai charme bordelais</h1>
+          <p class="lede">Postes de coworking, bureau privé et salle de réunion dans une maison de caractère du quartier Judaïque — à deux pas du centre-ville, ouvert 7j/7.</p>
+          <div class="hero__ctas">
+            <a class="btn btn--solid" href="#offres">Voir les tarifs</a>
+            <a class="btn btn--ghost" href="https://outlook.office.com/book/HealthSquareCoworking@ced4scale.fr/" target="_blank" rel="noopener">Réserver une visite</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="why">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Pourquoi HealthSquare</span>
+        <h2>Tout ce qu'il faut pour travailler bien, rien de superflu</h2>
+      </div>
+      <div class="why-grid">
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round"><path d="M5 12.5a11 11 0 0 1 14 0"/><path d="M8 15.5a6.5 6.5 0 0 1 8 0"/><path d="M11 18.5a2.2 2.2 0 0 1 2 0"/><circle cx="12" cy="19.3" r=".6" fill="currentColor" stroke="none"/></svg>
+          <h3>Wifi fibre</h3>
+          <p>Connexion stable et rapide sur tout le bâtiment, aucune coupure aux heures de pointe.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9h13a3 3 0 0 1 0 6h-1"/><path d="M4 9v6a3 3 0 0 0 3 3h6a3 3 0 0 0 3-3V9"/><path d="M7 6c0-1 1-1 1-2M11 6c0-1 1-1 1-2"/></svg>
+          <h3>Café à volonté</h3>
+          <p>Café et thé compris, en libre-service toute la journée.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M8 8h3M8 12h8M8 16h5"/></svg>
+          <h3>Cuisine équipée</h3>
+          <p>Réfrigérateur, micro-ondes et vaisselle pour déjeuner sur place sans y penser.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></svg>
+          <h3>Cabine téléphonique</h3>
+          <p>Un espace isolé pour un appel ou une visio sans déranger les autres.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>
+          <h3>Accès 7j/7</h3>
+          <p>Tu viens quand ça t'arrange, week-ends et soirées compris.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3-2 6-2 9 0s6 2 9 0V4c-3 2-6 2-9 0S6 2 3 4z"/></svg>
+          <h3>Charme bordelais</h3>
+          <p>Pierre, bois et lumière naturelle dans une maison rénovée du quartier Judaïque.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18M12 3l-3 3M12 3l3 3M12 21l-3-3M12 21l3-3M3 12h18M3 12l3-3M3 12l3 3M21 12l-3-3M21 12l-3 3"/></svg>
+          <h3>Climatisé partout</h3>
+          <p>Le centre est entièrement climatisé, poste de coworking comme salle de réunion.</p>
+        </div>
+        <div class="why-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3v3M12 2v3M16 3v3"/><path d="M6 8h12l-1 8a4 4 0 0 1-4 4h-2a4 4 0 0 1-4-4z"/></svg>
+          <h3>Douche sur place</h3>
+          <p>Venu à vélo ou en courant ? Une douche est à ta disposition dans le centre.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="offres">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Nos offres</span>
+        <h2>Trois façons de s'installer</h2>
+        <p>Tarifs HT, sans engagement caché — le détail exact des conditions se règle ensemble avant signature.</p>
+      </div>
+      <div class="offers">
+        <article class="offer-card" id="coworking">
+          <div class="offer-card__media"><img src="assets/coworking-1.jpg" alt="Espace de coworking en open space, table commune et sièges"><span class="promo-corner"><span class="promo-ribbon">-30% Kbis &lt;1 an</span></span></div>
+          <div class="offer-card__body">
+            <span class="offer-card__tag">Open space</span>
+            <h3>Poste de coworking</h3>
+            <div class="offer-card__price"><span class="num">200&nbsp;€</span><span class="unit">HT / mois</span></div>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>12 postes disponibles en open space</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Engagement trimestriel, 1 mois de préavis</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>1ère journée offerte pour essayer</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Location à la semaine possible — 60&nbsp;€/poste, sans poste fixe garanti d'une semaine à l'autre</li>
+            </ul>
+            <a class="btn btn--line" href="#contact">Demander une place</a>
+          </div>
+        </article>
+        <article class="offer-card offer-card--room" id="bureau">
+          <div class="offer-card__media"><img src="assets/bureau-prive-1.jpg" alt="Bureau privé fermé, aménagé pour une petite équipe"><span class="promo-corner"><span class="promo-ribbon">-30% Kbis &lt;1 an</span></span></div>
+          <div class="offer-card__body">
+            <span class="offer-card__tag">Zone unique</span>
+            <h3>Bureau privé fermé</h3>
+            <div class="offer-card__price"><span class="num">900&nbsp;€</span><span class="unit">HT / mois</span></div>
+            <ul>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Jusqu'à 5 personnes, porte fermante</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Une seule zone disponible actuellement</li>
+              <li><svg viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Location à la semaine possible (+15&nbsp;% du prorata mensuel)</li>
+            </ul>
+            <a class="btn btn--line" href="https://outlook.office.com/book/HealthSquareCoworking@ced4scale.fr/" target="_blank" rel="noopener">Réserver une visite</a>
+          </div>
+        </article>
+        <article class="offer-card offer-card--room" id="reunion">
+          <div class="offer-card__media"><img src="assets/salle-reunion-3.jpg" alt="Salle de réunion pour 12 personnes avec vidéoprojecteur"><span class="promo-corner"><span class="promo-ribbon">-30% Kbis &lt;1 an</span></span></div>
+          <div class="offer-card__body">
+            <span class="offer-card__tag">12 personnes</span>
+            <h3>Salle de réunion</h3>
+            <div class="offer-card__price"><span class="num">25&nbsp;€</span><span class="unit">HT / heure</span></div>
+            <ul>
+              <li>100&nbsp;€ la demi-journée</li>
+              <li>150&nbsp;€ la journée</li>
+              <li>750&nbsp;€ la semaine</li>
+              <li>250&nbsp;€/jour le week-end ou un jour férié</li>
+            </ul>
+            <a class="btn btn--line" href="#contact">Réserver la salle</a>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="devis" style="background:var(--paper-raised);border-top:1px solid var(--line);border-bottom:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Estimation</span>
+        <h2>Générez votre devis</h2>
+        <p>Choisissez une formule, ajustez la durée : le montant se met à jour tout de suite. Ce n'est pas un engagement — juste une base pour en discuter.</p>
+      </div>
+      <div class="devis-box">
+        <div class="devis-form">
+          <label class="devis-field">
+            <span>Formule</span>
+            <select id="devisFormule">
+              <option value="coworking">Poste de coworking</option>
+              <option value="bureau">Bureau privé fermé</option>
+              <option value="reunion">Salle de réunion</option>
+              <option value="privatisation">Privatisation du centre</option>
+            </select>
+          </label>
+
+          <div class="devis-group" data-for="coworking">
+            <label class="devis-field devis-field--num">
+              <span>Nombre de postes</span>
+              <input type="number" id="cwPostes" min="1" max="12" value="1">
+            </label>
+            <label class="devis-field">
+              <span>Durée en</span>
+              <select id="cwUnite">
+                <option value="mois">Mois</option>
+                <option value="semaine">Semaine(s)</option>
+              </select>
+            </label>
+            <label class="devis-field devis-field--num">
+              <span id="cwQtyLabel">Nombre de mois</span>
+              <input type="number" id="cwQty" min="1" value="3">
+            </label>
+          </div>
+
+          <div class="devis-group" data-for="bureau" hidden>
+            <label class="devis-field">
+              <span>Durée en</span>
+              <select id="buUnite">
+                <option value="mois">Mois</option>
+                <option value="semaine">Semaine(s)</option>
+              </select>
+            </label>
+            <label class="devis-field devis-field--num">
+              <span id="buQtyLabel">Nombre de mois</span>
+              <input type="number" id="buQty" min="1" value="3">
+            </label>
+          </div>
+
+          <div class="devis-group" data-for="reunion" hidden>
+            <label class="devis-field">
+              <span>Formule de location</span>
+              <select id="reDuree">
+                <option value="heure">À l'heure — 25 €HT/h</option>
+                <option value="demi">Demi-journée — 100 €HT</option>
+                <option value="jour">Journée — 150 €HT</option>
+                <option value="semaine">Semaine — 750 €HT</option>
+                <option value="weekend">Week-end / jour férié — 250 €/jour</option>
+              </select>
+            </label>
+            <label class="devis-field devis-field--num">
+              <span id="reQtyLabel">Nombre d'heures</span>
+              <input type="number" id="reQty" min="1" value="2">
+            </label>
+          </div>
+
+          <div class="devis-group" data-for="privatisation" hidden>
+            <label class="devis-field">
+              <span>Capacité</span>
+              <select id="prCapacite">
+                <option value="20">20 personnes</option>
+                <option value="30">30 personnes</option>
+                <option value="40">40 personnes</option>
+              </select>
+            </label>
+            <label class="devis-field">
+              <span>Durée</span>
+              <select id="prDuree">
+                <option value="jour">Journée</option>
+                <option value="semaine">Semaine</option>
+                <option value="weekend">Week-end / jour férié</option>
+              </select>
+            </label>
+            <label class="devis-field devis-field--num">
+              <span id="prQtyLabel">Nombre de jours</span>
+              <input type="number" id="prQty" min="1" value="1">
+            </label>
+            <label class="devis-field" id="prMenageChoiceWrap" hidden>
+              <span>Ménage de la semaine</span>
+              <select id="prMenageChoice">
+                <option value="forfait">Forfait fin de semaine — 160 €</option>
+                <option value="quotidien">Chaque jour — 35 €/jour</option>
+              </select>
+            </label>
+          </div>
+
+          <label class="devis-kbis">
+            <input type="checkbox" id="devisKbis">
+            <span>Ma société a un Kbis de moins d'un an <strong>— 30&nbsp;% de réduction</strong></span>
+          </label>
+        </div>
+
+        <div class="devis-result">
+          <div class="devis-result__lines" id="devisLines"></div>
+          <div class="devis-result__total">
+            <span>Total estimé HT</span>
+            <span id="devisTotal" class="num">0&nbsp;€</span>
+          </div>
+          <a class="btn btn--solid" id="devisSend" href="#" style="justify-content:center;">Recevoir ce devis par e-mail</a>
+          <p class="devis-result__note">Un e-mail pré-rempli s'ouvre dans ta messagerie — tu confirmes tes coordonnées avant de l'envoyer.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="priv">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Organismes de formation</span>
+        <h2>Privatisation complète du centre</h2>
+        <p>Tout le centre HealthSquare — ses 6 zones de travail, sa salle de réunion et sa cuisine équipée — pour une session de formation, un séminaire ou un événement d'équipe.</p>
+      </div>
+      <div class="priv-grid">
+        <div class="promo-panel priv-table-panel">
+          <span class="promo-pill">-30% Kbis &lt;1 an</span>
+          <table class="priv-table">
+            <caption>Tarifs à la journée / à la semaine</caption>
+            <thead>
+              <tr><th>Capacité</th><th class="num">Journée</th><th class="num">Semaine</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>20 personnes</td><td class="num">250&nbsp;€</td><td class="num">1.250&nbsp;€</td></tr>
+              <tr><td>30 personnes</td><td class="num">300&nbsp;€</td><td class="num">1.500&nbsp;€</td></tr>
+              <tr><td>40 personnes</td><td class="num">330&nbsp;€</td><td class="num">1.650&nbsp;€</td></tr>
+              <tr><td>Week-end / jour férié</td><td class="num">350&nbsp;€</td><td class="num">—</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="priv-side">
+          <div class="priv-note">
+            <strong>Ménage obligatoire, facturé en plus</strong>
+            <div class="priv-clean"><span>Par journée</span><span class="num" style="font-variant-numeric:tabular-nums;">35&nbsp;€</span></div>
+            <div class="priv-clean"><span>Forfait fin de semaine</span><span class="num" style="font-variant-numeric:tabular-nums;">160&nbsp;€</span></div>
+            <span style="font-size:0.85rem;">Pour une privatisation à la semaine : au choix, 35&nbsp;€ chaque jour ou le forfait fin de semaine à 160&nbsp;€.</span>
+          </div>
+          <div class="priv-note">
+            <strong>Conditions de réservation</strong>
+            <span>Acompte de 50&nbsp;% à la réservation, solde réglé 15 jours avant la date. Une option prioritaire de 10 jours peut être posée le temps de confirmer votre session.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="galerie">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Galerie</span>
+        <h2>Le lieu, pièce par pièce</h2>
+      </div>
+
+      <div class="gallery-group">
+        <h3>Espace coworking</h3>
+        <div class="gallery-grid">
+          <a href="assets/coworking-1.jpg" target="_blank" rel="noopener"><img src="assets/coworking-1.jpg" alt="Espace coworking, vue 1"></a>
+          <a href="assets/coworking-2.jpg" target="_blank" rel="noopener"><img src="assets/coworking-2.jpg" alt="Espace coworking, vue 2"></a>
+        </div>
+      </div>
+
+      <div class="gallery-group">
+        <h3>Bureau privé</h3>
+        <div class="gallery-grid">
+          <a href="assets/bureau-prive-1.jpg" target="_blank" rel="noopener"><img src="assets/bureau-prive-1.jpg" alt="Bureau privé, vue 1"></a>
+          <a href="assets/bureau-prive-2.jpg" target="_blank" rel="noopener"><img src="assets/bureau-prive-2.jpg" alt="Bureau privé, vue 2"></a>
+          <a href="assets/bureau-prive-3.jpg" target="_blank" rel="noopener"><img src="assets/bureau-prive-3.jpg" alt="Bureau privé, vue 3"></a>
+        </div>
+      </div>
+
+      <div class="gallery-group">
+        <h3>Salle de réunion</h3>
+        <div class="gallery-grid">
+          <a href="assets/salle-reunion-1.jpg" target="_blank" rel="noopener"><img src="assets/salle-reunion-1.jpg" alt="Salle de réunion, vue 1"></a>
+          <a href="assets/salle-reunion-2.jpg" target="_blank" rel="noopener"><img src="assets/salle-reunion-2.jpg" alt="Salle de réunion, vue 2"></a>
+          <a href="assets/salle-reunion-3.jpg" target="_blank" rel="noopener"><img src="assets/salle-reunion-3.jpg" alt="Salle de réunion, vue 3"></a>
+          <a href="assets/salle-reunion-4.jpg" target="_blank" rel="noopener"><img src="assets/salle-reunion-4.jpg" alt="Salle de réunion, vue 4"></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="contact" style="background:var(--paper-raised);border-top:1px solid var(--line);">
+    <div class="wrap">
+      <div class="section-head">
+        <span class="eyebrow">Contact</span>
+        <h2>Une question, une visite à prévoir ?</h2>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-list">
+          <div class="contact-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6 19.8 19.8 0 0 1-3.1-8.6A2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .3 2 .7 2.9a2 2 0 0 1-.5 2.1L8 10a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.4 1.9.6 2.9.7a2 2 0 0 1 1.7 2z"/></svg>
+            <div><h4>Téléphone</h4><a href="tel:+33680735233">06 80 73 52 33</a></div>
+          </div>
+          <div class="contact-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m3 6 9 7 9-7"/></svg>
+            <div><h4>E-mail</h4><a href="mailto:cedric.goillot@ced4scale.fr">cedric.goillot@ced4scale.fr</a></div>
+          </div>
+          <div class="contact-item">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <div><h4>Adresse</h4><p>229 rue Judaïque<br>33000 Bordeaux</p></div>
+          </div>
+          <div class="contact-form-note">
+            <a class="btn btn--solid" href="https://outlook.office.com/book/HealthSquareCoworking@ced4scale.fr/" target="_blank" rel="noopener" style="margin-bottom:10px;">Réserver un créneau de visite</a><br>
+            Choisis un créneau libre en ligne, ou appelle/écris directement — pas de réseau social actif pour l'instant.
+          </div>
+        </div>
+        <div class="map-card">
+          <div class="map-visual">
+            <div class="drop"><svg viewBox="0 0 24 24"><path d="M12 22s8-7.4 8-13a8 8 0 0 0-16 0c0 5.6 8 13 8 13z"/></svg></div>
+          </div>
+          <div class="map-card__foot">Carte interactive Google Maps — active sur le site en ligne, remplacée ici par un repère simplifié pour l'aperçu.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap footer-grid">
+    <div class="brand" style="display:flex;align-items:center;gap:10px;">
+      <img src="assets/logo.png" alt="" style="height:28px;filter:brightness(1.4);">
+      <span style="font-family:'Fraunces',serif;font-weight:600;">HealthSquare</span>
+    </div>
+    <div class="legal">
+      <strong>SCI Famatina</strong> — SIRET 804&nbsp;404&nbsp;333&nbsp;00010 — Siège social : 55 rue Famatina, 33200 Bordeaux.<br>
+      Centre HealthSquare : 229 rue Judaïque, 33000 Bordeaux.<br>
+      Site édité pour le compte de la SCI Famatina.
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // Nombres affichés avec un point comme séparateur de milliers, jamais autrement.
+  function fmt(n){
+    var cents = Math.round(n * 100);
+    var neg = cents < 0; cents = Math.abs(cents);
+    var intPart = Math.floor(cents / 100);
+    var decPart = cents % 100;
+    var intStr = intPart.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    var out = (neg ? '-' : '') + intStr;
+    if (decPart !== 0){
+      out += ',' + (decPart < 10 ? '0' + decPart : decPart);
+    }
+    return out + ' €';
+  }
+
+  var formuleSel = document.getElementById('devisFormule');
+  var groups = document.querySelectorAll('.devis-group');
+  var linesEl = document.getElementById('devisLines');
+  var totalEl = document.getElementById('devisTotal');
+  var sendBtn = document.getElementById('devisSend');
+
+  var reDuree = document.getElementById('reDuree');
+  var reQtyLabel = document.getElementById('reQtyLabel');
+  var reQty = document.getElementById('reQty');
+  var reLabels = {
+    heure: "Nombre d'heures", demi: "Nombre de demi-journées",
+    jour: "Nombre de journées", semaine: "Nombre de semaines",
+    weekend: "Nombre de jours (week-end/férié)"
+  };
+  var rePrices = {heure:25, demi:100, jour:150, semaine:750, weekend:250};
+
+  var prDuree = document.getElementById('prDuree');
+  var prQtyLabel = document.getElementById('prQtyLabel');
+  var prQtyLabels = {jour:"Nombre de journées", semaine:"Nombre de semaines", weekend:"Nombre de jours (week-end/férié)"};
+  var prCapPrices = {
+    "20":{jour:250, semaine:1250},
+    "30":{jour:300, semaine:1500},
+    "40":{jour:330, semaine:1650}
+  };
+  var MENAGE_JOUR = 35; // ménage obligatoire, jamais retirable
+  var MENAGE_FORFAIT_SEMAINE = 160;
+  var JOURS_PAR_SEMAINE = 5;
+  var prMenageChoiceWrap = document.getElementById('prMenageChoiceWrap');
+  var prMenageChoice = document.getElementById('prMenageChoice');
+
+  function showGroup(){
+    var v = formuleSel.value;
+    groups.forEach(function(g){ g.hidden = g.dataset.for !== v; });
+  }
+
+  function addLine(label, amount){
+    var row = document.createElement('div');
+    row.className = 'line';
+    row.innerHTML = '<span>' + label + '</span><span>' + fmt(amount) + '</span>';
+    linesEl.appendChild(row);
+  }
+
+  var SEMAINE_SURCOUT = 1.15; // location à la semaine (bureau privé) : +15% du prorata mensuel
+  var COWORKING_SEMAINE = 60; // tarif fixe poste de coworking à la semaine, sans poste fixe garanti
+  var KBIS_REDUCTION = 0.30; // Kbis de moins d'un an, sur toutes les formules — pas sur le ménage
+  var kbisBox = document.getElementById('devisKbis');
+
+  var cwUnite = document.getElementById('cwUnite');
+  var cwQtyLabel = document.getElementById('cwQtyLabel');
+  var buUnite = document.getElementById('buUnite');
+  var buQtyLabel = document.getElementById('buQtyLabel');
+  var UNITE_LABELS = {mois:'Nombre de mois', semaine:'Nombre de semaines'};
+
+  function unitPrice(moisPrice, unite){
+    return (unite === 'semaine') ? (moisPrice / 4 * SEMAINE_SURCOUT) : moisPrice;
+  }
+  function uniteMot(unite, qty){
+    return (unite === 'semaine') ? (qty > 1 ? 'semaines' : 'semaine') : 'mois';
+  }
+
+  function applyKbis(montant, kbis){
+    if (!kbis) return montant;
+    var remise = montant * KBIS_REDUCTION;
+    addLine('Réduction Kbis < 1 an (-30% sur la location)', -remise);
+    return montant - remise;
+  }
+
+  function compute(){
+    linesEl.innerHTML = '';
+    var v = formuleSel.value;
+    var total = 0;
+    var subject = '';
+    var recap = '';
+    var kbis = kbisBox.checked;
+
+    if (v === 'coworking'){
+      var postes = Math.max(1, parseInt(document.getElementById('cwPostes').value, 10) || 1);
+      var unite = cwUnite.value;
+      var qte = Math.max(1, parseInt(document.getElementById('cwQty').value, 10) || 1);
+      var unit = (unite === 'semaine') ? COWORKING_SEMAINE : 200;
+      var montant = postes * unit * qte;
+      addLine(postes + ' poste' + (postes>1?'s':'') + ' × ' + qte + ' ' + uniteMot(unite, qte) + ' × ' + fmt(unit), montant);
+      if (unite === 'semaine'){
+        var note = document.createElement('div');
+        note.className = 'line';
+        note.innerHTML = '<span style="font-style:italic;">Sans poste fixe garanti d\'une semaine à l\'autre</span><span></span>';
+        linesEl.appendChild(note);
+      }
+      total = applyKbis(montant, kbis);
+      subject = 'Devis HealthSquare — Coworking';
+      recap = postes + ' poste(s) de coworking, ' + qte + ' ' + uniteMot(unite, qte) + (unite === 'semaine' ? ' (sans poste fixe garanti)' : '');
+    }
+    else if (v === 'bureau'){
+      var buUniteV = buUnite.value;
+      var buQte = Math.max(1, parseInt(document.getElementById('buQty').value, 10) || 1);
+      var buUnit = unitPrice(900, buUniteV);
+      var montantB = buUnit * buQte;
+      addLine(buQte + ' ' + uniteMot(buUniteV, buQte) + ' × ' + fmt(buUnit), montantB);
+      total = applyKbis(montantB, kbis);
+      subject = 'Devis HealthSquare — Bureau privé';
+      recap = 'Bureau privé fermé, ' + buQte + ' ' + uniteMot(buUniteV, buQte);
+    }
+    else if (v === 'reunion'){
+      var duree = reDuree.value;
+      var qty = Math.max(1, parseInt(reQty.value, 10) || 1);
+      var unitR = rePrices[duree];
+      var montantR = unitR * qty;
+      addLine(qty + ' × ' + fmt(unitR), montantR);
+      total = applyKbis(montantR, kbis);
+      subject = 'Devis HealthSquare — Salle de réunion';
+      recap = 'Salle de réunion, formule "' + reDuree.options[reDuree.selectedIndex].text + '", quantité ' + qty;
+    }
+    else if (v === 'privatisation'){
+      var cap = prCapacite.value;
+      var pdur = prDuree.value;
+      var pqty = Math.max(1, parseInt(prQty.value, 10) || 1);
+      var baseUnit = (pdur === 'weekend') ? 350 : prCapPrices[cap][pdur];
+      var baseMontant = baseUnit * pqty;
+      addLine('Privatisation ' + cap + ' pers. — ' + pqty + ' × ' + fmt(baseUnit), baseMontant);
+      var baseNet = applyKbis(baseMontant, kbis);
+
+      var menageMontant, menageLabel;
+      if (pdur === 'semaine'){
+        if (prMenageChoice.value === 'quotidien'){
+          menageMontant = MENAGE_JOUR * JOURS_PAR_SEMAINE * pqty;
+          menageLabel = 'Ménage obligatoire — ' + (JOURS_PAR_SEMAINE * pqty) + ' j × ' + fmt(MENAGE_JOUR);
+        } else {
+          menageMontant = MENAGE_FORFAIT_SEMAINE * pqty;
+          menageLabel = 'Ménage obligatoire — forfait fin de semaine × ' + pqty;
+        }
+      } else {
+        menageMontant = MENAGE_JOUR * pqty;
+        menageLabel = 'Ménage obligatoire — ' + pqty + ' × ' + fmt(MENAGE_JOUR);
+      }
+      addLine(menageLabel, menageMontant);
+      total = baseNet + menageMontant;
+      subject = 'Devis HealthSquare — Privatisation du centre';
+      recap = 'Privatisation ' + cap + ' personnes, ' + prDuree.options[prDuree.selectedIndex].text.toLowerCase() + ', quantité ' + pqty + ' (ménage obligatoire inclus dans le total)';
+    }
+
+    totalEl.textContent = fmt(total);
+    if (kbis) { recap += ' (Kbis < 1 an, -30% appliqué sur la location)'; }
+
+    var body = 'Bonjour,\n\nJe souhaite recevoir un devis HealthSquare Coworking pour :\n' + recap +
+      '\n\nMontant estimé HT : ' + fmt(total) +
+      '\n\nMes coordonnées :\nNom : \nTéléphone : \n\nMerci de me confirmer les disponibilités.';
+    sendBtn.href = 'mailto:cedric.goillot@ced4scale.fr?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
+  }
+
+  formuleSel.addEventListener('change', function(){ showGroup(); compute(); });
+  document.getElementById('cwPostes').addEventListener('input', compute);
+  cwUnite.addEventListener('change', function(){ cwQtyLabel.textContent = UNITE_LABELS[cwUnite.value]; compute(); });
+  document.getElementById('cwQty').addEventListener('input', compute);
+  buUnite.addEventListener('change', function(){ buQtyLabel.textContent = UNITE_LABELS[buUnite.value]; compute(); });
+  document.getElementById('buQty').addEventListener('input', compute);
+  kbisBox.addEventListener('change', compute);
+  reDuree.addEventListener('change', function(){ reQtyLabel.textContent = reLabels[reDuree.value]; compute(); });
+  reQty.addEventListener('input', compute);
+  var prCapacite = document.getElementById('prCapacite');
+  prCapacite.addEventListener('change', compute);
+  prDuree.addEventListener('change', function(){
+    prQtyLabel.textContent = prQtyLabels[prDuree.value];
+    prMenageChoiceWrap.hidden = (prDuree.value !== 'semaine');
+    compute();
+  });
+  document.getElementById('prQty').addEventListener('input', compute);
+  prMenageChoice.addEventListener('change', compute);
+
+  showGroup();
+  compute();
+})();
+</script>
+
+</html>
