@@ -417,8 +417,11 @@
             <div style="display:flex;gap:.5rem;flex-wrap:wrap">
               <button type="button" class="btn btn--sm" id="cvBtnModeActivite" aria-pressed="true">Même activité</button>
               <button type="button" class="btn btn--sm btn--ghost" id="cvBtnModeDebit" aria-pressed="false">100% de la capacité</button>
+              <button type="button" class="btn btn--sm" id="cvBtnAvecAI" aria-pressed="true">Avec AI</button>
+              <button type="button" class="btn btn--sm btn--ghost" id="cvBtnSansAI" aria-pressed="false">Sans AI</button>
             </div>
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
+            <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeSansAITxt" hidden>Recette de l'acte intellectuel du radiologue retirée des 2 barres — ne montre plus que la recette du forfait technique.</p>
           </div>
         </div>
 
@@ -1296,6 +1299,25 @@
       document.getElementById("cvBtnModeActivite").addEventListener("click", function () { choisirModeActivite(false); });
       document.getElementById("cvBtnModeDebit").addEventListener("click", function () { choisirModeActivite(true); });
 
+      // Paire de boutons exclusifs "Avec AI" / "Sans AI" (AI = acte intellectuel du
+      // radiologue, demande de Cédric le 06/09/2026) : retire/rajoute la recette de l'acte
+      // intellectuel des 2 barres, pour isoler la seule recette du forfait technique — même
+      // motif que la paire "Même activité"/"100% de la capacité" ci-dessus, et même portée
+      // limitée : n'affecte QUE ces 2 barres, jamais le tableau "Résultat à votre activité"
+      // ni la bannière verte, qui continuent d'afficher recette FT + acte intellectuel.
+      var modeSansAI = false;
+      function choisirModeAI(sansAI) {
+        modeSansAI = sansAI;
+        document.getElementById("cvBtnAvecAI").classList.toggle("btn--ghost", sansAI);
+        document.getElementById("cvBtnAvecAI").setAttribute("aria-pressed", String(!sansAI));
+        document.getElementById("cvBtnSansAI").classList.toggle("btn--ghost", !sansAI);
+        document.getElementById("cvBtnSansAI").setAttribute("aria-pressed", String(sansAI));
+        document.getElementById("cvModeSansAITxt").hidden = !sansAI;
+        recalculer();
+      }
+      document.getElementById("cvBtnAvecAI").addEventListener("click", function () { choisirModeAI(false); });
+      document.getElementById("cvBtnSansAI").addEventListener("click", function () { choisirModeAI(true); });
+
       // Échelle de temps des 2 barres — 4 boutons exclusifs (demande de Cédric le 05/09/2026) :
       // "jour" (l'activité du jour telle quelle), "an"/"5ans"/"7ans" (mêmes multiplicateurs que
       // les lignes "Résultat / an" et "Résultat / 7 ans" du tableau au-dessus — 5 ans ajouté ici
@@ -1647,6 +1669,9 @@ var svg = document.getElementById("cvChart");
       function dessinerRepartition(resultats, configs, lignes, params) {
         svg.innerHTML = "";
 
+        // Recette de l'acte intellectuel retirée si "Sans AI" est actif (voir choisirModeAI
+        // ci-dessus) — actePart vaut l'acte réel ou 0, jamais l'acte lui-même modifié, pour
+        // ne jamais toucher au tableau/à la bannière qui restent lus depuis r.acte/l.acte.
         var compos = resultats.map(function (r, i) {
           if (modeChacuneSaCapacite) {
             var patientsHeure = r.tempsInstallation > 0 ? 60 / r.tempsInstallation : 0;
@@ -1655,18 +1680,20 @@ var svg = document.getElementById("cvChart");
             var loyerParPatient = (configs[i].loyer * 12) / patientsAnnuelsPropre;
             var elecParPatient = (r.elecFixe * 12) / patientsAnnuelsPropre + r.elecVariable;
             var rhParPatient = (r.rh * 12) / patientsAnnuelsPropre;
+            var actePart = modeSansAI ? 0 : r.acte;
             return {
-              recetteTotale: r.recette + r.acte,
+              recetteTotale: r.recette + actePart,
               charges: loyerParPatient + elecParPatient + rhParPatient,
-              resultat: r.recette + r.acte - loyerParPatient - elecParPatient - rhParPatient,
+              resultat: r.recette + actePart - loyerParPatient - elecParPatient - rhParPatient,
               color: r.color, nom: r.machine.nomCourt, patientsJour: patientsJourPropre
             };
           }
           var l = lignes[i];
+          var actePart = modeSansAI ? 0 : l.acte;
           return {
-            recetteTotale: l.recette + l.acte,
+            recetteTotale: l.recette + actePart,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
-            resultat: l.resultatParPatient,
+            resultat: l.recette + actePart - l.loyerParPatient - l.elecParPatient - l.rhParPatient,
             color: r.color, nom: r.machine.nomCourt, patientsJour: params.activitePatientsJour
           };
         });
