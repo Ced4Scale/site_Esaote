@@ -1317,7 +1317,10 @@
         }
         for (var p = 0; p <= 4; p++) {
           var xv = (FT_MOY_X_MAX * p) / 4;
-          var lx = svgEl("text", { x: xAt(xv), y: FT_MOY_VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+          // Le dernier repère ("15.000 pat./an", plus long que les autres) déborderait du
+          // viewBox avec un ancrage centré — ancré à droite ("end") pour lui seul, pour
+          // qu'il grandisse vers la gauche plutôt que de dépasser le bord droit.
+          var lx = svgEl("text", { x: xAt(xv), y: FT_MOY_VIEWBOX_H - 8, class: "simulator__axis-label", "text-anchor": p === 4 ? "end" : "middle" });
           lx.textContent = seuilsEntiers.format(xv) + (p === 4 ? " pat./an" : "");
           svg.appendChild(lx);
         }
@@ -1372,6 +1375,47 @@
         var xActuel = xAt(nActuel);
         svg.appendChild(svgEl("line", { id: "cvFtMoyMarker", x1: xActuel, x2: xActuel, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H, stroke: "#8a8578", "stroke-width": "1.2" }));
 
+        // Bulles reliées par un trait, une par machine, avec le tarif moyen exact au
+        // volume du repère ci-dessus (demande de Cédric le 06/09/2026) — même chiffre
+        // que sous le curseur (#cvFtMoyIrm/#cvFtMoyCt), mais lisible directement sur le
+        // graphe. Un point marque l'endroit exact sur la courbe ; la bulle elle-même est
+        // décalée (jamais posée pile sur le point, qui la cacherait) et reliée par un
+        // trait fin de la couleur de la machine — motif "callout".
+        var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel);
+        var valCtActuel = tarifMoyenPourVolume(trCt, nActuel);
+        var ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: eurosCent.format(valIrmActuel) };
+        var ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: eurosCent.format(valCtActuel) };
+        [ptIrm, ptCt].forEach(function (p) {
+          svg.appendChild(svgEl("circle", { cx: p.x, cy: p.y, r: 3.5, fill: "#fff", stroke: p.couleur, "stroke-width": "2" }));
+        });
+
+        // Chaque bulle est poussée du côté OPPOSÉ à l'autre point (celle du point le plus
+        // haut monte, celle du point le plus bas descend) — garantit un écart minimum
+        // entre les 2 bulles même quand les 2 courbes se frôlent ou se croisent, plutôt
+        // que de compter sur un espacement naturel qui peut s'annuler à cet endroit
+        // précis (motif "empiler ailleurs" déjà utilisé plus haut sur ce site).
+        function dessinerBulle(p, decalageY) {
+          var mesure = svgEl("text", { "font-size": "10", "font-weight": "700" });
+          mesure.textContent = p.texte;
+          svg.appendChild(mesure);
+          var bbox = mesure.getBBox();
+          svg.removeChild(mesure);
+
+          var padX = 6, padY = 4;
+          var largeur = bbox.width + padX * 2, hauteur = bbox.height + padY * 2;
+          var by = Math.max(FT_MOY_PAD.top + hauteur / 2 + 1, Math.min(FT_MOY_PAD.top + FT_MOY_PLOT_H - hauteur / 2 - 1, p.y + decalageY));
+          var bx = Math.max(FT_MOY_PAD.left + largeur / 2 + 1, Math.min(640 - FT_MOY_PAD.right - largeur / 2 - 1, p.x));
+
+          svg.appendChild(svgEl("line", { x1: p.x, y1: p.y, x2: bx, y2: by, stroke: p.couleur, "stroke-width": "1" }));
+          svg.appendChild(svgEl("rect", { x: bx - largeur / 2, y: by - hauteur / 2, width: largeur, height: hauteur, rx: 4, fill: p.couleur }));
+          var texte = svgEl("text", { x: bx, y: by + bbox.height / 2 - 1, "text-anchor": "middle", "font-size": "10", "font-weight": "700", fill: "#fff" });
+          texte.textContent = p.texte;
+          svg.appendChild(texte);
+        }
+        var ordonnes = [ptIrm, ptCt].sort(function (a, b) { return a.y - b.y; });
+        dessinerBulle(ordonnes[0], -20);
+        dessinerBulle(ordonnes[1], 20);
+
         // Nom de chaque courbe écrit dans sa couleur à son DÉBUT (demande de Cédric le
         // 06/09/2026 — déplacé depuis l'extrémité droite, où les 2 courbes convergent et
         // se chevauchaient ; au début, les tarifs pleins sont nettement plus séparés).
@@ -1399,14 +1443,9 @@
         dessinerGrapheFtMoyen(trIrm, trCt);
       }
       document.getElementById("cvFtMoySlider").addEventListener("input", majFtMoyen);
-      // Appel initial déplacé ici (après les déclarations FT_MOY_*/majFtMoyen/
-      // dessinerGrapheFtMoyen ci-dessus) — afficherSeuilsBareme() appelle majFtMoyen()
-      // en son sein, qui a besoin de ces fonctions/constantes déjà assignées ; les
-      // appeler avant leur définition textuelle plantait au tout 1er rendu
-      // ("Cannot read properties of undefined (reading 'top')", FT_MOY_PAD encore
-      // undefined — même piège que NICE_STEPS documenté plus haut, volontairement
-      // évité pour lui mais reproduit ici avec mes propres constantes).
-      afficherSeuilsBareme();
+      // Appel initial d'afficherSeuilsBareme() déplacé plus bas dans le script (après
+      // la définition de SVG_NS/svgEl() — voir plus loin) plutôt que laissé ici : voir
+      // le commentaire à son nouvel emplacement pour l'historique complet du piège.
 
       // Nombre de MERM par défaut : un aimant permanent (IRM ouverte Esaote) se manipule en
       // général seul (1 MERM), un scanner demande en général entre 1 et 2 MERM en poste
@@ -2164,6 +2203,25 @@ var svg = document.getElementById("cvChart");
         Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
         return el;
       }
+
+      // Appel initial d'afficherSeuilsBareme() — placé ICI (après SVG_NS/svgEl()) et
+      // pas juste après sa propre définition ni juste après le bloc "Tarif moyen selon
+      // le volume" plus haut : afficherSeuilsBareme() appelle majFtMoyen(), qui appelle
+      // dessinerGrapheFtMoyen(), qui utilise svgEl() (donc SVG_NS) pour construire tout
+      // le graphe SVG — les deux étaient encore déclarées mais pas assignées (hoisting
+      // de `var`, pas de `function`) au moment où cet appel se trouvait plus haut.
+      // MÊME PIÈGE que celui déjà rencontré et corrigé pour FT_MOY_PAD (voir plus haut,
+      // et le skill ced4scale-simulateur-web, section "Un appel de fonction existant qui
+      // casse quand on ajoute du code juste après") — repéré cette fois via l'erreur
+      // "mesure.getBBox is not a function" : `document.createElementNS(undefined, tag)`
+      // (SVG_NS pas encore assigné) crée un élément SANS namespace SVG — Chrome le
+      // dessine quand même par tolérance sur les attributs de géométrie (d'où un graphe
+      // qui semblait fonctionner malgré tout), mais l'élément n'est PAS une vraie
+      // SVGGraphicsElement : `getBBox()` (utilisé par les bulles ci-dessous pour mesurer
+      // le texte) lui manque. Réflexe à généraliser : une fonction qui semble marcher
+      // ne prouve pas que ses éléments DOM sont corrects — vérifier `instanceof
+      // SVGElement`/`namespaceURI` dès qu'une méthode propre au type attendu manque.
+      afficherSeuilsBareme();
 
       var NICE_STEPS = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
       function niceCeil(value) {
