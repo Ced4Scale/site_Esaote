@@ -56,7 +56,13 @@
        superposée au curseur, au lieu d'apparaître en dessous. */
     .cv-horaire-track-wrap { position: relative; height: 1.4rem; }
     .cv-horaire-track-wrap input[type="range"] {
-      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0;
+      /* border: 0 nécessaire ici (pas sur .cv-activite-track-wrap) car ce curseur est
+         DANS un conteneur .field — la règle partagée ".field input { border: 1px solid
+         var(--line-2) }" (styles.css) s'appliquait sinon à l'input caché, dessinant un
+         cadre gris visible autour de toute la ligne. Repéré le 07/09/2026 en comparant
+         pixel à pixel avec le curseur "Nombre de patients par jour" (hors .field, jamais
+         concerné par cette règle). */
+      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0; border: 0;
       -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
     }
     .cv-horaire-track-wrap input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
@@ -72,8 +78,11 @@
       background: var(--red); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
     }
     .cv-horaire-track {
+      /* Fond transparent (pas de gris permanent) — demande de Cédric le 07/09/2026 : même
+         look que le curseur "Nombre de patients par jour" (.cv-activite-track), qui n'a
+         jamais eu de piste grise visible, seul le remplissage rouge + les poignées. */
       position: absolute; top: 50%; left: 9px; right: 9px; height: 4px;
-      background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
+      background: transparent; border-radius: 2px; transform: translateY(-50%);
     }
     .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
     .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
@@ -185,6 +194,15 @@
        règle avec variante @media). */
     @media (min-width: 781px) {
       .simulator__layout { grid-template-columns: 350px minmax(0, 1fr); }
+    }
+    /* Masquer/réafficher la colonne de gauche entière (Paramètres communs + IRM Esaote +
+       Scanner CT) au clic sur l'icône ⏴/⏵ (demande de Cédric le 07/09/2026) — la colonne
+       de résultats occupe alors toute la largeur. `hidden` sur .simulator__form suffit en
+       mobile (déjà 1 colonne) ; en desktop il faut aussi repasser la grille à 1 colonne,
+       sinon .simulator__form masqué laisse un vide de 350px inutilisé à gauche. */
+    .simulator__layout.cv-panel-hidden .simulator__form { display: none; }
+    @media (min-width: 781px) {
+      .simulator__layout.cv-panel-hidden { grid-template-columns: 1fr; }
     }
     /* Curseur sous "Résultat à votre activité" (motif repris de
        simulateur-bascule-oscan.html, .bascule-range) — change directement le
@@ -350,7 +368,14 @@
         <div class="simulator__field-group" style="border-left-color:#6b5b95">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
             <h3 style="margin:0">Paramètres communs</h3>
-            <button type="button" class="cv-gear-btn" id="cvBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+            <div style="display:flex;align-items:center;gap:.3rem">
+              <!-- Masquer/réafficher les 3 blocs de la colonne de gauche (demande de Cédric
+                   le 07/09/2026) : la colonne de résultats prend alors toute la largeur.
+                   Icône séparée du réglage ⚙ juste à côté (rôle différent : celui-ci ne
+                   change aucun paramètre, juste l'affichage). -->
+              <button type="button" class="cv-gear-btn" id="cvBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+              <button type="button" class="cv-gear-btn" id="cvBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+            </div>
           </div>
         </div>
 
@@ -2201,6 +2226,18 @@ var svg = document.getElementById("cvChart");
       wireHypOverlay("cvHypOverlay", "cvBtnHypotheses", "cvHypClose", "cvHypDone");
       wireHypOverlay("cvHypOverlayA", "cvBtnHypothesesA", "cvHypCloseA", "cvHypDoneA");
       wireHypOverlay("cvHypOverlayB", "cvBtnHypothesesB", "cvHypCloseB", "cvHypDoneB");
+
+      // Masquer/réafficher la colonne de gauche (demande de Cédric le 07/09/2026) — voir
+      // règles CSS .cv-panel-hidden plus haut. N'affecte que l'affichage, aucun paramètre
+      // ni calcul (le formulaire masqué reste dans le DOM avec ses valeurs intactes).
+      document.getElementById("cvBtnTogglePanel").addEventListener("click", function () {
+        var layout = document.querySelector(".simulator__layout");
+        var masque = layout.classList.toggle("cv-panel-hidden");
+        this.textContent = masque ? "⏵" : "⏴";
+        this.title = masque ? "Afficher les paramètres" : "Masquer les paramètres";
+        this.setAttribute("aria-label", this.title);
+        this.setAttribute("aria-pressed", String(masque));
+      });
 
       recalculer();
 
