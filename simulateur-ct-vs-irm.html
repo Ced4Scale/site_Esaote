@@ -948,6 +948,17 @@
   <script>
     (function () {
       var SLOT_COLORS = ["#2a78d6", "#eb6834"];
+      // Version pastel de SLOT_COLORS, réservée aux APLATS du graphe à barres/camemberts
+      // (demande de Cédric le 07/09/2026) — jamais utilisée pour le nom des machines ni
+      // ailleurs sur la page, qui gardent SLOT_COLORS plein pour rester cohérents avec le
+      // reste du site (en-têtes de tableau, etc.). fill = couleur de fond de la forme,
+      // text = couleur du libellé posé DESSUS ou juste à côté (mêmes tons que les familles
+      // de boutons pastel déjà établies plus haut — pas de nouvelles couleurs inventées).
+      var PASTEL_MACHINE = [
+        { fill: "#bcd4f2", text: "#274a75" },
+        { fill: "#f7cda6", text: "#8a4a1f" }
+      ];
+      var PASTEL_PERTE = { fill: "#f5c6c2", text: "#9c2b34" };
       // Séparateur de milliers dans les cases à 4-5 chiffres (loyer, salaire) — demande de
       // Cédric le 11/08/2026. Champ texte (pas number, qui n'accepte aucune mise en forme) :
       // reformaté au moment de quitter le champ (blur), pas à chaque frappe, pour ne pas faire
@@ -1844,53 +1855,85 @@ var svg = document.getElementById("cvChart");
         return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
       }
 
-      // Palette fixe des 3 postes de charge — LA MÊME pour les 2 camemberts (motif déjà
+      // Palettes fixes — LA MÊME pour les 2 machines de chaque camembert (motif déjà
       // établi sur simulateur-recettes.html : une couleur = un poste, jamais une couleur
       // par machine, pour ne pas confondre avec le bleu/orange des machines elles-mêmes).
+      // Couleurs pastel (demande de Cédric le 07/09/2026) : `fill` pour le secteur,
+      // `texte` pour le libellé posé à côté — plus foncé que `fill` pour rester lisible
+      // sur le fond blanc de la carte, jamais la même teinte que le secteur lui-même.
       var CV_PARTS_CHARGE = [
-        { key: "loyer", label: "Loyer", color: "#6b5b95" },
-        { key: "elec", label: "Électricité", color: "#c9a227" },
-        { key: "rh", label: "Personnel MERM", color: "#4a90a4" }
+        { key: "loyer", label: "Loyer", fill: "#c9bfe0", texte: "#5c4b8a" },
+        { key: "elec", label: "Électricité", fill: "#f0d9a0", texte: "#8a6d1f" },
+        { key: "rh", label: "Personnel MERM", fill: "#a8d4dc", texte: "#2d6e7a" }
       ];
+      // 2ᵉ camembert par machine (demande de Cédric le 07/09/2026 : "deux fois deux
+      // camemberts, un pour les recettes et un pour les charges") — recette = forfait
+      // technique + acte intellectuel (0 si "Sans AI"), même structure que CV_PARTS_CHARGE.
+      var CV_PARTS_RECETTE = [
+        { key: "recette", label: "Forfait technique", fill: "#a8d8b9", texte: "#1f6b47" },
+        { key: "acte", label: "Acte intellectuel", fill: "#e8b8d4", texte: "#8a2f66" }
+      ];
+
+      // Dessine UN camembert (recette OU charges, selon `parts`/`total`) centré sur
+      // (cx, cy) — factorisé pour être appelé 4 fois (2 machines × 2 catégories) sans
+      // dupliquer le tracé des secteurs/étiquettes.
+      function dessinerUnCamembert(cx, cy, rayon, parts, c, total, fmtMontant, titrePrefixe, group) {
+        if (total > 0) {
+          var startAngle = -Math.PI / 2;
+          parts.forEach(function (p) {
+            var part = c[p.key];
+            if (!(part > 0)) return;
+            var fraction = part / total;
+            var endAngle = startAngle + fraction * 2 * Math.PI;
+            // Un secteur qui couvre 100% (une seule part non nulle, ex. "Sans AI" où
+            // l'acte intellectuel tombe à 0) ne peut PAS se dessiner comme un arc SVG —
+            // un arc de 360° a un point de départ et d'arrivée identiques, ce qui produit
+            // un tracé vide/invisible (limite connue du format `path`/`A`). Un vrai
+            // `<circle>` à la place dans ce cas précis, bug repéré le 07/09/2026 (le
+            // camembert "Recette" disparaissait entièrement en mode "Sans AI").
+            if (fraction >= 0.9999) {
+              group.appendChild(svgEl("circle", { cx: cx, cy: cy, r: rayon, fill: p.fill, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            } else {
+              group.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, rayon, startAngle, endAngle), fill: p.fill, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            }
+            var midAngle = (startAngle + endAngle) / 2;
+            var lx1 = cx + rayon * 1.05 * Math.cos(midAngle), ly1 = cy + rayon * 1.05 * Math.sin(midAngle);
+            var lx2 = cx + rayon * 1.18 * Math.cos(midAngle), ly2 = cy + rayon * 1.18 * Math.sin(midAngle);
+            group.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.texte, "stroke-width": "1.2" }));
+            var cosA = Math.cos(midAngle);
+            var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
+            var lx3 = cx + rayon * 1.24 * Math.cos(midAngle), ly3 = cy + rayon * 1.24 * Math.sin(midAngle);
+            var label = svgEl("text", { x: lx3, y: ly3, "text-anchor": anchor, "font-size": "9", "font-weight": "700", fill: p.texte });
+            var t1 = svgEl("tspan", { x: lx3, dy: "0" }); t1.textContent = p.label; label.appendChild(t1);
+            var t2 = svgEl("tspan", { x: lx3, dy: "11" }); t2.textContent = fmtMontant(part); label.appendChild(t2);
+            group.appendChild(label);
+            startAngle = endAngle;
+          });
+        } else {
+          group.appendChild(svgEl("circle", { cx: cx, cy: cy, r: rayon, fill: "#ece8dc" }));
+          var vide = svgEl("text", { x: cx, y: cy + 4, "text-anchor": "middle", "font-size": "10", fill: "#9a968a" });
+          vide.textContent = "Aucun montant";
+          group.appendChild(vide);
+        }
+        var titre = svgEl("text", { x: cx, y: cy - rayon - 15, "text-anchor": "middle", "font-size": "11.5", "font-weight": "800", fill: "#5c5a52" });
+        titre.textContent = titrePrefixe + " : " + fmtMontant(total);
+        svg.appendChild(titre);
+      }
+
+      // 2 lignes (recette en haut, charges en bas) × 2 colonnes (une par machine) — 4
+      // camemberts au total (demande de Cédric le 07/09/2026). Un seul <g> cliquable par
+      // machine, qui englobe SES 2 camemberts : cliquer sur l'un OU l'autre revient aux
+      // barres, comme avant.
       function dessinerCamemberts(compos, fmtMontant) {
-        var cy = PAD.top + PLOT_H / 2 + 10;
-        var rayon = 72;
         var centers = [PAD.left + PLOT_W * 0.27, PAD.left + PLOT_W * 0.73];
+        var rayon = 42;
+        var cyHaut = PAD.top + 76, cyBas = cyHaut + 130;
         compos.forEach(function (c, i) {
           var cx = centers[i];
-          var total = c.loyer + c.elec + c.rh;
           var group = svgEl("g", { class: "cv-camembert-clic" });
           svg.appendChild(group);
-          if (total > 0) {
-            var startAngle = -Math.PI / 2;
-            CV_PARTS_CHARGE.forEach(function (p) {
-              var part = c[p.key];
-              if (!(part > 0)) return;
-              var fraction = part / total;
-              var endAngle = startAngle + fraction * 2 * Math.PI;
-              group.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, rayon, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
-              var midAngle = (startAngle + endAngle) / 2;
-              var lx1 = cx + rayon * 1.03 * Math.cos(midAngle), ly1 = cy + rayon * 1.03 * Math.sin(midAngle);
-              var lx2 = cx + rayon * 1.16 * Math.cos(midAngle), ly2 = cy + rayon * 1.16 * Math.sin(midAngle);
-              group.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: p.color, "stroke-width": "1.3" }));
-              var cosA = Math.cos(midAngle);
-              var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
-              var lx3 = cx + rayon * 1.22 * Math.cos(midAngle), ly3 = cy + rayon * 1.22 * Math.sin(midAngle);
-              var label = svgEl("text", { x: lx3, y: ly3, "text-anchor": anchor, "font-size": "10", "font-weight": "700", fill: "#5c5a52" });
-              var t1 = svgEl("tspan", { x: lx3, dy: "0" }); t1.textContent = p.label; label.appendChild(t1);
-              var t2 = svgEl("tspan", { x: lx3, dy: "12" }); t2.textContent = fmtMontant(part); label.appendChild(t2);
-              group.appendChild(label);
-              startAngle = endAngle;
-            });
-          } else {
-            group.appendChild(svgEl("circle", { cx: cx, cy: cy, r: rayon, fill: "#e5e2d8" }));
-            var vide = svgEl("text", { x: cx, y: cy + 4, "text-anchor": "middle", "font-size": "11", fill: "#9a968a" });
-            vide.textContent = "Aucune charge";
-            group.appendChild(vide);
-          }
-          var titre = svgEl("text", { x: cx, y: cy - rayon - 24, "text-anchor": "middle", "font-size": "13", "font-weight": "800", fill: "#5c5a52" });
-          titre.textContent = "Charges : " + fmtMontant(total);
-          svg.appendChild(titre);
+          dessinerUnCamembert(cx, cyHaut, rayon, CV_PARTS_RECETTE, c, c.recette + c.acte, fmtMontant, "Recette", group);
+          dessinerUnCamembert(cx, cyBas, rayon, CV_PARTS_CHARGE, c, c.loyer + c.elec + c.rh, fmtMontant, "Charges", group);
           var labelNom = svgEl("text", { x: cx, y: VIEWBOX_H - 14, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
           labelNom.textContent = c.nom;
           svg.appendChild(labelNom);
@@ -1916,6 +1959,7 @@ var svg = document.getElementById("cvChart");
               recetteTotale: r.recette + actePart,
               charges: loyerParPatient + elecParPatient + rhParPatient,
               loyer: loyerParPatient, elec: elecParPatient, rh: rhParPatient,
+              recette: r.recette, acte: actePart,
               resultat: r.recette + actePart - loyerParPatient - elecParPatient - rhParPatient,
               color: r.color, nom: r.machine.nomCourt, patientsJour: patientsJourPropre
             };
@@ -1926,6 +1970,7 @@ var svg = document.getElementById("cvChart");
             recetteTotale: l.recette + actePart,
             charges: l.loyerParPatient + l.elecParPatient + l.rhParPatient,
             loyer: l.loyerParPatient, elec: l.elecParPatient, rh: l.rhParPatient,
+            recette: l.recette, acte: actePart,
             resultat: l.recette + actePart - l.loyerParPatient - l.elecParPatient - l.rhParPatient,
             color: r.color, nom: r.machine.nomCourt, patientsJour: params.activitePatientsJour
           };
@@ -1944,6 +1989,7 @@ var svg = document.getElementById("cvChart");
           return {
             recetteTotale: c.recetteTotale * mult, charges: c.charges * mult, resultat: c.resultat * mult,
             loyer: c.loyer * mult, elec: c.elec * mult, rh: c.rh * mult,
+            recette: c.recette * mult, acte: c.acte * mult,
             color: c.color, nom: c.nom, patientsJour: c.patientsJour
           };
         });
@@ -2087,16 +2133,18 @@ var svg = document.getElementById("cvChart");
           svg.appendChild(barGroup);
           barGroup.addEventListener("click", function () { modeCamembert = true; recalculer(); });
 
-          // Bloc charges (gris) : toujours entre le sommet de la recette totale et le niveau
-          // du résultat, que le résultat soit positif ou négatif.
+          // Bloc charges (gris pastel) : toujours entre le sommet de la recette totale et
+          // le niveau du résultat, que le résultat soit positif ou négatif.
           barGroup.appendChild(svgEl("rect", {
-            x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#cfcabd"
+            x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#e2ddd0"
           }));
-          // Bloc résultat net : couleur de la machine s'il est positif, rouge d'alerte sinon
-          // (perte — l'activité est en dessous du point mort).
+          // Bloc résultat net : couleur pastel de la machine si positif, rouge pastel
+          // d'alerte sinon (perte — l'activité est en dessous du point mort) — demande de
+          // Cédric le 07/09/2026 ("couleurs pastel pour les camemberts et les bâtons").
+          var couleurResultat = c.resultat >= 0 ? PASTEL_MACHINE[i] : PASTEL_PERTE;
           barGroup.appendChild(svgEl("rect", {
             x: x0, y: Math.min(yZero, yResultat), width: barWidth,
-            height: Math.max(0, Math.abs(yResultat - yZero)), fill: c.resultat >= 0 ? c.color : "#c0392b"
+            height: Math.max(0, Math.abs(yResultat - yZero)), fill: couleurResultat.fill
           }));
           barGroup.appendChild(svgEl("line", { x1: x0, x2: x1, y1: yTop, y2: yTop, stroke: "#8a8578", "stroke-width": "1" }));
 
@@ -2108,8 +2156,10 @@ var svg = document.getElementById("cvChart");
 
           // Les 6 libellés des 2 barres (Recette/Charges/Résultat × 2) partagent tous la même
           // taille — tailleCommune, calculée une fois au-dessus pour tout le graphe.
+          // Libellé en couleur foncée assortie (plus de blanc) — un fond pastel n'offre
+          // plus assez de contraste pour du texte blanc, demande de Cédric le 07/09/2026.
           var texteResultat = "Résultat : " + fmtMontant(c.resultat);
-          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: "#fff" });
+          var labelResultat = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: couleurResultat.text });
           labelResultat.textContent = texteResultat;
           svg.appendChild(labelResultat);
 
