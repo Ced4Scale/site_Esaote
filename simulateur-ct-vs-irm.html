@@ -251,6 +251,36 @@
     @media (min-width: 781px) {
       .cv-btn-row { justify-content: space-between; }
     }
+    /* Bulle d'aide au survol des boutons — remplace le `title="..."` natif (demande de
+       Cédric le 07/09/2026 : le tooltip navigateur ne se déclenchait pas de façon fiable
+       — délai variable, parfois désactivé selon le système). Une vraie bulle CSS, posée
+       au-dessus du bouton, contrôlée par le survol/focus : `data-tip` porte le texte
+       (via `content: attr(data-tip)`), affichée en `opacity`/`visibility` avec un léger
+       délai à l'apparition seulement (le bouton doit rester "arrêté" un instant avant
+       qu'elle sorte), disparition immédiate. Pas de popover JS ni de position:fixed —
+       chaque bouton passe en `position:relative`, la bulle est un enfant `::after`
+       positionné en absolu par rapport à LUI (jamais piégée par un ancêtre
+       `position:sticky`, voir le piège correspondant dans le skill : ces boutons ne sont
+       pas dans .simulator__form, la seule colonne sticky de cette page). */
+    .cv-btn-row button[data-tip] { position: relative; }
+    .cv-btn-row button[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      margin-bottom: 8px; background: var(--ink); color: #fff; font-size: .72rem;
+      font-weight: 500; line-height: 1.35; padding: .45rem .65rem; border-radius: 6px;
+      white-space: normal; width: max-content; max-width: 200px; box-shadow: var(--shadow-md);
+      z-index: 20; pointer-events: none; opacity: 0; visibility: hidden;
+      transition: opacity .1s ease, visibility .1s ease;
+    }
+    .cv-btn-row button[data-tip]:hover::after,
+    .cv-btn-row button[data-tip]:focus-visible::after {
+      opacity: 1; visibility: visible; transition-delay: .25s;
+    }
+    /* Les boutons collés au bord gauche/droit d'une rangée (motif "Répartition ... marge à
+       marge" ci-dessus) auraient une bulle centrée qui déborde du viewport sur mobile ou
+       tablette — alignée sur le bord du bouton correspondant à la place. */
+    .cv-btn-row button[data-tip].cv-tip-left::after { left: 0; transform: none; }
+    .cv-btn-row button[data-tip].cv-tip-right::after { left: auto; right: 0; transform: none; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -274,7 +304,6 @@
       <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
       <h1>Simulateur IRM Esaote / Scanner</h1>
       <p>Compare la rentabilité d'une <strong>IRM ouverte Esaote</strong> à celle d'un <strong>scanner (CT)</strong>, hors location des m² du local. Un outil séparé du <a href="simulateur-point-mort.html">comparateur IRM vs IRM</a>, parce que <strong>la recette de l'acte intellectuel du radiologue</strong> (différente entre les deux modalités — c'est souvent elle qui creuse l'écart) change tout entre un scanner et une IRM.</p>
-      <div class="simulator__hero-result" id="cvHeroResult" hidden></div>
     </div>
 
     <div class="simulator__layout">
@@ -431,11 +460,11 @@
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
                (mêmes horizons que le tableau "Résultat à votre activité" juste au-dessus). -->
           <div class="cv-btn-row" style="margin-top:.7rem">
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizonPatient" aria-pressed="false" title="Résultat pour un seul patient, sans tenir compte de votre activité.">1 patient</button>
-            <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true" title="Résultat ramené à votre activité du jour, telle que renseignée plus haut.">Par jour</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false" title="Résultat annualisé sur votre activité du jour.">1 an</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon5Ans" aria-pressed="false" title="Résultat cumulé sur 5 ans, à activité identique.">5 ans</button>
-            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon7Ans" aria-pressed="false" title="Résultat cumulé sur 7 ans (durée du loyer), à activité identique.">7 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-tip-left" id="cvBtnHorizonPatient" aria-pressed="false" data-tip="Résultat pour un seul patient, sans tenir compte de votre activité.">1 patient</button>
+            <button type="button" class="btn btn--sm" id="cvBtnHorizonJour" aria-pressed="true" data-tip="Résultat ramené à votre activité du jour, telle que renseignée plus haut.">Par jour</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon1An" aria-pressed="false" data-tip="Résultat annualisé sur votre activité du jour.">1 an</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="cvBtnHorizon5Ans" aria-pressed="false" data-tip="Résultat cumulé sur 5 ans, à activité identique.">5 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-tip-right" id="cvBtnHorizon7Ans" aria-pressed="false" data-tip="Résultat cumulé sur 7 ans (durée du loyer), à activité identique.">7 ans</button>
           </div>
           <!-- Paire de boutons exclusifs (pas des raccourcis comme les 5 ci-dessus) : changent
                la façon dont les 2 barres sont calculées (activité partagée vs capacité propre à
@@ -443,10 +472,10 @@
                reformulée en 2 boutons mutuellement exclusifs le même jour. -->
           <div style="margin-top:.5rem">
             <div class="cv-btn-row">
-              <button type="button" class="btn btn--sm cv-btn-activite" id="cvBtnModeActivite" aria-pressed="true" title="Les 2 machines reçoivent le même nombre de patients (votre activité renseignée plus haut).">Même activité</button>
-              <button type="button" class="btn btn--sm btn--ghost cv-btn-activite" id="cvBtnModeDebit" aria-pressed="false" title="Chaque machine reçoit son propre nombre maximum de patients, sur la même plage horaire.">100% de la capacité</button>
-              <button type="button" class="btn btn--sm cv-btn-ai" id="cvBtnAvecAI" aria-pressed="true" title="Inclut la recette de l'acte intellectuel du radiologue dans les 2 barres.">Avec AI</button>
-              <button type="button" class="btn btn--sm btn--ghost cv-btn-ai" id="cvBtnSansAI" aria-pressed="false" title="Retire la recette de l'acte intellectuel, ne montre que la recette du forfait technique.">Sans AI</button>
+              <button type="button" class="btn btn--sm cv-btn-activite cv-tip-left" id="cvBtnModeActivite" aria-pressed="true" data-tip="Les 2 machines reçoivent le même nombre de patients (votre activité renseignée plus haut).">Même activité</button>
+              <button type="button" class="btn btn--sm btn--ghost cv-btn-activite" id="cvBtnModeDebit" aria-pressed="false" data-tip="Chaque machine reçoit son propre nombre maximum de patients, sur la même plage horaire.">100% de la capacité</button>
+              <button type="button" class="btn btn--sm cv-btn-ai" id="cvBtnAvecAI" aria-pressed="true" data-tip="Inclut la recette de l'acte intellectuel du radiologue dans les 2 barres.">Avec AI</button>
+              <button type="button" class="btn btn--sm btn--ghost cv-btn-ai cv-tip-right" id="cvBtnSansAI" aria-pressed="false" data-tip="Retire la recette de l'acte intellectuel, ne montre que la recette du forfait technique.">Sans AI</button>
             </div>
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
             <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeSansAITxt" hidden>Recette de l'acte intellectuel du radiologue retirée des 2 barres — ne montre plus que la recette du forfait technique.</p>
@@ -1445,28 +1474,6 @@
           [document.getElementById("cvActivite"), document.getElementById("cvHeureDebut1"), document.getElementById("cvHeureFin1")]);
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
-
-        var heroEl = document.getElementById("cvHeroResult");
-        heroEl.hidden = false;
-        if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
-          var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
-          var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
-          var ecartPm = pire.pointMortJour - meilleur.pointMortJour;
-          var ecart7ans = lignesSynthese[meilleur.slot].resultat7ans - lignesSynthese[pire.slot].resultat7ans;
-          heroEl.innerHTML =
-            "<table style=\"width:100%;border-collapse:collapse;font-size:.8rem\">" +
-            "<tr><th style=\"text-align:left;padding:.1rem .5rem .25rem 0;font-size:1.05rem;font-weight:800\">Machine</th>" +
-            "<th style=\"text-align:left;padding:.1rem 0 .25rem;font-size:1.05rem;font-weight:800\">Point mort</th></tr>" +
-            "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">" + meilleur.machine.nomCourt + "</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(meilleur.pointMortJour) + " patients/jour</td></tr>" +
-            "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">" + pire.machine.nomCourt + "</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(pire.pointMortJour) + " patients/jour</td></tr>" +
-            "<tr><td style=\"padding:.12rem .5rem .12rem 0;font-weight:700\">Écart</td><td style=\"padding:.12rem 0\">" + patientsFmt.format(ecartPm) + " patient(s)/jour</td></tr>" +
-            "<tr><td style=\"padding:.3rem .5rem .12rem 0;font-weight:700;border-top:1px solid currentColor\">Résultat en plus sur 7 ans</td>" +
-            "<td style=\"padding:.3rem 0 .12rem;font-weight:800;border-top:1px solid currentColor\">" + euros.format(ecart7ans) + "</td></tr>" +
-            "</table>" +
-            "<p style=\"margin:.35rem 0 0;font-size:.7rem;opacity:.8\">À votre activité renseignée plus bas.</p>";
-        } else {
-          heroEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
-        }
 
         dessinerRecap(resultats, configs, params);
 
