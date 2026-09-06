@@ -381,13 +381,21 @@
        que le cadre bleu "Écart de résultat" au-dessus du graphe) — gauche/droite sur les
        2 lignes, haut sur la 1ʳᵉ ligne seulement, bas sur la dernière seulement (le
        "border-collapse" du tableau fusionne la frontière interne entre les 2 lignes avec
-       la couleur déjà posée juste au-dessus, qui reste donc invisible comme avant). */
+       la couleur déjà posée juste au-dessus, qui reste donc invisible comme avant).
+       Bordure du bas scopée par l'id de la table (#cvSyntheseTable ...) — piège trouvé
+       après publication ("bordure verte tout nul", 07/09/2026) : la règle partagée
+       `.stats-table tr:last-child td { border-bottom: none; }` (styles.css) a une
+       spécificité plus grande qu'une simple classe et gagnait sur `border-bottom: 2px
+       solid`, donc le bas du cadre restait sans bordure malgré la règle posée ici — un
+       sélecteur préfixé par l'id (poids d'un id > n'importe quel nombre de classes)
+       était nécessaire pour reprendre la main. */
     .cv-ligne-verte td:first-child { border-left: 2px solid var(--success-bd); }
     .cv-ligne-verte td:last-child { border-right: 2px solid var(--success-bd); }
     .cv-ligne-verte--haut td { padding-top: 1rem; border-top: 2px solid var(--success-bd); }
     .cv-ligne-verte--haut td:first-child { border-top-left-radius: var(--radius); }
     .cv-ligne-verte--haut td:last-child { border-top-right-radius: var(--radius); }
-    .cv-ligne-verte--bas td { padding-bottom: 1rem; border-bottom: 2px solid var(--success-bd); }
+    .cv-ligne-verte--bas td { padding-bottom: 1rem; }
+    #cvSyntheseTable .cv-ligne-verte--bas td { border-bottom: 2px solid var(--success-bd); }
     .cv-ligne-verte--bas td:first-child { border-bottom-left-radius: var(--radius); }
     .cv-ligne-verte--bas td:last-child { border-bottom-right-radius: var(--radius); }
     /* Bascule barres <-> camembert au clic (demande de Cédric le 07/09/2026) — curseur
