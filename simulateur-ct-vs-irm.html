@@ -680,9 +680,19 @@
                Cédric le 06/09/2026) : la coupure, si elle existe (cochée dans la roue
                crantée), apparaît directement comme une encoche déplaçable sur cette même
                ligne de temps — rien à cocher en double ici. -->
-          <div class="field" style="margin-top:1rem; margin-bottom:0">
-            <label>Horaires d'ouverture</label>
-            <div class="cv-horaire-range" id="cvHoraireMatinB">
+          <!-- Restructuré le 07/09/2026 (demande de Cédric : "mal structuré, structure-la
+               comme celle juste au-dessus le nombre de patients/jour") — même gabarit que
+               .cv-activite-slider ci-dessus : piste PLEINE LARGEUR à gauche, valeur (ici les
+               2 heures éditables) alignée à droite plutôt qu'en dessous, plus de titre
+               "Horaires d'ouverture" séparé (le bloc juste au-dessus n'en a pas non plus). -->
+          <!-- flex-wrap:wrap propre à cette ligne (pas sur .cv-activite-slider elle-même,
+               qui ne doit pas changer pour le curseur de patients/jour ci-dessus) : sur un
+               écran étroit, la piste + les 2 heures éditables ne rentrent plus côte à côte
+               — testé et corrigé le 07/09/2026, la 1ʳᵉ version cassait "08:00 – 18:00" sur
+               3 lignes au lieu de laisser la piste et la valeur se placer chacune sur sa
+               propre ligne. -->
+          <div class="field cv-activite-slider" style="margin-top:1rem; margin-bottom:0; flex-wrap:wrap">
+            <div class="cv-horaire-range" id="cvHoraireMatinB" style="flex:1 1 160px; margin-top:0">
               <div class="cv-horaire-track-wrap">
                 <div class="cv-horaire-track">
                   <div class="cv-horaire-fill" id="cvHoraireFill1B"></div>
@@ -692,10 +702,10 @@
                 <input type="range" id="cvHeureFin1B" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture" />
                 <input type="range" id="cvCoupurePositionB" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
               </div>
-              <div class="cv-horaire-row-label">
-                <div class="cv-horaire-label" id="cvHoraireLabel1B"></div>
-                <p class="simulator__hint" id="cvHeuresTotalTxtB"></p>
-              </div>
+            </div>
+            <div>
+              <div class="cv-horaire-label" id="cvHoraireLabel1B" style="margin-top:0; justify-content:flex-end; flex-wrap:nowrap"></div>
+              <p class="simulator__hint cv-activite-slider-equiv" id="cvHeuresTotalTxtB" style="text-align:right"></p>
             </div>
           </div>
         </div>
