@@ -332,28 +332,37 @@
        page). Un emplacement REMPLI perd .btn--ghost (fond violet plein) comme les autres
        familles. Le cadenas à côté (demande de Cédric le 06/09/2026, remplace la croix
        "×" d'origine) est TOUJOURS visible, plus seulement quand rempli, et cliquable
-       (efface l'emplacement) seulement si sauvegardé. Un premier essai en emoji
-       (🔒/🔓) a été jugé "on ne voit pas bien qu'il est ouvert" (rendu trop proche
-       entre les 2 glyphes) — remplacé par un vrai SVG à 2 parties (corps fixe +
-       anse `.cv-lock-shackle`) dont l'anse pivote de 180° en CSS (`transform-origin`
-       ancré sur le pied droit) plutôt que de changer de glyphe : le mouvement de
-       rotation se voit même si l'état final ressemble un peu au premier coup d'œil. */
+       (efface l'emplacement) seulement si sauvegardé. 3 itérations avant la version
+       actuelle : emoji 🔒/🔓 (glyphes trop proches, "on ne voit pas bien qu'il est
+       ouvert"), puis un SVG monochrome dont seule l'anse pivotait de 180° (l'anse
+       tournée finissait par chevaucher le corps du cadenas — moche une fois le dessin
+       agrandi), puis Cédric a fourni une image de référence (cadenas plein rouge fermé
+       / vert ouvert, avec trou de serrure). Reproduit ici avec 2 anses DISTINCTES
+       superposées dans le même SVG (`.cv-lock-shackle-fermee` / `-ouverte`, une seule
+       affichée à la fois via `display`) plutôt qu'une rotation — l'anse ouverte est
+       dessinée à la main pour se détacher proprement du corps (jamais un chevauchement
+       comme avec la rotation). Corps plein + trou de serrure (cercle + triangle en
+       creux), rouge si fermé/sauvegardé, vert si ouvert/vide. */
     .cv-memoire-slot { display: inline-flex; align-items: center; gap: .2rem; }
     .cv-btn-memoire { --btn-bg: #ded4f2; --btn-fg: #4a3a78; --btn-bd: #ded4f2; }
     .cv-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
     .cv-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
     .cv-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
     .cv-memoire-clear {
-      border: 0; background: transparent; color: #9a8fc2; line-height: 1;
-      width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
+      border: 0; background: transparent; color: var(--red-crimson); line-height: 1;
+      width: 1.9rem; height: 1.9rem; border-radius: 50%; cursor: pointer;
       display: inline-flex; align-items: center; justify-content: center;
     }
-    .cv-memoire-clear:hover { background: #f4f0fb; color: #4a3a78; }
-    .cv-memoire-clear:disabled { cursor: default; opacity: .55; }
-    .cv-memoire-clear:disabled:hover { background: transparent; color: #9a8fc2; }
+    .cv-memoire-clear:hover { background: #fbe9ec; }
+    .cv-memoire-clear:disabled { cursor: default; }
+    .cv-memoire-clear:disabled:hover { background: transparent; }
+    /* Ouvert (rien de sauvegardé) : vert "succès" déjà utilisé ailleurs sur cette page
+       (cadre autour de Résultat/an) — jamais cliquable, rien à effacer. */
+    .cv-memoire-clear.is-ouvert { color: var(--success-bd); }
     .cv-lock-icon { overflow: visible; }
-    .cv-lock-shackle { transform-origin: 16px 11px; transition: transform .25s ease; }
-    .cv-memoire-clear.is-ouvert .cv-lock-shackle { transform: rotate(180deg); }
+    .cv-lock-shackle-ouverte { display: none; }
+    .cv-memoire-clear.is-ouvert .cv-lock-shackle-fermee { display: none; }
+    .cv-memoire-clear.is-ouvert .cv-lock-shackle-ouverte { display: inline; }
     /* Onglet mémoire "affiché" (demande de Cédric le 07/09/2026, suite) : lequel des 3
        emplacements a produit le récapitulatif actuellement visible sous le graphe —
        distinct de "rempli/vide" (.btn--ghost géré en JS), un anneau en plus. Retiré
@@ -693,15 +702,15 @@
           <div class="cv-btn-row cv-memoire-row">
             <span class="cv-memoire-slot" data-slot="0">
               <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
-              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path class="cv-lock-shackle" d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor"/></svg></button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </span>
             <span class="cv-memoire-slot" data-slot="1">
               <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire2" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
-              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path class="cv-lock-shackle" d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor"/></svg></button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </span>
             <span class="cv-memoire-slot" data-slot="2">
               <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire3" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
-              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path class="cv-lock-shackle" d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round"/><rect x="5" y="11" width="14" height="9" rx="2" fill="currentColor"/></svg></button>
+              <button type="button" class="cv-memoire-clear" id="cvBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </span>
           </div>
           <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt">Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</p>
@@ -2737,7 +2746,7 @@ var svg = document.getElementById("cvChart");
           : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
         btn.setAttribute("data-tip", btn.title);
         // Cadenas toujours visible (jamais [hidden]) : fermé et cliquable si sauvegardé,
-        // ouvert (anse pivotée 180°, classe .is-ouvert) et inerte sinon — voir le
+        // ouvert (anse dessinée détachée + couleur verte, classe .is-ouvert) et inerte sinon — voir le
         // commentaire CSS de .cv-memoire-clear.
         clear.disabled = !rempli;
         clear.classList.toggle("is-ouvert", !rempli);
