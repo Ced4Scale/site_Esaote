@@ -1686,8 +1686,15 @@
         // trait fin de la couleur de la machine — motif "callout".
         var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel) + acteIrm;
         var valCtActuel = tarifMoyenPourVolume(trCt, nActuel) + acteCt;
-        var ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: eurosCent.format(valIrmActuel) };
-        var ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: eurosCent.format(valCtActuel) };
+        // Le texte de la bulle suit l'échelle de temps choisie (boutons "1 patient"/
+        // "jour"/"1 an"/"5 ans"/"7 ans", voir ftMoyMultiplicateur()) — signalé par Cédric
+        // le 07/09/2026, restait toujours en €/patient quel que soit le bouton actif. La
+        // POSITION de la bulle sur la courbe (yAt(valXxxActuel)), elle, ne change jamais :
+        // la courbe elle-même reste toujours en €/patient (voir plus haut, "ne touche QUE
+        // le texte, jamais les courbes").
+        var multActuel = ftMoyMultiplicateur(nActuel), fmtBulle = ftMoyFormateur();
+        var ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: fmtBulle(valIrmActuel * multActuel) };
+        var ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: fmtBulle(valCtActuel * multActuel) };
         [ptIrm, ptCt].forEach(function (p) {
           svg.appendChild(svgEl("circle", { cx: p.x, cy: p.y, r: 3.5, fill: "#fff", stroke: p.couleur, "stroke-width": "2" }));
         });
@@ -1824,20 +1831,11 @@
         var tarifIrm = tarifMoyenPourVolume(trIrm, n) + acteFtMoyIrm();
         var tarifCt = tarifMoyenPourVolume(trCt, n) + acteFtMoyCt();
         // Échelle de temps du résultat affiché (demande de Cédric le 07/09/2026) — ne
-        // touche QUE ces 2 lignes, jamais les courbes (voir le commentaire HTML au-dessus
-        // des boutons "1 patient"/"jour"/"1 an"/"5 ans"/"7 ans"). "jour" convertit le
-        // volume annuel du curseur en moyenne par jour d'ouverture réel (mêmes jours que
-        // le reste du site, via calculerJoursEtHeures() — pas un 365j/an générique).
-        var joursParAn = calculerJoursEtHeures().joursParMois * 12;
-        var mult = ftMoyHorizon === "patient" ? 1
-          : ftMoyHorizon === "jour" ? (joursParAn > 0 ? n / joursParAn : 0)
-          : ftMoyHorizon === "an" ? n
-          : ftMoyHorizon === "5ans" ? n * 5
-          : n * 7; // "7ans"
-        // Centimes seulement pour le tarif unitaire ("1 patient") — au-delà, ce sont des
-        // totaux (recette moyenne par jour, ou sur 1/5/7 ans), même convention que le
-        // graphe des 2 barres plus bas (les centimes n'ont plus de sens à cette échelle).
-        var fmtMontant = ftMoyHorizon === "patient" ? eurosCent.format : euros.format;
+        // touche QUE ces 2 lignes (et les bulles du graphe, voir dessinerGrapheFtMoyen),
+        // jamais les courbes elles-mêmes (voir le commentaire HTML au-dessus des boutons
+        // "1 patient"/"jour"/"1 an"/"5 ans"/"7 ans"). Formule/formatteur factorisés dans
+        // ftMoyMultiplicateur()/ftMoyFormateur() — voir leur commentaire pour le détail.
+        var mult = ftMoyMultiplicateur(n), fmtMontant = ftMoyFormateur();
         document.getElementById("cvFtMoyIrm").textContent = fmtMontant(tarifIrm * mult);
         document.getElementById("cvFtMoyCt").textContent = fmtMontant(tarifCt * mult);
         document.getElementById("cvFtMoySliderLabel").textContent = seuilsEntiers.format(n) + " patients/an";
@@ -2405,6 +2403,22 @@
         if (!ftMoyAvecAI) return 0;
         return acteIntellectuelPatient(machineParKey(selectB.value), +document.getElementById("cvMultiRegionB").value || 0);
       }
+      // Multiplicateur/formatteur de l'échelle de temps choisie (boutons "1 patient"/
+      // "jour"/"1 an"/"5 ans"/"7 ans", voir choisirFtMoyHorizon) — factorisé pour être
+      // utilisé à la fois par majFtMoyen() (les 2 lignes sous le curseur), les bulles du
+      // graphe (dessinerGrapheFtMoyen, ajouté le 07/09/2026 : elles restaient toujours en
+      // €/patient quel que soit le bouton choisi, signalé par Cédric) et l'export PDF —
+      // un seul endroit à corriger si la formule change. `n` = volume annuel (patients/an,
+      // valeur du curseur cvFtMoySlider).
+      function ftMoyMultiplicateur(n) {
+        var joursParAn = calculerJoursEtHeures().joursParMois * 12;
+        return ftMoyHorizon === "patient" ? 1
+          : ftMoyHorizon === "jour" ? (joursParAn > 0 ? n / joursParAn : 0)
+          : ftMoyHorizon === "an" ? n
+          : ftMoyHorizon === "5ans" ? n * 5
+          : n * 7; // "7ans"
+      }
+      function ftMoyFormateur() { return ftMoyHorizon === "patient" ? eurosCent.format : euros.format; }
 
       var derniers = null;
 
@@ -3981,13 +3995,7 @@ var svg = document.getElementById("cvChart");
           // mêmes réglages actuels que ceux affichés à l'écran).
           sy += 5;
           var ftMoyN = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
-          var ftMoyJoursParAn = calculerJoursEtHeures().joursParMois * 12;
-          var ftMoyMult = ftMoyHorizon === "patient" ? 1
-            : ftMoyHorizon === "jour" ? (ftMoyJoursParAn > 0 ? ftMoyN / ftMoyJoursParAn : 0)
-            : ftMoyHorizon === "an" ? ftMoyN
-            : ftMoyHorizon === "5ans" ? ftMoyN * 5
-            : ftMoyN * 7;
-          var ftMoyFmt = ftMoyHorizon === "patient" ? eurosCent.format : euros.format;
+          var ftMoyMult = ftMoyMultiplicateur(ftMoyN), ftMoyFmt = ftMoyFormateur();
           var FT_MOY_HORIZON_LABELS = { patient: "par patient", jour: "par jour", an: "sur 1 an", "5ans": "sur 5 ans", "7ans": "sur 7 ans" };
           doc.setFontSize(13);
           doc.setFont(undefined, "bold");
