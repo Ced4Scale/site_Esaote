@@ -313,20 +313,22 @@
     /* Largeur fixe PARTAGÉE (demande de Cédric le 07/09/2026, "les 2 traits rouges
        doivent mesurer la même longueur") — sans elle, les 2 pistes (patients/jour et
        horaires) n'ont pas la même longueur visible : chaque colonne de valeur (flex,
-       sans largeur fixée) prend juste la place que son texte réclame, et le texte plus
-       long des horaires (2 champs heure natifs + icônes horloge, ~240px incompressibles
-       en "nowrap") grignotait une bien plus grande part de la ligne, raccourcissant
-       d'autant sa piste. 15,5rem = juste assez pour ce libellé le plus large des 2.
-       Posée sur les 2 colonnes de valeur (patients/jour ET horaires) via cette classe
-       commune, pour qu'elles restent identiques si l'une des 2 change plus tard.
+       sans largeur fixée) prend juste la place que son texte réclame. Posée sur les 2
+       colonnes de valeur (patients/jour ET horaires) via cette classe commune, pour
+       qu'elles restent identiques si l'une des 2 change plus tard.
+       **Revue à la baisse le 07/09/2026** (15,5rem → 11rem) : la 1ʳᵉ valeur avait été
+       calée sur le libellé horaires "08:00 – 18:00" côte à côte (~240px) — devenue bien
+       trop large une fois les 2 heures empilées l'une sous l'autre (demande suivante de
+       Cédric le même jour), le plus large contenu réel étant alors le hint "Soit 10 h
+       d'ouverture par jour." (~168px, mesuré). Cédric a signalé "la zone blanche est
+       encore très importante" : 15,5rem laissait ~80px de blanc inutile dans chaque
+       colonne. 11rem (176px) garde juste la marge nécessaire au-delà de ces 168px.
        **Annulée sous 780px** (breakpoint déjà utilisé par .simulator__layout dans
-       styles.css pour empiler le formulaire) : une largeur fixe aussi large que 15,5rem
-       ne laissait quasiment plus de place à la piste sur un téléphone étroit (testé à
-       375px : la piste de patients/jour disparaissait complètement, largeur 0) — sous ce
-       seuil, chaque colonne reprend sa largeur naturelle et la ligne peut s'empiler
-       (voir flex-wrap:wrap déjà posé sur les 2 lignes), l'égalité stricte des 2 pistes
-       n'étant plus tenable sur un si petit écran de toute façon. */
-    .cv-slider-valeur-fixe { flex: 0 0 15.5rem; }
+       styles.css pour empiler le formulaire) : sous ce seuil, chaque colonne reprend sa
+       largeur naturelle et la ligne peut s'empiler (voir flex-wrap:wrap déjà posé sur
+       les 2 lignes), l'égalité stricte des 2 pistes n'étant plus tenable sur un si petit
+       écran de toute façon. */
+    .cv-slider-valeur-fixe { flex: 0 0 11rem; }
     @media (max-width: 780px) {
       .cv-slider-valeur-fixe { flex: 1 1 100%; }
     }
