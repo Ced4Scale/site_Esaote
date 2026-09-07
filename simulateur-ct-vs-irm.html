@@ -435,16 +435,17 @@
     .cv-btn-ai.btn--ghost:hover { --btn-fg: #1f6b47; background: #eefaf3; border-color: #b8e4cc; }
     /* Fond de bulle = couleur de la famille du bouton, jamais var(--ink) uniforme
        (demandé le 07/09/2026 : "le fond de la bulle est toujours noir") — la couleur
-       FONCÉE de chaque famille (--btn-fg), pas le pastel clair de fond (--btn-bg,
-       illisible en blanc sur clair) ; le texte reste blanc (règle générique déjà posée
-       sur .cv-btn-row button[data-tip]::after, pas besoin de la répéter ici). */
+       PASTEL clair de chaque famille (--btn-bg) — passé du foncé (--btn-fg) au pastel
+       clair le 07/09/2026, sur demande explicite de Cédric ; le texte passe donc du
+       blanc générique (illisible sur clair) au foncé (--btn-fg) de la même famille,
+       réécrit ici avec `color` en plus de `background`. */
     /* .cv-btn-row en préfixe pour égaler la spécificité de la règle générique
        ".cv-btn-row button[data-tip]::after" (qui a le sélecteur de type "button" en
        plus) — sans lui, ces 3 règles perdaient silencieusement contre le fond noir
        générique malgré un ordre plus tardif dans la feuille de style. */
-    .cv-btn-row .cv-btn-horizon[data-tip]::after { background: #9c2b34; }
-    .cv-btn-row .cv-btn-activite[data-tip]::after { background: #274a75; }
-    .cv-btn-row .cv-btn-ai[data-tip]::after { background: #1f6b47; }
+    .cv-btn-row .cv-btn-horizon[data-tip]::after { background: #ffd3d6; color: #9c2b34; }
+    .cv-btn-row .cv-btn-activite[data-tip]::after { background: #cfe0f7; color: #274a75; }
+    .cv-btn-row .cv-btn-ai[data-tip]::after { background: #cdecdc; color: #1f6b47; }
     /* Mémoires de simulation (demande de Cédric le 07/09/2026) — 4ᵉ famille pastel
        (violet, couleur déjà utilisée pour le bord de "Paramètres communs" sur cette
        page). Un emplacement REMPLI perd .btn--ghost (fond violet plein) comme les autres
@@ -466,7 +467,7 @@
     .cv-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
     .cv-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
     .cv-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
-    .cv-btn-row .cv-btn-memoire[data-tip]::after { background: #4a3a78; }
+    .cv-btn-row .cv-btn-memoire[data-tip]::after { background: #ded4f2; color: #4a3a78; }
     .cv-memoire-clear {
       border: 0; background: transparent; color: var(--red-crimson); line-height: 1;
       width: 1.9rem; height: 1.9rem; border-radius: 50%; cursor: pointer;
