@@ -3794,6 +3794,14 @@ var svg = document.getElementById("cvChart");
         { id: "cvCoupureDureeDimanche", evt: "input", label: "Durée de la coupure (dimanche)", suffixe: " h" },
         { id: "cvCoupurePositionDimanche", evt: "input", comparer: false },
         { id: "cvNetMerm", evt: "input", label: "Salaire MERM net avant impôt", type: "montant" },
+        // Amortissement du forfait technique (radio "Non amorties"/"Amorties (> 7 ans)")
+        // — oublié lors de la 1ʳᵉ version du mécanisme mémoire (07/09/2026, repéré par
+        // Cédric : 2 mémoires enregistrées avec ce réglage différent donnaient EXACTEMENT
+        // le même résultat dans "Comparer", puisque le calcul relit toujours l'état ACTUEL
+        // de ce radio au lieu de celui enregistré). Pas de vrai `id` sur ces `<input>`
+        // (seulement `name="cvAmorti"`) — `type: "radio"` fait lire/écrire via ce `name`
+        // dans capturerParametres()/definirChamp() plutôt que `getElementById(f.id)`.
+        { id: "cvAmorti", evt: "change", label: "Amortissement du forfait technique", type: "radio" },
         // IRM Esaote — cvMachineA en premier (reinitialise loyer/MERM/débit à son
         // changement, voir restaurerParametres() plus bas qui le rejoue avant le reste).
         { id: "cvMachineA", evt: "change", label: "Modèle IRM Esaote", type: "select" },
@@ -3815,12 +3823,17 @@ var svg = document.getElementById("cvChart");
       function capturerParametres() {
         var etat = {};
         CV_MEMOIRE_FIELDS.forEach(function (f) {
-          var el = document.getElementById(f.id);
+          // Groupe de radios (ex. cvAmorti) : pas de `getElementById(f.id)` possible,
+          // ces <input> n'ont qu'un `name` partagé, jamais d'id — lu via querySelector.
+          var el = f.type === "radio"
+            ? document.querySelector('input[name="' + f.id + '"]:checked')
+            : document.getElementById(f.id);
           if (!el) return;
           var valeur = f.type === "checkbox" ? el.checked : el.value;
           var texte;
           if (f.type === "select") texte = el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : String(valeur);
           else if (f.type === "checkbox") texte = valeur ? "Oui" : "Non";
+          else if (f.type === "radio") texte = el.parentNode.textContent.trim();
           else if (f.type === "heure") texte = decimalVersHeureLabel(parseFloat(valeur) || 0);
           else if (f.type === "kwh") texte = eurosCent.format(parseFloat(valeur) || 0);
           else if (f.type === "montant") texte = euros.format(valeurMilliers({ value: valeur }));
@@ -3851,6 +3864,13 @@ var svg = document.getElementById("cvChart");
       // déjà écouté ailleurs dans le script (recalculer(), miroirs d'horaires...) — aucune
       // logique de calcul dupliquée ici.
       function definirChamp(f, valeur) {
+        if (f.type === "radio") {
+          var radio = document.querySelector('input[name="' + f.id + '"][value="' + valeur + '"]');
+          if (!radio || radio.checked) return;
+          radio.checked = true;
+          radio.dispatchEvent(new Event(f.evt, { bubbles: true }));
+          return;
+        }
         var el = document.getElementById(f.id);
         if (!el) return;
         if (f.type === "checkbox") {
