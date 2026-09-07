@@ -1724,18 +1724,27 @@
       // reproduit exactement l'ancien calcul en dur, réglable depuis le 07/09/2026 (demande
       // de Cédric, suite à sa question sur l'écart de recette entre O-scan et G-scan).
       function acteRegionParDefaut(machine) { return machine.key === "esaote-o-scan" ? 0 : 75; }
+      // **O-scan verrouillé à 0% (demande de Cédric le 07/09/2026, suite au champ
+      // rendu réglable le même jour)** : contrairement aux autres modèles Esaote,
+      // l'O-scan est dédié aux membres/extrémités — aucune saisie autre que 0 n'a de
+      // sens pour cette machine précise, le champ est donc désactivé (pas seulement
+      // remis à 0 puis laissé modifiable) tant qu'elle reste sélectionnée.
       function reinitialiserActeRegion(select, input, hintEl) {
+        var estOScan = machineParKey(select.value).key === "esaote-o-scan";
         input.value = acteRegionParDefaut(machineParKey(select.value));
-        majActeRegionHint(input, hintEl);
+        input.disabled = estOScan;
+        majActeRegionHint(input, hintEl, estOScan);
       }
-      function majActeRegionHint(input, hintEl) {
+      function majActeRegionHint(input, hintEl, estOScan) {
         var p = Math.max(0, Math.min(100, +input.value || 0)) / 100;
         var tarif = (1 - p) * TARIF_IRM_MEMBRE + p * TARIF_IRM_AUTRES_REGIONS;
-        hintEl.textContent = "Soit " + eurosCent.format(tarif) + " en moyenne (" + eurosCent.format(TARIF_IRM_MEMBRE) + " membre / " + eurosCent.format(TARIF_IRM_AUTRES_REGIONS) + " autres régions).";
+        var texte = "Soit " + eurosCent.format(tarif) + " en moyenne (" + eurosCent.format(TARIF_IRM_MEMBRE) + " membre / " + eurosCent.format(TARIF_IRM_AUTRES_REGIONS) + " autres régions).";
+        if (estOScan) texte += " Verrouillé à 0% : l'O-scan est dédié aux membres.";
+        hintEl.textContent = texte;
       }
       var acteRegionA = document.getElementById("cvActeRegionA"), acteRegionHintA = document.getElementById("cvActeRegionHintA");
       reinitialiserActeRegion(selectA, acteRegionA, acteRegionHintA);
-      acteRegionA.addEventListener("input", function () { majActeRegionHint(acteRegionA, acteRegionHintA); recalculer(); });
+      acteRegionA.addEventListener("input", function () { majActeRegionHint(acteRegionA, acteRegionHintA, acteRegionA.disabled); recalculer(); });
 
       // Loyer de base par machine (SAV inclus, moyenné sur 7 ans) — communiqué par Cédric le
       // 10/08/2026 pour les scanners Siemens go.All/go.Top ; réutilise les mêmes valeurs IRM
