@@ -1022,6 +1022,11 @@
             <button type="button" class="cv-info-btn" id="cvFtMoyInfoBtn" aria-expanded="false" aria-controls="cvFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
             <div class="cv-info-pop" id="cvFtMoyInfoPop" hidden>Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils). Traits pointillés du graphe : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</div>
           </span>
+          <!-- Cadre d'écart (demande de Cédric le 07/09/2026, même motif que
+               #cvEcartFrame sur le graphe des 2 barres plus bas) — recalculé dans
+               majFtMoyen(), suit automatiquement le volume du curseur + Avec/Sans AI +
+               l'échelle de temps choisis sur cette section. -->
+          <div class="cv-ecart-frame" id="cvFtMoyEcartFrame" style="margin-bottom:.8rem"></div>
           <!-- Avec/Sans AI sur ce graphe (demande de Cédric le 07/09/2026, "de base c'est
                sans AI") — ce graphe n'affichait jusque-là QUE le forfait technique, jamais
                l'acte intellectuel du radiologue. "Avec AI" ajoute le tarif moyen de l'acte
@@ -1844,6 +1849,30 @@
         var mult = ftMoyMultiplicateur(n), fmtMontant = ftMoyFormateur();
         document.getElementById("cvFtMoyIrm").textContent = fmtMontant(tarifIrm * mult);
         document.getElementById("cvFtMoyCt").textContent = fmtMontant(tarifCt * mult);
+
+        // Cadre d'écart (demande de Cédric le 07/09/2026, même motif que #cvEcartFrame
+        // sur le graphe des 2 barres) — écart entre les 2 montants déjà mis à l'échelle
+        // juste au-dessus, jamais recalculé séparément.
+        var FT_MOY_ECART_LABELS = { patient: "pour ce patient", jour: "par jour", an: "sur 1 an", "5ans": "sur 5 ans", "7ans": "sur 7 ans" };
+        var ftMoyEcartFrame = document.getElementById("cvFtMoyEcartFrame");
+        var montantIrm = tarifIrm * mult, montantCt = tarifCt * mult;
+        var ftMoyEcart = montantIrm - montantCt;
+        var ftMoyEnTete = ftMoyEcart >= 0
+          ? { color: SLOT_COLORS[0], nom: machineParKey(selectA.value).nomCourt }
+          : { color: SLOT_COLORS[1], nom: machineParKey(selectB.value).nomCourt };
+        var ftMoyEcartAbs = Math.abs(ftMoyEcart);
+        var ftMoyEcartSeuil = ftMoyHorizon === "patient" ? 0.005 : 0.5;
+        if (ftMoyEcartAbs < ftMoyEcartSeuil) {
+          ftMoyEcartFrame.innerHTML = "Tarif quasiment identique entre les 2 machines " + FT_MOY_ECART_LABELS[ftMoyHorizon] + ".";
+          ftMoyEcartFrame.style.borderColor = "var(--line-2)";
+          ftMoyEcartFrame.style.background = "var(--wash-2)";
+          ftMoyEcartFrame.style.color = "var(--ink)";
+        } else {
+          ftMoyEcartFrame.innerHTML = "Écart de tarif : <strong style=\"color:" + ftMoyEnTete.color + "\">" + fmtMontant(ftMoyEcartAbs) + "</strong> de plus pour " + ftMoyEnTete.nom + " " + FT_MOY_ECART_LABELS[ftMoyHorizon] + ".";
+          ftMoyEcartFrame.style.borderColor = ftMoyEnTete.color;
+          ftMoyEcartFrame.style.background = ftMoyEnTete.color + "1a";
+          ftMoyEcartFrame.style.color = "var(--ink)";
+        }
         document.getElementById("cvFtMoySliderLabel").textContent = seuilsEntiers.format(n) + " patients/an";
         var slider = document.getElementById("cvFtMoySlider");
         var pct = (n - +slider.min) / (+slider.max - +slider.min) * 100;
