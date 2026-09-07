@@ -1041,7 +1041,7 @@
                  AI) — voir activerComparaison()/redessinerComparaison() plus bas. Active
                  aussi le mode plein écran (masque "Paramètres communs") automatiquement,
                  pour laisser toute la largeur aux 2 graphes. -->
-            <button type="button" class="btn btn--sm btn--ghost cv-btn-comparer" id="cvBtnComparer" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée.">Comparer</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-comparer" id="cvBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
             <span class="cv-memoire-slot" data-slot="0">
               <button type="button" class="btn btn--sm btn--ghost cv-btn-memoire" id="cvBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
               <button type="button" class="cv-memoire-clear" id="cvBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
@@ -4043,13 +4043,23 @@ var svg = document.getElementById("cvChart");
         document.getElementById("cvCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
         document.getElementById("cvCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
         redessinerComparaison();
+        // Bouton "Comparer" lui-même passe en actif (plein, comme les autres boutons de
+        // choix de la page) — sert aussi de bouton pour REFERMER la comparaison en
+        // recliquant dessus (demande de Cédric le 07/09/2026), pas seulement via "✕
+        // Fermer la comparaison" à l'intérieur du bloc.
+        document.getElementById("cvBtnComparer").classList.remove("btn--ghost");
+        document.getElementById("cvBtnComparer").setAttribute("aria-pressed", "true");
       }
       function desactiverComparaison() {
         compareMode = false;
         document.getElementById("cvGrapheSimple").hidden = false;
         document.getElementById("cvGrapheComparaison").hidden = true;
+        document.getElementById("cvBtnComparer").classList.add("btn--ghost");
+        document.getElementById("cvBtnComparer").setAttribute("aria-pressed", "false");
       }
-      document.getElementById("cvBtnComparer").addEventListener("click", activerComparaison);
+      document.getElementById("cvBtnComparer").addEventListener("click", function () {
+        if (compareMode) desactiverComparaison(); else activerComparaison();
+      });
       document.getElementById("cvBtnFermerComparaison").addEventListener("click", desactiverComparaison);
       document.getElementById("cvCompareSelectGauche").addEventListener("change", function () {
         compareGaucheIdx = this.value === "" ? null : +this.value;
