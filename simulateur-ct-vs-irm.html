@@ -1007,7 +1007,15 @@
              tarifs PAR TRANCHE) — les 2 se complètent, placés l'un sous l'autre. -->
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Tarif moyen du forfait technique selon le volume</summary>
-          <p class="simulator__hint">Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils).</p>
+          <!-- Règle systématique posée le 07/09/2026 (voir skill ced4scale-simulateur-web) :
+               toute phrase explicative de la colonne de résultats passe par une ampoule,
+               sauf le texte de bascule d'une section repliable ("Voir le récapitulatif
+               détaillé..."). Combine les 2 phrases fixes de cette section (celle-ci + celle
+               sur les traits pointillés, avant le curseur) en une seule ampoule. -->
+          <span class="cv-info-wrap">
+            <button type="button" class="cv-info-btn" id="cvFtMoyInfoBtn" aria-expanded="false" aria-controls="cvFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
+            <div class="cv-info-pop" id="cvFtMoyInfoPop" hidden>Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils). Traits pointillés du graphe : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</div>
+          </span>
           <!-- Avec/Sans AI sur ce graphe (demande de Cédric le 07/09/2026, "de base c'est
                sans AI") — ce graphe n'affichait jusque-là QUE le forfait technique, jamais
                l'acte intellectuel du radiologue. "Avec AI" ajoute le tarif moyen de l'acte
@@ -1024,7 +1032,6 @@
           <div style="overflow-x:auto">
             <svg id="cvFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour l'IRM Esaote et le scanner"></svg>
           </div>
-          <p class="simulator__hint">Traits pointillés : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</p>
           <div class="cv-ftmoy-slider">
             <div class="cv-ftmoy-slider-value" id="cvFtMoySliderLabel"></div>
             <div class="cv-ftmoy-track-wrap">
@@ -1055,7 +1062,10 @@
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
           <summary>Voir le récapitulatif détaillé de la simulation <span class="cv-recap-badge" id="cvRecapBadge" hidden></span></summary>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
+          <span class="cv-info-wrap" style="margin-bottom:.8rem">
+            <button type="button" class="cv-info-btn" id="cvRecapInfoBtn" aria-expanded="false" aria-controls="cvRecapInfoPop" aria-label="À quoi sert ce récapitulatif">💡</button>
+            <div class="cv-info-pop" id="cvRecapInfoPop" hidden>Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</div>
+          </span>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
           <div style="overflow-x:auto">
@@ -1135,7 +1145,10 @@
               <textarea id="cvCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
             </div>
             <button type="submit" class="btn btn--lg" id="cvExportSubmit">Recevoir ma simulation en PDF</button>
-            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+            <span class="cv-info-wrap" style="margin-top:.7rem">
+              <button type="button" class="cv-info-btn" id="cvExportInfoBtn" aria-expanded="false" aria-controls="cvExportInfoPop" aria-label="Confidentialité de vos données">💡</button>
+              <div class="cv-info-pop" id="cvExportInfoPop" hidden>Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</div>
+            </span>
           </form>
           <div class="simulator__export-success" id="cvExportSuccess" role="status" hidden>
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
@@ -3400,6 +3413,9 @@ var svg = document.getElementById("cvChart");
       wireInfoBtn("cvMemoireInfoBtn", "cvMemoireInfoPop");
       wireInfoBtn("cvModeDebitBtn", "cvModeDebitPop");
       wireInfoBtn("cvModeSansAIBtn", "cvModeSansAIPop");
+      wireInfoBtn("cvFtMoyInfoBtn", "cvFtMoyInfoPop");
+      wireInfoBtn("cvRecapInfoBtn", "cvRecapInfoPop");
+      wireInfoBtn("cvExportInfoBtn", "cvExportInfoPop");
       document.addEventListener("click", function (e) {
         cvInfoPopsOuverts.forEach(function (f) {
           f();
