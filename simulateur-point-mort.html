@@ -35,6 +35,17 @@
       font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
     }
     .pm-gear-btn:hover, .pm-gear-btn:focus-visible { opacity: 1; }
+    /* Roue crantée "Réglages avancés" — motif repris de simulateur-recettes.html
+       (panneau ancré à gauche, sans fond assombri) le 08/09/2026, sur demande de
+       Cédric ("il manque la roue crantée dans paramètres commun"). Remplace
+       l'ancien bloc "Hypothèses de calcul" dépliable en place dans le formulaire —
+       mêmes champs, mêmes ids, juste déplacés dans ce panneau. */
+    .pm-hyp-body { padding: clamp(1.3rem, 3vw, 1.8rem); }
+    .pm-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
+    .pm-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
+    #pmHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #pmHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #pmHypOverlay .modal__scroll { height: 100%; }
     .simulator__layout.pm-panel-hidden .simulator__form { display: none; }
     @media (min-width: 781px) {
       .simulator__layout.pm-panel-hidden { grid-template-columns: 1fr; }
@@ -67,8 +78,12 @@
 
     <div class="simulator__layout">
       <div class="form-card simulator__form">
-        <div style="display:flex;justify-content:flex-end">
-          <button type="button" class="pm-gear-btn" id="pmBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+          <h3 style="margin:0">Paramètres</h3>
+          <div style="display:flex;align-items:center;gap:.3rem">
+            <button type="button" class="pm-gear-btn" id="pmBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+            <button type="button" class="pm-gear-btn" id="pmBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+          </div>
         </div>
         <div class="field">
           <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
@@ -174,56 +189,6 @@
           <p class="simulator__warning" id="pmCapaciteWarning" hidden></p>
         </div>
 
-        <h3 class="simulator__collapse-toggle" id="pmHypothesesToggle" style="margin:1.4rem 0 1.2rem;cursor:pointer">Hypothèses de calcul <span aria-hidden="true">▾</span></h3>
-        <div id="pmHypothesesBody" class="simulator__field-group" style="border-left-color:#6b5b95" hidden>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</p>
-          <div class="field">
-            <label for="pmDate">Date de forfait technique</label>
-            <select id="pmDate"></select>
-          </div>
-          <div class="field">
-            <label for="pmZone">Zone géographique</label>
-            <select id="pmZone">
-              <option value="province">Province</option>
-              <option value="idf">Île-de-France (hors Paris)</option>
-              <option value="paris">Paris</option>
-            </select>
-          </div>
-          <div class="field">
-            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="pmAmorti" value="nonAmorti" checked /> Non amortie</label>
-              <label><input type="radio" name="pmAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
-            </div>
-          </div>
-          <div class="field">
-            <label for="pmKwh">Coût du kWh</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
-              <span>€ TTC</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="pmHeures">Amplitude d'ouverture par jour</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
-              <span>heures</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="pmJours">Jours d'ouverture par mois</label>
-            <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
-          </div>
-          <div class="field">
-            <label for="pmNetMerm">Salaire MERM net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetMerm" value="1.800" />
-              <span>€ / mois</span>
-            </div>
-          </div>
-          <p class="simulator__hint" id="pmCoutMermCalcule"></p>
-          <p class="simulator__hint">Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
-        </div>
       </div>
 
       <div class="simulator__results">
@@ -331,6 +296,69 @@
       </div>
     </div>
   </main>
+
+  <div class="modal-overlay" id="pmHypOverlay" role="dialog" aria-modal="true" aria-labelledby="pmHypTitle" hidden>
+    <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="modal__close" id="pmHypClose" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="pm-hyp-body">
+          <h3 id="pmHypTitle">Réglages avancés</h3>
+          <p class="simulator__hint" style="margin:0 0 .8rem">Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</p>
+          <div class="field">
+            <label for="pmDate">Date de forfait technique</label>
+            <select id="pmDate"></select>
+          </div>
+          <div class="field">
+            <label for="pmZone">Zone géographique</label>
+            <select id="pmZone">
+              <option value="province">Province</option>
+              <option value="idf">Île-de-France (hors Paris)</option>
+              <option value="paris">Paris</option>
+            </select>
+          </div>
+          <div class="field">
+            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="pmAmorti" value="nonAmorti" checked /> Non amortie</label>
+              <label><input type="radio" name="pmAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="pmKwh">Coût du kWh</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+              <span>€ TTC</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="pmHeures">Amplitude d'ouverture par jour</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
+              <span>heures</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="pmJours">Jours d'ouverture par mois</label>
+            <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="pmNetMerm">Salaire MERM net avant impôt</label>
+            <div class="simulator__field-suffix">
+              <input type="text" inputmode="numeric" id="pmNetMerm" value="1.800" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="pmCoutMermCalcule"></p>
+          <p class="simulator__hint">Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
+          <p class="simulator__hint" style="margin-top:.8rem">Chaque champ s'applique tout de suite — regarde le
+          résultat changer pendant que tu ajustes.</p>
+          <div class="pm-hyp-actions">
+            <button type="button" class="btn" id="pmHypDone">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -664,7 +692,6 @@
           toggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
         });
       }
-      brancherToggle("pmHypothesesToggle", "pmHypothesesBody");
       brancherToggle("pmRecapToggle", "pmRecapBody");
 
       // Masquer/réafficher la colonne de gauche entière (motif porté de
@@ -686,6 +713,23 @@
       });
       document.getElementById("pmBtnShowPanel").addEventListener("click", function () {
         appliquerVisibilitePanel(false);
+      });
+
+      // Roue crantée "Réglages avancés" (motif porté de simulateur-recettes.html le
+      // 08/09/2026) — panneau ancré à gauche, sans fond assombri.
+      var pmHypOverlay = document.getElementById("pmHypOverlay");
+      document.getElementById("pmBtnHypotheses").addEventListener("click", function () {
+        pmHypOverlay.hidden = false;
+        pmHypOverlay.classList.add("is-open");
+      });
+      function fermerPmHyp() {
+        pmHypOverlay.classList.remove("is-open");
+        pmHypOverlay.hidden = true;
+      }
+      document.getElementById("pmHypClose").addEventListener("click", fermerPmHyp);
+      document.getElementById("pmHypDone").addEventListener("click", fermerPmHyp);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && pmHypOverlay.classList.contains("is-open")) fermerPmHyp();
       });
 
       document.querySelectorAll('input[name="pmActiviteMode"]').forEach(function (radio) {

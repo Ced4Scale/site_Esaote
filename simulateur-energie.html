@@ -34,6 +34,17 @@
       font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
     }
     .ene-gear-btn:hover, .ene-gear-btn:focus-visible { opacity: 1; }
+    /* Roue crantée "Réglages avancés" — motif repris de simulateur-recettes.html
+       (panneau ancré à gauche, sans fond assombri) le 08/09/2026, sur demande de
+       Cédric ("il manque la roue crantée dans paramètres commun"). Contient la
+       phrase d'hypothèses simplificatrices, déplacée ici depuis le détail des
+       calculs (colonne de résultats) où elle était noyée dans les tableaux. */
+    .ene-hyp-body { padding: clamp(1.3rem, 3vw, 1.8rem); }
+    .ene-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
+    .ene-hyp-actions { display: flex; justify-content: flex-end; margin-top: 1.2rem; }
+    #eneHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #eneHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #eneHypOverlay .modal__scroll { height: 100%; }
     .simulator__layout.ene-panel-hidden .simulator__form { display: none; }
     @media (min-width: 781px) {
       .simulator__layout.ene-panel-hidden { grid-template-columns: 1fr; }
@@ -71,7 +82,10 @@
         <div class="simulator__field-group" style="border-left-color:#6b5b95">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
             <h3 style="margin:0">Paramètres communs</h3>
-            <button type="button" class="ene-gear-btn" id="eneBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+            <div style="display:flex;align-items:center;gap:.3rem">
+              <button type="button" class="ene-gear-btn" id="eneBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+              <button type="button" class="ene-gear-btn" id="eneBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+            </div>
           </div>
           <div class="field">
             <label for="enePrix">Coût du kWh</label>
@@ -278,8 +292,6 @@
               <tbody id="eneTableBody"></tbody>
             </table>
             </div>
-            <p class="simulator__hint">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
-
             <div class="simulator__chart-card" id="eneRecap">
               <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation</h3>
               <p class="simulator__hint" style="margin:0 0 .8rem">Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</p>
@@ -350,6 +362,21 @@
       </div>
     </div>
   </main>
+
+  <div class="modal-overlay" id="eneHypOverlay" role="dialog" aria-modal="true" aria-labelledby="eneHypTitle" hidden>
+    <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="modal__close" id="eneHypClose" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="ene-hyp-body">
+          <h3 id="eneHypTitle">Réglages avancés</h3>
+          <p class="simulator__hint" style="margin:0">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
+          <div class="ene-hyp-actions">
+            <button type="button" class="btn" id="eneHypDone">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     (function () {
@@ -1695,6 +1722,23 @@
       });
       document.getElementById("eneBtnShowPanel").addEventListener("click", function () {
         appliquerVisibilitePanel(false);
+      });
+
+      // Roue crantée "Réglages avancés" (motif porté de simulateur-recettes.html le
+      // 08/09/2026) — panneau ancré à gauche, sans fond assombri.
+      var eneHypOverlay = document.getElementById("eneHypOverlay");
+      document.getElementById("eneBtnHypotheses").addEventListener("click", function () {
+        eneHypOverlay.hidden = false;
+        eneHypOverlay.classList.add("is-open");
+      });
+      function fermerEneHyp() {
+        eneHypOverlay.classList.remove("is-open");
+        eneHypOverlay.hidden = true;
+      }
+      document.getElementById("eneHypClose").addEventListener("click", fermerEneHyp);
+      document.getElementById("eneHypDone").addEventListener("click", fermerEneHyp);
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape" && eneHypOverlay.classList.contains("is-open")) fermerEneHyp();
       });
 
       recalculer();
