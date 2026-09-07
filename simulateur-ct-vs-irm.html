@@ -123,20 +123,24 @@
        valables). */
     #cvHoraireLabel1B { flex-direction: column; align-items: flex-end; gap: .15rem; }
     #cvHoraireLabel1B span { display: none; }
-    /* "Ouverture"/"Fermeture" ajoutés devant chaque heure (demande de Cédric le
-       07/09/2026, "aligné à 30 patients/jour" juste au-dessus) — uniquement sur ce
-       miroir (voir le JS juste après wireHoraireRange("...B")), jamais la roue crantée
-       ni samedi/dimanche. Sélecteur plus spécifique que "#cvHoraireLabel1B span"
-       ci-dessus (qui ne visait que le tiret "–", devenu inutile en empilé) pour ne pas
-       cacher ces 2 nouveaux libellés avec la même règle. */
-    #cvHoraireLabel1B span.cv-horaire-mot {
-      display: block; font-size: .68rem; font-weight: 600; color: var(--muted);
-    }
+    /* "Ouverture 08:00" / "Fermeture 18:00" — 2 lignes, chacune avec son libellé et son
+       heure CÔTE À CÔTE (demande de Cédric le 07/09/2026, "aligné à 30 patients/jour"
+       juste au-dessus, puis "réduire la case heure pour qu'ils soient côte à côte" le
+       même jour) — uniquement sur ce miroir (voir le JS juste après
+       wireHoraireRange("...B")), jamais la roue crantée ni samedi/dimanche. Chaque
+       ligne est un `.cv-horaire-ligne` construit en JS, PAS un enfant direct de
+       #cvHoraireLabel1B — le sélecteur générique "#cvHoraireLabel1B span" ci-dessus
+       (qui ne visait que le tiret "–", devenu inutile) ne le cache donc pas, pas besoin
+       de le rendre plus spécifique. */
+    #cvHoraireLabel1B .cv-horaire-ligne { display: flex; align-items: baseline; gap: .3rem; }
+    #cvHoraireLabel1B .cv-horaire-mot { font-size: .68rem; font-weight: 600; color: var(--muted); }
     /* Heures colorées comme la piste/le curseur du curseur horaire (--cv-horaire-couleur),
        même principe que "30 patients/jour" plus haut coloré dans la teinte de SON propre
-       curseur (--cv-activite-couleur-texte) — demande de Cédric le 07/09/2026. */
+       curseur (--cv-activite-couleur-texte) — demande de Cédric le 07/09/2026. Case
+       nettement réduite (8.5em de base → 4.6em) pour tenir à côté du libellé plutôt
+       qu'en dessous — juste assez pour "08:00" + le petit sélecteur natif du navigateur. */
     #cvHoraireLabel1B input.cv-horaire-heure-txt {
-      color: var(--cv-horaire-couleur-texte); font-weight: 700;
+      color: var(--cv-horaire-couleur-texte); font-weight: 700; width: 5.4em;
     }
     /* Le texte "Soit X h d'ouverture par jour" juste après "17:00", sur la même ligne (pas
        en dessous) — demande de Cédric le 07/09/2026. */
@@ -166,6 +170,9 @@
     #cvSyntheseTable.simulator__table--compare3 td:last-child { width: 20%; }
     #cvSyntheseTable.simulator__table--compare3 th:first-child,
     #cvSyntheseTable.simulator__table--compare3 td:first-child { width: 30%; }
+    /* Montants centrés dans leur colonne (demande de Cédric le 07/09/2026) — seule la
+       1ʳᵉ colonne (libellé texte, pas un montant) garde l'alignement par défaut. */
+    #cvSyntheseTable.simulator__table--compare3 td:not(:first-child) { text-align: center; }
     /* Colonnes machine élargies (21% -> 25%, demande de Cédric le 07/09/2026) — "Esaote
        O-scan" en nowrap (voir plus bas) a besoin d'environ 131px, 21% de la largeur
        d'origine (540px) n'en offrait que 113px. Repris sur le "Recette moyenne acte
@@ -1350,7 +1357,11 @@
       // Sans le "€" ni le signe — pour les postes de charge affichés entre parenthèses en
       // rouge (convention comptable), demande de Cédric le 05/09/2026.
       var eurosCentSansSigne = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-      function eurosCharge(v) { return "<span style=\"color:var(--red)\">(" + eurosCentSansSigne.format(Math.abs(v)) + ")</span>"; }
+      // Le "€" manquait sur les charges entre parenthèses (demande de Cédric le
+      // 07/09/2026) — `eurosCent.format` (avec devise) remplace `eurosCentSansSigne`
+      // (sans devise), qui ne sert donc plus qu'à cet usage historique ; gardé tel quel
+      // au cas où un futur montant sans devise en aurait besoin.
+      function eurosCharge(v) { return "<span style=\"color:var(--red)\">(" + eurosCent.format(Math.abs(v)) + ")</span>"; }
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
 
       document.querySelectorAll(".simulator__swatch-text").forEach(function (sw) {
@@ -2346,8 +2357,11 @@
 
         document.getElementById("cvSyntheseHeadA").textContent = resultats[0].machine.nomCourt;
         document.getElementById("cvSyntheseHeadB").textContent = resultats[1].machine.nomCourt;
+        // "montants TTC" ajouté au sous-titre (demande de Cédric le 07/09/2026) — visible
+        // en permanence au-dessus du tableau, pas replié dans l'ampoule "Hypothèses" juste
+        // en dessous : une mention de fiscalité mérite de rester visible sans clic.
         document.getElementById("cvSyntheseSousTitre").textContent =
-          "Sur la base de votre activité renseignée plus haut : " + patientsFmt.format(patientsAnnuels) + " patients/an.";
+          "Sur la base de votre activité renseignée plus haut : " + patientsFmt.format(patientsAnnuels) + " patients/an. Montants TTC.";
 
         var tbody = document.getElementById("cvSyntheseBody");
         tbody.innerHTML = "";
@@ -3003,23 +3017,34 @@ var svg = document.getElementById("cvChart");
       // activité" (ids suffixés "B") — synchronisées dans les 2 sens.
       var majHoraireMatin = wireHoraireRange("cvHeureDebut1", "cvHeureFin1", "cvHoraireFill1", "cvHoraireLabel1");
       var majHoraireMatinB = wireHoraireRange("cvHeureDebut1B", "cvHeureFin1B", "cvHoraireFill1B", "cvHoraireLabel1B");
-      // "Ouverture"/"Fermeture" ajoutés devant chaque heure (demande de Cédric le
-      // 07/09/2026, "aligné à 30 patients/jour") — uniquement sur ce miroir, jamais la
+      // "Ouverture 08:00" / "Fermeture 18:00", libellé et heure CÔTE À CÔTE sur 2 lignes
+      // (demande de Cédric le 07/09/2026, "aligné à 30 patients/jour" puis "réduire la
+      // case heure pour qu'ils soient côte à côte") — uniquement sur ce miroir, jamais la
       // copie canonique de la roue crantée ni samedi/dimanche. wireHoraireRange() garde
-      // `label.children[0]`/`[2]` comme références directes vers les 2 <input> (capturées
-      // une fois, pas requêtées à chaque appel de maj()) : insérer des frères autour
-      // d'eux après coup ne casse rien, seul l'ORDRE visuel dans la colonne change.
+      // `label.children[0]`/`[2]` comme références DIRECTES vers les 2 <input> (capturées
+      // une fois, pas requêtées à chaque appel de maj()) : les déplacer dans un nouveau
+      // conteneur ne casse rien, seule leur position dans le DOM change — le tiret "–"
+      // (children[1]) devient un frère orphelin une fois les 2 <input> déplacés, retiré
+      // explicitement plutôt que laissé traîner (même s'il resterait invisible, `display:
+      // none` déjà posé dessus par la règle générique "#cvHoraireLabel1B span").
       (function () {
         var label = document.getElementById("cvHoraireLabel1B");
-        var txtDebut = label.children[0], txtFin = label.children[2];
-        var motOuverture = document.createElement("span");
-        motOuverture.className = "cv-horaire-mot";
-        motOuverture.textContent = "Ouverture";
-        label.insertBefore(motOuverture, txtDebut);
-        var motFermeture = document.createElement("span");
-        motFermeture.className = "cv-horaire-mot";
-        motFermeture.textContent = "Fermeture";
-        label.insertBefore(motFermeture, txtFin);
+        var txtDebut = label.children[0], separateur = label.children[1], txtFin = label.children[2];
+        function ligne(mot, champ) {
+          var wrap = document.createElement("span");
+          wrap.className = "cv-horaire-ligne";
+          var m = document.createElement("span");
+          m.className = "cv-horaire-mot";
+          m.textContent = mot;
+          wrap.appendChild(m);
+          wrap.appendChild(champ); // détache champ de son ancien parent (label) au passage
+          return wrap;
+        }
+        var ligneOuverture = ligne("Ouverture", txtDebut);
+        var ligneFermeture = ligne("Fermeture", txtFin);
+        separateur.remove();
+        label.appendChild(ligneOuverture);
+        label.appendChild(ligneFermeture);
       })();
       lierMiroirPoignee("cvHeureDebut1", majHoraireMatin, "cvHeureDebut1B", majHoraireMatinB);
       lierMiroirPoignee("cvHeureFin1", majHoraireMatin, "cvHeureFin1B", majHoraireMatinB);
@@ -3171,6 +3196,19 @@ var svg = document.getElementById("cvChart");
         // Le tableau "Résultat à votre activité" change de largeur avec la colonne —
         // le cadre vert superposé doit suivre.
         positionnerCadreVert();
+        // Correctif du 07/09/2026 (capture d'écran de Cédric à l'appui, "défaut du cadre
+        // vert") : passer en plein écran peut faire grandir la page assez pour faire
+        // apparaître/disparaître la barre de scroll verticale du navigateur — un
+        // changement qui élargit/rétrécit le viewport (et donc la largeur réelle du
+        // tableau) APRÈS la mesure synchrone ci-dessus, laissant le cadre figé sur
+        // l'ancienne largeur (repéré non reproductible en Chrome headless, qui ne réserve
+        // pas de place pour sa barre de scroll comme un vrai navigateur peut le faire).
+        // Un `resize` du navigateur redéclenche déjà positionnerCadreVert() plus bas, mais
+        // pas de façon fiable pour CE cas précis (barre de scroll interne au document, pas
+        // toujours signalée par un vrai évènement resize) — un second passage différé
+        // (double rAF, le temps que le navigateur termine sa mise en page) referme la
+        // fenêtre de ce bug quelle que soit sa cause exacte.
+        requestAnimationFrame(function () { requestAnimationFrame(positionnerCadreVert); });
       }
       document.getElementById("cvBtnTogglePanel").addEventListener("click", function () {
         appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("cv-panel-hidden"));
