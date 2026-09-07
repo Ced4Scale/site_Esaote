@@ -81,8 +81,14 @@
       /* Piste grise fixe (revenu sur la décision "transparent" du 07/09/2026, signalé
          manquant par Cédric le même jour) — même motif que .cv-ftmoy-track : une piste
          invisible donne l'impression que la ligne "se crée" au lieu d'être une vraie
-         ligne de curseur qui passe du gris au rouge. */
-      position: absolute; top: 50%; left: 9px; right: 9px; height: 4px;
+         ligne de curseur qui passe du gris au rouge. `right:0` (pas 9px) — demande de
+         Cédric le même jour, "allonger le trait gris... qu'il n'y ait plus de zone
+         blanche" : la marge de 9px à droite (réservée à l'origine pour le rayon de la
+         poignée) laissait un blanc visible une fois la poignée pas exactement au
+         maximum — le remplissage (`.cv-horaire-fill`, en %) s'étire avec la piste, la
+         poignée elle-même n'est pas affectée (position pilotée séparément par
+         l'`<input>`, toujours contrainte à l'intérieur du cadre par le navigateur). */
+      position: absolute; top: 50%; left: 9px; right: 0; height: 4px;
       background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
     }
     .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
@@ -268,7 +274,7 @@
        roue crantée. Bornes recalculées à chaque `recalculer()` (fonction
        `ajusterSliderActivite()`), pas fixes, pour rester cohérentes que l'on
        raisonne en jour ou en an. */
-    .cv-activite-slider { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-top: 1rem; }
+    .cv-activite-slider { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: 1rem; }
     /* Piste native abandonnée le 07/09/2026 : même avec fond transparent sur le track, Chrome
        continue à peindre lui-même la partie "non remplie" en gris dès que accent-color est
        posé — impossible à effacer par CSS de pseudo-élément (retour de Cédric : "il me
@@ -296,8 +302,10 @@
       /* Piste grise fixe (signalé manquant par Cédric le 07/09/2026) — même motif que
          .cv-ftmoy-track/.cv-horaire-track : sans elle, seul le remplissage rouge se
          voit, donnant l'impression que la ligne "se crée" au lieu d'être une vraie
-         ligne de curseur qui passe du gris au rouge. */
-      position: absolute; top: 50%; left: 9px; right: 9px; height: 4px;
+         ligne de curseur qui passe du gris au rouge. `right:0` (pas 9px, voir la note
+         équivalente sur .cv-horaire-track) — "allonger le trait gris ... qu'il n'y ait
+         plus de zone blanche". */
+      position: absolute; top: 50%; left: 9px; right: 0; height: 4px;
       background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
     }
     .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
