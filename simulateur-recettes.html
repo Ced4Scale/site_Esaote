@@ -32,6 +32,18 @@
       font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
     }
     .sim-gear-btn:hover, .sim-gear-btn:focus-visible { opacity: 1; }
+    /* Masquer/réafficher la colonne de gauche entière au clic sur l'icône ⏴/⏵ (motif
+       porté de simulateur-ct-vs-irm.html le 08/09/2026, sur demande de Cédric — la
+       colonne de résultats prend alors toute la largeur). */
+    .simulator__layout.sim-panel-hidden .simulator__form { display: none; }
+    @media (min-width: 781px) {
+      .simulator__layout.sim-panel-hidden { grid-template-columns: 1fr; }
+    }
+    /* #simBtnShowPanel a la classe .btn (display:inline-flex, styles.css) — cette règle
+       gagne sur le [hidden] natif à spécificité égale (piège déjà connu du site, voir
+       skill ced4scale-simulateur-web) : sans elle le bouton resterait visible en
+       permanence, avant même le premier clic sur ⏴. */
+    #simBtnShowPanel[hidden] { display: none; }
     .sim-hyp-body { padding: clamp(1.3rem, 3vw, 1.8rem); }
     .sim-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
     .sim-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
@@ -108,7 +120,10 @@
       <div class="form-card simulator__form">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
           <h3 style="margin:0">Paramètres</h3>
-          <button type="button" class="sim-gear-btn" id="simBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+          <div style="display:flex;align-items:center;gap:.3rem">
+            <button type="button" class="sim-gear-btn" id="simBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+            <button type="button" class="sim-gear-btn" id="simBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+          </div>
         </div>
         <div class="field">
           <label for="simMachine">Choix du champ / machine</label>
@@ -144,6 +159,10 @@
       </div>
 
       <div class="simulator__results">
+        <!-- Copie du bouton ⏴ (voir #simBtnTogglePanel) : vit dans la colonne de
+             résultats, jamais masquée avec le panneau, cachée par défaut et montrée
+             uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
+        <button type="button" class="btn btn--sm" id="simBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Composition des recettes de l'année 1</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année.</p>
@@ -1054,6 +1073,27 @@
       window.addEventListener("scroll", function () { if (!simSeuilsBox.hidden) positionnerSeuilsPopover(); }, true);
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && !simSeuilsBox.hidden) fermerSeuilsPopover();
+      });
+
+      // Masquer/réafficher la colonne de gauche entière (motif porté de
+      // simulateur-ct-vs-irm.html le 08/09/2026) : la colonne de résultats occupe
+      // alors toute la largeur. 2 boutons pilotent le même état : simBtnTogglePanel
+      // (dans le panneau — se masque avec lui) et simBtnShowPanel (dans la colonne de
+      // résultats, jamais masqué, visible seulement quand le panneau l'est).
+      function appliquerVisibilitePanel(masque) {
+        document.querySelector(".simulator__layout").classList.toggle("sim-panel-hidden", masque);
+        var btnHide = document.getElementById("simBtnTogglePanel");
+        btnHide.textContent = masque ? "⏵" : "⏴";
+        btnHide.title = masque ? "Afficher les paramètres" : "Masquer les paramètres";
+        btnHide.setAttribute("aria-label", btnHide.title);
+        btnHide.setAttribute("aria-pressed", String(masque));
+        document.getElementById("simBtnShowPanel").hidden = !masque;
+      }
+      document.getElementById("simBtnTogglePanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("sim-panel-hidden"));
+      });
+      document.getElementById("simBtnShowPanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(false);
       });
 
       var simHypOverlay = document.getElementById("simHypOverlay");

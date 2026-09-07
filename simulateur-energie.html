@@ -25,6 +25,21 @@
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
+  <style>
+    /* Masquer/réafficher la colonne de gauche entière au clic sur l'icône ⏴/⏵ (motif
+       porté de simulateur-ct-vs-irm.html le 08/09/2026, sur demande de Cédric — la
+       colonne de résultats prend alors toute la largeur). */
+    .ene-gear-btn {
+      background: none; border: 0; padding: .1rem .2rem; margin: 0; cursor: pointer;
+      font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
+    }
+    .ene-gear-btn:hover, .ene-gear-btn:focus-visible { opacity: 1; }
+    .simulator__layout.ene-panel-hidden .simulator__form { display: none; }
+    @media (min-width: 781px) {
+      .simulator__layout.ene-panel-hidden { grid-template-columns: 1fr; }
+    }
+    #eneBtnShowPanel[hidden] { display: none; }
+  </style>
 </head>
 <body class="tool-page">
   <header class="document-viewer__bar">
@@ -54,7 +69,10 @@
     <div class="simulator__layout">
       <div class="form-card simulator__form">
         <div class="simulator__field-group" style="border-left-color:#6b5b95">
-          <h3 style="margin:0 0 1.2rem">Paramètres communs</h3>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+            <h3 style="margin:0">Paramètres communs</h3>
+            <button type="button" class="ene-gear-btn" id="eneBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+          </div>
           <div class="field">
             <label for="enePrix">Coût du kWh</label>
             <div class="simulator__field-suffix">
@@ -160,6 +178,7 @@
       </div>
 
       <div class="simulator__results">
+        <button type="button" class="btn btn--sm" id="eneBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card">
           <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
@@ -1656,6 +1675,27 @@
         }
       }
       document.getElementById("eneClose").addEventListener("click", goBack);
+
+      // Masquer/réafficher la colonne de gauche entière (motif porté de
+      // simulateur-ct-vs-irm.html le 08/09/2026) — la colonne de résultats occupe
+      // alors toute la largeur. 2 boutons pilotent le même état : eneBtnTogglePanel
+      // (dans le panneau — se masque avec lui) et eneBtnShowPanel (dans la colonne de
+      // résultats, jamais masqué, visible seulement quand le panneau l'est).
+      function appliquerVisibilitePanel(masque) {
+        document.querySelector(".simulator__layout").classList.toggle("ene-panel-hidden", masque);
+        var btnHide = document.getElementById("eneBtnTogglePanel");
+        btnHide.textContent = masque ? "⏵" : "⏴";
+        btnHide.title = masque ? "Afficher les paramètres" : "Masquer les paramètres";
+        btnHide.setAttribute("aria-label", btnHide.title);
+        btnHide.setAttribute("aria-pressed", String(masque));
+        document.getElementById("eneBtnShowPanel").hidden = !masque;
+      }
+      document.getElementById("eneBtnTogglePanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(!document.querySelector(".simulator__layout").classList.contains("ene-panel-hidden"));
+      });
+      document.getElementById("eneBtnShowPanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(false);
+      });
 
       recalculer();
       dessinerGrapheHistoriquePrixKwh();
