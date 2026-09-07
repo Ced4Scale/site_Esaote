@@ -199,8 +199,17 @@
        large et le faisait déborder de la carte sur desktop (colonne "Écart" qui sortait
        du cadre, repéré visuellement) ; combiner les deux corrections modestes évite ce
        débordement tout en donnant assez de place à "Esaote O-scan"/"Siemens go.Top". */
-    #cvSyntheseTable { min-width: 600px; }
+    #cvSyntheseTable { min-width: 520px; }
     #cvSyntheseTable th .simulator__swatch-text { white-space: nowrap; }
+    /* En-têtes réduits SEULEMENT sur ce tableau (demande de Cédric le 07/09/2026, "pour
+       que le tableau soit visible en entier sans utiliser la barre grise") — override
+       plus spécifique que ".stats-table th" ci-dessous (partagée par tous les tableaux
+       de cette page, laissée intacte ailleurs). `min-width` réduit en même temps
+       (600→520px) puisque c'est justement la largeur de ces 3 en-têtes qui l'avait fait
+       monter à 600px le 07/09/2026 (voir commentaire juste au-dessus) — un texte plus
+       petit a besoin de moins de place, revérifié qu'"Esaote O-scan" ne se recoupe pas
+       en 2 lignes à cette taille. */
+    #cvSyntheseTable th { font-size: .85rem; }
     /* En-têtes de colonnes des tableaux (.stats-table, partagée avec les autres simulateurs) —
        trop petits et trop clairs pour être lisibles confortablement (demande de Cédric le
        05/09/2026) : agrandis et foncés, override local à cette page uniquement. */
@@ -629,6 +638,18 @@
       --cv-info-bg: #cdeee9; --cv-info-bg-hover: #aee2da; --cv-info-bd: #a9ddd4;
       --cv-info-fg: #146b63; --cv-info-pop-bg: #eafaf7; --cv-info-pop-fg: #146b63;
     }
+    /* Bleu = même famille que .cv-btn-activite ("100% de la capacité") ; vert = même
+       famille que .cv-btn-ai ("Sans AI") — pour les 2 ampoules qui remplacent les
+       paragraphes conditionnels cvModeDebitTxt/cvModeSansAITxt (demande de Cédric le
+       07/09/2026), couleurs reprises telles quelles de ces boutons. */
+    .cv-info-wrap--bleu {
+      --cv-info-bg: #cfe0f7; --cv-info-bg-hover: #b3cdf3; --cv-info-bd: #a9c3ea;
+      --cv-info-fg: #274a75; --cv-info-pop-bg: #eef4fc; --cv-info-pop-fg: #274a75;
+    }
+    .cv-info-wrap--vert {
+      --cv-info-bg: #cdecdc; --cv-info-bg-hover: #aee0c8; --cv-info-bd: #a3d9bc;
+      --cv-info-fg: #1f6b47; --cv-info-pop-bg: #eaf8f1; --cv-info-pop-fg: #1f6b47;
+    }
     .cv-info-btn {
       display: inline-flex; align-items: center; justify-content: center;
       width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--cv-info-bd);
@@ -898,8 +919,28 @@
               <button type="button" class="btn btn--sm cv-btn-ai" id="cvBtnAvecAI" aria-pressed="true" data-tip="Inclut la recette de l'acte intellectuel du radiologue dans les 2 barres.">Avec AI</button>
               <button type="button" class="btn btn--sm btn--ghost cv-btn-ai cv-tip-right" id="cvBtnSansAI" aria-pressed="false" data-tip="Retire la recette de l'acte intellectuel, ne montre que la recette du forfait technique.">Sans AI</button>
             </div>
-            <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeDebitTxt" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</p>
-            <p class="simulator__hint" style="margin:.35rem 0 0" id="cvModeSansAITxt" hidden>Recette de l'acte intellectuel du radiologue retirée des 2 barres — ne montre plus que la recette du forfait technique.</p>
+            <!-- Explications des 2 modes repliées derrière une ampoule chacune (demande de
+                 Cédric le 07/09/2026, "gain de place") — le conteneur `#cvModeDebitTxt`/
+                 `#cvModeSansAITxt` garde son id et son mécanisme `hidden` INCHANGÉS
+                 (choisirModeActivite()/choisirModeAI() continuent de piloter sa visibilité
+                 tel quel) : seule la présentation interne passe de texte brut à ampoule.
+                 Couleur reprise de la famille du bouton concerné (bleu = .cv-btn-activite,
+                 vert = .cv-btn-ai) pour que l'ampoule se lise comme rattachée à CE mode
+                 précis. `<div>` (bloc, garde le `margin-top` d'origine) plutôt que l'id
+                 directement sur `.cv-info-wrap` (inline-block) — évite de devoir ajouter un
+                 correctif [hidden] à ce dernier, piège déjà documenté sur ce site. -->
+            <div id="cvModeDebitTxt" hidden style="margin-top:.35rem">
+              <span class="cv-info-wrap cv-info-wrap--bleu">
+                <button type="button" class="cv-info-btn" id="cvModeDebitBtn" aria-expanded="false" aria-controls="cvModeDebitPop" aria-label="À propos de ce mode">💡</button>
+                <div class="cv-info-pop" id="cvModeDebitPop" hidden>Chaque machine tourne ici à son propre débit maximum sur la même plage horaire — le scanner voit alors plus de patients que l'IRM (plus rapide), ce qui dilue mieux ses charges fixes : comparatif moins tranché qu'à activité imposée égale.</div>
+              </span>
+            </div>
+            <div id="cvModeSansAITxt" hidden style="margin-top:.35rem">
+              <span class="cv-info-wrap cv-info-wrap--vert">
+                <button type="button" class="cv-info-btn" id="cvModeSansAIBtn" aria-expanded="false" aria-controls="cvModeSansAIPop" aria-label="À propos de ce mode">💡</button>
+                <div class="cv-info-pop" id="cvModeSansAIPop" hidden>Recette de l'acte intellectuel du radiologue retirée des 2 barres — ne montre plus que la recette du forfait technique.</div>
+              </span>
+            </div>
           </div>
           <!-- Mémoires de simulation (demande de Cédric le 07/09/2026) : jusqu'à 3
                emplacements. Cliquer sur un emplacement VIDE y enregistre les paramètres
@@ -930,7 +971,7 @@
                  puisqu'il change à chaque clic). -->
             <span class="cv-info-wrap cv-info-wrap--violet" style="align-self:center">
               <button type="button" class="cv-info-btn" id="cvMemoireInfoBtn" aria-expanded="false" aria-controls="cvMemoireInfoPop" aria-label="Comment marchent les mémoires">💡</button>
-              <div class="cv-info-pop" id="cvMemoireInfoPop" hidden>Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</div>
+              <div class="cv-info-pop" id="cvMemoireInfoPop" hidden>Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail, et utilisez les boutons Mémoire pour comparer plusieurs simulations entre elles.</div>
             </span>
           </div>
           <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt"></p>
@@ -967,6 +1008,19 @@
         <details class="simulator__chart-card simulator__chart-card--collapsible">
           <summary>Tarif moyen du forfait technique selon le volume</summary>
           <p class="simulator__hint">Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils).</p>
+          <!-- Avec/Sans AI sur ce graphe (demande de Cédric le 07/09/2026, "de base c'est
+               sans AI") — ce graphe n'affichait jusque-là QUE le forfait technique, jamais
+               l'acte intellectuel du radiologue. "Avec AI" ajoute le tarif moyen de l'acte
+               intellectuel (déjà réglé plus haut dans "Réglages avancés" IRM/Scanner —
+               acteIntellectuelPatient()) au tarif du FT, sur les 2 courbes ET les 2
+               lignes de résultat sous le curseur. Constante par volume (l'acte
+               intellectuel n'a pas de barème dégressif), donc un simple décalage vertical
+               des courbes, pas un recalcul de leur forme. Même classe `.cv-btn-ai` que le
+               graphe des 2 barres plus bas (même couleur, même sens), ids distincts. -->
+          <div class="cv-btn-row">
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-ai" id="cvBtnFtMoyAvecAI" aria-pressed="false" data-tip="Ajoute le tarif moyen de l'acte intellectuel du radiologue au tarif du forfait technique.">Avec AI</button>
+            <button type="button" class="btn btn--sm cv-btn-ai" id="cvBtnFtMoySansAI" aria-pressed="true" data-tip="N'affiche que le tarif du forfait technique, sans l'acte intellectuel.">Sans AI</button>
+          </div>
           <div style="overflow-x:auto">
             <svg id="cvFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour l'IRM Esaote et le scanner"></svg>
           </div>
@@ -977,6 +1031,21 @@
               <div class="cv-ftmoy-track"><div class="cv-ftmoy-fill" id="cvFtMoyFill"></div></div>
               <input type="range" id="cvFtMoySlider" min="0" max="15000" step="100" value="6000" aria-label="Volume annuel (patients)" />
             </div>
+          </div>
+          <!-- Échelle de temps du résultat sous le curseur (demande de Cédric le
+               07/09/2026, même principe que le graphe des 2 barres) — NE change QUE les 2
+               lignes de résultat ci-dessous, jamais les courbes elles-mêmes : un tarif par
+               patient mis à l'échelle "5 ans" donnerait des courbes à une toute autre
+               échelle que le reste du graphe (des millions d'euros au lieu de dizaines),
+               illisible sur le même axe. "1 patient" = tarif unitaire actuel (défaut) ;
+               "jour"/"1 an"/"5 ans"/"7 ans" = tarif unitaire × volume annuel choisi sur le
+               curseur, ramené à l'échelle (jour = volume ÷ jours d'ouverture par an). -->
+          <div class="cv-btn-row" style="margin-top:.5rem">
+            <button type="button" class="btn btn--sm cv-btn-horizon cv-tip-left" id="cvBtnFtMoyPatient" aria-pressed="true" data-tip="Tarif moyen pour un seul patient, au volume choisi sur le curseur.">1 patient</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnFtMoyJour" aria-pressed="false" data-tip="Recette moyenne par jour d'ouverture, au volume choisi sur le curseur.">Par jour</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnFtMoy1An" aria-pressed="false" data-tip="Recette totale sur 1 an, au volume choisi sur le curseur.">1 an</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnFtMoy5Ans" aria-pressed="false" data-tip="Recette totale sur 5 ans, au volume choisi sur le curseur.">5 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon cv-tip-right" id="cvBtnFtMoy7Ans" aria-pressed="false" data-tip="Recette totale sur 7 ans, au volume choisi sur le curseur.">7 ans</button>
           </div>
           <div class="cv-ftmoy-resultats">
             <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span><span class="cv-ftmoy-montant" id="cvFtMoyIrm"></span></div>
@@ -1496,17 +1565,27 @@
         var svg = document.getElementById("cvFtMoyChart");
         svg.innerHTML = "";
 
+        // Tarif de l'acte intellectuel des 2 machines (0 si "Sans AI", voir
+        // choisirFtMoyAI ci-dessus) — constant quel que soit le volume (pas de barème
+        // dégressif sur l'acte intellectuel), donc un simple décalage vertical ajouté à
+        // CHAQUE valeur de tarif lue dans cette fonction, jamais un recalcul de forme.
+        // `acteDe()` retrouve le bon décalage à partir d'une référence `tranches` (trIrm
+        // ou trCt) — utilisé plus bas par plageCourbeAutreY(), qui ne reçoit que des
+        // tranches, jamais un nom de machine explicite.
+        var acteIrm = acteFtMoyIrm(), acteCt = acteFtMoyCt();
+        function acteDe(tranches) { return tranches === trIrm ? acteIrm : acteCt; }
+
         var NB_PAS = 100;
-        function serie(tranches) {
+        function serie(tranches, acteOffset) {
           var pts = [];
-          for (var i = 0; i <= NB_PAS; i++) pts.push(tarifMoyenPourVolume(tranches, (FT_MOY_X_MAX * i) / NB_PAS));
+          for (var i = 0; i <= NB_PAS; i++) pts.push(tarifMoyenPourVolume(tranches, (FT_MOY_X_MAX * i) / NB_PAS) + acteOffset);
           return pts;
         }
-        var serieIrm = serie(trIrm), serieCt = serie(trCt);
+        var serieIrm = serie(trIrm, acteIrm), serieCt = serie(trCt, acteCt);
 
         // Le point le plus haut de chaque courbe est toujours le tarif plein (N→0) — la
         // moyenne pondérée ne peut jamais dépasser le tarif de la 1ʳᵉ tranche.
-        var yMax = arrondiSup5(Math.max(trIrm[0].montant, trCt[0].montant) * 1.05);
+        var yMax = arrondiSup5(Math.max(trIrm[0].montant + acteIrm, trCt[0].montant + acteCt) * 1.05);
         // Le point le plus BAS de chaque courbe est toujours au volume maximum affiché
         // (15.000, dernier échantillon) — la moyenne pondérée décroît tout du long,
         // jamais un creux ailleurs sur la courbe. Axe qui démarre à ce plancher (arrondi
@@ -1592,8 +1671,8 @@
         // graphe. Un point marque l'endroit exact sur la courbe ; la bulle elle-même est
         // décalée (jamais posée pile sur le point, qui la cacherait) et reliée par un
         // trait fin de la couleur de la machine — motif "callout".
-        var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel);
-        var valCtActuel = tarifMoyenPourVolume(trCt, nActuel);
+        var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel) + acteIrm;
+        var valCtActuel = tarifMoyenPourVolume(trCt, nActuel) + acteCt;
         var ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: eurosCent.format(valIrmActuel) };
         var ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: eurosCent.format(valCtActuel) };
         [ptIrm, ptCt].forEach(function (p) {
@@ -1633,7 +1712,7 @@
           var ys = [];
           [x1, (x1 + x2) / 2, x2].forEach(function (x) {
             var n = Math.max(0, Math.min(FT_MOY_X_MAX, ((x - FT_MOY_PAD.left) / FT_MOY_PLOT_W) * FT_MOY_X_MAX));
-            ys.push(yAt(tarifMoyenPourVolume(tranches, n)));
+            ys.push(yAt(tarifMoyenPourVolume(tranches, n) + acteDe(tranches)));
           });
           return { min: Math.min.apply(null, ys), max: Math.max.apply(null, ys) };
         }
@@ -1729,8 +1808,25 @@
         var n = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
         var trIrm = tranchesAvecMontant(FT_CLASSES.le05, dateIso, zone, amortiKey);
         var trCt = tranchesAvecMontant(FT_CLASSES.ct, dateIso, zone, amortiKey);
-        document.getElementById("cvFtMoyIrm").textContent = eurosCent.format(tarifMoyenPourVolume(trIrm, n));
-        document.getElementById("cvFtMoyCt").textContent = eurosCent.format(tarifMoyenPourVolume(trCt, n));
+        var tarifIrm = tarifMoyenPourVolume(trIrm, n) + acteFtMoyIrm();
+        var tarifCt = tarifMoyenPourVolume(trCt, n) + acteFtMoyCt();
+        // Échelle de temps du résultat affiché (demande de Cédric le 07/09/2026) — ne
+        // touche QUE ces 2 lignes, jamais les courbes (voir le commentaire HTML au-dessus
+        // des boutons "1 patient"/"jour"/"1 an"/"5 ans"/"7 ans"). "jour" convertit le
+        // volume annuel du curseur en moyenne par jour d'ouverture réel (mêmes jours que
+        // le reste du site, via calculerJoursEtHeures() — pas un 365j/an générique).
+        var joursParAn = calculerJoursEtHeures().joursParMois * 12;
+        var mult = ftMoyHorizon === "patient" ? 1
+          : ftMoyHorizon === "jour" ? (joursParAn > 0 ? n / joursParAn : 0)
+          : ftMoyHorizon === "an" ? n
+          : ftMoyHorizon === "5ans" ? n * 5
+          : n * 7; // "7ans"
+        // Centimes seulement pour le tarif unitaire ("1 patient") — au-delà, ce sont des
+        // totaux (recette moyenne par jour, ou sur 1/5/7 ans), même convention que le
+        // graphe des 2 barres plus bas (les centimes n'ont plus de sens à cette échelle).
+        var fmtMontant = ftMoyHorizon === "patient" ? eurosCent.format : euros.format;
+        document.getElementById("cvFtMoyIrm").textContent = fmtMontant(tarifIrm * mult);
+        document.getElementById("cvFtMoyCt").textContent = fmtMontant(tarifCt * mult);
         document.getElementById("cvFtMoySliderLabel").textContent = seuilsEntiers.format(n) + " patients/an";
         var slider = document.getElementById("cvFtMoySlider");
         var pct = (n - +slider.min) / (+slider.max - +slider.min) * 100;
@@ -2243,6 +2339,59 @@
       Object.keys(HORIZONS).forEach(function (k) {
         document.getElementById(HORIZONS[k].boutonId).addEventListener("click", function () { choisirHorizon(k); });
       });
+
+      // ---- Avec/Sans AI et échelle de temps du graphe "Tarif moyen du forfait technique
+      // selon le volume" (demande de Cédric le 07/09/2026) — mêmes motifs que ci-dessus
+      // (paire exclusive / groupe de 5 boutons exclusifs), état séparé de ceux du graphe
+      // des 2 barres plus bas (`modeSansAI`/`horizonBarres`), ce sont 2 graphes
+      // indépendants. **Déclarés ICI, avant le tout premier appel `afficherSeuilsBareme()`
+      // plus bas dans le script** (qui appelle `majFtMoyen()`, qui les lit) — piège de
+      // hoisting déjà documenté plusieurs fois sur ce fichier, à ne pas reproduire une
+      // fois de plus : une `var` non encore assignée à ce moment-là romprait le tout 1er
+      // rendu de la page.
+      var ftMoyAvecAI = false;
+      var ftMoyHorizon = "patient";
+      var FT_MOY_HORIZONS = {
+        patient: { boutonId: "cvBtnFtMoyPatient" },
+        jour: { boutonId: "cvBtnFtMoyJour" },
+        an: { boutonId: "cvBtnFtMoy1An" },
+        "5ans": { boutonId: "cvBtnFtMoy5Ans" },
+        "7ans": { boutonId: "cvBtnFtMoy7Ans" }
+      };
+      function choisirFtMoyAI(avecAI) {
+        ftMoyAvecAI = avecAI;
+        document.getElementById("cvBtnFtMoyAvecAI").classList.toggle("btn--ghost", !avecAI);
+        document.getElementById("cvBtnFtMoyAvecAI").setAttribute("aria-pressed", String(avecAI));
+        document.getElementById("cvBtnFtMoySansAI").classList.toggle("btn--ghost", avecAI);
+        document.getElementById("cvBtnFtMoySansAI").setAttribute("aria-pressed", String(!avecAI));
+        recalculer();
+      }
+      document.getElementById("cvBtnFtMoyAvecAI").addEventListener("click", function () { choisirFtMoyAI(true); });
+      document.getElementById("cvBtnFtMoySansAI").addEventListener("click", function () { choisirFtMoyAI(false); });
+      function choisirFtMoyHorizon(cle) {
+        ftMoyHorizon = cle;
+        Object.keys(FT_MOY_HORIZONS).forEach(function (k) {
+          var btn = document.getElementById(FT_MOY_HORIZONS[k].boutonId);
+          btn.classList.toggle("btn--ghost", k !== cle);
+          btn.setAttribute("aria-pressed", String(k === cle));
+        });
+        recalculer();
+      }
+      Object.keys(FT_MOY_HORIZONS).forEach(function (k) {
+        document.getElementById(FT_MOY_HORIZONS[k].boutonId).addEventListener("click", function () { choisirFtMoyHorizon(k); });
+      });
+      // Tarif de l'acte intellectuel des machines actuellement sélectionnées, aux réglages
+      // en cours (roue crantée IRM/Scanner) — 0 si "Sans AI". Utilisé à la fois par les
+      // courbes (décalage constant, voir dessinerGrapheFtMoyen) et par les 2 lignes de
+      // résultat sous le curseur (voir majFtMoyen).
+      function acteFtMoyIrm() {
+        if (!ftMoyAvecAI) return 0;
+        return acteIntellectuelPatient(machineParKey(selectA.value), +document.getElementById("cvActeRegionA").value || 0);
+      }
+      function acteFtMoyCt() {
+        if (!ftMoyAvecAI) return 0;
+        return acteIntellectuelPatient(machineParKey(selectB.value), +document.getElementById("cvMultiRegionB").value || 0);
+      }
 
       var derniers = null;
 
@@ -3249,6 +3398,8 @@ var svg = document.getElementById("cvChart");
       wireInfoBtn("cvHypBtn", "cvHypPop");
       wireInfoBtn("cvCamembertBtn", "cvCamembertPop");
       wireInfoBtn("cvMemoireInfoBtn", "cvMemoireInfoPop");
+      wireInfoBtn("cvModeDebitBtn", "cvModeDebitPop");
+      wireInfoBtn("cvModeSansAIBtn", "cvModeSansAIPop");
       document.addEventListener("click", function (e) {
         cvInfoPopsOuverts.forEach(function (f) {
           f();
@@ -3810,8 +3961,18 @@ var svg = document.getElementById("cvChart");
           // 06/09/2026) — reprend le curseur affiché à l'écran, à la valeur où Cédric
           // l'a laissé au moment de l'envoi (pas une valeur fixe arbitraire dans le
           // PDF). Voir tarifMoyenPourVolume()/majFtMoyen() plus haut dans le script.
+          // Reprend aussi Avec/Sans AI et l'échelle de temps (ajoutés le 07/09/2026,
+          // mêmes réglages actuels que ceux affichés à l'écran).
           sy += 5;
           var ftMoyN = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
+          var ftMoyJoursParAn = calculerJoursEtHeures().joursParMois * 12;
+          var ftMoyMult = ftMoyHorizon === "patient" ? 1
+            : ftMoyHorizon === "jour" ? (ftMoyJoursParAn > 0 ? ftMoyN / ftMoyJoursParAn : 0)
+            : ftMoyHorizon === "an" ? ftMoyN
+            : ftMoyHorizon === "5ans" ? ftMoyN * 5
+            : ftMoyN * 7;
+          var ftMoyFmt = ftMoyHorizon === "patient" ? eurosCent.format : euros.format;
+          var FT_MOY_HORIZON_LABELS = { patient: "par patient", jour: "par jour", an: "sur 1 an", "5ans": "sur 5 ans", "7ans": "sur 7 ans" };
           doc.setFontSize(13);
           doc.setFont(undefined, "bold");
           doc.setTextColor(0);
@@ -3819,14 +3980,15 @@ var svg = document.getElementById("cvChart");
           doc.setFontSize(8.5);
           doc.setFont(undefined, "normal");
           doc.setTextColor(110);
-          doc.text("Pour " + seuilsEntiers.format(ftMoyN) + " patients/an, moyenne pondérée sur le barème dégressif.", sx0, sy); sy += 9;
+          doc.text("Pour " + seuilsEntiers.format(ftMoyN) + " patients/an, moyenne pondérée sur le barème dégressif" +
+            (ftMoyAvecAI ? " + acte intellectuel" : "") + ", " + FT_MOY_HORIZON_LABELS[ftMoyHorizon] + ".", sx0, sy); sy += 9;
 
-          [["IRM Esaote", trIrm], ["Scanner (CT)", trCt]].forEach(function (pair) {
+          [["IRM Esaote", trIrm, acteFtMoyIrm()], ["Scanner (CT)", trCt, acteFtMoyCt()]].forEach(function (pair) {
             doc.setFontSize(9);
             doc.setFont(undefined, "bold");
             doc.setTextColor(0);
             doc.text(pair[0], sx0, sy);
-            doc.text(eurosCent.format(tarifMoyenPourVolume(pair[1], ftMoyN)), sx0 + slabelW, sy);
+            doc.text(ftMoyFmt((tarifMoyenPourVolume(pair[1], ftMoyN) + pair[2]) * ftMoyMult), sx0 + slabelW, sy);
             sy += 6.5;
           });
 
