@@ -127,13 +127,19 @@
        heure CÔTE À CÔTE (demande de Cédric le 07/09/2026, "aligné à 30 patients/jour"
        juste au-dessus, puis "réduire la case heure pour qu'ils soient côte à côte" le
        même jour) — uniquement sur ce miroir (voir le JS juste après
-       wireHoraireRange("...B")), jamais la roue crantée ni samedi/dimanche. Chaque
-       ligne est un `.cv-horaire-ligne` construit en JS, PAS un enfant direct de
-       #cvHoraireLabel1B — le sélecteur générique "#cvHoraireLabel1B span" ci-dessus
-       (qui ne visait que le tiret "–", devenu inutile) ne le cache donc pas, pas besoin
-       de le rendre plus spécifique. */
+       wireHoraireRange("...B")), jamais la roue crantée ni samedi/dimanche. **Piège vécu
+       et corrigé le 07/09/2026 (signalé par Cédric, "je ne vois pas les mots") : `.cv-
+       horaire-ligne` ET `.cv-horaire-mot` sont TOUS LES DEUX des `<span>`** (construits
+       en JS), donc TOUS LES DEUX matchés par la règle générique "#cvHoraireLabel1B span
+       { display:none; }" ci-dessus (qui ne visait à l'origine que le tiret "–"). La
+       règle ".cv-horaire-ligne" pose bien `display:flex` (elle gagne car plus
+       spécifique QUE SUR LA PROPRIÉTÉ display, qu'elle définit) — mais ".cv-horaire-mot"
+       ne posait PAS de `display` explicite : la cascade CSS se résout PROPRIÉTÉ PAR
+       PROPRIÉTÉ, pas règle entière contre règle entière — sans un `display` propre à
+       cette classe, le `display:none` de la règle générique reste seul à s'appliquer
+       pour cette propriété, quelle que soit la spécificité globale des 2 règles. */
     #cvHoraireLabel1B .cv-horaire-ligne { display: flex; align-items: baseline; gap: .3rem; }
-    #cvHoraireLabel1B .cv-horaire-mot { font-size: .68rem; font-weight: 600; color: var(--muted); }
+    #cvHoraireLabel1B .cv-horaire-mot { display: inline; font-size: .68rem; font-weight: 600; color: var(--muted); }
     /* Heures colorées comme la piste/le curseur du curseur horaire (--cv-horaire-couleur),
        même principe que "30 patients/jour" plus haut coloré dans la teinte de SON propre
        curseur (--cv-activite-couleur-texte) — demande de Cédric le 07/09/2026. Case
