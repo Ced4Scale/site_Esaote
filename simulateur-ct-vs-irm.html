@@ -44,6 +44,19 @@
        sur un élément aussi togglé par hidden, un style inline gagne toujours sur [hidden]. */
     .cv-inline-check { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; margin-bottom: 0; }
     .cv-inline-check[hidden] { display: none; }
+    /* 2 couleurs pastel distinctes pour les 2 curseurs "patients/jour" et "horaires"
+       (demande de Cédric le 07/09/2026, "mettre les barres rouges en ton pastel et
+       avoir deux couleurs") — jusque-là tous deux en rouge de marque plein
+       (`var(--red)`), comme la ligne "Écart de résultat" ou les CTA du site, ce qui les
+       confondait visuellement avec ces éléments "d'action" alors que ce sont de simples
+       curseurs de réglage. Tons choisis pour ne PAS reprendre une couleur déjà porteuse
+       de sens ailleurs sur cette page (rose/bleu/bleu-ciel/vert déjà pris par les
+       familles de boutons sous le graphe, bleu/orange = SLOT_COLORS des 2 machines). */
+    :root {
+      --cv-activite-couleur: #e8946b; /* corail pastel — patients/jour */
+      --cv-activite-couleur-texte: #a3521f; /* variante foncée, lisible en texte */
+      --cv-horaire-couleur: #5fb3a8; /* bleu-vert pastel (teal) — horaires */
+    }
     /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
        sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
        curseur laisse passer le clic vers l'autre en-dessous), motif classique pour simuler
@@ -69,29 +82,31 @@
     .cv-horaire-track-wrap input[type="range"]::-moz-range-track { background: transparent; }
     .cv-horaire-track-wrap input[type="range"]::-webkit-slider-thumb {
       -webkit-appearance: none; pointer-events: auto; cursor: pointer;
-      width: 18px; height: 18px; border-radius: 50%; background: var(--red);
+      width: 18px; height: 18px; border-radius: 50%; background: var(--cv-horaire-couleur);
       border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
       position: relative;
     }
     .cv-horaire-track-wrap input[type="range"]::-moz-range-thumb {
       pointer-events: auto; cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
-      background: var(--red); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+      background: var(--cv-horaire-couleur); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
     }
     .cv-horaire-track {
       /* Piste grise fixe (revenu sur la décision "transparent" du 07/09/2026, signalé
          manquant par Cédric le même jour) — même motif que .cv-ftmoy-track : une piste
          invisible donne l'impression que la ligne "se crée" au lieu d'être une vraie
-         ligne de curseur qui passe du gris au rouge. `right:0` (pas 9px) — demande de
-         Cédric le même jour, "allonger le trait gris... qu'il n'y ait plus de zone
-         blanche" : la marge de 9px à droite (réservée à l'origine pour le rayon de la
-         poignée) laissait un blanc visible une fois la poignée pas exactement au
-         maximum — le remplissage (`.cv-horaire-fill`, en %) s'étire avec la piste, la
-         poignée elle-même n'est pas affectée (position pilotée séparément par
-         l'`<input>`, toujours contrainte à l'intérieur du cadre par le navigateur). */
-      position: absolute; top: 50%; left: 9px; right: 0; height: 4px;
+         ligne de curseur qui passe du gris au rouge. `right:0`/`left:0` (pas 9px) —
+         demande de Cédric le même jour, "allonger le trait gris... qu'il n'y ait plus
+         de zone blanche" puis "allonger un peu le trait gris jusqu'au plus proche de
+         08:00 et 18:00" (le côté gauche avait été oublié au 1er passage, seul `right`
+         avait été mis à 0) : la marge de 9px de chaque côté (réservée à l'origine pour
+         le rayon de la poignée) laissait un blanc visible dès que la poignée n'était
+         pas exactement au bord — le remplissage (`.cv-horaire-fill`, en %) s'étire avec
+         la piste, la poignée elle-même n'est pas affectée (position pilotée séparément
+         par l'`<input>`, toujours contrainte à l'intérieur du cadre par le navigateur). */
+      position: absolute; top: 50%; left: 0; right: 0; height: 4px;
       background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
     }
-    .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--red); border-radius: 2px; }
+    .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--cv-horaire-couleur); border-radius: 2px; }
     .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
     /* Champs heure éditables dans le label (demande de Cédric le 06/09/2026) — mêmes
        dimensions/couleur que le texte qu'ils remplacent, pas l'air d'un champ de formulaire
@@ -291,25 +306,25 @@
     .cv-activite-track-wrap input[type=range]::-moz-range-track { background: transparent; }
     .cv-activite-track-wrap input[type=range]::-webkit-slider-thumb {
       -webkit-appearance: none; cursor: pointer;
-      width: 18px; height: 18px; border-radius: 50%; background: var(--red);
+      width: 18px; height: 18px; border-radius: 50%; background: var(--cv-activite-couleur);
       border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
     }
     .cv-activite-track-wrap input[type=range]::-moz-range-thumb {
       cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
-      background: var(--red); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+      background: var(--cv-activite-couleur); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
     }
     .cv-activite-track {
       /* Piste grise fixe (signalé manquant par Cédric le 07/09/2026) — même motif que
-         .cv-ftmoy-track/.cv-horaire-track : sans elle, seul le remplissage rouge se
+         .cv-ftmoy-track/.cv-horaire-track : sans elle, seul le remplissage coloré se
          voit, donnant l'impression que la ligne "se crée" au lieu d'être une vraie
-         ligne de curseur qui passe du gris au rouge. `right:0` (pas 9px, voir la note
-         équivalente sur .cv-horaire-track) — "allonger le trait gris ... qu'il n'y ait
-         plus de zone blanche". */
-      position: absolute; top: 50%; left: 9px; right: 0; height: 4px;
+         ligne de curseur. `left:0`/`right:0` (pas 9px, voir la note équivalente sur
+         .cv-horaire-track) — "allonger le trait gris ... qu'il n'y ait plus de zone
+         blanche". */
+      position: absolute; top: 50%; left: 0; right: 0; height: 4px;
       background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
     }
-    .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
-    .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
+    .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--cv-activite-couleur); border-radius: 2px; }
+    .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--cv-activite-couleur-texte); font-size: .82rem; text-align: right; }
     /* Largeur fixe PARTAGÉE (demande de Cédric le 07/09/2026, "les 2 traits rouges
        doivent mesurer la même longueur") — sans elle, les 2 pistes (patients/jour et
        horaires) n'ont pas la même longueur visible : chaque colonne de valeur (flex,
@@ -2139,7 +2154,7 @@
         // existe (utile : montre la coupure) — sans coupure, il ferait doublon avec les 2
         // champs heure juste à côté, retiré à la demande de Cédric le 07/09/2026.
         var heuresSemaine = horaireDureeAvecCoupure("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree");
-        var heuresTotalTxt = "Soit " + patientsFmt.format(heuresSemaine) + " h d'ouverture par jour" +
+        var heuresTotalTxt = patientsFmt.format(heuresSemaine) + " h d'ouverture/jour" +
           (document.getElementById("cvCoupureDejeuner").checked ? " (" + libelleHoraires() + ")" : "") + ".";
         document.getElementById("cvHeuresTotalTxt").textContent = heuresTotalTxt;
         document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
