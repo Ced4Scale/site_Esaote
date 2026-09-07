@@ -56,6 +56,7 @@
       --cv-activite-couleur: #e8946b; /* corail pastel — patients/jour */
       --cv-activite-couleur-texte: #a3521f; /* variante foncée, lisible en texte */
       --cv-horaire-couleur: #5fb3a8; /* bleu-vert pastel (teal) — horaires */
+      --cv-horaire-couleur-texte: #2b6f66; /* variante foncée, lisible en texte */
     }
     /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
        sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
@@ -122,6 +123,21 @@
        valables). */
     #cvHoraireLabel1B { flex-direction: column; align-items: flex-end; gap: .15rem; }
     #cvHoraireLabel1B span { display: none; }
+    /* "Ouverture"/"Fermeture" ajoutés devant chaque heure (demande de Cédric le
+       07/09/2026, "aligné à 30 patients/jour" juste au-dessus) — uniquement sur ce
+       miroir (voir le JS juste après wireHoraireRange("...B")), jamais la roue crantée
+       ni samedi/dimanche. Sélecteur plus spécifique que "#cvHoraireLabel1B span"
+       ci-dessus (qui ne visait que le tiret "–", devenu inutile en empilé) pour ne pas
+       cacher ces 2 nouveaux libellés avec la même règle. */
+    #cvHoraireLabel1B span.cv-horaire-mot {
+      display: block; font-size: .68rem; font-weight: 600; color: var(--muted);
+    }
+    /* Heures colorées comme la piste/le curseur du curseur horaire (--cv-horaire-couleur),
+       même principe que "30 patients/jour" plus haut coloré dans la teinte de SON propre
+       curseur (--cv-activite-couleur-texte) — demande de Cédric le 07/09/2026. */
+    #cvHoraireLabel1B input.cv-horaire-heure-txt {
+      color: var(--cv-horaire-couleur-texte); font-weight: 700;
+    }
     /* Le texte "Soit X h d'ouverture par jour" juste après "17:00", sur la même ligne (pas
        en dessous) — demande de Cédric le 07/09/2026. */
     .cv-horaire-row-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
@@ -913,9 +929,10 @@
           <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt"></p>
         </div>
 
+        <span class="simulator__hint" style="font-weight:600; margin-right:.3rem">Hypothèses :</span>
         <span class="cv-info-wrap">
           <button type="button" class="cv-info-btn" id="cvHypBtn" aria-expanded="false" aria-controls="cvHypPop" aria-label="Hypothèses de calcul">💡</button>
-          <div class="cv-info-pop" id="cvHypPop" hidden>Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</div>
+          <div class="cv-info-pop" id="cvHypPop" hidden>Le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</div>
         </span>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
@@ -2986,6 +3003,24 @@ var svg = document.getElementById("cvChart");
       // activité" (ids suffixés "B") — synchronisées dans les 2 sens.
       var majHoraireMatin = wireHoraireRange("cvHeureDebut1", "cvHeureFin1", "cvHoraireFill1", "cvHoraireLabel1");
       var majHoraireMatinB = wireHoraireRange("cvHeureDebut1B", "cvHeureFin1B", "cvHoraireFill1B", "cvHoraireLabel1B");
+      // "Ouverture"/"Fermeture" ajoutés devant chaque heure (demande de Cédric le
+      // 07/09/2026, "aligné à 30 patients/jour") — uniquement sur ce miroir, jamais la
+      // copie canonique de la roue crantée ni samedi/dimanche. wireHoraireRange() garde
+      // `label.children[0]`/`[2]` comme références directes vers les 2 <input> (capturées
+      // une fois, pas requêtées à chaque appel de maj()) : insérer des frères autour
+      // d'eux après coup ne casse rien, seul l'ORDRE visuel dans la colonne change.
+      (function () {
+        var label = document.getElementById("cvHoraireLabel1B");
+        var txtDebut = label.children[0], txtFin = label.children[2];
+        var motOuverture = document.createElement("span");
+        motOuverture.className = "cv-horaire-mot";
+        motOuverture.textContent = "Ouverture";
+        label.insertBefore(motOuverture, txtDebut);
+        var motFermeture = document.createElement("span");
+        motFermeture.className = "cv-horaire-mot";
+        motFermeture.textContent = "Fermeture";
+        label.insertBefore(motFermeture, txtFin);
+      })();
       lierMiroirPoignee("cvHeureDebut1", majHoraireMatin, "cvHeureDebut1B", majHoraireMatinB);
       lierMiroirPoignee("cvHeureFin1", majHoraireMatin, "cvHeureFin1B", majHoraireMatinB);
       wireHoraireRange("cvHeureDebutSamedi", "cvHeureFinSamedi", "cvHoraireFillSamedi", "cvHoraireLabelSamedi");
