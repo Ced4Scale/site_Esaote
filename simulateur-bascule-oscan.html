@@ -281,6 +281,44 @@
     .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
     .bascule-hyp-table td:last-child { text-align: left; font-variant-numeric: normal; font-weight: 400; color: var(--ink); }
     .bascule-hyp-table td:first-child { width: 30%; white-space: nowrap; }
+
+    /* Mémoires de simulation + mode Comparer (07/09/2026), portées ici du motif déjà
+       construit sur simulateur-ct-vs-irm.html (skill ced4scale-simulateur-web) — mêmes
+       couleurs/mécanisme de cadenas, adaptées à ce simulateur (curseur de répartition
+       propre à chaque mémoire, pas partagé — voir commentaire JS de restaurerParametres()). */
+    .bascule-btn-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    .bascule-btn-memoire { --btn-bg: #ded4f2; --btn-fg: #4a3a78; --btn-bd: #ded4f2; }
+    .bascule-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
+    .bascule-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
+    .bascule-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
+    .bascule-btn-comparer { --btn-bg: #fbe0c8; --btn-fg: #8a5321; --btn-bd: #fbe0c8; }
+    .bascule-btn-comparer:hover { background: #f6cd9f; border-color: #f6cd9f; }
+    .bascule-btn-comparer.btn--ghost { --btn-bg: transparent; --btn-fg: #a56a2e; --btn-bd: #f6cd9f; }
+    .bascule-btn-comparer.btn--ghost:hover { --btn-fg: #8a5321; background: #fdf3e8; border-color: #f6cd9f; }
+    .bascule-memoire-slot { display: inline-flex; align-items: center; gap: .1rem; }
+    .bascule-memoire-clear {
+      border: 0; background: transparent; color: var(--red-crimson); line-height: 1;
+      width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .bascule-memoire-clear:hover { background: #fbe9ec; }
+    .bascule-memoire-clear:disabled { cursor: default; }
+    .bascule-memoire-clear:disabled:hover { background: transparent; }
+    .bascule-memoire-clear.is-ouvert { color: var(--success-bd); }
+    .bascule-lock-icon { overflow: visible; }
+    .bascule-lock-shackle-ouverte { display: none; }
+    .bascule-memoire-clear.is-ouvert .bascule-lock-shackle-fermee { display: none; }
+    .bascule-memoire-clear.is-ouvert .bascule-lock-shackle-ouverte { display: inline; }
+    .bascule-memoire-hint { flex-basis: 100%; margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
+
+    .bascule-comparaison-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; }
+    @media (max-width: 700px) { .bascule-comparaison-grille { grid-template-columns: 1fr; } }
+    .bascule-comparaison-cote select {
+      width: 100%; padding: .55rem .7rem; border: 1px solid var(--line-2); border-radius: 6px;
+      font-family: inherit; font-size: .88rem; background: #fff; color: var(--ink); margin-bottom: .5rem;
+    }
+    .bascule-comparaison-cote svg { width: 100%; height: 90px; display: block; }
+    .bascule-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="tool-page">
@@ -378,6 +416,7 @@
             <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale<span id="boBtnOptimumPct" style="font-size:.72rem;opacity:.85"></span></button>
           </div>
 
+          <div id="boGrapheSimple">
           <div class="bascule-courbe-zone">
             <svg id="boCourbeSvg" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total selon la répartition de l'activité">
               <line id="boCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
@@ -497,6 +536,57 @@
               </table>
             </div>
           </details>
+          </div>
+
+          <!-- Mémoires de simulation + mode Comparer (07/09/2026, portés du simulateur
+               CT vs IRM). Contrairement à ce dernier, ici le curseur de répartition ET
+               "Activité totale" sont mémorisés PROPRES à chaque mémoire (pas partagés) :
+               chaque emplacement fige un scénario de répartition complet, pas seulement
+               des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire(). -->
+          <div class="bascule-btn-row">
+            <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparer" aria-pressed="false" title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
+            <span class="bascule-memoire-slot" data-slot="0">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire1" title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="1">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire2" title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="2">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire3" title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
+          </div>
+
+          <div id="boGrapheComparaison" hidden>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
+            </div>
+            <div class="bascule-comparaison-grille">
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectGauche" aria-label="Mémoire affichée à gauche">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartGauche" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à gauche"></svg>
+                <div id="boCompareStatsGauche"></div>
+              </div>
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectDroite" aria-label="Mémoire affichée à droite">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartDroite" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à droite"></svg>
+                <div id="boCompareStatsDroite"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible">
@@ -1565,6 +1655,238 @@
           rA: rA, rO: rO, caTotal: caTotal, netTotal: netTotal, gainOscan: gainOscan, pctGainTxt: pctGainTxt
         };
       }
+
+      // ---- Mémoires de simulation + mode Comparer (07/09/2026, porté du motif déjà
+      // construit sur simulateur-ct-vs-irm.html — voir skill ced4scale-simulateur-web,
+      // section "Mémoriser/rappeler un instantané complet du formulaire" et "Comparer 2
+      // mémoires enregistrées sans dupliquer les formules de calcul"). Différence
+      // assumée avec ce modèle d'origine (décision explicite de Cédric, 08/09/2026) :
+      // là où CT vs IRM garde l'activité/curseur PARTAGÉS entre les 2 côtés comparés,
+      // ici le curseur de répartition (et "Activité totale actuelle") sont mémorisés
+      // PROPRES à chaque mémoire — le curseur EST le paramètre central de ce
+      // simulateur, comparer 2 répartitions différentes a plus de sens que d'en
+      // imposer une seule aux 2 côtés.
+      var BO_MEMOIRE_FIELDS = [
+        { id: "boClasseA", evt: "change", type: "select" },
+        { id: "boLoyerA", evt: "blur", type: "montant" },
+        { id: "boManipA", evt: "input" },
+        { id: "boDebitA", evt: "input" },
+        { id: "boVolumeA", evt: "input" },
+        { id: "boPartExtremites", evt: "input" },
+        { id: "boLoyerO", evt: "blur", type: "montant" },
+        { id: "boDebitO", evt: "input" },
+        { id: "boKwh", evt: "blur" }
+      ];
+
+      // Capture un instantané complet : les champs du formulaire (BO_MEMOIRE_FIELDS),
+      // la position du curseur de répartition (à part — pas un simple champ, ses
+      // bornes min/max dépendent de "Activité totale"), et les variables JS pures
+      // réglées via les 2 roues crantées (aucune n'a d'id de champ visible en dehors
+      // du panneau ⚙, donc hors du mécanisme BO_MEMOIRE_FIELDS qui suppose un
+      // `getElementById`).
+      function capturerParametres() {
+        var champs = {};
+        BO_MEMOIRE_FIELDS.forEach(function (f) {
+          champs[f.id] = document.getElementById(f.id).value;
+        });
+        return {
+          champs: champs,
+          curseur: curseur.value,
+          vars: {
+            NET_MERM: NET_MERM, HEURES_LEGALES_MOIS: HEURES_LEGALES_MOIS,
+            AMPLITUDE_A_SEMAINE: AMPLITUDE_A_SEMAINE, AMPLITUDE_A_SAMEDI: AMPLITUDE_A_SAMEDI, AMPLITUDE_A_DIMANCHE: AMPLITUDE_A_DIMANCHE,
+            MODELE_A_KEY: MODELE_A_KEY, ZONE_TARIFAIRE: ZONE_TARIFAIRE, DUREE_ACQ_A: DUREE_ACQ_A,
+            AMPLITUDE_O_SEMAINE: AMPLITUDE_O_SEMAINE, AMPLITUDE_O_SAMEDI: AMPLITUDE_O_SAMEDI, AMPLITUDE_O_DIMANCHE: AMPLITUDE_O_DIMANCHE,
+            DUREE_ACQ_O: DUREE_ACQ_O
+          }
+        };
+      }
+
+      // Restaure une photo dans le formulaire — boClasseA d'abord (son changement
+      // remet MODELE_A_KEY/DUREE_ACQ_A à leurs valeurs par défaut, voir son listener
+      // plus haut), puis les variables JS pures (qui écrasent ces valeurs par défaut
+      // avec celles réellement enregistrées), puis le reste des champs, puis enfin le
+      // curseur — repositionnerCurseur() (rejoué par les champs ci-dessus) le pose sur
+      // l'optimum, jamais sur la valeur mémorisée : on le réécrase explicitement à la
+      // fin, comme dernière étape.
+      function restaurerParametres(etat) {
+        var classeEl = document.getElementById("boClasseA");
+        if (classeEl.value !== etat.champs.boClasseA) {
+          classeEl.value = etat.champs.boClasseA;
+          classeEl.dispatchEvent(new Event("change"));
+        }
+        NET_MERM = etat.vars.NET_MERM;
+        HEURES_LEGALES_MOIS = etat.vars.HEURES_LEGALES_MOIS;
+        AMPLITUDE_A_SEMAINE = etat.vars.AMPLITUDE_A_SEMAINE;
+        AMPLITUDE_A_SAMEDI = etat.vars.AMPLITUDE_A_SAMEDI;
+        AMPLITUDE_A_DIMANCHE = etat.vars.AMPLITUDE_A_DIMANCHE;
+        MODELE_A_KEY = etat.vars.MODELE_A_KEY;
+        ZONE_TARIFAIRE = etat.vars.ZONE_TARIFAIRE;
+        DUREE_ACQ_A = etat.vars.DUREE_ACQ_A;
+        AMPLITUDE_O_SEMAINE = etat.vars.AMPLITUDE_O_SEMAINE;
+        AMPLITUDE_O_SAMEDI = etat.vars.AMPLITUDE_O_SAMEDI;
+        AMPLITUDE_O_DIMANCHE = etat.vars.AMPLITUDE_O_DIMANCHE;
+        DUREE_ACQ_O = etat.vars.DUREE_ACQ_O;
+        BO_MEMOIRE_FIELDS.forEach(function (f) {
+          if (f.id === "boClasseA") return;
+          var el = document.getElementById(f.id);
+          el.value = etat.champs[f.id];
+          el.dispatchEvent(new Event(f.evt));
+        });
+        majResumeHypotheses();
+        repositionnerCurseur();
+        var N = parseInt(document.getElementById("boVolumeA").value, 10) || 0;
+        curseur.value = Math.max(0, Math.min(N, parseInt(etat.curseur, 10) || 0));
+        recalculer();
+      }
+
+      // 3 emplacements ; null = vide. boBtnMemoireN vide -> enregistre, rempli -> rappelle.
+      var memoires = [null, null, null];
+      function majBoutonMemoire(i) {
+        var btn = document.getElementById("boBtnMemoire" + (i + 1));
+        var clear = document.getElementById("boBtnMemoire" + (i + 1) + "Clear");
+        var rempli = memoires[i] !== null;
+        btn.classList.toggle("btn--ghost", !rempli);
+        btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
+        btn.title = rempli
+          ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
+          : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
+        clear.disabled = !rempli;
+        clear.classList.toggle("is-ouvert", !rempli);
+        clear.title = rempli
+          ? "Cliquez pour effacer la mémoire " + (i + 1) + " et libérer l'emplacement."
+          : "Mémoire " + (i + 1) + " pas encore enregistrée.";
+        clear.setAttribute("aria-label", clear.title);
+        majOptionsCompareSelects();
+      }
+      [0, 1, 2].forEach(function (i) {
+        document.getElementById("boBtnMemoire" + (i + 1)).addEventListener("click", function () {
+          if (memoires[i] === null) {
+            memoires[i] = capturerParametres();
+            document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " enregistrée.";
+          } else {
+            restaurerParametres(memoires[i]);
+            document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
+          }
+          majBoutonMemoire(i);
+        });
+        document.getElementById("boBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
+          memoires[i] = null;
+          majBoutonMemoire(i);
+          document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
+        });
+      });
+      [0, 1, 2].forEach(majBoutonMemoire);
+
+      // Instantané figé d'une mémoire, sans toucher au formulaire visible : restaure
+      // temporairement la mémoire choisie (déclenche recalculer() en cascade comme un
+      // vrai rappel), lit le résultat déjà calculé dans `dernierEtat`, échantillonne la
+      // courbe avec les globales de CETTE mémoire encore actives (totalPour()/resultat()
+      // lisent ZONE_TARIFAIRE/AMPLITUDE_*/DUREE_ACQ_*/etc. comme variables de module, pas
+      // en paramètres — il faut donc les échantillonner ICI, pas après restauration de
+      // l'état d'avant), puis restaure IMMÉDIATEMENT l'état capturé au début. Tout ça de
+      // façon synchrone : le navigateur ne peint qu'une fois le script terminé, donc les
+      // états intermédiaires restent invisibles pour le visiteur.
+      function calculerSnapshotPourMemoire(idx) {
+        if (idx === null || !memoires[idx]) return null;
+        var avant = capturerParametres();
+        restaurerParametres(memoires[idx]);
+        var N = dernierEtat.volumeTotal, classeA = dernierEtat.classeA;
+        var xs = [];
+        for (var i = 0; i <= 100; i++) { xs.push(Math.round(N * i / 100)); }
+        xs = xs.filter(function (x) { return x >= 0 && x <= N; });
+        xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
+        var pts = xs.map(function (x) {
+          return { x: x, y: totalPour(x, N, classeA, dernierEtat.loyerA, dernierEtat.manipA, dernierEtat.debitA, dernierEtat.loyerO, dernierEtat.debitO, dernierEtat.kwh) };
+        });
+        var snap = JSON.parse(JSON.stringify(dernierEtat));
+        snap.pts = pts;
+        restaurerParametres(avant);
+        return snap;
+      }
+
+      function dessinerCoteComparaison(svgId, statsId, snap) {
+        var svg = document.getElementById(svgId);
+        var statsEl = document.getElementById(statsId);
+        if (!snap) {
+          svg.innerHTML = "";
+          statsEl.innerHTML = "<p class=\"simulator__hint\" style=\"margin:.4rem 0 0\">Choisissez une mémoire ci-dessus.</p>";
+          return;
+        }
+        var W = 640, H = 120, top = 8, bottom = 8;
+        var N = snap.volumeTotal;
+        function px(x) { return N > 0 ? (x / N) * W : 0; }
+        var yMin = Math.min.apply(null, snap.pts.map(function (p) { return p.y; }));
+        var yMax = Math.max.apply(null, snap.pts.map(function (p) { return p.y; }));
+        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+        var pad = (yMax - yMin) * 0.08;
+        yMin -= pad; yMax += pad;
+        function py(y) { return top + (1 - (y - yMin) / (yMax - yMin)) * (H - top - bottom); }
+        var d = snap.pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
+        var yZeroPx = py(0);
+        var zeroLigne = (yZeroPx >= top - 1 && yZeroPx <= H - bottom + 1)
+          ? "<line x1=\"0\" y1=\"" + yZeroPx.toFixed(1) + "\" x2=\"" + W + "\" y2=\"" + yZeroPx.toFixed(1) + "\" stroke=\"var(--line)\" stroke-width=\"1\"></line>"
+          : "";
+        var cx = px(snap.volA).toFixed(1), cy = py(snap.netTotal).toFixed(1);
+        svg.innerHTML = zeroLigne +
+          "<path d=\"" + d + "\" fill=\"none\" stroke=\"#eb6834\" stroke-width=\"2.5\"></path>" +
+          "<circle cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"6\" fill=\"#fcfcfb\"></circle>" +
+          "<circle cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"4\" fill=\"#eb6834\"></circle>";
+        function ligne(label, valeur, style) {
+          return "<div class=\"bascule-compare-ligne\"" + (style ? " style=\"" + style + "\"" : "") + "><span>" + label + "</span><span>" + valeur + "</span></div>";
+        }
+        statsEl.innerHTML =
+          ligne(snap.nomClasseA, fmt(snap.volA) + " FT/an", "color:#2a78d6") +
+          ligne("O-scan", fmt(snap.volO) + " FT/an", "color:#eb6834") +
+          ligne("Résultat net total", eur(snap.netTotal), "font-weight:800;border-top:1px dashed var(--line);padding-top:.3rem;margin-top:.2rem") +
+          ligne("C.A. total (FT)", eur(snap.caTotal)) +
+          ligne((snap.gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(snap.gainOscan)) + " grâce à l'O-scan", "", "color:#1a7a3d;font-weight:600");
+      }
+
+      function majOptionsCompareSelects() {
+        ["boCompareSelectGauche", "boCompareSelectDroite"].forEach(function (id) {
+          var sel = document.getElementById(id);
+          [0, 1, 2].forEach(function (i) { sel.options[i + 1].disabled = !memoires[i]; });
+        });
+      }
+
+      var compareMode = false, compareGaucheIdx = null, compareDroiteIdx = null;
+      function redessinerComparaison() {
+        dessinerCoteComparaison("boCompareChartGauche", "boCompareStatsGauche", calculerSnapshotPourMemoire(compareGaucheIdx));
+        dessinerCoteComparaison("boCompareChartDroite", "boCompareStatsDroite", calculerSnapshotPourMemoire(compareDroiteIdx));
+      }
+      function activerComparaison() {
+        compareMode = true;
+        document.getElementById("boGrapheSimple").hidden = true;
+        document.getElementById("boGrapheComparaison").hidden = false;
+        majOptionsCompareSelects();
+        compareGaucheIdx = memoires[0] ? 0 : null;
+        compareDroiteIdx = memoires[1] ? 1 : null;
+        document.getElementById("boCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
+        document.getElementById("boCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
+        redessinerComparaison();
+        document.getElementById("boBtnComparer").classList.remove("btn--ghost");
+        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "true");
+      }
+      function desactiverComparaison() {
+        compareMode = false;
+        document.getElementById("boGrapheSimple").hidden = false;
+        document.getElementById("boGrapheComparaison").hidden = true;
+        document.getElementById("boBtnComparer").classList.add("btn--ghost");
+        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "false");
+      }
+      document.getElementById("boBtnComparer").addEventListener("click", function () {
+        if (compareMode) desactiverComparaison(); else activerComparaison();
+      });
+      document.getElementById("boBtnFermerComparaison").addEventListener("click", desactiverComparaison);
+      document.getElementById("boCompareSelectGauche").addEventListener("change", function () {
+        compareGaucheIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+      document.getElementById("boCompareSelectDroite").addEventListener("change", function () {
+        compareDroiteIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
 
       /* Réutilise le même flux Power Automate générique que les 4 autres simulateurs
          ("Simulateur_Recettes_Envoi_PDF_V1") — il se contente d'envoyer par e-mail le PDF joint
