@@ -2880,8 +2880,19 @@ var svg = document.getElementById("cvChart");
           labelNom.textContent = c.nom;
           svg.appendChild(labelNom);
           if (modeChacuneSaCapacite) {
+            // Mis à la même échelle que le reste de la barre (montants, écart au-dessus) —
+            // signalé par Cédric le 07/09/2026 : ce libellé restait toujours "patients/jour"
+            // même en horizon "5 ans"/"7 ans", pendant que le reste de la barre affichait déjà
+            // des totaux sur 5/7 ans, donnant l'impression que le texte n'était pas adapté.
+            // Même table d'unités que l'écart (ECARTS_UNITES) et même formule de mise à
+            // l'échelle (horizon "1 patient" gardé en repère journalier, sans notion de
+            // "patients" à cette échelle-là).
+            var uniteDebit = horizonActuel.annees === "patient" || horizonActuel.annees == null ? "patients/jour" : ECARTS_UNITES[horizonBarres];
+            var valeurDebit = horizonActuel.annees === "patient" || horizonActuel.annees == null
+              ? c.patientsJour
+              : c.patientsJour * params.joursParMois * 12 * horizonActuel.annees;
             var labelDebit = svgEl("text", { x: centers[i], y: VIEWBOX_H - 8, "text-anchor": "middle", "font-size": "13", fill: "#7a776c" });
-            labelDebit.textContent = patientsFmt.format(c.patientsJour) + " patients/jour";
+            labelDebit.textContent = patientsFmt.format(valeurDebit) + " " + uniteDebit;
             svg.appendChild(labelDebit);
           }
         });
