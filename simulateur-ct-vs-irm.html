@@ -584,19 +584,40 @@
        positionne par rapport à lui, pas par rapport à un ancêtre plus haut dans la page —
        .simulator__results n'est pas en position:sticky (contrairement à .simulator__form),
        donc pas de risque du piège de contexte d'empilement déjà documenté sur ce site. */
-    .cv-info-wrap { position: relative; display: inline-block; }
+    /* Couleur par ampoule, jamais la même partout (demande de Cédric le 07/09/2026,
+       "changer de couleur chaque ampoule, toujours en couleur pastel") — 3 variables CSS
+       posées sur le wrapper (héritées par le bouton et le popover), une variante par
+       ampoule via une classe sur .cv-info-wrap. Amber = valeur par défaut (Hypothèses,
+       générale) ; violet = repris tel quel de la famille "Mémoire" des boutons juste à
+       côté (--btn-bg/--btn-fg de .cv-btn-memoire) pour que l'ampoule des mémoires se lise
+       comme faisant partie du même groupe ; sarcelle = ampoule du graphe barres/camembert,
+       teinte encore inutilisée ailleurs sur cette page (à ne jamais réutiliser pour autre
+       chose que cette ampoule précise, voir règle "pas de couleur déjà porteuse de sens"). */
+    .cv-info-wrap {
+      position: relative; display: inline-block;
+      --cv-info-bg: #fff6e0; --cv-info-bg-hover: #ffe9ad; --cv-info-bd: #f0d998;
+      --cv-info-fg: #8a6d1e; --cv-info-pop-bg: #fffaf0; --cv-info-pop-fg: #6b5b2a;
+    }
+    .cv-info-wrap--violet {
+      --cv-info-bg: #ded4f2; --cv-info-bg-hover: #cbb8ee; --cv-info-bd: #c7b6e8;
+      --cv-info-fg: #4a3a78; --cv-info-pop-bg: #f3eefb; --cv-info-pop-fg: #4a3a78;
+    }
+    .cv-info-wrap--sarcelle {
+      --cv-info-bg: #cdeee9; --cv-info-bg-hover: #aee2da; --cv-info-bd: #a9ddd4;
+      --cv-info-fg: #146b63; --cv-info-pop-bg: #eafaf7; --cv-info-pop-fg: #146b63;
+    }
     .cv-info-btn {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid #f0d998;
-      background: #fff6e0; color: #8a6d1e; font-size: .95rem; line-height: 1; cursor: pointer;
-      padding: 0;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--cv-info-bd);
+      background: var(--cv-info-bg); color: var(--cv-info-fg); font-size: .95rem; line-height: 1;
+      cursor: pointer; padding: 0;
     }
-    .cv-info-btn:hover, .cv-info-btn[aria-expanded="true"] { background: #ffe9ad; }
+    .cv-info-btn:hover, .cv-info-btn[aria-expanded="true"] { background: var(--cv-info-bg-hover); }
     .cv-info-pop {
       position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 4;
-      background: #fffaf0; border: 1px solid #f0d998; border-radius: .6rem;
+      background: var(--cv-info-pop-bg); border: 1px solid var(--cv-info-bd); border-radius: .6rem;
       box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem;
-      font-size: .82rem; line-height: 1.45; color: #6b5b2a;
+      font-size: .82rem; line-height: 1.45; color: var(--cv-info-pop-fg);
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .cv-info-pop[hidden] { display: none; }
@@ -817,9 +838,14 @@
           <div class="simulator__chart-wrap">
             <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
           </div>
-          <!-- Bascule barres <-> camembert (demande de Cédric le 07/09/2026) : rempli en JS
-               à chaque dessinerRepartition(), change de texte selon le mode actuel. -->
-          <p class="simulator__hint" id="cvCamembertHint" style="margin:.4rem 0 0"></p>
+          <!-- Bascule barres <-> camembert (demande de Cédric le 07/09/2026) : le texte
+               (rempli en JS à chaque dessinerRepartition(), change selon le mode actuel)
+               est replié derrière une icône ampoule depuis le 07/09/2026 (gain de place) —
+               voir wireInfoBtn(). Le popover reste dynamique, seul son affichage change. -->
+          <span class="cv-info-wrap cv-info-wrap--sarcelle" style="margin-top:.4rem; display:inline-block">
+            <button type="button" class="cv-info-btn" id="cvCamembertBtn" aria-expanded="false" aria-controls="cvCamembertPop" aria-label="Comment lire ce graphe">💡</button>
+            <div class="cv-info-pop" id="cvCamembertPop" hidden></div>
+          </span>
           <!-- Échelle de temps des 2 barres — 4 boutons exclusifs (un seul actif à la fois),
                demande de Cédric le 05/09/2026 : au lieu de rester bloqué sur le résultat par
                patient, on peut voir le même écart ramené à une journée, 1 an, 5 ans ou 7 ans
@@ -867,7 +893,15 @@
               <button type="button" class="cv-memoire-clear" id="cvBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="cv-lock-icon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </span>
           </div>
-          <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt">Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</p>
+          <!-- Explication générale repliée derrière une icône ampoule depuis le 07/09/2026
+               (gain de place) — ne dépend d'aucun état, contrairement à cvMemoireTxt juste
+               en dessous (statut transitoire "Mémoire X enregistrée/rappelée/effacée.",
+               qui doit rester du texte visible en clair puisqu'il change à chaque clic). -->
+          <span class="cv-info-wrap cv-info-wrap--violet" style="margin-top:.35rem; display:inline-block">
+            <button type="button" class="cv-info-btn" id="cvMemoireInfoBtn" aria-expanded="false" aria-controls="cvMemoireInfoPop" aria-label="Comment marchent les mémoires">💡</button>
+            <div class="cv-info-pop" id="cvMemoireInfoPop" hidden>Enregistrez jusqu'à 3 simulations pour les intégrer au récapitulatif du PDF envoyé par e-mail (l'activité et l'échelle de temps restent communes aux 3).</div>
+          </span>
+          <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt"></p>
         </div>
 
         <span class="cv-info-wrap">
@@ -2736,7 +2770,7 @@ var svg = document.getElementById("cvChart");
 
         // Bascule barres <-> camembert (voir modeCamembert plus haut) : en mode camembert,
         // on saute tout le dessin des barres (grille, axes...) qui n'a plus de sens ici.
-        var camembertHint = document.getElementById("cvCamembertHint");
+        var camembertHint = document.getElementById("cvCamembertPop");
         if (modeCamembert) {
           dessinerCamemberts(compos, fmtMontant);
           if (camembertHint) camembertHint.textContent = "Cliquez sur un camembert pour revenir aux barres.";
@@ -3122,6 +3156,8 @@ var svg = document.getElementById("cvChart");
         cvInfoPopsOuverts.push(fermer);
       }
       wireInfoBtn("cvHypBtn", "cvHypPop");
+      wireInfoBtn("cvCamembertBtn", "cvCamembertPop");
+      wireInfoBtn("cvMemoireInfoBtn", "cvMemoireInfoPop");
       document.addEventListener("click", function (e) {
         cvInfoPopsOuverts.forEach(function (f) {
           f();
