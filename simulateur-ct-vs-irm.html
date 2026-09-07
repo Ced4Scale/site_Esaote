@@ -619,6 +619,18 @@
     /* Bascule barres <-> camembert au clic (demande de Cédric le 07/09/2026) — curseur
        "cliquable" sur les 2 groupes concernés (voir dessinerRepartition/dessinerCamemberts). */
     .cv-histo-clic, .cv-camembert-clic { cursor: pointer; }
+    /* Mode "Comparer" (demande de Cédric le 07/09/2026) : 2 graphes indépendants côte à
+       côte, chacun figé sur une mémoire. 2 colonnes sur desktop, empilé sous 780px (même
+       seuil que .simulator__layout dans styles.css) — un graphe à 640px de large réduit
+       de moitié devient vite trop étroit pour rester lisible sur téléphone. */
+    .cv-comparaison-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; }
+    @media (max-width: 780px) { .cv-comparaison-grille { grid-template-columns: 1fr; } }
+    .cv-comparaison-cote { min-width: 0; }
+    .cv-comparaison-select {
+      width: 100%; margin-bottom: .5rem; padding: .35rem .5rem; border-radius: 6px;
+      border: 1px solid var(--line-2); font: inherit; background: #fff;
+    }
+    .cv-comparaison-cote .simulator__chart { cursor: pointer; }
     /* Phrase explicative fixe repliée derrière une icône ampoule, pour gagner de la place
        dans la colonne de droite (demande de Cédric le 07/09/2026) — motif réutilisable pour
        tout texte purement explicatif qui n'a pas besoin de rester visible en permanence.
@@ -892,20 +904,61 @@
                un chiffre unique lisible d'un coup d'œil, qui suit les 3 groupes de boutons
                sous le graphe (échelle de temps, mode d'activité, mode AI) puisqu'il est
                recalculé dans dessinerRepartition() à partir de la même donnée "compos". -->
-          <div class="cv-ecart-frame" id="cvEcartFrame"></div>
-          <div class="simulator__chart-wrap">
-            <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
-            <!-- Bascule barres <-> camembert (demande de Cédric le 07/09/2026) : le texte
-                 (rempli en JS à chaque dessinerRepartition(), change selon le mode actuel)
-                 est replié derrière une icône ampoule depuis le 07/09/2026 (gain de place),
-                 posée dans le coin bas-gauche du graphe le même jour (sur demande explicite)
-                 — .simulator__chart-wrap est déjà en position:relative (styles.css), le
-                 popover s'ouvre vers le HAUT (cv-info-pop--up) pour ne pas sortir du bas de
-                 la carte vu la position de l'icône. Voir wireInfoBtn(). -->
-            <span class="cv-info-wrap cv-info-wrap--sarcelle" style="position:absolute; left:.5rem; bottom:.5rem">
-              <button type="button" class="cv-info-btn" id="cvCamembertBtn" aria-expanded="false" aria-controls="cvCamembertPop" aria-label="Comment lire ce graphe">💡</button>
-              <div class="cv-info-pop cv-info-pop--up" id="cvCamembertPop" hidden></div>
-            </span>
+          <!-- Vue normale (1 graphe, piloté par le formulaire en direct) — masquée quand
+               "Comparer" est actif, voir #cvGrapheComparaison juste en dessous. -->
+          <div id="cvGrapheSimple">
+            <div class="cv-ecart-frame" id="cvEcartFrame"></div>
+            <div class="simulator__chart-wrap">
+              <svg id="cvChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette par patient entre charges et résultat net, pour l'IRM Esaote et le scanner"></svg>
+              <!-- Bascule barres <-> camembert (demande de Cédric le 07/09/2026) : le texte
+                   (rempli en JS à chaque dessinerRepartition(), change selon le mode actuel)
+                   est replié derrière une icône ampoule depuis le 07/09/2026 (gain de place),
+                   posée dans le coin bas-gauche du graphe le même jour (sur demande explicite)
+                   — .simulator__chart-wrap est déjà en position:relative (styles.css), le
+                   popover s'ouvre vers le HAUT (cv-info-pop--up) pour ne pas sortir du bas de
+                   la carte vu la position de l'icône. Voir wireInfoBtn(). -->
+              <span class="cv-info-wrap cv-info-wrap--sarcelle" style="position:absolute; left:.5rem; bottom:.5rem">
+                <button type="button" class="cv-info-btn" id="cvCamembertBtn" aria-expanded="false" aria-controls="cvCamembertPop" aria-label="Comment lire ce graphe">💡</button>
+                <div class="cv-info-pop cv-info-pop--up" id="cvCamembertPop" hidden></div>
+              </span>
+            </div>
+          </div>
+          <!-- Vue comparaison (demande de Cédric le 07/09/2026) : 2 graphes indépendants,
+               chacun figé sur une mémoire choisie (jamais le formulaire en direct) — voir
+               activerComparaison()/redessinerComparaison(). Toujours pilotée par les 3
+               groupes de boutons de choix juste en dessous (échelle de temps / mode
+               activité / mode AI, partagés par les 2 côtés). -->
+          <div id="cvGrapheComparaison" hidden>
+            <div class="cv-btn-row" style="margin-bottom:.6rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="cvBtnFermerComparaison">✕ Fermer la comparaison</button>
+            </div>
+            <div class="cv-comparaison-grille">
+              <div class="cv-comparaison-cote">
+                <select class="cv-comparaison-select" id="cvCompareSelectGauche" aria-label="Mémoire affichée à gauche">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <div class="cv-ecart-frame" id="cvCompareEcartGauche" style="font-size:.82rem; padding:.5rem .7rem"></div>
+                <div style="overflow-x:auto">
+                  <svg id="cvCompareChartGauche" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Graphe de la mémoire affichée à gauche"></svg>
+                </div>
+              </div>
+              <div class="cv-comparaison-cote">
+                <select class="cv-comparaison-select" id="cvCompareSelectDroite" aria-label="Mémoire affichée à droite">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <div class="cv-ecart-frame" id="cvCompareEcartDroite" style="font-size:.82rem; padding:.5rem .7rem"></div>
+                <div style="overflow-x:auto">
+                  <svg id="cvCompareChartDroite" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Graphe de la mémoire affichée à droite"></svg>
+                </div>
+              </div>
+            </div>
+            <p class="simulator__hint" style="margin-top:.4rem">Cliquez sur un graphe pour voir le détail des charges (loyer, électricité, personnel).</p>
           </div>
           <!-- Échelle de temps des 2 barres — 4 boutons exclusifs (un seul actif à la fois),
                demande de Cédric le 05/09/2026 : au lieu de rester bloqué sur le résultat par
@@ -2553,6 +2606,13 @@
         dessinerRecap(resultats, configs, params);
 
         dessinerRepartition(resultats, configs, lignesSynthese, params);
+
+        // Mode "Comparer" : chaque recalcul normal (y compris via les 3 groupes de
+        // boutons de choix partagés) rafraîchit aussi les 2 graphes de comparaison —
+        // sauf pendant la prise d'un instantané (calculerSnapshotPourMemoire), qui
+        // redéclenche elle-même recalculer() en restaurant temporairement une mémoire
+        // dans le formulaire : sans cette garde, ce serait une récursion infinie.
+        if (compareMode && !enTrainDeSnapshotComparaison) redessinerComparaison();
       }
 
       // ---- Tableau récapitulatif par patient / par an / sur 7 ans, avec écart — même structure
@@ -2831,6 +2891,23 @@ var svg = document.getElementById("cvChart");
       // les 2 en même temps, cohérent avec "les barres deviennent des camemberts".
       var modeCamembert = false;
 
+      // ---- Mode "Comparer" (demande de Cédric le 07/09/2026) — 2 graphes indépendants,
+      // chacun figé sur une mémoire choisie, pilotés par les mêmes boutons de choix
+      // (échelle de temps/mode activité/mode AI, globaux ci-dessus) que le graphe unique.
+      // Déclarées ICI, avant le tout premier appel `recalculer()` plus bas dans le script
+      // (qui les lit à sa toute fin) — piège de hoisting déjà documenté plusieurs fois sur
+      // ce fichier, à ne pas reproduire : une `var` non encore assignée à ce moment-là ne
+      // ferait rien planter ici (elle vaudrait juste `undefined`, faux dans un `if`), mais
+      // autant rester rigoureux sur ce point comme le reste du fichier. Le reste du
+      // mécanisme (memoires[], calculerSnapshotPourMemoire(), redessinerComparaison(),
+      // activerComparaison()...) est déclaré plus bas, près du reste de la mécanique
+      // Mémoire dont il dépend — les fonctions sont hoistées, seules les `var` lues par un
+      // appel immédiat au chargement doivent être assignées à temps.
+      var compareMode = false;
+      var enTrainDeSnapshotComparaison = false;
+      var compareGaucheIdx = null, compareDroiteIdx = null;
+      var compareCamembertGauche = false, compareCamembertDroite = false;
+
       // Même tracé d'un secteur de camembert que sur simulateur-recettes.html (motif déjà
       // éprouvé sur ce site) — dupliqué ici plutôt que partagé, ces 2 fichiers HTML
       // n'important aucun JS commun.
@@ -2906,7 +2983,10 @@ var svg = document.getElementById("cvChart");
         }
         var titre = svgEl("text", { x: cx, y: cy - rayon - 15, "text-anchor": "middle", "font-size": "11.5", "font-weight": "800", fill: "#5c5a52" });
         titre.textContent = titrePrefixe + " : " + fmtMontant(total);
-        svg.appendChild(titre);
+        // Ajouté à `group` (déjà un enfant du bon SVG), pas à la variable `svg` du module
+        // — cette fonction reste ainsi utilisable pour n'importe quel SVG cible (voir
+        // dessinerCoteComparaison(), qui l'appelle pour les 2 graphes du mode "Comparer").
+        group.appendChild(titre);
       }
 
       // 2 lignes (recette en haut, charges en bas) × 2 colonnes (une par machine) — 4
@@ -3218,6 +3298,101 @@ var svg = document.getElementById("cvChart");
             svg.appendChild(labelDebit);
           }
         });
+      }
+
+      // ---- Dessin d'un côté du mode "Comparer" (demande de Cédric le 07/09/2026) —
+      // versions volontairement plus simples des barres/camemberts du graphe principal
+      // (pas d'ajustement de police sur 20 combinaisons, pas d'écart de patients en
+      // sous-titre, cadre d'écart réduit à une seule ligne) : la carte est deux fois plus
+      // étroite, un rendu identique au graphe principal n'y tiendrait pas proprement.
+      // Réutilisent les mêmes constantes de couleur (PASTEL_MACHINE/PASTEL_PERTE) et la
+      // même fonction bas niveau `dessinerUnCamembert` (rendue réutilisable le même jour :
+      // elle ajoutait son titre à la variable `svg` du graphe principal au lieu de
+      // `group`, ce qui l'aurait fait atterrir dans le mauvais SVG ici).
+      function dessinerBarresCote(svgCible, compos, fmtMontant, toggleCB) {
+        var padL = 58, padR = 16, padT = 18, padB = 32, vbW = 640, vbH = 260;
+        var plotW = vbW - padL - padR, plotH = vbH - padT - padB;
+        var barWidth = 110, centers = [padL + plotW * 0.27, padL + plotW * 0.73];
+        var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
+        var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
+        var yMax = niceCeil(top * 1.2);
+        var yMin = bottomBrut < 0 ? -niceCeil(Math.abs(bottomBrut) * 1.2) : 0;
+        function yAt(v) { return padT + plotH - (plotH * (v - yMin)) / (yMax - yMin); }
+        var yZero = yAt(0);
+        svgCible.appendChild(svgEl("line", { x1: padL, x2: vbW - padR, y1: yZero, y2: yZero, stroke: "var(--line-2)", "stroke-width": "1" }));
+        var groupClic = svgEl("g", { class: "cv-histo-clic" });
+        svgCible.appendChild(groupClic);
+        groupClic.addEventListener("click", toggleCB);
+        compos.forEach(function (c, i) {
+          var x0 = centers[i] - barWidth / 2, yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
+          groupClic.appendChild(svgEl("rect", { x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#e2ddd0" }));
+          var couleurRes = c.resultat >= 0 ? PASTEL_MACHINE[i] : PASTEL_PERTE;
+          groupClic.appendChild(svgEl("rect", { x: x0, y: Math.min(yZero, yResultat), width: barWidth, height: Math.max(0, Math.abs(yResultat - yZero)), fill: couleurRes.fill }));
+          var labelRes = svgEl("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": "12", "font-weight": "800", fill: couleurRes.text });
+          labelRes.textContent = fmtMontant(c.resultat);
+          svgCible.appendChild(labelRes);
+          var labelNom = svgEl("text", { x: centers[i], y: vbH - 8, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "11" });
+          labelNom.textContent = c.nom;
+          svgCible.appendChild(labelNom);
+        });
+      }
+      function dessinerCamembertsCote(svgCible, compos, fmtMontant, toggleCB) {
+        // Mêmes centres X que le graphe principal (PAD/PLOT_W définies plus haut, la
+        // largeur du viewBox — 640 — est identique, seule sa hauteur diffère) — rayon et
+        // écart vertical réduits pour tenir dans une carte deux fois plus courte (260 au
+        // lieu de 320).
+        var centers = [PAD.left + PLOT_W * 0.27, PAD.left + PLOT_W * 0.73];
+        var rayon = 30, cyHaut = 52, cyBas = cyHaut + 100;
+        compos.forEach(function (c, i) {
+          var cx = centers[i];
+          var group = svgEl("g", { class: "cv-camembert-clic" });
+          svgCible.appendChild(group);
+          dessinerUnCamembert(cx, cyHaut, rayon, CV_PARTS_RECETTE, c, c.recette + c.acte, fmtMontant, "Recette", group);
+          dessinerUnCamembert(cx, cyBas, rayon, CV_PARTS_CHARGE, c, c.loyer + c.elec + c.rh, fmtMontant, "Charges", group);
+          var labelNom = svgEl("text", { x: cx, y: 250, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "11" });
+          labelNom.textContent = c.nom;
+          svgCible.appendChild(labelNom);
+          group.addEventListener("click", toggleCB);
+        });
+      }
+      // `snap` = instantané figé d'une mémoire (voir calculerSnapshotPourMemoire()) ou
+      // `null` si aucune mémoire choisie pour ce côté. Recompose `compos` à partir des
+      // boutons de choix ACTUELS (partagés, globaux) — jamais ceux enregistrés dans la
+      // mémoire elle-même, pour que les 2 côtés restent "modifiables que sur les boutons
+      // de choix" comme demandé.
+      function dessinerCoteComparaison(svgId, ecartId, snap, camembertActif, toggleCB) {
+        var svgCible = document.getElementById(svgId);
+        var ecartEl = document.getElementById(ecartId);
+        svgCible.innerHTML = "";
+        if (!snap) {
+          ecartEl.textContent = "";
+          ecartEl.style.borderColor = "var(--line-2)";
+          ecartEl.style.background = "var(--wash-2)";
+          var msg = svgEl("text", { x: 320, y: 130, "text-anchor": "middle", "font-size": "13", fill: "#9a968a" });
+          msg.textContent = "Choisissez une mémoire ci-dessus.";
+          svgCible.appendChild(msg);
+          return;
+        }
+        var compos = appliquerHorizonCompos(
+          calculerCompos(snap.resultats, snap.configs, snap.lignes, snap.params, modeChacuneSaCapacite, modeSansAI),
+          snap.params, horizonBarres
+        );
+        var fmtMontant = euros.format;
+        var ecart = compos[0].resultat - compos[1].resultat;
+        var enTete = ecart >= 0 ? compos[0] : compos[1];
+        if (Math.abs(ecart) < 0.5) {
+          ecartEl.textContent = "Résultat quasiment identique.";
+          ecartEl.style.borderColor = "var(--line-2)";
+          ecartEl.style.background = "var(--wash-2)";
+          ecartEl.style.color = "var(--ink)";
+        } else {
+          ecartEl.innerHTML = "<strong style=\"color:" + enTete.color + "\">" + fmtMontant(Math.abs(ecart)) + "</strong> de plus pour " + enTete.nom + ".";
+          ecartEl.style.borderColor = enTete.color;
+          ecartEl.style.background = enTete.color + "1a";
+          ecartEl.style.color = "var(--ink)";
+        }
+        if (camembertActif) dessinerCamembertsCote(svgCible, compos, fmtMontant, toggleCB);
+        else dessinerBarresCote(svgCible, compos, fmtMontant, toggleCB);
       }
 
       ["cvZone", "cvKwh", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
@@ -3754,6 +3929,9 @@ var svg = document.getElementById("cvChart");
         // Le texte change ("Mémoire 1" <-> "✓ Mémoire 1") donc sa largeur naturelle
         // aussi — la largeur commune à toute la famille "mémoire" doit se recalculer.
         egaliserLargeurFamille(CV_FAMILLES_BOUTONS.memoire);
+        // Tient les 2 listes déroulantes du mode "Comparer" à jour (une mémoire qui vient
+        // d'être enregistrée devient choisissable, une mémoire effacée redevient grisée).
+        majOptionsCompareSelects();
       }
       [0, 1, 2].forEach(function (i) {
         document.getElementById("cvBtnMemoire" + (i + 1)).addEventListener("click", function () {
@@ -3782,6 +3960,85 @@ var svg = document.getElementById("cvChart");
       // le `disabled` posé en dur dans le HTML serait correct mais l'anse resterait
       // dessinée fermée (classe .is-ouvert jamais posée avant un premier clic).
       [0, 1, 2].forEach(majBoutonMemoire);
+
+      // ---- Mode "Comparer" (demande de Cédric le 07/09/2026) — voir aussi les
+      // variables `compareMode`/`compareGaucheIdx`/etc. déclarées plus haut (avant le
+      // 1ᵉʳ appel recalculer()) et dessinerCoteComparaison()/dessinerBarresCote()/
+      // dessinerCamembertsCote() juste après dessinerRepartition().
+      //
+      // Instantané figé d'une mémoire, SANS toucher au formulaire visible ni au reste de
+      // la page : restaure temporairement la mémoire choisie (déclenche recalculer() en
+      // cascade comme un vrai rappel), lit le résultat déjà calculé dans `derniers`
+      // (rempli par recalculer()), puis restaure IMMÉDIATEMENT l'état d'avant — tout ça de
+      // façon synchrone, donc invisible pour le visiteur (le navigateur ne peint qu'une
+      // fois le script terminé). `JSON.parse(JSON.stringify(...))` fige une copie
+      // indépendante (resultats/configs/lignes sont de simples données, pas de fonction
+      // dedans) — sans ça, le prochain restaurerParametres() écraserait ce qu'on vient de
+      // lire, puisque `derniers` est le même objet partagé par tout le fichier.
+      function calculerSnapshotPourMemoire(idx) {
+        if (idx === null || !memoires[idx]) return null;
+        var avant = capturerParametres();
+        restaurerParametres(memoires[idx]);
+        var lignes = dessinerSynthese(derniers.resultats, derniers.configs, derniers.params);
+        var snap = JSON.parse(JSON.stringify({ resultats: derniers.resultats, configs: derniers.configs, params: derniers.params, lignes: lignes }));
+        restaurerParametres(avant);
+        return snap;
+      }
+      function redessinerComparaison() {
+        if (enTrainDeSnapshotComparaison) return;
+        enTrainDeSnapshotComparaison = true;
+        var snapGauche = calculerSnapshotPourMemoire(compareGaucheIdx);
+        var snapDroite = calculerSnapshotPourMemoire(compareDroiteIdx);
+        enTrainDeSnapshotComparaison = false;
+        dessinerCoteComparaison("cvCompareChartGauche", "cvCompareEcartGauche", snapGauche, compareCamembertGauche, function () {
+          compareCamembertGauche = !compareCamembertGauche;
+          redessinerComparaison();
+        });
+        dessinerCoteComparaison("cvCompareChartDroite", "cvCompareEcartDroite", snapDroite, compareCamembertDroite, function () {
+          compareCamembertDroite = !compareCamembertDroite;
+          redessinerComparaison();
+        });
+      }
+      // Grise une option de mémoire vide dans les 2 listes déroulantes (demande de
+      // Cédric : "une mémoire non enregistrée ne doit pas être choisissable") — appelée
+      // à l'ouverture du mode Comparer et à chaque enregistrement/effacement de mémoire
+      // (voir majBoutonMemoire() plus haut).
+      function majOptionsCompareSelects() {
+        ["cvCompareSelectGauche", "cvCompareSelectDroite"].forEach(function (id) {
+          var sel = document.getElementById(id);
+          [0, 1, 2].forEach(function (i) { sel.options[i + 1].disabled = !memoires[i]; });
+        });
+      }
+      function activerComparaison() {
+        compareMode = true;
+        document.getElementById("cvGrapheSimple").hidden = true;
+        document.getElementById("cvGrapheComparaison").hidden = false;
+        // Plein écran automatique (demande explicite de Cédric) — même fonction que
+        // l'icône ⏴ à côté de la roue crantée "Paramètres communs".
+        appliquerVisibilitePanel(true);
+        majOptionsCompareSelects();
+        // Par défaut Mémoire 1 à gauche / Mémoire 2 à droite (seulement si remplies).
+        compareGaucheIdx = memoires[0] ? 0 : null;
+        compareDroiteIdx = memoires[1] ? 1 : null;
+        document.getElementById("cvCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
+        document.getElementById("cvCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
+        redessinerComparaison();
+      }
+      function desactiverComparaison() {
+        compareMode = false;
+        document.getElementById("cvGrapheSimple").hidden = false;
+        document.getElementById("cvGrapheComparaison").hidden = true;
+      }
+      document.getElementById("cvBtnComparer").addEventListener("click", activerComparaison);
+      document.getElementById("cvBtnFermerComparaison").addEventListener("click", desactiverComparaison);
+      document.getElementById("cvCompareSelectGauche").addEventListener("change", function () {
+        compareGaucheIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+      document.getElementById("cvCompareSelectDroite").addEventListener("change", function () {
+        compareDroiteIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
 
       var CED4SCALE_CONTACT = {
         nom: "Cédric Goillot",
