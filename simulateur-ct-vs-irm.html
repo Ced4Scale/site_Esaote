@@ -257,7 +257,7 @@
        roue crantée. Bornes recalculées à chaque `recalculer()` (fonction
        `ajusterSliderActivite()`), pas fixes, pour rester cohérentes que l'on
        raisonne en jour ou en an. */
-    .cv-activite-slider { display: flex; align-items: center; gap: .8rem; margin-top: 1rem; }
+    .cv-activite-slider { display: flex; flex-wrap: wrap; align-items: center; gap: .8rem; margin-top: 1rem; }
     /* Piste native abandonnée le 07/09/2026 : même avec fond transparent sur le track, Chrome
        continue à peindre lui-même la partie "non remplie" en gris dès que accent-color est
        posé — impossible à effacer par CSS de pseudo-élément (retour de Cédric : "il me
@@ -287,6 +287,26 @@
     }
     .cv-activite-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: var(--red); border-radius: 2px; }
     .cv-activite-slider-value { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--red); font-size: .82rem; text-align: right; }
+    /* Largeur fixe PARTAGÉE (demande de Cédric le 07/09/2026, "les 2 traits rouges
+       doivent mesurer la même longueur") — sans elle, les 2 pistes (patients/jour et
+       horaires) n'ont pas la même longueur visible : chaque colonne de valeur (flex,
+       sans largeur fixée) prend juste la place que son texte réclame, et le texte plus
+       long des horaires (2 champs heure natifs + icônes horloge, ~240px incompressibles
+       en "nowrap") grignotait une bien plus grande part de la ligne, raccourcissant
+       d'autant sa piste. 15,5rem = juste assez pour ce libellé le plus large des 2.
+       Posée sur les 2 colonnes de valeur (patients/jour ET horaires) via cette classe
+       commune, pour qu'elles restent identiques si l'une des 2 change plus tard.
+       **Annulée sous 780px** (breakpoint déjà utilisé par .simulator__layout dans
+       styles.css pour empiler le formulaire) : une largeur fixe aussi large que 15,5rem
+       ne laissait quasiment plus de place à la piste sur un téléphone étroit (testé à
+       375px : la piste de patients/jour disparaissait complètement, largeur 0) — sous ce
+       seuil, chaque colonne reprend sa largeur naturelle et la ligne peut s'empiler
+       (voir flex-wrap:wrap déjà posé sur les 2 lignes), l'égalité stricte des 2 pistes
+       n'étant plus tenable sur un si petit écran de toute façon. */
+    .cv-slider-valeur-fixe { flex: 0 0 15.5rem; }
+    @media (max-width: 780px) {
+      .cv-slider-valeur-fixe { flex: 1 1 100%; }
+    }
     .cv-activite-slider-equiv { font-weight: 400; font-size: .72rem; color: var(--muted); margin-top: .1rem; }
     /* Curseur "Tarif moyen du forfait technique selon le volume" (demande de Cédric le
        06/09/2026) — même motif que .cv-activite-* ci-dessus (piège accent-color déjà
@@ -667,7 +687,7 @@
               <div class="cv-activite-track"><div class="cv-activite-fill" id="cvActiviteFill"></div></div>
               <input type="range" id="cvActiviteSlider" min="0" max="40" step="0.5" value="30" aria-label="Activité (patients)" />
             </div>
-            <div class="cv-activite-slider-value" id="cvActiviteSliderLabel"></div>
+            <div class="cv-activite-slider-value cv-slider-valeur-fixe" id="cvActiviteSliderLabel"></div>
           </div>
           <!-- Déplacé ici depuis le bloc "Votre activité" (retiré du formulaire le
                05/09/2026) : c'est maintenant le seul endroit où l'activité se règle. -->
@@ -703,7 +723,7 @@
                 <input type="range" id="cvCoupurePositionB" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
               </div>
             </div>
-            <div>
+            <div class="cv-slider-valeur-fixe">
               <div class="cv-horaire-label" id="cvHoraireLabel1B" style="margin-top:0; justify-content:flex-end; flex-wrap:nowrap"></div>
               <p class="simulator__hint cv-activite-slider-equiv" id="cvHeuresTotalTxtB" style="text-align:right"></p>
             </div>
