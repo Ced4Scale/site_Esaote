@@ -5,7 +5,9 @@
     (function () {
       try {
         var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
-        if (!(v && v.expiresAt && v.expiresAt > Date.now())) {
+        if (v && v.expiresAt && v.expiresAt > Date.now()) {
+          window.__ced4scaleProfile = v.profile || null;
+        } else {
           document.documentElement.style.visibility = "hidden";
         }
       } catch (e) {
@@ -21,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260906-landscape-hint" />
+  <link rel="stylesheet" href="styles.css?v=20260908-profil-gate" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="document-page">
@@ -308,11 +310,28 @@
           '<p>' + doc.statement + '</p>' +
           '<a class="btn" href="' + doc.sourceUrl + '" target="_blank" rel="noopener">' + doc.sourceLabel + '</a>' +
           '</article>';
+      } else if (doc.access !== "restricted" && window.__ced4scaleProfile === "ced4scale") {
+        /* Profil "Ced4Scale" (ajouté le 08/09/2026) : affichage direct sans passer par le
+           formulaire de demande, réservé aux documents déjà publics chez Esaote (le fichier
+           existe réellement dans ce dépôt). Les documents "restricted" (Site Planning Guide...)
+           ne peuvent pas être affichés directement : le vrai fichier ne vit que dans SharePoint,
+           jamais dans ce dépôt public (mention de copyright Esaote) — ils gardent le formulaire
+           de demande même avec ce profil, voir mémoire site-web pour la question ouverte. */
+        gate.hidden = true;
+        frame.hidden = false;
+        frame.src = doc.src;
+        if (window.goatcounter && window.goatcounter.count) {
+          window.goatcounter.count({
+            path: "document-acces-direct-" + (docKey || "inconnu"),
+            title: "Document affiché directement (profil Ced4Scale) — " + doc.title,
+            event: true
+          });
+        }
       } else if (doc.src) {
-        /* Jamais d'affichage direct du fichier, même tant que le flux Power Automate n'existe
-           pas encore : le formulaire est toujours actif. Sans flux branché, la demande part par
-           e-mail (mailto) à Cédric, qui traite alors la demande à la main en attendant que
-           l'envoi automatique soit construit. */
+        /* Jamais d'affichage direct du fichier pour les visiteurs (profil pro de santé / autre),
+           même tant que le flux Power Automate n'existe pas encore : le formulaire est toujours
+           actif. Sans flux branché, la demande part par e-mail (mailto) à Cédric, qui traite
+           alors la demande à la main en attendant que l'envoi automatique soit construit. */
         frame.hidden = true;
         gate.hidden = false;
         gateTitle.textContent = doc.title;

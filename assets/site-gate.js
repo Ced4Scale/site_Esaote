@@ -2,7 +2,10 @@
   var ACCESS_KEY = "ced4scale-site-access";
   var ACCESS_DAYS = 15;
   // SHA-256 du code d'accès (même code que les pages "examens métal/charge").
+  // Le code est le même pour les 3 profils (pro de santé / autre / Ced4Scale) :
+  // seul le bouton choisi change le profil mémorisé, pas le code à saisir.
   var ACCESS_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
+  var PROFILES = { pro: "Professionnel de santé", autre: "Autre", ced4scale: "Ced4Scale" };
 
   function normalizeCode(value) {
     var digits = String(value || "").replace(/\D/g, "");
@@ -22,19 +25,21 @@
     });
   }
 
-  function storedAccessIsValid() {
+  function storedAccess() {
     try {
       var value = JSON.parse(window.localStorage.getItem(ACCESS_KEY) || "null");
-      return Boolean(value && value.expiresAt && value.expiresAt > Date.now());
+      if (value && value.expiresAt && value.expiresAt > Date.now()) return value;
+      return null;
     } catch (error) {
-      return false;
+      return null;
     }
   }
 
-  function storeAccess() {
+  function storeAccess(profile) {
     try {
       window.localStorage.setItem(ACCESS_KEY, JSON.stringify({
-        expiresAt: Date.now() + (ACCESS_DAYS * 24 * 60 * 60 * 1000)
+        expiresAt: Date.now() + (ACCESS_DAYS * 24 * 60 * 60 * 1000),
+        profile: profile || null
       }));
     } catch (error) {}
   }
@@ -43,7 +48,9 @@
     document.documentElement.style.visibility = "";
   }
 
-  if (storedAccessIsValid()) {
+  var existing = storedAccess();
+  if (existing) {
+    window.__ced4scaleProfile = existing.profile || null;
     reveal();
     return;
   }
@@ -54,29 +61,50 @@
   panel.setAttribute("aria-modal", "true");
   panel.setAttribute("aria-labelledby", "siteGateTitle");
   panel.innerHTML =
-    '<form class="site-gate__panel" id="siteGateForm">' +
+    '<div class="site-gate__panel">' +
       '<span class="kicker">Site en construction</span>' +
       '<h1 id="siteGateTitle">Accès réservé</h1>' +
-      '<p>Ce site est en cours de préparation. Entrez le code d’accès pour continuer. Il restera mémorisé 15 jours sur cet appareil.</p>' +
-      '<label>' +
-        '<span>Code</span>' +
-        '<input id="siteGateCode" type="password" inputmode="tel" autocomplete="one-time-code" required />' +
-      '</label>' +
-      '<p class="site-gate__error" id="siteGateError" role="alert" hidden>Code incorrect.</p>' +
-      '<button class="btn" type="submit">Continuer</button>' +
-    '</form>';
+      '<div class="site-gate__profiles" id="siteGateProfiles">' +
+        '<p>Vous êtes…</p>' +
+        '<button type="button" class="btn btn--on-dark btn--ghost" data-profile="pro">Professionnel de santé</button>' +
+        '<button type="button" class="btn btn--on-dark btn--ghost" data-profile="autre">Autre</button>' +
+        '<button type="button" class="btn btn--on-dark btn--ghost" data-profile="ced4scale">Ced4Scale</button>' +
+      '</div>' +
+      '<form class="site-gate__form" id="siteGateForm" hidden>' +
+        '<p>Ce site est en cours de préparation. Entrez le code d’accès pour continuer. Il restera mémorisé 15 jours sur cet appareil.</p>' +
+        '<label>' +
+          '<span>Code</span>' +
+          '<input id="siteGateCode" type="password" inputmode="tel" autocomplete="one-time-code" required />' +
+        '</label>' +
+        '<p class="site-gate__error" id="siteGateError" role="alert" hidden>Code incorrect.</p>' +
+        '<button class="btn" type="submit">Continuer</button>' +
+      '</form>' +
+    '</div>';
 
   function attach() {
     document.body.appendChild(panel);
+    var profilesBlock = document.getElementById("siteGateProfiles");
     var form = document.getElementById("siteGateForm");
     var code = document.getElementById("siteGateCode");
     var error = document.getElementById("siteGateError");
+    var selectedProfile = null;
+
+    Array.prototype.forEach.call(profilesBlock.querySelectorAll("[data-profile]"), function (button) {
+      button.addEventListener("click", function () {
+        selectedProfile = button.getAttribute("data-profile");
+        profilesBlock.hidden = true;
+        form.hidden = false;
+        code.focus();
+      });
+    });
+
     form.addEventListener("submit", function (event) {
       event.preventDefault();
       var normalized = normalizeCode(code.value);
       hashText(normalized).then(function (hash) {
         if (hash === ACCESS_HASH || normalized === ACCESS_HASH) {
-          storeAccess();
+          storeAccess(selectedProfile);
+          window.__ced4scaleProfile = selectedProfile;
           panel.remove();
           reveal();
           return;
@@ -85,7 +113,6 @@
         code.select();
       });
     });
-    code.focus();
   }
 
   if (document.body) attach();
