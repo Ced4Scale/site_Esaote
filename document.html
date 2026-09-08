@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260908-profil-gate" />
+  <link rel="stylesheet" href="styles.css?v=20260908-quicksend" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </head>
 <body class="document-page">
@@ -358,6 +358,28 @@
             : "Un brouillon d'e-mail vient de s'ouvrir dans votre messagerie, à destination de Cédric : vérifiez qu'il parte bien, l'envoi automatique n'est pas encore actif.";
           gatePhoneLabel.hidden = true;
           gatePhone.required = false;
+        }
+
+        /* Profil "Ced4Scale" sur un document "restricted" (ajouté le 08/09/2026, suite à
+           la décision de Cédric) : pas de fichier affichable directement (voir plus haut),
+           mais un envoi en un clic avec ses propres coordonnées pré-remplies plutôt que de
+           lui faire ressaisir nom/e-mail/téléphone à chaque fois. Passe toujours par le même
+           flux Power Automate, avec la même étape d'approbation "restricted" qu'un visiteur
+           normal — Cédric se l'approuve alors à lui-même en quelques secondes. */
+        var isCed4scaleQuickSend = isRestricted && window.__ced4scaleProfile === "ced4scale";
+        if (isCed4scaleQuickSend) {
+          gatePrenom.value = "Cédric";
+          gateNom.value = "Goillot";
+          gateFonction.value = "Ced4Scale";
+          gateEmail.value = "cedric.goillot@ced4scale.fr";
+          gatePhone.value = "0680735233";
+          [gatePrenom, gateNom, gateFonction, gateEmail, gatePhoneLabel].forEach(function (field) {
+            var label = field.closest ? field.closest("label") : null;
+            if (label) label.hidden = true;
+          });
+          gatePersonalNudge.hidden = true;
+          gateIntro.textContent = "Profil Ced4Scale : reçois ce document immédiatement sur ton adresse, sans ressaisir tes coordonnées.";
+          gateForm.querySelector('button[type="submit"]').textContent = "Recevoir immédiatement";
         }
 
         var emailConfirmedPersonal = false;
