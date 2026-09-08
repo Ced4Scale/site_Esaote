@@ -350,8 +350,17 @@
 
     <div class="simulator__layout">
       <form id="boForm">
-        <div style="display:flex;justify-content:flex-end;margin-bottom:.3rem">
-          <button type="button" class="bascule-gear-btn" id="boBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem">
+          <h3 style="margin:0;font-size:1.05rem">Paramètres</h3>
+          <div style="display:flex;align-items:center;gap:.3rem">
+            <button type="button" class="bascule-gear-btn" id="boBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+            <!-- Ouvre le même panneau que le ⚙ de "Machine A" plus bas (id boBtnHypotheses) —
+                 pas un doublon de contenu, juste un 2e point d'accès : ce panneau est déjà
+                 titré "Hypothèses de ce simulateur" / "Communes aux deux machines", donc
+                 légitime ici aussi (règle du skill ced4scale-simulateur-web : le bloc de
+                 gauche a toujours ⏴ ET ⚙ côte à côte, ajoutée le 08/09/2026). -->
+            <button type="button" class="bascule-gear-btn" id="boBtnHypothesesTop" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+          </div>
         </div>
         <div class="simulator__machine-box" data-slot="0" style="border-left-color:#2a78d6">
           <h4 class="simulator__machine-box-title simulator__swatch-text bascule-machine-title" data-slot="0" style="color:#2a78d6">
@@ -1315,6 +1324,7 @@
         document.getElementById("boGainDetail").hidden = !document.getElementById("boGainDetail").hidden;
       });
       document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
+      document.getElementById("boBtnHypothesesTop").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
       document.getElementById("boHypDone").addEventListener("click", fermerHypotheses);
       document.getElementById("boHypNetMerm").addEventListener("blur", function () {
