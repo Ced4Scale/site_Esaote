@@ -1728,7 +1728,37 @@ ul { margin: 0; padding: 0; list-style: none; }
 .simulator__date-check input { width: 16px; height: 16px; }
 .simulator__checkbox-field label { display: flex; align-items: flex-start; gap: .5rem; font-weight: 400; font-size: .85rem; cursor: pointer; color: var(--ink-soft); }
 .simulator__checkbox-field input { width: 16px; height: 16px; flex-shrink: 0; margin-top: .1rem; }
-.simulator__chart-card { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1.2rem .6rem; box-shadow: var(--shadow-sm); margin-bottom: 1.2rem; }
+.simulator__chart-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.2rem 1.2rem .6rem; box-shadow: var(--shadow-sm); margin-bottom: 1.2rem; }
+
+/* Bouton plein écran RÉEL (API Fullscreen du navigateur, sort du mode fenêtre) sur
+   chaque cadre de la colonne de résultats (demande de Cédric le 10/09/2026, distinct
+   du bouton ⛶ existant qui ne fait que remplir la fenêtre du navigateur). Un bouton par
+   cadre plutôt qu'un seul pour toute la colonne. Positionné en haut à droite du cadre,
+   qui est déjà en position:relative ci-dessus. */
+.chart-card-fullscreen-btn {
+  position: absolute; top: .7rem; right: .7rem; z-index: 3;
+  width: 2rem; height: 2rem; border-radius: 6px; border: 1px solid var(--line);
+  background: #fff; color: var(--ink-soft); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; padding: 0;
+}
+.chart-card-fullscreen-btn:hover, .chart-card-fullscreen-btn:focus-visible {
+  background: var(--red); color: #fff; border-color: var(--red);
+}
+.chart-card-fullscreen-btn svg { display: block; }
+.chart-card-fullscreen-btn .icon-compress { display: none; }
+.chart-card-fullscreen-btn.is-fullscreen .icon-expand { display: none; }
+.chart-card-fullscreen-btn.is-fullscreen .icon-compress { display: block; }
+/* Cadre collapsible (<details>) : le bouton vit DANS <summary> (sinon il disparaît
+   avec le reste du contenu quand replié), mais reste positionné par rapport au cadre
+   entier grâce au position:relative posé plus haut — laisse de la place au texte du
+   résumé pour ne pas passer dessous. */
+.simulator__chart-card--collapsible > summary { padding-right: 2.4rem; }
+/* La carte occupe tout l'écran physique une fois en plein écran : centre son contenu
+   avec une marge confortable au lieu de rester collée en haut-gauche d'un écran bien
+   plus grand qu'elle. */
+.simulator__chart-card:fullscreen {
+  overflow: auto; padding: 2.6rem clamp(1.2rem, 4vw, 4rem) 2rem; background: #fff;
+}
 .simulator__hero-result { background: var(--success-bg); border: 1px solid var(--success-bd); color: var(--success-tx); border-radius: var(--radius); padding: 1rem 1.3rem; margin: 1rem 0 1.6rem; font-size: 1.05rem; line-height: 1.45; }
 .simulator__hero-result strong { font-size: 1.2rem; }
 .simulator__warning { background: #fdecec; border: 1px solid var(--red); color: #7a1414; border-radius: var(--radius); padding: .8rem 1rem; margin: .6rem 0 0; font-size: .88rem; line-height: 1.45; }

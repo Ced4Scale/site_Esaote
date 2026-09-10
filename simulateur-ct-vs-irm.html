@@ -1096,6 +1096,12 @@
              uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
         <button type="button" class="btn btn--sm" id="cvBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card" id="cvSyntheseCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="cvSyntheseFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <h3 style="margin-bottom:.6rem">Résultat à votre activité</h3>
           <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
           <!-- Cadre vert dessiné par-dessus les 2 lignes vertes du tableau, en JS (voir
@@ -1173,7 +1179,13 @@
           </div>
         </div>
 
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="cvGrapheCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="cvGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <!-- Cadre d'écart de résultat, au-dessus du graphe à barres (demande de Cédric le
                07/09/2026) — reprend l'écart déjà visible en comparant les 2 barres, mais en
                un chiffre unique lisible d'un coup d'œil, qui suit les 3 groupes de boutons
@@ -1329,8 +1341,16 @@
           <div class="cv-info-pop" id="cvHypPop" hidden>Le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</div>
         </span>
 
-        <details class="simulator__chart-card simulator__chart-card--collapsible">
-          <summary>Seuils du barème dégressif, par examen</summary>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvSeuilsCard">
+          <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="cvSeuilsFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Seuils du barème dégressif, par examen
+          </summary>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvSeuilsTable">
             <thead>
@@ -1351,8 +1371,16 @@
              tarifMoyenPourVolume()/majFtMoyen()), pas le tarif de la seule tranche où
              tombe ce volume. Distinct du tableau des seuils ci-dessus (qui liste les
              tarifs PAR TRANCHE) — les 2 se complètent, placés l'un sous l'autre. -->
-        <details class="simulator__chart-card simulator__chart-card--collapsible">
-          <summary>Tarif moyen du forfait technique selon le volume</summary>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvFtMoyCard">
+          <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="cvFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Tarif moyen du forfait technique selon le volume
+          </summary>
           <!-- Règle systématique posée le 07/09/2026 (voir skill ced4scale-simulateur-web) :
                toute phrase explicative de la colonne de résultats passe par une ampoule,
                sauf le texte de bascule d'une section repliable ("Voir le récapitulatif
@@ -1411,7 +1439,15 @@
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
-          <summary>Voir le récapitulatif détaillé de la simulation <span class="cv-recap-badge" id="cvRecapBadge" hidden></span></summary>
+          <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="cvRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Voir le récapitulatif détaillé de la simulation <span class="cv-recap-badge" id="cvRecapBadge" hidden></span>
+          </summary>
           <span class="cv-info-wrap" style="margin-bottom:.8rem">
             <button type="button" class="cv-info-btn" id="cvRecapInfoBtn" aria-expanded="false" aria-controls="cvRecapInfoPop" aria-label="À quoi sert ce récapitulatif">💡</button>
             <div class="cv-info-pop" id="cvRecapInfoPop" hidden>Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</div>
@@ -4270,6 +4306,36 @@ var svg = document.getElementById("cvChart");
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") cvInfoPopsOuverts.forEach(function (f) { f(); });
       });
+
+      // Bouton plein écran RÉEL par cadre de la colonne de résultats (demande de Cédric
+      // le 10/09/2026, distinct du bouton ⛶ existant qui ne remplit que la fenêtre du
+      // navigateur) — API Fullscreen standard. Pour un cadre repliable (<details>), le
+      // bouton vit dans <summary> : preventDefault()/stopPropagation() empêchent le clic
+      // de (re)fermer le repli, et on force son ouverture avant de passer en plein écran
+      // (sinon le contenu resterait invisible une fois agrandi).
+      function wireCardFullscreen(btnId, cardId) {
+        var btn = document.getElementById(btnId), card = document.getElementById(cardId);
+        if (!btn || !card) return;
+        btn.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (document.fullscreenElement === card) {
+            document.exitFullscreen();
+          } else {
+            if (card.tagName === "DETAILS") card.open = true;
+            card.requestFullscreen();
+          }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          var actif = document.fullscreenElement === card;
+          btn.classList.toggle("is-fullscreen", actif);
+          btn.setAttribute("aria-pressed", String(actif));
+        });
+      }
+      wireCardFullscreen("cvSyntheseFullscreenBtn", "cvSyntheseCard");
+      wireCardFullscreen("cvGrapheFullscreenBtn", "cvGrapheCard");
+      wireCardFullscreen("cvSeuilsFullscreenBtn", "cvSeuilsCard");
+      wireCardFullscreen("cvFtMoyFullscreenBtn", "cvFtMoyCard");
+      wireCardFullscreen("cvRecapFullscreenBtn", "cvRecap");
 
       recalculer();
       egaliserTousLesBoutons();
