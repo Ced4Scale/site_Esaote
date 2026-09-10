@@ -50,8 +50,28 @@
     .sim-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
     .sim-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
     #simHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #simHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #simHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
     #simHypOverlay .modal__scroll { height: 100%; }
+
+    /* Bouton "agrandir/réduire" du panneau ⚙ (nouveau motif, 10/09/2026, à généraliser
+       aux autres simulateurs une fois validé ici) — remplit la fenêtre du navigateur
+       (pas le vrai plein écran natif du navigateur, qui masquerait aussi la barre
+       d'adresse) : bascule juste la largeur du panneau entre 420px et 100%. Icône à 2
+       états dessinée en 2 groupes SVG séparés togglés par display (jamais une rotation
+       — motif déjà en place pour le cadenas des mémoires, voir skill
+       ced4scale-simulateur-web). Positionné juste à gauche du bouton fermer (×),
+       même style rond que lui. */
+    .sim-hyp-fullscreen-btn {
+      position: absolute; top: 14px; right: 64px; z-index: 3;
+      width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255,255,255,.92); color: var(--ink); box-shadow: var(--shadow-sm);
+      display: grid; place-items: center; transition: background .15s, color .15s;
+    }
+    .sim-hyp-fullscreen-btn:hover, .sim-hyp-fullscreen-btn:focus-visible { background: var(--red); color: #fff; }
+    .sim-hyp-fullscreen-btn svg { display: block; }
+    .sim-hyp-fullscreen-btn .icon-compress { display: none; }
+    .sim-hyp-fullscreen-btn.is-compressed .icon-expand { display: none; }
+    .sim-hyp-fullscreen-btn.is-compressed .icon-compress { display: block; }
 
     /* "Seuils de cette classe" repliable, avec le tableau qui déborde de la
        colonne étroite du formulaire une fois ouvert — demandé par Cédric le
@@ -441,6 +461,16 @@
 
   <div class="modal-overlay" id="simHypOverlay" role="dialog" aria-modal="true" aria-labelledby="simHypTitle" hidden>
     <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="sim-hyp-fullscreen-btn" id="simHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="simHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="sim-hyp-body">
@@ -1279,6 +1309,25 @@
       }
       document.getElementById("simHypClose").addEventListener("click", fermerSimHyp);
       document.getElementById("simHypDone").addEventListener("click", fermerSimHyp);
+
+      // Bouton "agrandir/réduire" du panneau ⚙ (nouveau motif, 10/09/2026) : remplit la
+      // fenêtre du navigateur plutôt que le vrai plein écran natif (pas de permission
+      // navigateur à gérer, plus simple et fiable) — bascule juste la largeur du
+      // panneau entre 420px et 100%, en manipulant directement le même style inline
+      // que le HTML de départ (pas de conflit de spécificité CSS à gérer).
+      var simHypModal = document.querySelector("#simHypOverlay .modal");
+      var simHypLargeurNormale = simHypModal.style.width; // "min(420px, 100%)" posé dans le HTML
+      var simHypFullscreenBtn = document.getElementById("simHypFullscreenBtn");
+      var simHypFullscreen = false;
+      simHypFullscreenBtn.addEventListener("click", function () {
+        simHypFullscreen = !simHypFullscreen;
+        simHypModal.style.width = simHypFullscreen ? "100%" : simHypLargeurNormale;
+        simHypFullscreenBtn.classList.toggle("is-compressed", simHypFullscreen);
+        simHypFullscreenBtn.setAttribute("aria-pressed", String(simHypFullscreen));
+        var libelle = simHypFullscreen ? "Réduire le panneau" : "Agrandir le panneau";
+        simHypFullscreenBtn.setAttribute("aria-label", libelle);
+        simHypFullscreenBtn.title = libelle;
+      });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && simHypOverlay.classList.contains("is-open")) fermerSimHyp();
       });
