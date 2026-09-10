@@ -88,15 +88,19 @@
        le popover n'a besoin de recouvrir que d'autres éléments DE LA MÊME colonne
        (jamais .simulator__results), donc pas concerné par le piège de contexte
        d'empilement documenté sur ce site ; tous les autres sont dans .simulator__results
-       ou #eneHypOverlay (panneau ⚙, hors de toute colonne du layout). Couleur : amber par
-       défaut, sauf violet pour les 3 ampoules qui parlent du socle (couleur TIER_COLORS.socle,
+       ou #eneHypOverlay (panneau ⚙, hors de toute colonne du layout). Couleur : rose par
+       défaut (touche "cartes Apple Arcade", 10/09/2026 — remplace l'ancien amber), sauf
+       violet pour les 3 ampoules qui parlent du socle (couleur TIER_COLORS.socle,
        #6b5b95) et vert pour celle de l'activité (couleur du champ "Activité",
        border-left #1baf7a = TIER_COLORS.entrePatients — reprise telle quelle du variant
-       --cv-info-wrap--vert de simulateur-ct-vs-irm.html). */
+       --cv-info-wrap--vert de simulateur-ct-vs-irm.html) — ces 2 variantes ne sont PAS
+       converties en rose, elles reprennent délibérément une couleur du graphe pour
+       relier visuellement l'ampoule à la couche qu'elle explique, exactement comme les
+       couleurs de graphe volontairement exclues de ce chantier. */
     .ene-info-wrap {
       position: relative; display: inline-block;
-      --ene-info-bg: #fff6e0; --ene-info-bg-hover: #ffe9ad; --ene-info-bd: #f0d998;
-      --ene-info-fg: #8a6d1e; --ene-info-pop-bg: #fffaf0; --ene-info-pop-fg: #6b5b2a;
+      --ene-info-bg: #fdeaf3; --ene-info-bg-hover: #fbd4e7; --ene-info-bd: #f3b8d6;
+      --ene-info-fg: #9c2f68; --ene-info-pop-bg: #fff5fa; --ene-info-pop-fg: #7a2350;
     }
     .ene-info-wrap--violet {
       --ene-info-bg: #e4dff0; --ene-info-bg-hover: #d3caE4; --ene-info-bd: #cabfe0;
@@ -182,6 +186,34 @@
     }
     .ene-comparaison-cote svg { width: 100%; height: 140px; display: block; margin-bottom: .5rem; }
     .ene-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
+
+    /* Touche de couleur "cartes Apple Arcade" (dégradés vifs), palette validée sur
+       simulateur-recettes.html / simulateur-point-mort.html. 3 volets : boutons d'action
+       génériques → orange, curseurs (aucun input[type=range] sur cette page) → turquoise,
+       bulles d'aide ampoule 💡 → rose. Exclusions volontaires : .ene-btn-memoire (violet)
+       et .ene-btn-comparer (orange pastel) ont déjà leur propre --btn-bg de famille (voir
+       plus haut, liées aux mémoires/à la comparaison) — elles gardent leur couleur, jamais
+       reprises par la règle orange générique. L'encadré rouge de capacité
+       (#eneCapaciteWarning/.ene-capnote) et les couleurs SLOT_COLORS bleu/orange des 2
+       machines comparées (graphe 3 couches, tableaux, camembert socle) ne font pas partie
+       de ce chantier et ne sont pas touchés ici. Les variantes .ene-info-wrap--violet et
+       .ene-info-wrap--vert ne sont PAS converties en rose : elles reprennent délibérément
+       les couleurs du graphe (TIER_COLORS.socle #6b5b95, TIER_COLORS.entrePatients
+       #1baf7a) pour relier visuellement l'ampoule à la couche qu'elle explique — même
+       logique fonctionnelle que les couleurs de graphe exclues ci-dessus. Seule la
+       variante PAR DÉFAUT (ambre, 9 des 13 emplacements, aucun lien avec une couleur de
+       graphe) passe en rose. */
+    .btn:not(.btn--ghost):not(.ene-btn-memoire):not(.ene-btn-comparer) {
+      --btn-bg: linear-gradient(135deg, #ff9d3d 0%, #ff6a00 60%, #e0501a 100%);
+      background: var(--btn-bg);
+      border-color: #e0501a;
+      box-shadow: 0 3px 10px rgba(224,80,26,.35);
+    }
+    .btn:not(.btn--ghost):not(.ene-btn-memoire):not(.ene-btn-comparer):hover {
+      background: linear-gradient(135deg, #ffb066 0%, #ff7a1a 60%, #c8440f 100%);
+      border-color: #c8440f;
+      box-shadow: 0 5px 14px rgba(224,80,26,.45);
+    }
   </style>
 </head>
 <body class="tool-page">
