@@ -93,6 +93,41 @@
        de .stats-table) — demandé par Cédric le 04/09/2026, plus lisible pour
        une colonne de chiffres. */
     .sim-seuils-popover td:not(:first-child), .sim-seuils-popover th:not(:first-child) { text-align: center; }
+
+    /* Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif porté
+       tel quel de simulateur-point-mort.html / simulateur-ct-vs-irm.html — voir skill
+       ced4scale-simulateur-web, "Phrase explicative fixe repliée derrière une icône
+       ampoule"). Le conteneur passe en position:relative pour que le popover se
+       positionne par rapport à lui. Vérifié : sur les 4 emplacements utilisés ici, 3 sont
+       dans .simulator__results / #simHypOverlay (jamais position:sticky) ; le 4e
+       (simInfoAnnee1, "année 1") est dans .simulator__form, qui EST en position:sticky
+       (voir plus haut le commentaire sur .sim-seuils-popover) — c'est le seul de la page.
+       Vérifié en test réel (getBoundingClientRect + getComputedStyle) que ce popover
+       s'ouvre sans être recouvert : il est le dernier élément de la carte, rien ne se
+       superpose sous lui dans la même colonne, et il ne chevauche jamais la colonne de
+       résultats voisine. Une seule couleur amber par défaut : aucune des 4 phrases n'est
+       rattachée à une section qui a déjà sa propre couleur d'identité (SLOT_COLORS ne
+       sert ici qu'aux dates/slots comparés, pas à ces notes générales). */
+    .sim-info-wrap {
+      position: relative; display: inline-block;
+      --sim-info-bg: #fff6e0; --sim-info-bg-hover: #ffe9ad; --sim-info-bd: #f0d998;
+      --sim-info-fg: #8a6d1e; --sim-info-pop-bg: #fffaf0; --sim-info-pop-fg: #6b5b2a;
+    }
+    .sim-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--sim-info-bd);
+      background: var(--sim-info-bg); color: var(--sim-info-fg); font-size: .95rem; line-height: 1;
+      cursor: pointer; padding: 0;
+    }
+    .sim-info-btn:hover, .sim-info-btn[aria-expanded="true"] { background: var(--sim-info-bg-hover); }
+    .sim-info-pop {
+      position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 4;
+      background: var(--sim-info-pop-bg); border: 1px solid var(--sim-info-bd); border-radius: .6rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem;
+      font-size: .82rem; line-height: 1.45; color: var(--sim-info-pop-fg);
+      width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
+    }
+    .sim-info-pop[hidden] { display: none; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -157,7 +192,10 @@
           <select id="simDateSel1"></select>
         </div>
 
-        <p class="simulator__hint">Chaque ligne part de sa date choisie comme "année 1" — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</p>
+        <span class="sim-info-wrap">
+          <button type="button" class="sim-info-btn" id="simInfoAnnee1Btn" aria-expanded="false" aria-controls="simInfoAnnee1Pop" aria-label="À propos de l'année 1">💡</button>
+          <div class="sim-info-pop" id="simInfoAnnee1Pop" hidden>Chaque ligne part de sa date choisie comme "année 1" — le statut reste "non amorti" sur toute la fenêtre, puisque 7 ans est exactement la durée d'amortissement.</div>
+        </span>
       </div>
 
       <div class="simulator__results">
@@ -166,8 +204,13 @@
              uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
         <button type="button" class="btn btn--sm" id="simBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Composition des recettes de l'année 1</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année.</p>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+            <h3 style="margin:0">Composition des recettes de l'année 1</h3>
+            <span class="sim-info-wrap">
+              <button type="button" class="sim-info-btn" id="simInfoLegendeBtn" aria-expanded="false" aria-controls="simInfoLegendePop" aria-label="Comment lire ce graphe">💡</button>
+              <div class="sim-info-pop" id="simInfoLegendePop" hidden>Un camembert par date choisie : la part des recettes venant du forfait plein et de chaque seuil du barème dégressif, sur la première année.</div>
+            </span>
+          </div>
           <div class="simulator__legend" id="simLegend2"></div>
           <div class="simulator__chart-wrap">
             <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
@@ -255,7 +298,10 @@
               <label><input type="checkbox" id="simJoindreExtraits" checked /> Joindre aussi les extraits officiels des dates choisies (synthèse maison + lien vers le texte officiel)</label>
             </div>
             <button type="submit" class="btn btn--lg" id="simExportSubmit">Recevoir ma simulation en PDF</button>
-            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+            <span class="sim-info-wrap" style="margin-top:.7rem">
+              <button type="button" class="sim-info-btn" id="simInfoExportBtn" aria-expanded="false" aria-controls="simInfoExportPop" aria-label="Confidentialité de vos données">💡</button>
+              <div class="sim-info-pop" id="simInfoExportPop" hidden>Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</div>
+            </span>
           </form>
           <div class="simulator__export-success" id="simExportSuccess" role="status" hidden>
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
@@ -278,7 +324,13 @@
       <button type="button" class="modal__close" id="simHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="sim-hyp-body">
-          <h3 id="simHypTitle">Réglages avancés</h3>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem">
+            <h3 id="simHypTitle" style="margin:0">Réglages avancés</h3>
+            <span class="sim-info-wrap">
+              <button type="button" class="sim-info-btn" id="simInfoChampsBtn" aria-expanded="false" aria-controls="simInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
+              <div class="sim-info-pop" id="simInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le tableau et le graphique changer pendant que tu ajustes.</div>
+            </span>
+          </div>
           <div class="field">
             <label>Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</label>
             <div class="simulator__toggle">
@@ -293,8 +345,6 @@
               <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (valeur de l'année 1)</label>
             </div>
           </div>
-          <p class="simulator__hint" style="margin-top:.8rem">Chaque champ s'applique tout de suite — regarde le
-          tableau et le graphique changer pendant que tu ajustes.</p>
           <div class="sim-hyp-actions">
             <button type="button" class="btn" id="simHypDone">Fermer</button>
           </div>
@@ -1696,6 +1746,39 @@
         }
       }
       document.getElementById("simClose").addEventListener("click", goBack);
+
+      // Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif
+      // porté tel quel de simulateur-point-mort.html / simulateur-ct-vs-irm.html — voir
+      // skill ced4scale-simulateur-web). Un seul popover ouvert à la fois ; fermeture au
+      // clic ailleurs ou à Échap.
+      var simInfoPopsOuverts = [];
+      function wireInfoBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          simInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        simInfoPopsOuverts.push(fermer);
+      }
+      wireInfoBtn("simInfoAnnee1Btn", "simInfoAnnee1Pop");
+      wireInfoBtn("simInfoLegendeBtn", "simInfoLegendePop");
+      wireInfoBtn("simInfoExportBtn", "simInfoExportPop");
+      wireInfoBtn("simInfoChampsBtn", "simInfoChampsPop");
+      document.addEventListener("click", function () {
+        simInfoPopsOuverts.forEach(function (f) { f(); });
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") simInfoPopsOuverts.forEach(function (f) { f(); });
+      });
 
       recalculer();
     })();
