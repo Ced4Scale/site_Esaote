@@ -56,6 +56,16 @@
        gagne sur le [hidden] natif à spécificité égale (piège déjà connu du site, voir
        skill ced4scale-simulateur-web). */
     #pmBtnShowPanel[hidden] { display: none; }
+    /* Note de capacité structurée (icône + statut + tableau + conseil), même motif que
+       .bascule-capnote de simulateur-bascule-oscan.html — couleur rouge d'alerte reprise
+       telle quelle de l'ancien .simulator__warning, seule la structure interne change. */
+    .pm-capnote { font-size: .88rem; margin: .6rem 0 0; padding: .8rem 1rem; border-radius: var(--radius); background: #fdecec; border: 1px solid var(--red); color: #7a1414; box-sizing: border-box; overflow-x: auto; }
+    .pm-capnote-status { font-weight: 700; margin-bottom: .3rem; color: var(--red); }
+    .pm-capnote-table { width: 100%; max-width: 100%; border-collapse: collapse; font-size: .82rem; font-variant-numeric: tabular-nums; table-layout: fixed; }
+    .pm-capnote-table td { padding: .15rem 0; }
+    .pm-capnote-table td:first-child { padding-right: .6rem; width: 58%; }
+    .pm-capnote-table td:last-child { text-align: left; font-weight: 600; }
+    .pm-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .84rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -188,7 +198,7 @@
           </div>
           <p class="simulator__hint" id="pmActiviteEquivalent"></p>
           <p class="simulator__hint" id="pmResultatActivite"></p>
-          <p class="simulator__warning" id="pmCapaciteWarning" hidden></p>
+          <div class="pm-capnote" id="pmCapaciteWarning" hidden></div>
         </div>
 
       </div>
@@ -623,6 +633,21 @@
       // patient (installation + acquisition + sortie, déjà tout compris — ne pas
       // l'additionner à dureeAcquisitionMinutes, il l'inclut déjà). Non bloquant — juste un
       // avertissement, l'activité reste un simple repère (voir plus haut).
+      // Construit le contenu de la note de capacité (pmCapaciteWarning) en mode tableau :
+      // icône + statut court, puis les valeurs numériques en lignes label/valeur (pas en
+      // phrase), puis un conseil optionnel en italique. Même motif que capnoteHTML() de
+      // simulateur-bascule-oscan.html.
+      function capnoteHTML(icone, statut, lignes, conseil) {
+        var html = "<div class=\"pm-capnote-status\">" + icone + " " + statut + "</div>";
+        html += "<table class=\"pm-capnote-table\"><tbody>";
+        lignes.forEach(function (l) {
+          html += "<tr><td>" + l[0] + "</td><td>" + l[1] + "</td></tr>";
+        });
+        html += "</tbody></table>";
+        if (conseil) html += "<div class=\"pm-capnote-hint\">" + conseil + "</div>";
+        return html;
+      }
+
       function verifierCapacite(resultats, heuresParJour, activitePatientsJour, warningEl, champsAAlerter) {
         var depassements = resultats.filter(function (r) {
           r.capaciteJour = (heuresParJour * 60) / r.tempsInstallation;
@@ -631,11 +656,14 @@
         (champsAAlerter || []).forEach(function (champ) { champ.classList.toggle("simulator__field-alert", depassements.length > 0); });
         if (!depassements.length) { warningEl.hidden = true; return; }
         warningEl.hidden = false;
-        warningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
-          depassements.map(function (r) {
-            return "<strong>" + r.machine.nomCourt + "</strong> ne peut faire que " + patientsFmt.format(r.capaciteJour) +
-              " patients/jour au maximum (" + r.tempsInstallation + " min de prise en charge par patient, sur " + patientsFmt.format(heuresParJour) + " h d'ouverture)";
-          }).join(" ; ") + " — activité saisie : " + patientsFmt.format(activitePatientsJour) + " patients/jour. Réduis l'activité ou augmente l'amplitude d'ouverture.";
+        var lignes = [["Ouverture", patientsFmt.format(heuresParJour) + " h/jour"]];
+        depassements.forEach(function (r) {
+          lignes.push([r.machine.nomCourt + " — capacité max", patientsFmt.format(r.capaciteJour) + " patients/jour"]);
+          lignes.push([r.machine.nomCourt + " — prise en charge", r.tempsInstallation + " min/patient"]);
+        });
+        lignes.push(["Activité saisie", patientsFmt.format(activitePatientsJour) + " patients/jour"]);
+        warningEl.innerHTML = capnoteHTML("⚠", "Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine"),
+          lignes, "Réduis l'activité ou augmente l'amplitude d'ouverture.");
       }
 
       // ---- Coût réel employeur d'un MERM à partir du salaire net avant impôt ----

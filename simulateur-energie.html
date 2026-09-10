@@ -52,6 +52,16 @@
       .simulator__layout.ene-panel-hidden { grid-template-columns: 1fr; }
     }
     #eneBtnShowPanel[hidden] { display: none; }
+    /* Note de capacité structurée (icône + statut + tableau + conseil), même motif que
+       .bascule-capnote de simulateur-bascule-oscan.html — couleur rouge d'alerte reprise
+       telle quelle de l'ancien .simulator__warning, seule la structure interne change. */
+    .ene-capnote { font-size: .88rem; margin: .6rem 0 0; padding: .8rem 1rem; border-radius: var(--radius); background: #fdecec; border: 1px solid var(--red); color: #7a1414; box-sizing: border-box; overflow-x: auto; }
+    .ene-capnote-status { font-weight: 700; margin-bottom: .3rem; color: var(--red); }
+    .ene-capnote-table { width: 100%; max-width: 100%; border-collapse: collapse; font-size: .82rem; font-variant-numeric: tabular-nums; table-layout: fixed; }
+    .ene-capnote-table td { padding: .15rem 0; }
+    .ene-capnote-table td:first-child { padding-right: .6rem; width: 58%; }
+    .ene-capnote-table td:last-child { text-align: left; font-weight: 600; }
+    .ene-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .84rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -136,7 +146,7 @@
           </div>
           <p class="simulator__hint" id="eneActiviteEquivalent"></p>
           <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
-          <p class="simulator__warning" id="eneCapaciteWarning" hidden></p>
+          <div class="ene-capnote" id="eneCapaciteWarning" hidden></div>
         </div>
 
         <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
@@ -614,6 +624,21 @@
         return facteur > 0 ? (ancienneValeur / 52) / facteur : 0;
       }
 
+      // Construit le contenu de la note de capacité (eneCapaciteWarning) en mode tableau :
+      // icône + statut court, puis les valeurs numériques en lignes label/valeur (pas en
+      // phrase), puis un conseil optionnel en italique. Même motif que capnoteHTML() de
+      // simulateur-bascule-oscan.html.
+      function capnoteHTML(icone, statut, lignes, conseil) {
+        var html = "<div class=\"ene-capnote-status\">" + icone + " " + statut + "</div>";
+        html += "<table class=\"ene-capnote-table\"><tbody>";
+        lignes.forEach(function (l) {
+          html += "<tr><td>" + l[0] + "</td><td>" + l[1] + "</td></tr>";
+        });
+        html += "</tbody></table>";
+        if (conseil) html += "<div class=\"ene-capnote-hint\">" + conseil + "</div>";
+        return html;
+      }
+
       function recalculer() {
         var prix = Math.max(0, parseFloat(document.getElementById("enePrix").value) || 0);
         var heuresSemaineJour = Math.max(0, Math.min(24, parseFloat(document.getElementById("eneHeuresSemaine").value) || 0));
@@ -662,11 +687,14 @@
           });
           if (!depassements.length) { capaciteWarningEl.hidden = true; return; }
           capaciteWarningEl.hidden = false;
-          capaciteWarningEl.innerHTML = "⚠ Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine") + " : " +
-            depassements.map(function (d) {
-              return "<strong>" + d.machine.nomCourt + "</strong> (machine " + d.label + ") ne peut faire que " + entiers.format(d.capaciteJour) +
-                " patients/jour ouvré au maximum (" + d.dureeInstall + " min de prise en charge par patient, sur " + entiers.format(heuresSemaineJour) + " h d'ouverture)";
-            }).join(" ; ") + " — activité saisie : ≈ " + entiers.format(equivalentJour) + " patients/jour ouvré. Réduis l'activité ou augmente l'amplitude d'ouverture.";
+          var lignes = [["Ouverture", entiers.format(heuresSemaineJour) + " h/jour ouvré"]];
+          depassements.forEach(function (d) {
+            lignes.push([d.machine.nomCourt + " (" + d.label + ") — capacité max", entiers.format(d.capaciteJour) + " patients/jour ouvré"]);
+            lignes.push([d.machine.nomCourt + " (" + d.label + ") — prise en charge", d.dureeInstall + " min/patient"]);
+          });
+          lignes.push(["Activité saisie", "≈ " + entiers.format(equivalentJour) + " patients/jour ouvré"]);
+          capaciteWarningEl.innerHTML = capnoteHTML("⚠", "Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine"),
+            lignes, "Réduis l'activité ou augmente l'amplitude d'ouverture.");
         })();
 
         // Un profil distinct par machine : à volume de patients identique, une machine plus
