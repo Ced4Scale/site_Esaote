@@ -955,7 +955,7 @@
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetManipAlternance" value="9.600" /><span id="boHypNetManipAlternanceSuffix">€/an</span></div>
             <span class="bascule-info-wrap">
               <button type="button" class="bascule-info-btn" id="boHypTauxInfoBtn" aria-expanded="false" aria-controls="boHypTauxInfoPop" aria-label="À propos des taux employeur utilisés">💡</button>
-              <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : mêmes taux que le MERM. Cadre de santé : taux cadre ESTIMÉS, pas encore confirmés avec toi. Manip en alternance : mêmes taux que le MERM pour l'instant, alors qu'un contrat d'apprentissage bénéficie normalement d'exonérations de charges bien plus importantes — à corriger dès que tu me donnes les vrais taux.</div>
+              <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
             </span>
           </div>
           <div class="field">
@@ -1326,21 +1326,39 @@
       // (Cédric ne veut saisir que le salaire net avant IR, pas ces deux ratios).
       var COEF_BRUT = 0.78;
       var COEF_CHARGES = 1.42;
-      // Cadre de santé : taux ESTIMÉS, pas confirmés par Cédric (voir bulle 💡 à côté du
-      // salaire manip en alternance, même texte que simulateur-point-mort.html).
+      // Cadre de santé : taux recoupés le 10/09/2026 (recherche web, sources
+      // village-justice.com et calculetontaux.fr) — un cadre cotise davantage pour la
+      // retraite complémentaire (Agirc-Arrco tranche 2, APEC, prévoyance cadre
+      // obligatoire) : charges patronales ~42-45 % du brut (vs ~40 % non-cadre),
+      // net/brut ~75 % (vs ~78 % non-cadre) — reste une valeur moyenne de repère.
       var COEF_BRUT_CADRE = 0.75;
-      var COEF_CHARGES_CADRE = 1.47;
+      var COEF_CHARGES_CADRE = 1.45;
+      // Manip en alternance : taux dédiés depuis le 10/09/2026 (recherche web, sources
+      // service-public.fr, urssaf.fr, mon-entreprise.net — voir
+      // [[site-web/simulateur-point-mort]]). Depuis le 1ᵉʳ janvier 2019, plus
+      // d'exonération de charges patronales spécifique à l'apprentissage : l'employeur
+      // profite seulement de la réduction générale (ex-Fillon), très avantageuse sur un
+      // salaire d'apprenti bas. Confirmé par Cédric : le DTS Imagerie Médicale est
+      // post-bac, donc PAS éligible à l'aide unique aux employeurs d'apprentis
+      // (5.000 €/an, réservée aux diplômes jusqu'au bac). **Taux calés sur une moyenne
+      // d'âge 18-22 ans** — grille officielle du salaire d'un apprenti en % du SMIC
+      // (labonnealternance.apprentissage.beta.gouv.fr) : 18-20 ans = 43/51/67 % (1ʳᵉ/2ᵉ/
+      // 3ᵉ année), 21-25 ans = 53/61/78 % — moyenne des 6 valeurs ≈ 59 % du SMIC. Reste
+      // une moyenne, pas un calcul par tranche d'âge/année exact (choix de Cédric).
+      var COEF_BRUT_ALTERNANCE = 0.96;
+      var COEF_CHARGES_ALTERNANCE = 1.08;
       var HEURES_LEGALES_MOIS = 151.67;
       // Coût mensuel/horaire réel employeur pour un ETP à temps plein d'un rôle donné —
-      // généralise coutHoraireMerm() aux 5 nouveaux postes. "cadre" bascule les 2
-      // coefficients ci-dessus (seul le cadre de santé est concerné).
-      function coutMensuelDepuisNetMensuel(netMensuel, cadre) {
-        var brut = cadre ? COEF_BRUT_CADRE : COEF_BRUT;
-        var charges = cadre ? COEF_CHARGES_CADRE : COEF_CHARGES;
+      // généralise coutHoraireMerm() aux 5 nouveaux postes. "statut" choisit le bon
+      // couple de coefficients ci-dessus ("nonCadre" par défaut, "cadre" ou
+      // "alternance").
+      function coutMensuelDepuisNetMensuel(netMensuel, statut) {
+        var brut = statut === "cadre" ? COEF_BRUT_CADRE : statut === "alternance" ? COEF_BRUT_ALTERNANCE : COEF_BRUT;
+        var charges = statut === "cadre" ? COEF_CHARGES_CADRE : statut === "alternance" ? COEF_CHARGES_ALTERNANCE : COEF_CHARGES;
         return (netMensuel / brut) * charges;
       }
-      function coutHoraireDepuisNetMensuel(netMensuel, cadre) {
-        return coutMensuelDepuisNetMensuel(netMensuel, cadre) / HEURES_LEGALES_MOIS;
+      function coutHoraireDepuisNetMensuel(netMensuel, statut) {
+        return coutMensuelDepuisNetMensuel(netMensuel, statut) / HEURES_LEGALES_MOIS;
       }
       // Amplitude d'ouverture par type de jour (h/jour) plutôt qu'un unique couple
       // heures/jour × jours/an — permet un samedi/dimanche différent de la semaine.
@@ -1640,11 +1658,11 @@
       // pour rester à jour si NET_SECRETAIRE/etc. viennent de changer via la roue crantée.
       function coutsRolesPartages() {
         return {
-          secretaireMensuel: coutMensuelDepuisNetMensuel(NET_SECRETAIRE, false),
-          cadreSanteMensuel: coutMensuelDepuisNetMensuel(NET_CADRE_SANTE, true),
-          aideManipHoraire: coutHoraireDepuisNetMensuel(NET_AIDE_MANIP, false),
-          infirmiereHoraire: coutHoraireDepuisNetMensuel(NET_INFIRMIERE, false),
-          manipAlternanceHoraire: coutHoraireDepuisNetMensuel(NET_MANIP_ALTERNANCE, false)
+          secretaireMensuel: coutMensuelDepuisNetMensuel(NET_SECRETAIRE, "nonCadre"),
+          cadreSanteMensuel: coutMensuelDepuisNetMensuel(NET_CADRE_SANTE, "cadre"),
+          aideManipHoraire: coutHoraireDepuisNetMensuel(NET_AIDE_MANIP, "nonCadre"),
+          infirmiereHoraire: coutHoraireDepuisNetMensuel(NET_INFIRMIERE, "nonCadre"),
+          manipAlternanceHoraire: coutHoraireDepuisNetMensuel(NET_MANIP_ALTERNANCE, "alternance")
         };
       }
       // Construit l'objet "extra" (voir commentaire de resultat()) pour le côté "A" ou

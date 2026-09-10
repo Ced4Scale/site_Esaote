@@ -1542,7 +1542,7 @@
           </div>
           <span class="cv-info-wrap">
             <button type="button" class="cv-info-btn" id="cvInfoTauxBtn" aria-expanded="false" aria-controls="cvInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
-            <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : mêmes taux que le MERM. Cadre de santé : taux cadre estimés, pas encore confirmés avec toi. Manip en alternance : mêmes taux que le MERM pour l'instant, alors qu'un contrat d'apprentissage bénéficie normalement d'exonérations de charges bien plus importantes — à corriger dès que tu me donnes les vrais taux.</div>
+            <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
           </span>
           <div class="field">
             <label for="cvCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
@@ -2663,20 +2663,43 @@
       // ---- Postes propagés depuis simulateur-point-mort.html le 10/09/2026 (secrétaire
       // médicale, cadre de santé, aide-manip, infirmière, manip en alternance). Non-cadre
       // (secrétaire, aide-manip, infirmière) réutilisent les mêmes taux que le MERM
-      // ci-dessus. **Cadre de santé : taux ESTIMÉS, pas confirmés par Cédric** — un cadre
-      // cotise davantage pour la retraite (APEC/Agirc-Arrco cadre), d'où un net/brut un peu
-      // plus faible et des charges patronales un peu plus élevées qu'un non-cadre ; valeurs
-      // de repère courantes du secteur, à remplacer dès que Cédric donne les vrais taux.
-      // **Manip en alternance : mêmes taux que le MERM pour l'instant**, alors qu'un contrat
-      // d'apprentissage bénéficie normalement d'exonérations de charges patronales bien plus
-      // importantes (souvent quasi totales) — sous-estime donc le vrai avantage économique
-      // de l'alternance tant que Cédric n'a pas donné les vrais taux. Signalé à l'écran
-      // (bulle 💡 #cvInfoTauxPop à côté des champs de salaire).
+      // ci-dessus. **Cadre de santé : taux recoupés le 10/09/2026** (recherche web,
+      // sources village-justice.com et calculetontaux.fr) — un cadre cotise davantage pour
+      // la retraite complémentaire (Agirc-Arrco tranche 2 ~12,95 % patronal, APEC,
+      // prévoyance cadre obligatoire) : charges patronales ~42-45 % du brut (vs ~40 %
+      // non-cadre), net/brut ~75 % (vs ~78 % non-cadre) — reste une valeur moyenne de
+      // repère, le vrai taux dépend de la convention collective exacte.
       var TAUX_NET_VERS_BRUT_CADRE = 0.75;
-      var TAUX_CHARGES_PATRONALES_CADRE = 1.47;
+      var TAUX_CHARGES_PATRONALES_CADRE = 1.45;
       function coutCadreDepuisNet(netAvantIR) {
         var brut = netAvantIR / TAUX_NET_VERS_BRUT_CADRE;
         return brut * TAUX_CHARGES_PATRONALES_CADRE;
+      }
+
+      // **Manip en alternance : taux dédiés depuis le 10/09/2026** (recherche web,
+      // sources service-public.fr, urssaf.fr, mon-entreprise.net — voir
+      // [[site-web/simulateur-point-mort]]). Depuis le 1ᵉʳ janvier 2019, il n'existe
+      // PLUS d'exonération de charges patronales spécifique à l'apprentissage :
+      // l'employeur profite seulement de la réduction générale (ex-Fillon), très
+      // avantageuse ici parce que le salaire d'un apprenti est bas. Confirmé par Cédric
+      // le 10/09/2026 : le DTS Imagerie Médicale (le vrai diplôme d'un manip radio) est
+      // post-bac — donc PAS éligible à l'aide unique aux employeurs d'apprentis
+      // (5.000 €/an, réservée aux diplômes jusqu'au bac).
+      // **Taux calés sur une moyenne d'âge 18-22 ans** (confirmé par Cédric le
+      // 10/09/2026) — grille officielle du salaire d'un apprenti en % du SMIC
+      // (labonnealternance.apprentissage.beta.gouv.fr) : 18-20 ans = 43/51/67 % (1ʳᵉ/2ᵉ/
+      // 3ᵉ année), 21-25 ans = 53/61/78 % — moyenne des 6 valeurs ≈ 59 % du SMIC, le
+      // niveau retenu pour ces taux. Salarial : exonéré de cotisations jusqu'à 50 % du
+      // SMIC, donc quasi net = brut à ce niveau. Patronal : charges patronales nettes
+      // ~2,6 % du brut à 43 % du SMIC (exemple sourcé mon-entreprise.net) ; un peu plus
+      // élevées à 59 % du SMIC (notre moyenne), mais encore loin des ~40 % d'un salarié
+      // classique. **Reste une moyenne, pas un calcul par tranche d'âge/année exact**
+      // (choix explicite de Cédric : simple plutôt que précis).
+      var TAUX_NET_VERS_BRUT_ALTERNANCE = 0.96;
+      var TAUX_CHARGES_PATRONALES_ALTERNANCE = 1.08;
+      function coutAlternanceDepuisNet(netAvantIR) {
+        var brut = netAvantIR / TAUX_NET_VERS_BRUT_ALTERNANCE;
+        return brut * TAUX_CHARGES_PATRONALES_ALTERNANCE;
       }
 
       // Base légale mensuelle standard française (151,67 h, même valeur que
@@ -2928,7 +2951,7 @@
         params.coutCadreSanteMensuel = coutCadreDepuisNet(cvSalaireMensuel("CadreSante"));
         params.coutAideManipHoraire = coutMermDepuisNet(cvSalaireMensuel("AideManip")) / HEURES_LEGALES_MENSUELLES;
         params.coutInfirmiereHoraire = coutMermDepuisNet(cvSalaireMensuel("Infirmiere")) / HEURES_LEGALES_MENSUELLES;
-        params.coutManipAlternanceHoraire = coutMermDepuisNet(cvSalaireMensuel("ManipAlternance")) / HEURES_LEGALES_MENSUELLES;
+        params.coutManipAlternanceHoraire = coutAlternanceDepuisNet(cvSalaireMensuel("ManipAlternance")) / HEURES_LEGALES_MENSUELLES;
         params.coutRisMensuel = valeurMilliers(document.getElementById("cvCoutRis"));
         // Décrit la ligne "semaine" elle-même (pas la moyenne pondérée tous jours confondus,
         // affichée séparément dans cvJoursTotalTxt) — sinon le nombre et le détail entre
