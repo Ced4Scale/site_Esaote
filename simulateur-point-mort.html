@@ -194,6 +194,36 @@
     .pm-cumul-btn:hover, .pm-cumul-btn:focus-visible { color: var(--red); }
     .pm-ligne-detail td { color: var(--muted); font-size: .86em; font-weight: 400; padding-left: 1.4rem; }
     .pm-ligne-detail td:first-child { font-style: italic; }
+
+    /* Touche de couleur "cartes Apple Arcade" (dégradés vifs), palette validée sur
+       simulateur-bascule-oscan.html. 3 volets : boutons d'action génériques → orange,
+       curseurs (aucun sur cette page) → turquoise, bulles d'aide ampoule 💡 → rose.
+       Exclusions volontaires : .pm-btn-memoire (violet) et .pm-btn-comparer (orange
+       pastel) ont déjà leur propre --btn-bg de famille (voir plus haut, liées aux
+       mémoires/à la comparaison) — elles gardent leur couleur, jamais reprises par la
+       règle orange générique. L'encadré rouge de capacité (.pm-capnote) et les couleurs
+       SLOT_COLORS bleu/orange des 2 machines comparées (graphe, en-têtes de tableau) ne
+       font pas partie de ce chantier et ne sont pas touchés ici. */
+    .btn:not(.btn--ghost):not(.pm-btn-memoire):not(.pm-btn-comparer) {
+      --btn-bg: linear-gradient(135deg, #ff9d3d 0%, #ff6a00 60%, #e0501a 100%);
+      background: var(--btn-bg);
+      border-color: #e0501a;
+      box-shadow: 0 3px 10px rgba(224,80,26,.35);
+    }
+    .btn:not(.btn--ghost):not(.pm-btn-memoire):not(.pm-btn-comparer):hover {
+      background: linear-gradient(135deg, #ffb066 0%, #ff7a1a 60%, #c8440f 100%);
+      border-color: #c8440f;
+      box-shadow: 0 5px 14px rgba(224,80,26,.45);
+    }
+
+    /* Bulles d'aide ampoule 💡 → rose (remplace la variante amber d'origine posée sur
+       .pm-info-wrap plus haut ; une seule variante utilisée sur cette page, aucune des 7
+       ampoules n'est rattachée à un groupe de boutons ayant déjà sa propre couleur
+       d'identité). */
+    .pm-info-wrap {
+      --pm-info-bg: #fdeaf3; --pm-info-bg-hover: #fbd4e7; --pm-info-bd: #f3b8d6;
+      --pm-info-fg: #9c2f68; --pm-info-pop-bg: #fff5fa; --pm-info-pop-fg: #7a2350;
+    }
   </style>
 </head>
 <body class="tool-page">
