@@ -66,6 +66,39 @@
     .pm-capnote-table td:first-child { padding-right: .6rem; width: 58%; }
     .pm-capnote-table td:last-child { text-align: left; font-weight: 600; }
     .pm-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .84rem; }
+
+    /* Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif porté
+       tel quel de simulateur-ct-vs-irm.html / simulateur-bascule-oscan.html — voir skill
+       ced4scale-simulateur-web, "Phrase explicative fixe repliée derrière une icône
+       ampoule"). Le conteneur passe en position:relative pour que le popover se
+       positionne par rapport à lui. Vérifié : aucun des 7 emplacements utilisés sur cette
+       page n'a d'ancêtre en position:sticky — 5 sont dans .simulator__results (jamais
+       sticky sur ce site) et 2 sont dans #pmHypOverlay (panneau ⚙ ancré à gauche, hors de
+       toute colonne du layout) ; seul .simulator__form (colonne de gauche) l'est, et
+       aucune de ces 7 phrases n'y vit. Une seule couleur amber par défaut : aucune des 7
+       phrases n'est rattachée à une section qui a déjà sa propre couleur d'identité
+       (SLOT_COLORS bleu/orange des 2 machines, vert #1baf7a de "Votre activité") — toutes
+       sont des notes générales (hypothèses, confidentialité, usage du panneau). */
+    .pm-info-wrap {
+      position: relative; display: inline-block;
+      --pm-info-bg: #fff6e0; --pm-info-bg-hover: #ffe9ad; --pm-info-bd: #f0d998;
+      --pm-info-fg: #8a6d1e; --pm-info-pop-bg: #fffaf0; --pm-info-pop-fg: #6b5b2a;
+    }
+    .pm-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--pm-info-bd);
+      background: var(--pm-info-bg); color: var(--pm-info-fg); font-size: .95rem; line-height: 1;
+      cursor: pointer; padding: 0;
+    }
+    .pm-info-btn:hover, .pm-info-btn[aria-expanded="true"] { background: var(--pm-info-bg-hover); }
+    .pm-info-pop {
+      position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 4;
+      background: var(--pm-info-pop-bg); border: 1px solid var(--pm-info-bd); border-radius: .6rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem;
+      font-size: .82rem; line-height: 1.45; color: var(--pm-info-pop-fg);
+      width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
+    }
+    .pm-info-pop[hidden] { display: none; }
   </style>
 </head>
 <body class="tool-page">
@@ -223,8 +256,13 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Résultat mensuel selon l'activité</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</p>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+            <h3 style="margin:0">Résultat mensuel selon l'activité</h3>
+            <span class="pm-info-wrap">
+              <button type="button" class="pm-info-btn" id="pmInfoLegendeBtn" aria-expanded="false" aria-controls="pmInfoLegendePop" aria-label="Comment lire ce graphe">💡</button>
+              <div class="pm-info-pop" id="pmInfoLegendePop" hidden>Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</div>
+            </span>
+          </div>
           <div class="simulator__legend" id="pmLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel selon le nombre de patients par jour, avec le point mort de chaque machine"></svg>
@@ -232,12 +270,18 @@
           </div>
         </div>
 
-        <p class="simulator__hint">Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</p>
+        <span class="pm-info-wrap">
+          <button type="button" class="pm-info-btn" id="pmInfoHypBtn" aria-expanded="false" aria-controls="pmInfoHypPop" aria-label="Hypothèses de calcul">💡</button>
+          <div class="pm-info-pop" id="pmInfoHypPop" hidden>Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</div>
+        </span>
 
         <div class="simulator__chart-card" id="pmRecap">
           <h3 class="simulator__collapse-toggle" id="pmRecapToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail complet des données utilisées <span aria-hidden="true">▾</span></h3>
           <div id="pmRecapBody" hidden>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</p>
+          <span class="pm-info-wrap" style="margin-bottom:.8rem">
+            <button type="button" class="pm-info-btn" id="pmInfoRecapBtn" aria-expanded="false" aria-controls="pmInfoRecapPop" aria-label="À quoi sert ce récapitulatif">💡</button>
+            <div class="pm-info-pop" id="pmInfoRecapPop" hidden>Tout ce qui a servi au calcul ci-dessus, repris en un seul endroit — pratique si tu relis ce document plus tard ou si tu le transmets à quelqu'un d'autre. Repris à l'identique dans le PDF envoyé par e-mail.</div>
+          </span>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
           <div style="overflow-x:auto">
@@ -298,7 +342,10 @@
               <textarea id="pmCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
             </div>
             <button type="submit" class="btn btn--lg" id="pmExportSubmit">Recevoir ma simulation en PDF</button>
-            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+            <span class="pm-info-wrap" style="margin-top:.7rem">
+              <button type="button" class="pm-info-btn" id="pmInfoExportBtn" aria-expanded="false" aria-controls="pmInfoExportPop" aria-label="Confidentialité de vos données">💡</button>
+              <div class="pm-info-pop" id="pmInfoExportPop" hidden>Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</div>
+            </span>
           </form>
           <div class="simulator__export-success" id="pmExportSuccess" role="status" hidden>
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
@@ -314,8 +361,13 @@
       <button type="button" class="modal__close" id="pmHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="pm-hyp-body">
-          <h3 id="pmHypTitle">Réglages avancés</h3>
-          <p class="simulator__hint" style="margin:0 0 .8rem">Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</p>
+          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem">
+            <h3 id="pmHypTitle" style="margin:0">Réglages avancés</h3>
+            <span class="pm-info-wrap">
+              <button type="button" class="pm-info-btn" id="pmInfoReglagesBtn" aria-expanded="false" aria-controls="pmInfoReglagesPop" aria-label="À propos de ces réglages">💡</button>
+              <div class="pm-info-pop" id="pmInfoReglagesPop" hidden>Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</div>
+            </span>
+          </div>
           <div class="field">
             <label for="pmDate">Date de forfait technique</label>
             <select id="pmDate"></select>
@@ -361,9 +413,14 @@
             </div>
           </div>
           <p class="simulator__hint" id="pmCoutMermCalcule"></p>
-          <p class="simulator__hint">Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</p>
-          <p class="simulator__hint" style="margin-top:.8rem">Chaque champ s'applique tout de suite — regarde le
-          résultat changer pendant que tu ajustes.</p>
+          <span class="pm-info-wrap">
+            <button type="button" class="pm-info-btn" id="pmInfoConstatBtn" aria-expanded="false" aria-controls="pmInfoConstatPop" aria-label="À propos du tarif utilisé">💡</button>
+            <div class="pm-info-pop" id="pmInfoConstatPop" hidden>Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</div>
+          </span>
+          <span class="pm-info-wrap" style="margin-top:.8rem">
+            <button type="button" class="pm-info-btn" id="pmInfoChampsBtn" aria-expanded="false" aria-controls="pmInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
+            <div class="pm-info-pop" id="pmInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le résultat changer pendant que tu ajustes.</div>
+          </span>
           <div class="pm-hyp-actions">
             <button type="button" class="btn" id="pmHypDone">Fermer</button>
           </div>
@@ -1143,6 +1200,42 @@
 
       document.getElementById("pmClose").addEventListener("click", function () {
         if (document.referrer) history.back(); else window.location.href = "index.html";
+      });
+
+      // Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif
+      // porté tel quel de simulateur-ct-vs-irm.html / simulateur-bascule-oscan.html — voir
+      // skill ced4scale-simulateur-web). Un seul popover ouvert à la fois ; fermeture au
+      // clic ailleurs ou à Échap.
+      var pmInfoPopsOuverts = [];
+      function wireInfoBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          pmInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        pmInfoPopsOuverts.push(fermer);
+      }
+      wireInfoBtn("pmInfoLegendeBtn", "pmInfoLegendePop");
+      wireInfoBtn("pmInfoHypBtn", "pmInfoHypPop");
+      wireInfoBtn("pmInfoRecapBtn", "pmInfoRecapPop");
+      wireInfoBtn("pmInfoExportBtn", "pmInfoExportPop");
+      wireInfoBtn("pmInfoReglagesBtn", "pmInfoReglagesPop");
+      wireInfoBtn("pmInfoConstatBtn", "pmInfoConstatPop");
+      wireInfoBtn("pmInfoChampsBtn", "pmInfoChampsPop");
+      document.addEventListener("click", function () {
+        pmInfoPopsOuverts.forEach(function (f) { f(); });
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") pmInfoPopsOuverts.forEach(function (f) { f(); });
       });
 
       /* Réutilise le même flux Power Automate générique que les deux autres simulateurs
