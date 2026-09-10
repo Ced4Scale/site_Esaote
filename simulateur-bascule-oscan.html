@@ -80,8 +80,24 @@
        (graphique, résultats) reste visible et cliquable pendant le réglage, pour voir
        l'effet en temps réel. */
     #boHypOverlay, #boHypOverlayO { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #boHypOverlay .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #boHypOverlay .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
     #boHypOverlay .modal__scroll, #boHypOverlayO .modal__scroll { height: 100%; }
+
+    /* Bouton "agrandir/réduire" du panneau ⚙ (motif validé sur simulateur-recettes.html
+       le 10/09/2026, commit 5028de8, propagé ici) — remplit la fenêtre du navigateur
+       (pas le vrai plein écran natif), icône à 2 états en 2 groupes SVG togglés par
+       display, jamais une rotation. */
+    .bascule-hyp-fullscreen-btn {
+      position: absolute; top: 14px; right: 64px; z-index: 3;
+      width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255,255,255,.92); color: var(--ink); box-shadow: var(--shadow-sm);
+      display: grid; place-items: center; transition: background .15s, color .15s;
+    }
+    .bascule-hyp-fullscreen-btn:hover, .bascule-hyp-fullscreen-btn:focus-visible { background: var(--red); color: #fff; }
+    .bascule-hyp-fullscreen-btn svg { display: block; }
+    .bascule-hyp-fullscreen-btn .icon-compress { display: none; }
+    .bascule-hyp-fullscreen-btn.is-compressed .icon-expand { display: none; }
+    .bascule-hyp-fullscreen-btn.is-compressed .icon-compress { display: block; }
     .bascule-range { display: flex; align-items: center; gap: .7rem; }
     .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; color: #2a78d6; }
     /* Curseur #boPartExtremites : motif "curseur double" repris de simulateur-ct-vs-irm.html
@@ -768,6 +784,16 @@
 
   <div class="modal-overlay" id="boHypOverlay" role="dialog" aria-modal="true" aria-labelledby="boHypTitle" hidden>
     <div class="modal" style="width:min(480px, 100%); position:relative">
+      <button type="button" class="bascule-hyp-fullscreen-btn" id="boHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="boHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="bascule-hyp-body">
@@ -856,6 +882,16 @@
 
   <div class="modal-overlay" id="boHypOverlayO" role="dialog" aria-modal="true" aria-labelledby="boHypTitleO" hidden>
     <div class="modal" style="width:min(480px, 100%); position:relative">
+      <button type="button" class="bascule-hyp-fullscreen-btn" id="boHypFullscreenBtnO" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="boHypCloseO" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="bascule-hyp-body">
@@ -1598,6 +1634,28 @@
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && hypOverlay.classList.contains("is-open")) fermerHypotheses();
       });
+
+      // Bouton "agrandir/réduire" du panneau ⚙ (motif validé sur simulateur-recettes.html
+      // le 10/09/2026, commit 5028de8) : remplit la fenêtre du navigateur plutôt que le
+      // vrai plein écran natif. Fonction générique branchée sur les 2 panneaux de cette
+      // page (principal + O-scan) pour ne pas dupliquer le code.
+      function brancherFullscreenPanel(overlayId, btnId) {
+        var modal = document.querySelector("#" + overlayId + " .modal");
+        var largeurNormale = modal.style.width;
+        var btn = document.getElementById(btnId);
+        var plein = false;
+        btn.addEventListener("click", function () {
+          plein = !plein;
+          modal.style.width = plein ? "100%" : largeurNormale;
+          btn.classList.toggle("is-compressed", plein);
+          btn.setAttribute("aria-pressed", String(plein));
+          var libelle = plein ? "Réduire le panneau" : "Agrandir le panneau";
+          btn.setAttribute("aria-label", libelle);
+          btn.title = libelle;
+        });
+      }
+      brancherFullscreenPanel("boHypOverlay", "boHypFullscreenBtn");
+      brancherFullscreenPanel("boHypOverlayO", "boHypFullscreenBtnO");
 
       // Panneau des plages d'ouverture de l'O-scan — même principe (ancré à gauche,
       // application en direct) que celui de la Machine A, mais uniquement l'amplitude
