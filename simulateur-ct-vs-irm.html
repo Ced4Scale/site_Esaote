@@ -733,6 +733,69 @@
        le popover s'ouvre vers le HAUT plutôt que vers le bas, pour ne jamais sortir de la
        carte qui la contient. */
     .cv-info-pop--up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+
+    /* === Touche de couleur "cartes Apple Arcade" (dégradés vifs), même palette
+       que simulateur-bascule-oscan.html — ajoutée le 10/09/2026. 3 volets :
+       boutons génériques → orange, curseurs → turquoise, ampoules génériques →
+       rose. Ce qui N'EST PAS touché, car couleur fonctionnelle/identité, pas
+       décorative : les 5 familles de boutons sous le graphe (.cv-btn-horizon,
+       .cv-btn-activite, .cv-btn-ai, .cv-btn-memoire, .cv-btn-comparer — chacune
+       a déjà son propre --btn-bg, voir plus haut), les ampoules --violet/--bleu/
+       --vert (couleur reprise telle quelle d'une de ces familles précises), les
+       graphes/légendes par machine (SLOT_COLORS bleu/orange) et le cadre vert
+       (positionnerCadreVert()). */
+
+    /* 1) Boutons d'action génériques → orange (email, PDF, Fermer, ⏵ Paramètres,
+       Annuel/Mensuel...) — exclut .btn--ghost (transparent, pas de fond à teinter)
+       et les 5 familles ci-dessus qui gardent leur propre --btn-bg. */
+    .btn:not(.btn--ghost):not(.cv-btn-horizon):not(.cv-btn-activite):not(.cv-btn-ai):not(.cv-btn-memoire):not(.cv-btn-comparer) {
+      --btn-bg: linear-gradient(135deg, #ff9d3d 0%, #ff6a00 60%, #e0501a 100%);
+      background: var(--btn-bg); border-color: #e0501a;
+      box-shadow: 0 3px 10px rgba(224,80,26,.35);
+    }
+    .btn:not(.btn--ghost):not(.cv-btn-horizon):not(.cv-btn-activite):not(.cv-btn-ai):not(.cv-btn-memoire):not(.cv-btn-comparer):hover {
+      background: linear-gradient(135deg, #ffb066 0%, #ff7a1a 60%, #c8440f 100%);
+      border-color: #c8440f; box-shadow: 0 5px 14px rgba(224,80,26,.45);
+    }
+
+    /* 2) Curseurs → turquoise, sur la poignée uniquement (piste/remplissage
+       gardent leur couleur actuelle quand ils en portent une, ex. corail/teal
+       pastel de .cv-activite-* et .cv-horaire-* ci-dessus — même traitement que sur
+       simulateur-bascule-oscan.html, où la poignée du curseur bleu "Machine A"
+       est elle aussi passée en turquoise sans toucher au remplissage bleu).
+       Bordure blanche déjà posée par les règles existantes (border:2px solid
+       #fff) : pas besoin d'ajouter un anneau blanc en plus.
+       PIÈGE CSS : jamais ::-webkit-slider-thumb et ::-moz-range-thumb dans la
+       même liste de sélecteurs séparés par virgule (un sélecteur non reconnu par
+       Chrome invalide toute la liste) — deux blocs séparés ci-dessous. */
+    .cv-activite-track-wrap input[type=range]::-webkit-slider-thumb,
+    .cv-horaire-track-wrap input[type="range"]::-webkit-slider-thumb,
+    .cv-ftmoy-track-wrap input[type=range]::-webkit-slider-thumb {
+      background: linear-gradient(135deg, #21c7c1 0%, #0f8f92 100%);
+      box-shadow: 0 2px 8px rgba(15,143,146,.5);
+    }
+    .cv-activite-track-wrap input[type=range]::-moz-range-thumb,
+    .cv-horaire-track-wrap input[type="range"]::-moz-range-thumb,
+    .cv-ftmoy-track-wrap input[type=range]::-moz-range-thumb {
+      background: linear-gradient(135deg, #21c7c1 0%, #0f8f92 100%);
+      box-shadow: 0 2px 8px rgba(15,143,146,.5);
+    }
+
+    /* 3) Ampoules génériques (Hypothèses, récap, export, taux employeur...) →
+       rose. --violet/--bleu/--vert non touchées (couleur reprise d'une famille
+       de bouton précise). --sarcelle non plus : ampoule sans lien à une famille
+       de bouton, mais avec une teinte dédiée choisie exprès pour rester distincte
+       des autres ampoules (voir commentaire d'origine) — recolorée dans une 2ᵉ
+       teinte de rose pour préserver cette distinction plutôt que fondue dans le
+       rose générique. */
+    .cv-info-wrap:not(.cv-info-wrap--violet):not(.cv-info-wrap--bleu):not(.cv-info-wrap--vert):not(.cv-info-wrap--sarcelle) {
+      --cv-info-bg: #fdeaf3; --cv-info-bg-hover: #fbd4e7; --cv-info-bd: #f3b8d6;
+      --cv-info-fg: #9c2f68; --cv-info-pop-bg: #fff5fa; --cv-info-pop-fg: #7a2350;
+    }
+    .cv-info-wrap--sarcelle {
+      --cv-info-bg: #fbe0f5; --cv-info-bg-hover: #f6c4ea; --cv-info-bd: #e8a0d9;
+      --cv-info-fg: #7a1d63; --cv-info-pop-bg: #fff0fa; --cv-info-pop-fg: #5c1548;
+    }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
