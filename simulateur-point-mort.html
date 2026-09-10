@@ -99,6 +99,64 @@
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .pm-info-pop[hidden] { display: none; }
+
+    /* Mémoires de simulation + mode Comparer (10/09/2026) — motif porté tel quel de
+       simulateur-recettes.html / simulateur-ct-vs-irm.html (skill ced4scale-simulateur-web,
+       "Mémoriser/rappeler un instantané complet du formulaire" et "Comparer 2 mémoires
+       enregistrées sans dupliquer les formules de calcul"). Contrairement à recettes.html
+       (un scénario = 2 dates comparées), ici une mémoire fige un scénario complet à 1 ou 2
+       machines (gamme, choix IRM, loyer, MERM, prise en charge, part membre) + toute
+       l'activité et les réglages du panneau ⚙. Vue Comparer volontairement simplifiée
+       (mini-graphe + stats, pas le tableau détaillé ni le récapitulatif complet). */
+    .pm-memoire-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin: 1.1rem 0 .3rem; }
+    .pm-btn-memoire { --btn-bg: #ded4f2; --btn-fg: #4a3a78; --btn-bd: #ded4f2; }
+    .pm-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
+    .pm-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
+    .pm-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
+    .pm-btn-comparer { --btn-bg: #fbe0c8; --btn-fg: #8a5321; --btn-bd: #fbe0c8; }
+    .pm-btn-comparer:hover { background: #f6cd9f; border-color: #f6cd9f; }
+    .pm-btn-comparer.btn--ghost { --btn-bg: transparent; --btn-fg: #a56a2e; --btn-bd: #f6cd9f; }
+    .pm-btn-comparer.btn--ghost:hover { --btn-fg: #8a5321; background: #fdf3e8; border-color: #f6cd9f; }
+    .pm-memoire-slot { display: inline-flex; align-items: center; gap: .1rem; }
+    .pm-memoire-clear {
+      border: 0; background: transparent; color: var(--red-crimson); line-height: 1;
+      width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .pm-memoire-clear:hover { background: #fbe9ec; }
+    .pm-memoire-clear:disabled { cursor: default; }
+    .pm-memoire-clear:disabled:hover { background: transparent; }
+    .pm-memoire-clear.is-ouvert { color: var(--success-bd); }
+    .pm-lock-icon { overflow: visible; }
+    .pm-lock-shackle-ouverte { display: none; }
+    .pm-memoire-clear.is-ouvert .pm-lock-shackle-fermee { display: none; }
+    .pm-memoire-clear.is-ouvert .pm-lock-shackle-ouverte { display: inline; }
+    .pm-memoire-hint { flex-basis: 100%; margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
+    .pm-memoire-row button[data-tip] { position: relative; }
+    .pm-memoire-row button[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      margin-bottom: 8px; background: var(--ink); color: #fff; font-size: .72rem;
+      font-weight: 500; line-height: 1.35; padding: .45rem .65rem; border-radius: 6px;
+      white-space: normal; width: max-content; max-width: 200px; box-shadow: var(--shadow-md);
+      z-index: 20; pointer-events: none; opacity: 0; visibility: hidden;
+      transition: opacity .1s ease, visibility .1s ease;
+    }
+    .pm-memoire-row button[data-tip]:hover::after,
+    .pm-memoire-row button[data-tip]:focus-visible::after {
+      opacity: 1; visibility: visible; transition-delay: .25s;
+    }
+    .pm-memoire-row .pm-btn-memoire[data-tip]::after { background: #ded4f2; color: #4a3a78; }
+    .pm-memoire-row .pm-btn-comparer[data-tip]::after { background: #fbe0c8; color: #8a5321; }
+
+    .pm-comparaison-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; }
+    @media (max-width: 700px) { .pm-comparaison-grille { grid-template-columns: 1fr; } }
+    .pm-comparaison-cote select {
+      width: 100%; padding: .55rem .7rem; border: 1px solid var(--line-2); border-radius: 6px;
+      font-family: inherit; font-size: .88rem; background: #fff; color: var(--ink); margin-bottom: .5rem;
+    }
+    .pm-comparaison-cote svg { width: 100%; height: 140px; display: block; margin-bottom: .5rem; }
+    .pm-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="tool-page">
@@ -238,6 +296,63 @@
 
       <div class="simulator__results">
         <button type="button" class="btn btn--sm" id="pmBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
+
+        <!-- Mémoires de simulation + mode Comparer (10/09/2026) : jusqu'à 3 emplacements.
+             Cliquer sur un emplacement VIDE y enregistre le scénario complet actuel (1 ou 2
+             machines, activité, hypothèses du panneau ⚙) ; cliquer sur un emplacement REMPLI
+             le rappelle dans le formulaire. "Comparer" affiche 2 scénarios enregistrés côte
+             à côte, chacun figé sur sa mémoire — voir activerComparaison()/redessinerComparaison(). -->
+        <div class="pm-memoire-row" id="pmMemoireRow">
+          <button type="button" class="btn btn--sm btn--ghost pm-btn-comparer" id="pmBtnComparer" aria-pressed="false" data-tip="Affiche 2 scénarios côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 scénarios côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
+          <span class="pm-memoire-slot" data-slot="0">
+            <button type="button" class="btn btn--sm btn--ghost pm-btn-memoire" id="pmBtnMemoire1" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 1." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 1.">Mémoire 1</button>
+            <button type="button" class="pm-memoire-clear" id="pmBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="pm-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="pm-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="pm-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="pm-memoire-slot" data-slot="1">
+            <button type="button" class="btn btn--sm btn--ghost pm-btn-memoire" id="pmBtnMemoire2" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 2." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 2.">Mémoire 2</button>
+            <button type="button" class="pm-memoire-clear" id="pmBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="pm-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="pm-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="pm-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="pm-memoire-slot" data-slot="2">
+            <button type="button" class="btn btn--sm btn--ghost pm-btn-memoire" id="pmBtnMemoire3" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 3." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 3.">Mémoire 3</button>
+            <button type="button" class="pm-memoire-clear" id="pmBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="pm-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="pm-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="pm-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="pm-info-wrap" style="align-self:center">
+            <button type="button" class="pm-info-btn" id="pmInfoMemoireBtn" aria-expanded="false" aria-controls="pmInfoMemoirePop" aria-label="Comment marchent les mémoires">💡</button>
+            <div class="pm-info-pop" id="pmInfoMemoirePop" hidden>Enregistrez jusqu'à 3 scénarios complets (machine(s), zone, hypothèses de calcul, activité) pour les rappeler d'un clic, et utilisez "Comparer" pour en voir 2 côte à côte.</div>
+          </span>
+          <p class="pm-memoire-hint" id="pmMemoireTxt"></p>
+        </div>
+
+        <div id="pmVueComparaison" hidden>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="pmBtnFermerComparaison">✕ Fermer la comparaison</button>
+          </div>
+          <div class="pm-comparaison-grille">
+            <div class="pm-comparaison-cote">
+              <select id="pmCompareSelectGauche" aria-label="Mémoire affichée à gauche">
+                <option value="">— Choisir une mémoire —</option>
+                <option value="0">Mémoire 1</option>
+                <option value="1">Mémoire 2</option>
+                <option value="2">Mémoire 3</option>
+              </select>
+              <svg id="pmCompareChartGauche" viewBox="0 0 300 130" preserveAspectRatio="none" role="img" aria-label="Résultat mensuel selon l'activité de la mémoire affichée à gauche"></svg>
+              <div id="pmCompareStatsGauche"></div>
+            </div>
+            <div class="pm-comparaison-cote">
+              <select id="pmCompareSelectDroite" aria-label="Mémoire affichée à droite">
+                <option value="">— Choisir une mémoire —</option>
+                <option value="0">Mémoire 1</option>
+                <option value="1">Mémoire 2</option>
+                <option value="2">Mémoire 3</option>
+              </select>
+              <svg id="pmCompareChartDroite" viewBox="0 0 300 130" preserveAspectRatio="none" role="img" aria-label="Résultat mensuel selon l'activité de la mémoire affichée à droite"></svg>
+              <div id="pmCompareStatsDroite"></div>
+            </div>
+          </div>
+          <p class="simulator__hint" style="margin-top:.4rem">Pour le détail complet (tableau, récapitulatif), rappelez la mémoire dans le formulaire — le bouton "Comparer" reste réservé à une vue d'ensemble rapide.</p>
+        </div>
+
+        <div id="pmVueSimple">
         <div class="simulator__chart-card" id="pmVerdictCard">
           <p id="pmVerdict" style="margin:0;font-size:1.15rem;line-height:1.5"></p>
         </div>
@@ -351,6 +466,7 @@
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
           </div>
           <p class="simulator__export-error" id="pmExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
         </div>
       </div>
     </div>
@@ -1228,6 +1344,246 @@
 
       recalculer();
 
+      // ---- Mémoires de simulation + mode Comparer (10/09/2026) — motif porté de
+      // simulateur-recettes.html / simulateur-ct-vs-irm.html, voir le commentaire CSS plus
+      // haut et le skill ced4scale-simulateur-web. Un scénario complet = 1 ou 2 machines
+      // (gamme, choix IRM, loyer, MERM, prise en charge, part membre), l'activité et tous
+      // les réglages du panneau ⚙ (date, zone, amortissement, kWh, horaires, jours/mois,
+      // salaire MERM + son unité mensuel/annuel).
+      var PM_MEMOIRE_FIELDS = [
+        { id: "pmNbMachines", evt: "change", label: "Comparer à une 2ᵉ IRM ?", type: "radio" },
+        { id: "pmChampA", evt: "change", label: "Gamme de champ — Machine A", type: "select" },
+        { id: "pmMachineA", evt: "change", label: "Choix IRM — Machine A", type: "select" },
+        { id: "pmLoyerA", evt: "input", label: "Loyer — Machine A" },
+        { id: "pmMermA", evt: "input", label: "MERM — Machine A" },
+        { id: "pmInstallA", evt: "input", label: "Prise en charge — Machine A" },
+        { id: "pmMembreA", evt: "input", label: "Part membre — Machine A" },
+        { id: "pmChampB", evt: "change", label: "Gamme de champ — Machine B", type: "select" },
+        { id: "pmMachineB", evt: "change", label: "Choix IRM — Machine B", type: "select" },
+        { id: "pmLoyerB", evt: "input", label: "Loyer — Machine B" },
+        { id: "pmMermB", evt: "input", label: "MERM — Machine B" },
+        { id: "pmInstallB", evt: "input", label: "Prise en charge — Machine B" },
+        { id: "pmMembreB", evt: "input", label: "Part membre — Machine B" },
+        { id: "pmActiviteMode", evt: "change", label: "Unité de l'activité", type: "radio" },
+        { id: "pmActivite", evt: "input", label: "Activité" },
+        { id: "pmDate", evt: "change", label: "Date de forfait technique", type: "select" },
+        { id: "pmZone", evt: "change", label: "Zone géographique", type: "select" },
+        { id: "pmAmorti", evt: "change", label: "Machine amortie ?", type: "radio" },
+        { id: "pmKwh", evt: "input", label: "Coût du kWh" },
+        { id: "pmHeures", evt: "input", label: "Amplitude d'ouverture" },
+        { id: "pmJours", evt: "input", label: "Jours d'ouverture par mois" },
+        { id: "pmNetMerm", evt: "input", label: "Salaire net MERM" }
+      ];
+
+      function capturerParametres() {
+        var etat = {};
+        PM_MEMOIRE_FIELDS.forEach(function (f) {
+          var el = f.type === "radio"
+            ? document.querySelector('input[name="' + f.id + '"]:checked')
+            : document.getElementById(f.id);
+          if (!el) return;
+          etat[f.id] = { valeur: el.value };
+        });
+        // Variable JS pure (pas un champ DOM) : le mode mensuel/annuel du salaire MERM — voir
+        // skill "Mémoire de simulation : capturer aussi les variables JS pures". Sans elle,
+        // restaurer la valeur brute de pmNetMerm dans le mauvais mode fausserait le calcul
+        // (21.600 lu comme un montant MENSUEL au lieu d'ANNUEL, par exemple).
+        etat.__netMermAnnuel = pmNetMermModeAnnuel;
+        return etat;
+      }
+
+      function definirChamp(f, valeur) {
+        if (f.type === "radio") {
+          var radio = document.querySelector('input[name="' + f.id + '"][value="' + valeur + '"]');
+          if (!radio || radio.checked) return;
+          radio.checked = true;
+          radio.dispatchEvent(new Event(f.evt, { bubbles: true }));
+          return;
+        }
+        var el = document.getElementById(f.id);
+        if (!el) return;
+        el.value = valeur;
+        el.dispatchEvent(new Event(f.evt, { bubbles: true }));
+      }
+
+      // Restaure le mode mensuel/annuel du salaire MERM SANS conversion, juste avant
+      // d'écraser la valeur brute du champ avec celle enregistrée — pmNetMermSetUnite()
+      // n'est pas réutilisable ici : elle est prévue pour un vrai clic utilisateur qui
+      // convertit la valeur DÉJÀ tapée, pas pour un rappel de mémoire.
+      function restaurerNetMermMode(annuel) {
+        pmNetMermModeAnnuel = annuel;
+        document.getElementById("pmNetMermSuffix").textContent = annuel ? "€ / an" : "€ / mois";
+        document.getElementById("pmNetMermBtnAn").classList.toggle("btn--ghost", !annuel);
+        document.getElementById("pmNetMermBtnAn").setAttribute("aria-pressed", String(annuel));
+        document.getElementById("pmNetMermBtnMois").classList.toggle("btn--ghost", annuel);
+        document.getElementById("pmNetMermBtnMois").setAttribute("aria-pressed", String(!annuel));
+      }
+
+      // Ordre du tableau PM_MEMOIRE_FIELDS déjà correct pour la restauration : gamme de
+      // champ puis choix d'IRM avant les champs propres à cette machine (loyer/MERM/prise en
+      // charge/part membre, remis à leurs valeurs par défaut par le changement de machine
+      // puis écrasés juste après par la valeur enregistrée) — pour la machine A comme pour B.
+      function restaurerParametres(etat) {
+        if (etat.__netMermAnnuel !== undefined) restaurerNetMermMode(etat.__netMermAnnuel);
+        PM_MEMOIRE_FIELDS.forEach(function (f) {
+          if (etat[f.id] === undefined) return;
+          definirChamp(f, etat[f.id].valeur);
+        });
+        recalculer();
+      }
+
+      // 3 emplacements ; null = vide. pmBtnMemoireN vide -> enregistre, rempli -> rappelle.
+      var memoires = [null, null, null];
+      function majBoutonMemoire(i) {
+        var btn = document.getElementById("pmBtnMemoire" + (i + 1));
+        var clear = document.getElementById("pmBtnMemoire" + (i + 1) + "Clear");
+        var rempli = memoires[i] !== null;
+        btn.classList.toggle("btn--ghost", !rempli);
+        btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
+        btn.title = rempli
+          ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
+          : "Cliquez pour enregistrer le scénario actuel dans la mémoire " + (i + 1) + ".";
+        btn.setAttribute("data-tip", btn.title);
+        clear.disabled = !rempli;
+        clear.classList.toggle("is-ouvert", !rempli);
+        clear.title = rempli
+          ? "Cliquez pour effacer la mémoire " + (i + 1) + " et libérer l'emplacement."
+          : "Mémoire " + (i + 1) + " pas encore enregistrée.";
+        clear.setAttribute("aria-label", clear.title);
+        majOptionsCompareSelects();
+      }
+      [0, 1, 2].forEach(function (i) {
+        document.getElementById("pmBtnMemoire" + (i + 1)).addEventListener("click", function () {
+          if (memoires[i] === null) {
+            memoires[i] = capturerParametres();
+            document.getElementById("pmMemoireTxt").textContent = "Mémoire " + (i + 1) + " enregistrée.";
+          } else {
+            restaurerParametres(memoires[i]);
+            document.getElementById("pmMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
+          }
+          majBoutonMemoire(i);
+          if (compareMode) redessinerComparaison();
+        });
+        document.getElementById("pmBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
+          memoires[i] = null;
+          majBoutonMemoire(i);
+          document.getElementById("pmMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
+          if (compareMode) redessinerComparaison();
+        });
+      });
+      [0, 1, 2].forEach(majBoutonMemoire);
+
+      // Instantané figé d'une mémoire, sans toucher au formulaire visible : restaure
+      // temporairement la mémoire choisie (déclenche recalculer() en cascade, comme un vrai
+      // rappel), clone le résultat déjà calculé (variable partagée `derniers`, remplie par
+      // recalculer()), puis restaure IMMÉDIATEMENT l'état d'avant — le tout de façon
+      // synchrone, invisible pour le visiteur. Vue Comparer volontairement plus simple qu'un
+      // rappel complet (mini-graphe + stats, pas le tableau ni le récapitulatif) — voir skill
+      // ced4scale-simulateur-web, "Rendu volontairement plus simple pour une vue secondaire".
+      function calculerSnapshotPourMemoire(idx) {
+        if (idx === null || !memoires[idx]) return null;
+        var avant = capturerParametres();
+        restaurerParametres(memoires[idx]);
+        var snap = JSON.parse(JSON.stringify(derniers));
+        restaurerParametres(avant);
+        return snap;
+      }
+
+      function dessinerCoteComparaison(svgId, statsId, snap) {
+        var svgC = document.getElementById(svgId);
+        var statsEl = document.getElementById(statsId);
+        if (!snap) {
+          svgC.innerHTML = "";
+          statsEl.innerHTML = "<p class=\"simulator__hint\" style=\"margin:0\">Choisissez une mémoire ci-dessus.</p>";
+          return;
+        }
+        var resultats = snap.resultats, params = snap.params;
+        var W = 300, H = 130, padL = 8, padR = 8, padT = 8, padB = 8;
+        var pointsMorts = resultats.filter(function (r) { return isFinite(r.pointMortJour); }).map(function (r) { return r.pointMortJour; });
+        var repereMax = Math.max(pointsMorts.length ? Math.max.apply(null, pointsMorts) : 0, params.activitePatientsJour || 0);
+        var xMax = niceCeil((repereMax || 20) * 1.6);
+        var NB_PAS = 30;
+        var series = resultats.map(function (r) {
+          var pts = [];
+          for (var i = 0; i <= NB_PAS; i++) {
+            var pj = (xMax * i) / NB_PAS;
+            pts.push(resultatMensuel(r, pj, params.joursParMois));
+          }
+          return { r: r, pts: pts };
+        });
+        var yMin = 0, yMax = 0;
+        series.forEach(function (s) { s.pts.forEach(function (v) { if (v < yMin) yMin = v; if (v > yMax) yMax = v; }); });
+        var yAbs = niceCeil(Math.max(Math.abs(yMin), Math.abs(yMax)) * 1.05) || 1;
+        yMin = -yAbs; yMax = yAbs;
+        function xAt(pj) { return padL + ((W - padL - padR) * pj) / xMax; }
+        function yAt(v) { return padT + (H - padT - padB) - ((H - padT - padB) * (v - yMin)) / (yMax - yMin); }
+        var parts = ['<line x1="' + padL + '" y1="' + yAt(0).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yAt(0).toFixed(1) + '" stroke="#8a8578" stroke-width="1"></line>'];
+        series.forEach(function (s) {
+          var pts = s.pts.map(function (v, i) { return xAt((xMax * i) / NB_PAS).toFixed(1) + "," + yAt(v).toFixed(1); }).join(" ");
+          parts.push('<polyline points="' + pts + '" fill="none" stroke="' + s.r.color + '" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"></polyline>');
+          if (isFinite(s.r.pointMortJour) && s.r.pointMortJour <= xMax) {
+            parts.push('<circle cx="' + xAt(s.r.pointMortJour).toFixed(1) + '" cy="' + yAt(0).toFixed(1) + '" r="3.5" fill="' + s.r.color + '"></circle>');
+          }
+        });
+        svgC.innerHTML = parts.join("");
+
+        var statsHtml = resultats.map(function (r) {
+          return '<div class="pm-compare-ligne" style="font-weight:700;color:' + r.color + '"><span>' + r.machine.nomCourt + '</span><span>' +
+            (isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./j" : "jamais atteint") + '</span></div>';
+        }).join("");
+        statsHtml += '<div class="pm-compare-ligne"><span>Activité</span><span>' + patientsFmt.format(params.activitePatientsJour) + ' patients/jour</span></div>';
+        resultats.forEach(function (r) {
+          var res = resultatMensuel(r, params.activitePatientsJour, params.joursParMois);
+          statsHtml += '<div class="pm-compare-ligne" style="color:' + r.color + '"><span>Résultat ' + r.machine.nomCourt + '</span><span>' + (res >= 0 ? "+" : "") + euros.format(res) + ' / mois</span></div>';
+        });
+        statsEl.innerHTML = statsHtml;
+      }
+
+      function majOptionsCompareSelects() {
+        ["pmCompareSelectGauche", "pmCompareSelectDroite"].forEach(function (id) {
+          var sel = document.getElementById(id);
+          [0, 1, 2].forEach(function (i) { sel.options[i + 1].disabled = !memoires[i]; });
+        });
+      }
+
+      var compareMode = false, compareGaucheIdx = null, compareDroiteIdx = null;
+      function redessinerComparaison() {
+        dessinerCoteComparaison("pmCompareChartGauche", "pmCompareStatsGauche", calculerSnapshotPourMemoire(compareGaucheIdx));
+        dessinerCoteComparaison("pmCompareChartDroite", "pmCompareStatsDroite", calculerSnapshotPourMemoire(compareDroiteIdx));
+      }
+      function activerComparaison() {
+        compareMode = true;
+        document.getElementById("pmVueSimple").hidden = true;
+        document.getElementById("pmVueComparaison").hidden = false;
+        majOptionsCompareSelects();
+        compareGaucheIdx = memoires[0] ? 0 : null;
+        compareDroiteIdx = memoires[1] ? 1 : null;
+        document.getElementById("pmCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
+        document.getElementById("pmCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
+        redessinerComparaison();
+        document.getElementById("pmBtnComparer").classList.remove("btn--ghost");
+        document.getElementById("pmBtnComparer").setAttribute("aria-pressed", "true");
+      }
+      function desactiverComparaison() {
+        compareMode = false;
+        document.getElementById("pmVueSimple").hidden = false;
+        document.getElementById("pmVueComparaison").hidden = true;
+        document.getElementById("pmBtnComparer").classList.add("btn--ghost");
+        document.getElementById("pmBtnComparer").setAttribute("aria-pressed", "false");
+      }
+      document.getElementById("pmBtnComparer").addEventListener("click", function () {
+        if (compareMode) desactiverComparaison(); else activerComparaison();
+      });
+      document.getElementById("pmBtnFermerComparaison").addEventListener("click", desactiverComparaison);
+      document.getElementById("pmCompareSelectGauche").addEventListener("change", function () {
+        compareGaucheIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+      document.getElementById("pmCompareSelectDroite").addEventListener("change", function () {
+        compareDroiteIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+
       document.getElementById("pmClose").addEventListener("click", function () {
         if (document.referrer) history.back(); else window.location.href = "index.html";
       });
@@ -1254,6 +1610,7 @@
         });
         pmInfoPopsOuverts.push(fermer);
       }
+      wireInfoBtn("pmInfoMemoireBtn", "pmInfoMemoirePop");
       wireInfoBtn("pmInfoLegendeBtn", "pmInfoLegendePop");
       wireInfoBtn("pmInfoHypBtn", "pmInfoHypPop");
       wireInfoBtn("pmInfoRecapBtn", "pmInfoRecapPop");
