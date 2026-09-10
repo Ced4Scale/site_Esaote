@@ -276,8 +276,28 @@
        principal déjà ancré à gauche depuis le 04/09/2026 (voir skill
        ced4scale-simulateur-web, "panneau ancré à gauche"). */
     #cvHypOverlay, #cvHypOverlayA, #cvHypOverlayB { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #cvHypOverlay .modal, #cvHypOverlayA .modal, #cvHypOverlayB .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #cvHypOverlay .modal, #cvHypOverlayA .modal, #cvHypOverlayB .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
     #cvHypOverlay .modal__scroll, #cvHypOverlayA .modal__scroll, #cvHypOverlayB .modal__scroll { height: 100%; }
+
+    /* Bouton "agrandir/réduire" des 3 panneaux ⚙ (motif validé le 10/09/2026 sur
+       simulateur-recettes.html, commit 5028de8, propagé ici tel quel) — remplit la
+       fenêtre du navigateur (pas le vrai plein écran natif) : bascule juste la
+       largeur du panneau entre sa largeur de départ (420px ou 380px selon le panneau)
+       et 100%. Icône à 2 états en 2 groupes SVG séparés togglés par display (jamais
+       une rotation, voir skill ced4scale-simulateur-web). Positionné juste à gauche
+       du bouton fermer (×), même style rond que lui. Classe commune aux 3 panneaux,
+       un id de bouton distinct par panneau. */
+    .cv-hyp-fullscreen-btn {
+      position: absolute; top: 14px; right: 64px; z-index: 3;
+      width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255,255,255,.92); color: var(--ink); box-shadow: var(--shadow-sm);
+      display: grid; place-items: center; transition: background .15s, color .15s;
+    }
+    .cv-hyp-fullscreen-btn:hover, .cv-hyp-fullscreen-btn:focus-visible { background: var(--red); color: #fff; }
+    .cv-hyp-fullscreen-btn svg { display: block; }
+    .cv-hyp-fullscreen-btn .icon-compress { display: none; }
+    .cv-hyp-fullscreen-btn.is-compressed .icon-expand { display: none; }
+    .cv-hyp-fullscreen-btn.is-compressed .icon-compress { display: block; }
     /* Colonne de formulaire élargie à 350px (desktop seulement, la règle mobile
        "1 colonne" de styles.css reste intacte car cette règle ne s'applique
        qu'au-dessus de 780px) — les 300px partagés avec les autres simulateurs
@@ -1258,6 +1278,16 @@
 
   <div class="modal-overlay" id="cvHypOverlay" role="dialog" aria-modal="true" aria-labelledby="cvHypTitle" hidden>
     <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="cv-hyp-fullscreen-btn" id="cvHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="cvHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="cv-hyp-body">
@@ -1425,6 +1455,16 @@
        (IRM Esaote, ajoutée pour que les 2 blocs machine se ressemblent). -->
   <div class="modal-overlay" id="cvHypOverlayA" role="dialog" aria-modal="true" aria-labelledby="cvHypTitleA" hidden>
     <div class="modal" style="width:min(380px, 100%)">
+      <button type="button" class="cv-hyp-fullscreen-btn" id="cvHypFullscreenBtnA" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="cvHypCloseA" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="cv-hyp-body">
@@ -1458,6 +1498,16 @@
 
   <div class="modal-overlay" id="cvHypOverlayB" role="dialog" aria-modal="true" aria-labelledby="cvHypTitleB" hidden>
     <div class="modal" style="width:min(380px, 100%)">
+      <button type="button" class="cv-hyp-fullscreen-btn" id="cvHypFullscreenBtnB" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="cvHypCloseB" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="cv-hyp-body">
@@ -3586,6 +3636,32 @@ var svg = document.getElementById("cvChart");
       wireHypOverlay("cvHypOverlay", "cvBtnHypotheses", "cvHypClose", "cvHypDone");
       wireHypOverlay("cvHypOverlayA", "cvBtnHypothesesA", "cvHypCloseA", "cvHypDoneA");
       wireHypOverlay("cvHypOverlayB", "cvBtnHypothesesB", "cvHypCloseB", "cvHypDoneB");
+
+      // Bouton "agrandir/réduire" des 3 panneaux ⚙ (motif validé le 10/09/2026 sur
+      // simulateur-recettes.html, commit 5028de8) : remplit la fenêtre du navigateur
+      // plutôt que le vrai plein écran natif — bascule juste la largeur du panneau
+      // entre sa largeur de départ (capturée au chargement, PAS remise à "" — sinon
+      // elle retomberait sur le width:min(1040px,100%) de la classe .modal de base au
+      // lieu de la largeur d'origine de CE panneau) et "100%". Fonction générique
+      // appelée une fois par panneau, pas de code dupliqué 3 fois.
+      function brancherFullscreenPanel(overlayId, btnId) {
+        var modal = document.querySelector("#" + overlayId + " .modal");
+        var largeurNormale = modal.style.width;
+        var btn = document.getElementById(btnId);
+        var plein = false;
+        btn.addEventListener("click", function () {
+          plein = !plein;
+          modal.style.width = plein ? "100%" : largeurNormale;
+          btn.classList.toggle("is-compressed", plein);
+          btn.setAttribute("aria-pressed", String(plein));
+          var libelle = plein ? "Réduire le panneau" : "Agrandir le panneau";
+          btn.setAttribute("aria-label", libelle);
+          btn.title = libelle;
+        });
+      }
+      brancherFullscreenPanel("cvHypOverlay", "cvHypFullscreenBtn");
+      brancherFullscreenPanel("cvHypOverlayA", "cvHypFullscreenBtnA");
+      brancherFullscreenPanel("cvHypOverlayB", "cvHypFullscreenBtnB");
 
       // Masquer/réafficher la colonne de gauche (demande de Cédric le 07/09/2026) — voir
       // règles CSS .cv-panel-hidden plus haut. N'affecte que l'affichage, aucun paramètre
