@@ -46,8 +46,25 @@
     .pm-hyp-body h3 { margin: 0 0 .8rem; font-size: 1.15rem; }
     .pm-hyp-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1.2rem; }
     #pmHypOverlay { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #pmHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
+    #pmHypOverlay .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
     #pmHypOverlay .modal__scroll { height: 100%; }
+
+    /* Bouton "agrandir/réduire" du panneau ⚙ (motif porté de simulateur-recettes.html
+       le 10/09/2026) — remplit la fenêtre du navigateur (pas le vrai plein écran natif)
+       en basculant juste la largeur du panneau entre 420px et 100%. Icône à 2 états
+       dessinée en 2 groupes SVG séparés togglés par display (jamais une rotation).
+       Positionné juste à gauche du bouton fermer (×), même style rond que lui. */
+    .pm-hyp-fullscreen-btn {
+      position: absolute; top: 14px; right: 64px; z-index: 3;
+      width: 42px; height: 42px; border-radius: 50%; border: 0; cursor: pointer;
+      background: rgba(255,255,255,.92); color: var(--ink); box-shadow: var(--shadow-sm);
+      display: grid; place-items: center; transition: background .15s, color .15s;
+    }
+    .pm-hyp-fullscreen-btn:hover, .pm-hyp-fullscreen-btn:focus-visible { background: var(--red); color: #fff; }
+    .pm-hyp-fullscreen-btn svg { display: block; }
+    .pm-hyp-fullscreen-btn .icon-compress { display: none; }
+    .pm-hyp-fullscreen-btn.is-compressed .icon-expand { display: none; }
+    .pm-hyp-fullscreen-btn.is-compressed .icon-compress { display: block; }
     .simulator__layout.pm-panel-hidden .simulator__form { display: none; }
     @media (min-width: 781px) {
       .simulator__layout.pm-panel-hidden { grid-template-columns: 1fr; }
@@ -474,6 +491,16 @@
 
   <div class="modal-overlay" id="pmHypOverlay" role="dialog" aria-modal="true" aria-labelledby="pmHypTitle" hidden>
     <div class="modal" style="width:min(420px, 100%); position:relative">
+      <button type="button" class="pm-hyp-fullscreen-btn" id="pmHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
       <button type="button" class="modal__close" id="pmHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="pm-hyp-body">
@@ -959,6 +986,23 @@
       }
       document.getElementById("pmHypClose").addEventListener("click", fermerPmHyp);
       document.getElementById("pmHypDone").addEventListener("click", fermerPmHyp);
+
+      // Bouton "agrandir/réduire" du panneau ⚙ (motif porté de simulateur-recettes.html
+      // le 10/09/2026) : bascule juste la largeur du panneau entre 420px et 100%, en
+      // manipulant directement le même style inline que le HTML de départ.
+      var pmHypModal = document.querySelector("#pmHypOverlay .modal");
+      var pmHypLargeurNormale = pmHypModal.style.width; // "min(420px, 100%)" posé dans le HTML
+      var pmHypFullscreenBtn = document.getElementById("pmHypFullscreenBtn");
+      var pmHypFullscreen = false;
+      pmHypFullscreenBtn.addEventListener("click", function () {
+        pmHypFullscreen = !pmHypFullscreen;
+        pmHypModal.style.width = pmHypFullscreen ? "100%" : pmHypLargeurNormale;
+        pmHypFullscreenBtn.classList.toggle("is-compressed", pmHypFullscreen);
+        pmHypFullscreenBtn.setAttribute("aria-pressed", String(pmHypFullscreen));
+        var libelle = pmHypFullscreen ? "Réduire le panneau" : "Agrandir le panneau";
+        pmHypFullscreenBtn.setAttribute("aria-label", libelle);
+        pmHypFullscreenBtn.title = libelle;
+      });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && pmHypOverlay.classList.contains("is-open")) fermerPmHyp();
       });
