@@ -181,6 +181,19 @@
        case resterait visible en permanence malgré l'attribut hidden posé en JS. */
     .pm-inline-check { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
     .pm-inline-check[hidden] { display: none; }
+
+    /* Ligne "cumul" du tableau de résultats dont le montant se clique pour ventiler
+       (10/09/2026, demande de Cédric) — le bouton reprend l'apparence d'un simple
+       texte en gras (pas un bouton visible) avec un soulignement pointillé pour
+       signaler qu'il est cliquable, et les lignes de détail sont légèrement mises en
+       retrait/grisées pour rester visuellement secondaires par rapport aux totaux. */
+    .pm-cumul-btn {
+      all: unset; cursor: pointer; font-weight: 700; text-decoration: underline dotted;
+      text-underline-offset: 3px; color: inherit;
+    }
+    .pm-cumul-btn:hover, .pm-cumul-btn:focus-visible { color: var(--red); }
+    .pm-ligne-detail td { color: var(--muted); font-size: .86em; font-weight: 400; padding-left: 1.4rem; }
+    .pm-ligne-detail td:first-child { font-style: italic; }
   </style>
 </head>
 <body class="tool-page">
@@ -1247,6 +1260,10 @@
       });
 
       var derniers = null;
+      // État ouvert/fermé des lignes "cumul" du tableau (clic sur le montant pour
+      // ventiler) — survit à chaque recalcul() puisque le tbody est reconstruit à
+      // chaque fois (voir ligneCumulExpandable()).
+      var pmDetailOuvert = {};
 
       function recalculer() {
         var params = {
@@ -1330,18 +1347,83 @@
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
+          return tr;
+        }
+        // Ligne "cumul" dont le montant se clique pour révéler/masquer sa ventilation
+        // juste en dessous (demande de Cédric le 10/09/2026) — l'état ouvert/fermé
+        // (pmDetailOuvert) survit à chaque recalcul() (le tbody est reconstruit à
+        // chaque fois), sinon rouvrir automatiquement à chaque frappe serait agaçant.
+        function ligneCumulExpandable(cle, label, cells, detailRows) {
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td");
+          td0.style.fontWeight = "700";
+          td0.textContent = label;
+          tr.appendChild(td0);
+          cells.forEach(function (c) {
+            var td = document.createElement("td");
+            td.style.fontWeight = "700";
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "pm-cumul-btn";
+            btn.textContent = c;
+            btn.setAttribute("aria-expanded", String(!!pmDetailOuvert[cle]));
+            td.appendChild(btn);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+          var trsDetail = detailRows.map(function (d) {
+            var trd = ligne("— " + d.label, d.valeurs);
+            trd.className = "pm-ligne-detail";
+            trd.hidden = !pmDetailOuvert[cle];
+            return trd;
+          });
+          tr.querySelectorAll(".pm-cumul-btn").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+              pmDetailOuvert[cle] = !pmDetailOuvert[cle];
+              trsDetail.forEach(function (trd) { trd.hidden = !pmDetailOuvert[cle]; });
+              tr.querySelectorAll(".pm-cumul-btn").forEach(function (b) { b.setAttribute("aria-expanded", String(!!pmDetailOuvert[cle])); });
+            });
+          });
         }
         ligne("Recette moyenne du FT / patient", resultats.map(function (r) { return eurosCent.format(r.recetteFt); }));
         ligne("Recette moyenne acte intellectuel / patient", resultats.map(function (r, i) {
           return eurosCent.format(r.acte) + " (" + patientsFmt.format(configs[i].pctMembre) + " % membre)";
         }));
         ligne("Recette totale / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
-        ligne("Loyer de l'IRM, SAV inclus", resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }));
-        ligne("Personnel MERM", resultats.map(function (r, i) {
-          return configs[i].nombreMerm + " × " + euros.format(params.coutMermMensuel) + " = " + euros.format(r.rh) + " / mois";
-        }));
-        ligne("Électricité (part fixe)", resultats.map(function (r) { return euros.format(r.elecFixe) + " / mois"; }));
-        ligne("Charges fixes totales", resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles) + " / mois"; }), true);
+
+        // Détail RH fixe (MERM + secrétaire + cadre de santé) — un poste n'apparaît
+        // dans la ventilation que si au moins une machine l'utilise (effectif > 0).
+        var rhFixeDetail = [
+          { key: "nombreMerm", coutKey: "coutMermMensuel", label: "MERM" },
+          { key: "nombreSecretaire", coutKey: "coutSecretaireMensuel", label: "Secrétaire médicale" },
+          { key: "nombreCadreSante", coutKey: "coutCadreSanteMensuel", label: "Cadre de santé" }
+        ].filter(function (p) { return configs.some(function (c) { return c[p.key] > 0; }); })
+          .map(function (p) {
+            return { label: p.label, valeurs: configs.map(function (c) { return c[p.key] + " × " + euros.format(params[p.coutKey]) + " / mois"; }) };
+          });
+        ligneCumulExpandable("chargesFixes", "Charges fixes totales",
+          resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles) + " / mois"; }),
+          [{ label: "Loyer de l'IRM, SAV inclus", valeurs: resultats.map(function (r, i) { return euros.format(configs[i].loyer) + " / mois"; }) }]
+            .concat(rhFixeDetail.length ? [{ label: "Personnel (charge fixe)", valeurs: resultats.map(function (r) { return euros.format(r.rh) + " / mois"; }) }].concat(rhFixeDetail) : [])
+            .concat([{ label: "Électricité (part fixe)", valeurs: resultats.map(function (r) { return euros.format(r.elecFixe) + " / mois"; }) }])
+        );
+
+        // Détail RH variable (aide-manip/infirmière/manip alternance) — coût par
+        // examen, retiré de la marge par patient (voir calculerMachine()) ; n'apparaît
+        // du tout que si au moins un de ces 3 postes est utilisé quelque part.
+        var rhVariableDetail = [
+          { key: "nombreAideManip", coutKey: "coutAideManipHoraire", label: "Aide-manip" },
+          { key: "nombreInfirmiere", coutKey: "coutInfirmiereHoraire", label: "Infirmière" },
+          { key: "nombreManipAlternance", coutKey: "coutManipAlternanceHoraire", label: "Manip en alternance" }
+        ].filter(function (p) { return configs.some(function (c) { return c[p.key] > 0; }); });
+        if (rhVariableDetail.length) {
+          ligneCumulExpandable("rhVariable", "Personnel supplémentaire pendant l'examen",
+            resultats.map(function (r) { return eurosCent.format(r.rhVariable) + " / patient"; }),
+            rhVariableDetail.map(function (p) {
+              return { label: p.label, valeurs: configs.map(function (c, i) { return c[p.key] + " × " + eurosCent.format(params[p.coutKey]) + "/h × " + (resultats[i].tempsInstallation / 60).toFixed(2) + " h"; }) };
+            })
+          );
+        }
         ligne("Marge par patient", resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
         ligne("Point mort", resultats.map(function (r) {
           return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " patients / jour" : "jamais atteint";
