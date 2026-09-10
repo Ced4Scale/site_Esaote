@@ -82,8 +82,35 @@
     #boHypOverlay .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); }
     #boHypOverlay .modal__scroll, #boHypOverlayO .modal__scroll { height: 100%; }
     .bascule-range { display: flex; align-items: center; gap: .7rem; }
-    .bascule-range input[type=range] { flex: 1; accent-color: var(--red); }
-    .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; color: var(--red); }
+    .bascule-range .val { font-variant-numeric: tabular-nums; font-weight: 700; min-width: 3rem; text-align: right; color: #2a78d6; }
+    /* Curseur #boPartExtremites : motif "curseur double" repris de simulateur-ct-vs-irm.html
+       (.cv-activite-track-wrap/.cv-activite-fill) plutôt que accent-color, qui laisse la
+       partie NON remplie grise sans qu'aucun CSS ne puisse l'effacer (piège documenté dans
+       le skill ced4scale-simulateur-web). <input type=range> totalement transparent
+       (aucun accent-color), superposé à une piste fixe (.bo-partext-track, fond
+       var(--line-2)) + un remplissage coloré (.bo-partext-fill) piloté en JS — couleur
+       bleue reprise de "Machine A" (#2a78d6, la boîte qui contient ce champ). */
+    .bo-partext-track-wrap { position: relative; height: 1.4rem; flex: 1; }
+    .bo-partext-track-wrap input[type=range] {
+      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent;
+    }
+    .bo-partext-track-wrap input[type=range]::-webkit-slider-runnable-track { background: transparent; }
+    .bo-partext-track-wrap input[type=range]::-moz-range-track { background: transparent; }
+    .bo-partext-track-wrap input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; cursor: pointer;
+      width: 18px; height: 18px; border-radius: 50%; background: #2a78d6;
+      border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
+    }
+    .bo-partext-track-wrap input[type=range]::-moz-range-thumb {
+      cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
+      background: #2a78d6; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+    }
+    .bo-partext-track {
+      position: absolute; top: 50%; left: 0; right: 0; height: 4px;
+      background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
+    }
+    .bo-partext-fill { position: absolute; top: 0; left: 0; height: 100%; width: 0; background: #2a78d6; border-radius: 2px; }
 
     .bascule-courbe-zone { position: relative; margin: 2.2rem 0 .5rem; }
     .bascule-courbe-zone svg { width: 100%; height: 100px; display: block; overflow: visible; }
@@ -395,7 +422,10 @@
           <div class="bascule-champ" style="margin-bottom:0">
             <label for="boPartExtremites">Part membres/extrémités</label>
             <div class="bascule-range">
-              <input type="range" id="boPartExtremites" min="0" max="100" value="35" />
+              <div class="bo-partext-track-wrap">
+                <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill"></div></div>
+                <input type="range" id="boPartExtremites" min="0" max="100" value="35" />
+              </div>
               <span class="val" id="boPartExtremitesVal">35 %</span>
             </div>
           </div>
@@ -1153,8 +1183,21 @@
       }
       ajusterStepVolumeA();
       boVolumeAEl.addEventListener("input", ajusterStepVolumeA);
-      document.getElementById("boPartExtremites").addEventListener("input", function () {
+      // Remplissage du curseur #boPartExtremites, piloté en JS (piste native abandonnée,
+      // voir CSS) — appelé ici (min/max/value changés par script, sans évènement "input",
+      // ex. au chargement ou au rappel d'une mémoire) et depuis l'évènement "input"
+      // ci-dessous (glisser-déposer utilisateur).
+      var boPartExtremitesEl = document.getElementById("boPartExtremites");
+      function majPartExtremitesFill() {
+        var min = parseFloat(boPartExtremitesEl.min), max = parseFloat(boPartExtremitesEl.max);
+        var val = parseFloat(boPartExtremitesEl.value);
+        var pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
+        document.getElementById("boPartExtremitesFill").style.width = pct + "%";
+      }
+      majPartExtremitesFill();
+      boPartExtremitesEl.addEventListener("input", function () {
         document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
+        majPartExtremitesFill();
         repositionnerCurseur();
       });
       curseur.addEventListener("input", recalculer);
