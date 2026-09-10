@@ -174,6 +174,13 @@
     }
     .pm-comparaison-cote svg { width: 100%; height: 140px; display: block; margin-bottom: .5rem; }
     .pm-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
+
+    /* Case "Coupure le samedi/dimanche" togglée par [hidden] (visible seulement si
+       "Ouvert le samedi/dimanche" est coché) — motif "Un élément togglé par hidden avec
+       sa propre règle display" du skill : sans le [hidden]{display:none} explicite, la
+       case resterait visible en permanence malgré l'attribut hidden posé en JS. */
+    .pm-inline-check { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .pm-inline-check[hidden] { display: none; }
   </style>
 </head>
 <body class="tool-page">
@@ -663,16 +670,70 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmHeures">Amplitude d'ouverture par jour</label>
+            <label for="pmHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmHeures" value="8" min="1" max="24" step="0.5" />
+              <input type="number" id="pmHeuresSemaine" value="8" min="0" max="24" step="0.5" />
+              <span>h/jour</span>
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:.5rem;margin:-.5rem 0 .8rem">
+            <input type="checkbox" id="pmCoupureSemaine" style="width:16px;height:16px;margin:0" />
+            <span>Coupure dans la journée (lundi-vendredi) ?</span>
+          </label>
+          <div class="field" id="pmCoupureDureeSemaineWrap" hidden style="margin:-.4rem 0 .8rem">
+            <label for="pmCoupureDureeSemaine">Durée de la coupure</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmCoupureDureeSemaine" value="1" min="0" step="0.25" />
               <span>heures</span>
             </div>
           </div>
-          <div class="field" style="margin-bottom:0">
-            <label for="pmJours">Jours d'ouverture par mois</label>
-            <input type="number" id="pmJours" value="22" min="1" max="31" step="1" />
+
+          <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+            <input type="checkbox" id="pmOuvertSamedi" style="width:16px;height:16px;margin:0" />
+            <span>Ouvert le samedi</span>
+          </label>
+          <div class="field" id="pmHeuresSamediWrap" hidden>
+            <label for="pmHeuresSamedi">Amplitude d'ouverture, samedi</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmHeuresSamedi" value="4" min="0" max="24" step="0.5" />
+              <span>h/jour</span>
+            </div>
           </div>
+          <label id="pmCoupureSamediLabel" class="pm-inline-check" hidden>
+            <input type="checkbox" id="pmCoupureSamedi" style="width:16px;height:16px;margin:0" />
+            <span>Coupure le samedi ?</span>
+          </label>
+          <div class="field" id="pmCoupureDureeSamediWrap" hidden style="margin:-.4rem 0 .8rem">
+            <label for="pmCoupureDureeSamedi">Durée de la coupure</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmCoupureDureeSamedi" value="1" min="0" step="0.25" />
+              <span>heures</span>
+            </div>
+          </div>
+
+          <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+            <input type="checkbox" id="pmOuvertDimanche" style="width:16px;height:16px;margin:0" />
+            <span>Ouvert le dimanche</span>
+          </label>
+          <div class="field" id="pmHeuresDimancheWrap" hidden>
+            <label for="pmHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmHeuresDimanche" value="4" min="0" max="24" step="0.5" />
+              <span>h/jour</span>
+            </div>
+          </div>
+          <label id="pmCoupureDimancheLabel" class="pm-inline-check" hidden>
+            <input type="checkbox" id="pmCoupureDimanche" style="width:16px;height:16px;margin:0" />
+            <span>Coupure le dimanche ?</span>
+          </label>
+          <div class="field" id="pmCoupureDureeDimancheWrap" hidden style="margin:-.4rem 0 .8rem">
+            <label for="pmCoupureDureeDimanche">Durée de la coupure</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="pmCoupureDureeDimanche" value="1" min="0" step="0.25" />
+              <span>heures</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="pmJoursTotalTxt" style="margin:0 0 .8rem"></p>
           <p class="simulator__hint" id="pmCoutMermCalcule"></p>
           <span class="pm-info-wrap">
             <button type="button" class="pm-info-btn" id="pmInfoConstatBtn" aria-expanded="false" aria-controls="pmInfoConstatPop" aria-label="À propos du tarif utilisé">💡</button>
@@ -1172,7 +1233,7 @@
       document.querySelectorAll('input[name="pmActiviteMode"]').forEach(function (radio) {
         radio.addEventListener("change", function () {
           var mode = document.querySelector('input[name="pmActiviteMode"]:checked').value;
-          var joursParMois = Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1);
+          var joursParMois = Math.max(1, pmJoursParMois());
           var activiteInput = document.getElementById("pmActivite");
           var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
           document.getElementById("pmActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
@@ -1193,8 +1254,8 @@
           zone: document.getElementById("pmZone").value,
           amortiKey: document.querySelector('input[name="pmAmorti"]:checked').value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("pmKwh").value) || 0),
-          heuresParJour: Math.max(0, parseFloat(document.getElementById("pmHeures").value) || 0),
-          joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1)
+          heuresParJour: Math.max(0, pmHeuresParJourMoyen()),
+          joursParMois: Math.max(1, pmJoursParMois())
         };
         var netMerm = pmSalaireMensuel("Merm");
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
@@ -1243,7 +1304,7 @@
         derniers = { resultats: resultats, params: params, configs: configs };
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("pmCapaciteWarning"),
-          [document.getElementById("pmActivite"), document.getElementById("pmHeures")]);
+          [document.getElementById("pmActivite"), document.getElementById("pmHeuresSemaine")]);
 
         document.getElementById("pmResultatActivite").innerHTML = "Résultat mensuel à cette activité : " +
           resultats.map(function (r) {
@@ -1348,10 +1409,20 @@
           { label: "Recette totale / patient", valeurs: resultats.map(function (r) { return eurosCent.format(r.recette); }) }
         ];
 
+        var amplitudeDesc = document.getElementById("pmHeuresSemaine").value + " h lun-ven";
+        if (document.getElementById("pmCoupureSemaine").checked) amplitudeDesc += " (coupure " + document.getElementById("pmCoupureDureeSemaine").value + " h)";
+        if (document.getElementById("pmOuvertSamedi").checked) {
+          amplitudeDesc += " · " + document.getElementById("pmHeuresSamedi").value + " h samedi";
+          if (document.getElementById("pmCoupureSamedi").checked) amplitudeDesc += " (coupure " + document.getElementById("pmCoupureDureeSamedi").value + " h)";
+        }
+        if (document.getElementById("pmOuvertDimanche").checked) {
+          amplitudeDesc += " · " + document.getElementById("pmHeuresDimanche").value + " h dimanche";
+          if (document.getElementById("pmCoupureDimanche").checked) amplitudeDesc += " (coupure " + document.getElementById("pmCoupureDureeDimanche").value + " h)";
+        }
         var paramsCommuns = [
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
-          ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
-          ["Jours d'ouverture par mois", params.joursParMois + " jours"],
+          ["Amplitude d'ouverture", amplitudeDesc],
+          ["Jours d'ouverture par mois", patientsFmt.format(params.joursParMois) + " jours (moyenne " + patientsFmt.format(params.heuresParJour) + " h/jour ouvert)"],
           ["Salaire MERM net avant impôt", euros.format(pmSalaireMensuel("Merm")) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
         ];
@@ -1579,7 +1650,7 @@
       }
 
       [
-        "pmZone", "pmKwh", "pmHeures", "pmJours", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite", "pmInstallA", "pmInstallB",
+        "pmZone", "pmKwh", "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmActivite", "pmInstallA", "pmInstallB",
         "pmNetSecretaire", "pmNetCadreSante", "pmNetAideManip", "pmNetInfirmiere", "pmNetManipAlternance",
         "pmSecretaireA", "pmCadreSanteA", "pmAideManipA", "pmInfirmiereA", "pmManipAlternanceA",
         "pmSecretaireB", "pmCadreSanteB", "pmAideManipB", "pmInfirmiereB", "pmManipAlternanceB"
@@ -1590,6 +1661,64 @@
         var input = document.getElementById(id);
         input.addEventListener("blur", function () { formaterMilliers(input); });
       });
+
+      // ---- Amplitude d'ouverture à 3 segments (lundi-vendredi/samedi/dimanche), chacun
+      // avec une coupure optionnelle réduite à une simple durée (10/09/2026, demande de
+      // Cédric : "il faut la question coupure pour les 3 segments") — remplace l'ancien
+      // couple pmHeures (un seul chiffre)/pmJours (saisi à la main). Motif "Jours
+      // d'ouverture par semaine avec jours de week-end optionnels" du skill
+      // ced4scale-simulateur-web : joursParMois = joursOuvertsParSemaine × (52/12),
+      // heuresParJour devient la moyenne pondérée (totalHeuresSemaine /
+      // joursOuvertsParSemaine) — préserve tel quel tout le calcul existant qui
+      // multiplie heuresParJour × joursParMois (electriciteMensuelle, capacité...).
+      // PAS le modèle "encoche déplaçable" de ct-vs-irm (qui suppose des heures de
+      // début/fin réelles) : ici juste une durée de coupure, retranchée de l'amplitude.
+      function pmJoursOuvertsParSemaine() {
+        return 5 + (document.getElementById("pmOuvertSamedi").checked ? 1 : 0) + (document.getElementById("pmOuvertDimanche").checked ? 1 : 0);
+      }
+      function pmJoursParMois() {
+        return pmJoursOuvertsParSemaine() * (52 / 12);
+      }
+      function pmHeuresEffectives(segment) {
+        var amplitude = Math.max(0, parseFloat(document.getElementById("pmHeures" + segment).value) || 0);
+        var coupureCochee = document.getElementById("pmCoupure" + segment).checked;
+        var duree = coupureCochee ? Math.max(0, parseFloat(document.getElementById("pmCoupureDuree" + segment).value) || 0) : 0;
+        return Math.max(0, amplitude - duree);
+      }
+      function pmHeuresParJourMoyen() {
+        var samedi = document.getElementById("pmOuvertSamedi").checked;
+        var dimanche = document.getElementById("pmOuvertDimanche").checked;
+        var total = 5 * pmHeuresEffectives("Semaine") + (samedi ? pmHeuresEffectives("Samedi") : 0) + (dimanche ? pmHeuresEffectives("Dimanche") : 0);
+        var jours = pmJoursOuvertsParSemaine();
+        return jours > 0 ? total / jours : 0;
+      }
+      function majAmplitudeVisibilite() {
+        var samedi = document.getElementById("pmOuvertSamedi").checked;
+        var dimanche = document.getElementById("pmOuvertDimanche").checked;
+        document.getElementById("pmHeuresSamediWrap").hidden = !samedi;
+        document.getElementById("pmCoupureSamediLabel").hidden = !samedi;
+        document.getElementById("pmCoupureDureeSamediWrap").hidden = !(samedi && document.getElementById("pmCoupureSamedi").checked);
+        document.getElementById("pmHeuresDimancheWrap").hidden = !dimanche;
+        document.getElementById("pmCoupureDimancheLabel").hidden = !dimanche;
+        document.getElementById("pmCoupureDureeDimancheWrap").hidden = !(dimanche && document.getElementById("pmCoupureDimanche").checked);
+        document.getElementById("pmCoupureDureeSemaineWrap").hidden = !document.getElementById("pmCoupureSemaine").checked;
+        var joursSemaine = pmJoursOuvertsParSemaine();
+        document.getElementById("pmJoursTotalTxt").textContent =
+          "≈ " + patientsFmt.format(pmJoursParMois()) + " jours d'ouverture par mois (" + joursSemaine + " jour(s)/semaine, moyenne " +
+          patientsFmt.format(pmHeuresParJourMoyen()) + " h/jour ouvert).";
+      }
+      [
+        "pmHeuresSemaine", "pmCoupureDureeSemaine", "pmHeuresSamedi", "pmCoupureDureeSamedi", "pmHeuresDimanche", "pmCoupureDureeDimanche"
+      ].forEach(function (id) {
+        document.getElementById(id).addEventListener("input", function () { majAmplitudeVisibilite(); recalculer(); });
+      });
+      [
+        "pmOuvertSamedi", "pmOuvertDimanche", "pmCoupureSemaine", "pmCoupureSamedi", "pmCoupureDimanche"
+      ].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () { majAmplitudeVisibilite(); recalculer(); });
+      });
+      majAmplitudeVisibilite();
+
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="pmAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
       document.getElementById("pmSalaireBtnMois").addEventListener("click", function () { pmSalaireSetUnite(false); });
@@ -1633,8 +1762,17 @@
         { id: "pmZone", evt: "change", label: "Zone géographique", type: "select" },
         { id: "pmAmorti", evt: "change", label: "Machine amortie ?", type: "radio" },
         { id: "pmKwh", evt: "input", label: "Coût du kWh" },
-        { id: "pmHeures", evt: "input", label: "Amplitude d'ouverture" },
-        { id: "pmJours", evt: "input", label: "Jours d'ouverture par mois" },
+        { id: "pmHeuresSemaine", evt: "input", label: "Amplitude, lundi-vendredi" },
+        { id: "pmCoupureSemaine", evt: "change", label: "Coupure (lundi-vendredi) ?", type: "checkbox" },
+        { id: "pmCoupureDureeSemaine", evt: "input", label: "Durée coupure (lundi-vendredi)" },
+        { id: "pmOuvertSamedi", evt: "change", label: "Ouvert le samedi ?", type: "checkbox" },
+        { id: "pmHeuresSamedi", evt: "input", label: "Amplitude, samedi" },
+        { id: "pmCoupureSamedi", evt: "change", label: "Coupure (samedi) ?", type: "checkbox" },
+        { id: "pmCoupureDureeSamedi", evt: "input", label: "Durée coupure (samedi)" },
+        { id: "pmOuvertDimanche", evt: "change", label: "Ouvert le dimanche ?", type: "checkbox" },
+        { id: "pmHeuresDimanche", evt: "input", label: "Amplitude, dimanche" },
+        { id: "pmCoupureDimanche", evt: "change", label: "Coupure (dimanche) ?", type: "checkbox" },
+        { id: "pmCoupureDureeDimanche", evt: "input", label: "Durée coupure (dimanche)" },
         { id: "pmNetMerm", evt: "input", label: "Salaire net MERM" },
         { id: "pmNetSecretaire", evt: "input", label: "Salaire net secrétaire médicale" },
         { id: "pmNetCadreSante", evt: "input", label: "Salaire net cadre de santé" },
@@ -1650,7 +1788,7 @@
             ? document.querySelector('input[name="' + f.id + '"]:checked')
             : document.getElementById(f.id);
           if (!el) return;
-          etat[f.id] = { valeur: el.value };
+          etat[f.id] = { valeur: f.type === "checkbox" ? el.checked : el.value };
         });
         // Variable JS pure (pas un champ DOM) : le mode mensuel/annuel PARTAGÉ des 6
         // salaires — voir skill "Mémoire de simulation : capturer aussi les variables JS
@@ -1671,7 +1809,12 @@
         }
         var el = document.getElementById(f.id);
         if (!el) return;
-        el.value = valeur;
+        if (f.type === "checkbox") {
+          if (el.checked === valeur) return;
+          el.checked = valeur;
+        } else {
+          el.value = valeur;
+        }
         el.dispatchEvent(new Event(f.evt, { bubbles: true }));
       }
 
