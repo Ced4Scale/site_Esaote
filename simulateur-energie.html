@@ -62,6 +62,48 @@
     .ene-capnote-table td:first-child { padding-right: .6rem; width: 58%; }
     .ene-capnote-table td:last-child { text-align: left; font-weight: 600; }
     .ene-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .84rem; }
+    /* Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif porté
+       tel quel de simulateur-point-mort.html / simulateur-ct-vs-irm.html — voir skill
+       ced4scale-simulateur-web, "Phrase explicative fixe repliée derrière une icône
+       ampoule"). Le conteneur passe en position:relative pour que le popover se
+       positionne par rapport à lui. Vérifié : sur les 13 emplacements de cette page, un
+       seul (#eneInfoActiviteWrap) est un descendant de .simulator__form (sticky) — mais
+       le popover n'a besoin de recouvrir que d'autres éléments DE LA MÊME colonne
+       (jamais .simulator__results), donc pas concerné par le piège de contexte
+       d'empilement documenté sur ce site ; tous les autres sont dans .simulator__results
+       ou #eneHypOverlay (panneau ⚙, hors de toute colonne du layout). Couleur : amber par
+       défaut, sauf violet pour les 3 ampoules qui parlent du socle (couleur TIER_COLORS.socle,
+       #6b5b95) et vert pour celle de l'activité (couleur du champ "Activité",
+       border-left #1baf7a = TIER_COLORS.entrePatients — reprise telle quelle du variant
+       --cv-info-wrap--vert de simulateur-ct-vs-irm.html). */
+    .ene-info-wrap {
+      position: relative; display: inline-block;
+      --ene-info-bg: #fff6e0; --ene-info-bg-hover: #ffe9ad; --ene-info-bd: #f0d998;
+      --ene-info-fg: #8a6d1e; --ene-info-pop-bg: #fffaf0; --ene-info-pop-fg: #6b5b2a;
+    }
+    .ene-info-wrap--violet {
+      --ene-info-bg: #e4dff0; --ene-info-bg-hover: #d3caE4; --ene-info-bd: #cabfe0;
+      --ene-info-fg: #4a3d68; --ene-info-pop-bg: #f2eefa; --ene-info-pop-fg: #4a3d68;
+    }
+    .ene-info-wrap--vert {
+      --ene-info-bg: #cdecdc; --ene-info-bg-hover: #aee0c8; --ene-info-bd: #a3d9bc;
+      --ene-info-fg: #1f6b47; --ene-info-pop-bg: #eaf8f1; --ene-info-pop-fg: #1f6b47;
+    }
+    .ene-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--ene-info-bd);
+      background: var(--ene-info-bg); color: var(--ene-info-fg); font-size: .95rem; line-height: 1;
+      cursor: pointer; padding: 0;
+    }
+    .ene-info-btn:hover, .ene-info-btn[aria-expanded="true"] { background: var(--ene-info-bg-hover); }
+    .ene-info-pop {
+      position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 4;
+      background: var(--ene-info-pop-bg); border: 1px solid var(--ene-info-bd); border-radius: .6rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem;
+      font-size: .82rem; line-height: 1.45; color: var(--ene-info-pop-fg);
+      width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
+    }
+    .ene-info-pop[hidden] { display: none; }
   </style>
 </head>
 <body class="tool-page">
@@ -145,7 +187,10 @@
             <input type="number" id="eneActivite" value="18" min="0" step="1" />
           </div>
           <p class="simulator__hint" id="eneActiviteEquivalent"></p>
-          <p class="simulator__hint">Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</p>
+          <span class="ene-info-wrap ene-info-wrap--vert">
+            <button type="button" class="ene-info-btn" id="eneInfoActiviteBtn" aria-expanded="false" aria-controls="eneInfoActivitePop" aria-label="Comment est compté le temps sans patient">💡</button>
+            <div class="ene-info-pop" id="eneInfoActivitePop" hidden>Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</div>
+          </span>
           <div class="ene-capnote" id="eneCapaciteWarning" hidden></div>
         </div>
 
@@ -206,14 +251,20 @@
       <div class="simulator__results">
         <button type="button" class="btn btn--sm" id="eneBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.</p>
-          <p class="simulator__hint" style="margin:0 0 .6rem"><strong>Définition (Ced4Scale) — talon de consommation :</strong> le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. C'est un plancher théorique, pas un scénario réel : au-delà, les coûts réels s'ajoutent au prorata de l'activité (nombre de patients dans la plage d'ouverture) — c'est ce que mesurent les couches "Entre deux patients" et "Examens".</p>
+          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches
+            <span class="ene-info-wrap ene-info-wrap--violet">
+              <button type="button" class="ene-info-btn" id="eneInfoSocleBtn" aria-expanded="false" aria-controls="eneInfoSoclePop" aria-label="Définition des trois couches et du talon de consommation">💡</button>
+              <div class="ene-info-pop" id="eneInfoSoclePop" hidden>Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.<br /><br /><strong>Définition (Ced4Scale) — talon de consommation :</strong> le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. C'est un plancher théorique, pas un scénario réel : au-delà, les coûts réels s'ajoutent au prorata de l'activité (nombre de patients dans la plage d'ouverture) — c'est ce que mesurent les couches "Entre deux patients" et "Examens".</div>
+            </span>
+          </h3>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
           </div>
-          <p class="simulator__hint" style="margin-top:.4rem">Cliquez sur le socle (couleur violette) d'une barre pour voir sa composition en détail.</p>
+          <span class="ene-info-wrap ene-info-wrap--violet" style="margin-top:.4rem">
+            <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Comment voir le détail du socle">💡</button>
+            <div class="ene-info-pop" id="eneInfoSocleClicPop" hidden>Cliquez sur le socle (couleur violette) d'une barre pour voir sa composition en détail.</div>
+          </span>
         </div>
 
         <div class="simulator__chart-card" id="eneCardSocleDetail" hidden>
@@ -226,8 +277,12 @@
         </div>
 
         <div class="simulator__chart-card">
-          <h3 style="margin-bottom:.6rem">Empreinte carbone (mix électrique français)</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</p>
+          <h3 style="margin-bottom:.6rem">Empreinte carbone (mix électrique français)
+            <span class="ene-info-wrap">
+              <button type="button" class="ene-info-btn" id="eneInfoCo2Btn" aria-expanded="false" aria-controls="eneInfoCo2Pop" aria-label="Source de la conversion CO2">💡</button>
+              <div class="ene-info-pop" id="eneInfoCo2Pop" hidden>Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</div>
+            </span>
+          </h3>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2" id="eneTableCo2">
             <thead>
@@ -243,23 +298,32 @@
         </div>
 
         <div class="simulator__chart-card" id="eneCardHistoPrix">
-          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France depuis 2000</h3>
-          <p class="simulator__hint" style="margin:0 0 .6rem">Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.</p>
-          <p class="simulator__hint" style="margin:0 0 .6rem"><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</p>
+          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France depuis 2000
+            <span class="ene-info-wrap">
+              <button type="button" class="ene-info-btn" id="eneInfoTarifBtn" aria-expanded="false" aria-controls="eneInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button>
+              <div class="ene-info-pop" id="eneInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.<br /><br /><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div>
+            </span>
+          </h3>
           <div class="simulator__chart-wrap">
             <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
             <div class="simulator__tooltip" id="eneHistoTooltip" hidden></div>
           </div>
-          <p class="simulator__hint" style="margin:.4rem 0">Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée) — l'info s'affiche quelques secondes puis disparaît.</p>
-          <p class="simulator__hint" style="margin-top:.4rem">Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</p>
+          <span class="ene-info-wrap" style="margin-top:.4rem">
+            <button type="button" class="ene-info-btn" id="eneInfoTarifClicBtn" aria-expanded="false" aria-controls="eneInfoTarifClicPop" aria-label="Interaction et sources de ce graphe">💡</button>
+            <div class="ene-info-pop" id="eneInfoTarifClicPop" hidden>Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée) — l'info s'affiche quelques secondes puis disparaît.<br /><br />Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</div>
+          </span>
         </div>
 
         <div class="simulator__chart-card">
           <h3 class="simulator__collapse-toggle" id="eneDetailToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail des calculs <span aria-hidden="true">▾</span></h3>
           <div id="eneDetailBody" hidden>
             <div class="simulator__chart-card" id="eneCardTech">
-              <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées</h3>
-              <p class="simulator__hint" style="margin:0 0 .6rem">Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</p>
+              <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées
+                <span class="ene-info-wrap">
+                  <button type="button" class="ene-info-btn" id="eneInfoTechBtn" aria-expanded="false" aria-controls="eneInfoTechPop" aria-label="À propos de ce tableau">💡</button>
+                  <div class="ene-info-pop" id="eneInfoTechPop" hidden>Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</div>
+                </span>
+              </h3>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="eneTableTech">
                 <thead>
@@ -272,12 +336,19 @@
                 <tbody id="eneTableTechBody"></tbody>
               </table>
               </div>
-              <p class="simulator__hint" style="margin-top:.6rem">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
+              <span class="ene-info-wrap" style="margin-top:.6rem">
+                <button type="button" class="ene-info-btn" id="eneInfoTechSourcesBtn" aria-expanded="false" aria-controls="eneInfoTechSourcesPop" aria-label="Où trouver les sources détaillées">💡</button>
+                <div class="ene-info-pop" id="eneInfoTechSourcesPop" hidden>Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</div>
+              </span>
             </div>
 
             <div class="simulator__chart-card">
-              <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible</h3>
-              <p class="simulator__hint" style="margin:0 0 .6rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</p>
+              <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible
+                <span class="ene-info-wrap ene-info-wrap--violet">
+                  <button type="button" class="ene-info-btn" id="eneInfoSocleDetailBtn" aria-expanded="false" aria-controls="eneInfoSocleDetailPop" aria-label="Composition du socle">💡</button>
+                  <div class="ene-info-pop" id="eneInfoSocleDetailPop" hidden>Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</div>
+                </span>
+              </h3>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="eneTableSocle">
                 <thead>
@@ -305,8 +376,12 @@
             </table>
             </div>
             <div class="simulator__chart-card" id="eneRecap">
-              <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation</h3>
-              <p class="simulator__hint" style="margin:0 0 .8rem">Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</p>
+              <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation
+                <span class="ene-info-wrap">
+                  <button type="button" class="ene-info-btn" id="eneInfoRecapBtn" aria-expanded="false" aria-controls="eneInfoRecapPop" aria-label="À quoi sert ce récapitulatif">💡</button>
+                  <div class="ene-info-pop" id="eneInfoRecapPop" hidden>Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</div>
+                </span>
+              </h3>
               <table class="stats-table simulator__table" id="eneRecapParamsCommunsTable">
                 <tbody id="eneRecapParamsCommunsBody"></tbody>
               </table>
@@ -329,8 +404,11 @@
         <div class="simulator__chart-card">
           <h3 class="simulator__collapse-toggle" id="eneEtudesToggle" style="margin-bottom:.6rem;cursor:pointer">Ce que disent les études indépendantes <span aria-hidden="true">▾</span></h3>
           <div id="eneEtudesBody" hidden>
-            <p class="simulator__hint" style="margin:0 0 .6rem">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</p>
-            <ul id="eneEtudesListe" style="margin:0 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
+            <span class="ene-info-wrap" style="margin:0 0 .6rem">
+              <button type="button" class="ene-info-btn" id="eneInfoEtudesBtn" aria-expanded="false" aria-controls="eneInfoEtudesPop" aria-label="À propos de ces études">💡</button>
+              <div class="ene-info-pop" id="eneInfoEtudesPop" hidden>L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</div>
+            </span>
+            <ul id="eneEtudesListe" style="margin:.6rem 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
           </div>
         </div>
 
@@ -364,7 +442,10 @@
               <textarea id="eneCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
             </div>
             <button type="submit" class="btn btn--lg" id="eneExportSubmit">Recevoir ma simulation en PDF</button>
-            <p class="simulator__hint" style="margin-top:.7rem">Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</p>
+            <span class="ene-info-wrap" style="margin-top:.7rem">
+              <button type="button" class="ene-info-btn" id="eneInfoExportBtn" aria-expanded="false" aria-controls="eneInfoExportPop" aria-label="Confidentialité de vos données">💡</button>
+              <div class="ene-info-pop" id="eneInfoExportPop" hidden>Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</div>
+            </span>
           </form>
           <div class="simulator__export-success" id="eneExportSuccess" role="status" hidden>
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
@@ -380,8 +461,12 @@
       <button type="button" class="modal__close" id="eneHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="ene-hyp-body">
-          <h3 id="eneHypTitle">Réglages avancés</h3>
-          <p class="simulator__hint" style="margin:0">Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</p>
+          <h3 id="eneHypTitle">Réglages avancés
+            <span class="ene-info-wrap">
+              <button type="button" class="ene-info-btn" id="eneInfoHypBtn" aria-expanded="false" aria-controls="eneInfoHypPop" aria-label="Hypothèses simplificatrices">💡</button>
+              <div class="ene-info-pop" id="eneInfoHypPop" hidden>Hypothèses simplificatrices : 52 semaines identiques sur l'année (hors jours fériés), même volume de patients réparti proportionnellement au temps d'ouverture de chaque type de jour (semaine/samedi/dimanche). Climatisation de la salle d'examen comptée en continu (24 h/24).</div>
+            </span>
+          </h3>
           <div class="ene-hyp-actions">
             <button type="button" class="btn" id="eneHypDone">Fermer</button>
           </div>
@@ -1773,6 +1858,48 @@
 
       recalculer();
       dessinerGrapheHistoriquePrixKwh();
+
+      // Phrase explicative fixe repliée derrière une icône ampoule (10/09/2026, motif
+      // porté tel quel de simulateur-point-mort.html / simulateur-ct-vs-irm.html — voir
+      // skill ced4scale-simulateur-web). Un seul popover ouvert à la fois ; fermeture au
+      // clic ailleurs ou à Échap.
+      var eneInfoPopsOuverts = [];
+      function wireInfoBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          eneInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        eneInfoPopsOuverts.push(fermer);
+      }
+      wireInfoBtn("eneInfoActiviteBtn", "eneInfoActivitePop");
+      wireInfoBtn("eneInfoSocleBtn", "eneInfoSoclePop");
+      wireInfoBtn("eneInfoSocleClicBtn", "eneInfoSocleClicPop");
+      wireInfoBtn("eneInfoCo2Btn", "eneInfoCo2Pop");
+      wireInfoBtn("eneInfoTarifBtn", "eneInfoTarifPop");
+      wireInfoBtn("eneInfoTarifClicBtn", "eneInfoTarifClicPop");
+      wireInfoBtn("eneInfoTechBtn", "eneInfoTechPop");
+      wireInfoBtn("eneInfoTechSourcesBtn", "eneInfoTechSourcesPop");
+      wireInfoBtn("eneInfoSocleDetailBtn", "eneInfoSocleDetailPop");
+      wireInfoBtn("eneInfoRecapBtn", "eneInfoRecapPop");
+      wireInfoBtn("eneInfoEtudesBtn", "eneInfoEtudesPop");
+      wireInfoBtn("eneInfoExportBtn", "eneInfoExportPop");
+      wireInfoBtn("eneInfoHypBtn", "eneInfoHypPop");
+      document.addEventListener("click", function () {
+        eneInfoPopsOuverts.forEach(function (f) { f(); });
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") eneInfoPopsOuverts.forEach(function (f) { f(); });
+      });
     })();
   </script>
   <script src="assets/site-gate.js"></script>
