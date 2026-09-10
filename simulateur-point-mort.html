@@ -408,8 +408,12 @@
           <div class="field" style="margin-bottom:0">
             <label for="pmNetMerm">Salaire MERM net avant impôt</label>
             <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetMerm" value="1.800" />
-              <span>€ / mois</span>
+              <input type="text" inputmode="numeric" id="pmNetMerm" value="21.600" />
+              <span id="pmNetMermSuffix">€ / an</span>
+            </div>
+            <div style="display:flex;gap:.4rem;margin-top:.35rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="pmNetMermBtnMois" aria-pressed="false">Mensuel</button>
+              <button type="button" class="btn btn--sm" id="pmNetMermBtnAn" aria-pressed="true">Annuel</button>
             </div>
           </div>
           <p class="simulator__hint" id="pmCoutMermCalcule"></p>
@@ -455,6 +459,30 @@
       }
       function valeurMilliers(input) {
         return parseInt(String(input.value).replace(/[^\d]/g, ""), 10) || 0;
+      }
+
+      // Toggle mensuel/annuel du salaire MERM — la valeur LUE par le calcul reste
+      // toujours mensuelle en interne (pmNetMermMensuel()) ; seuls l'affichage et la
+      // saisie du champ #pmNetMerm basculent. Vue annuelle sélectionnée par défaut au
+      // chargement (valeur HTML déjà en annuel, 1.800 × 12 = 21.600).
+      var pmNetMermModeAnnuel = true;
+      function pmNetMermMensuel() {
+        var v = valeurMilliers(document.getElementById("pmNetMerm"));
+        return pmNetMermModeAnnuel ? v / 12 : v;
+      }
+      function pmNetMermSetUnite(annuel) {
+        if (annuel === pmNetMermModeAnnuel) return;
+        var input = document.getElementById("pmNetMerm");
+        var actuel = valeurMilliers(input);
+        var converti = annuel ? actuel * 12 : Math.round(actuel / 12);
+        pmNetMermModeAnnuel = annuel;
+        input.value = milliersFmt.format(converti);
+        document.getElementById("pmNetMermSuffix").textContent = annuel ? "€ / an" : "€ / mois";
+        document.getElementById("pmNetMermBtnAn").classList.toggle("btn--ghost", !annuel);
+        document.getElementById("pmNetMermBtnAn").setAttribute("aria-pressed", String(annuel));
+        document.getElementById("pmNetMermBtnMois").classList.toggle("btn--ghost", annuel);
+        document.getElementById("pmNetMermBtnMois").setAttribute("aria-pressed", String(!annuel));
+        recalculer();
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
@@ -846,7 +874,7 @@
           heuresParJour: Math.max(0, parseFloat(document.getElementById("pmHeures").value) || 0),
           joursParMois: Math.max(1, parseFloat(document.getElementById("pmJours").value) || 1)
         };
-        var netMerm = valeurMilliers(document.getElementById("pmNetMerm"));
+        var netMerm = pmNetMermMensuel();
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
         document.getElementById("pmCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
@@ -983,7 +1011,7 @@
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
           ["Amplitude d'ouverture", params.heuresParJour + " h/jour"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
-          ["Salaire MERM net avant impôt", euros.format(valeurMilliers(document.getElementById("pmNetMerm"))) + " / mois"],
+          ["Salaire MERM net avant impôt", euros.format(pmNetMermMensuel()) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
         ];
 
@@ -1195,6 +1223,8 @@
       });
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="pmAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
+      document.getElementById("pmNetMermBtnMois").addEventListener("click", function () { pmNetMermSetUnite(false); });
+      document.getElementById("pmNetMermBtnAn").addEventListener("click", function () { pmNetMermSetUnite(true); });
 
       recalculer();
 

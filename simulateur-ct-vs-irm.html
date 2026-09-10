@@ -1401,8 +1401,12 @@
           <div class="field" style="margin-bottom:0">
             <label for="cvNetMerm">Salaire MERM net avant impôt</label>
             <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetMerm" value="1.800" />
-              <span>€ / mois</span>
+              <input type="text" inputmode="numeric" id="cvNetMerm" value="21.600" />
+              <span id="cvNetMermSuffix">€ / an</span>
+            </div>
+            <div style="display:flex;gap:.4rem;margin-top:.35rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="cvNetMermBtnMois" aria-pressed="false">Mensuel</button>
+              <button type="button" class="btn btn--sm" id="cvNetMermBtnAn" aria-pressed="true">Annuel</button>
             </div>
           </div>
           <p class="simulator__hint" id="cvCoutMermCalcule"></p>
@@ -1530,6 +1534,30 @@
       }
       function valeurMilliers(input) {
         return parseInt(String(input.value).replace(/[^\d]/g, ""), 10) || 0;
+      }
+
+      // Toggle mensuel/annuel du salaire MERM — la valeur LUE par le calcul reste
+      // toujours mensuelle en interne (cvNetMermMensuel()) ; seuls l'affichage et la
+      // saisie du champ #cvNetMerm basculent. Vue annuelle sélectionnée par défaut au
+      // chargement (valeur HTML déjà en annuel, 1.800 × 12 = 21.600).
+      var cvNetMermModeAnnuel = true;
+      function cvNetMermMensuel() {
+        var v = valeurMilliers(document.getElementById("cvNetMerm"));
+        return cvNetMermModeAnnuel ? v / 12 : v;
+      }
+      function cvNetMermSetUnite(annuel) {
+        if (annuel === cvNetMermModeAnnuel) return;
+        var input = document.getElementById("cvNetMerm");
+        var actuel = valeurMilliers(input);
+        var converti = annuel ? actuel * 12 : Math.round(actuel / 12);
+        cvNetMermModeAnnuel = annuel;
+        input.value = milliersFmt.format(converti);
+        document.getElementById("cvNetMermSuffix").textContent = annuel ? "€ / an" : "€ / mois";
+        document.getElementById("cvNetMermBtnAn").classList.toggle("btn--ghost", !annuel);
+        document.getElementById("cvNetMermBtnAn").setAttribute("aria-pressed", String(annuel));
+        document.getElementById("cvNetMermBtnMois").classList.toggle("btn--ghost", annuel);
+        document.getElementById("cvNetMermBtnMois").setAttribute("aria-pressed", String(!annuel));
+        recalculer();
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
@@ -2559,7 +2587,7 @@
           joursEtHeures.joursParSemaine + " jour" + (joursEtHeures.joursParSemaine > 1 ? "s" : "") +
           " d'ouverture par semaine, soit " + patientsFmt.format(joursEtHeures.joursParMois) + " jours/mois et " +
           patientsFmt.format(joursEtHeures.heuresParJour) + " h/jour en moyenne.";
-        var netMerm = valeurMilliers(document.getElementById("cvNetMerm"));
+        var netMerm = cvNetMermMensuel();
         params.coutMermMensuel = coutMermDepuisNet(netMerm);
         document.getElementById("cvCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
@@ -2783,7 +2811,7 @@
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
           ["Amplitude d'ouverture", libelleHoraires() + " (" + patientsFmt.format(params.heuresParJour) + " h/jour)"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
-          ["Salaire MERM net avant impôt", euros.format(valeurMilliers(document.getElementById("cvNetMerm"))) + " / mois"],
+          ["Salaire MERM net avant impôt", euros.format(cvNetMermMensuel()) + " / mois"],
           ["Votre activité", activiteBrute + (modeActivite === "jour" ? " patients/jour" : " patients/an")]
         ];
 
@@ -3534,6 +3562,8 @@ var svg = document.getElementById("cvChart");
       });
       dateSelect.addEventListener("change", recalculer);
       document.querySelectorAll('input[name="cvAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
+      document.getElementById("cvNetMermBtnMois").addEventListener("click", function () { cvNetMermSetUnite(false); });
+      document.getElementById("cvNetMermBtnAn").addEventListener("click", function () { cvNetMermSetUnite(true); });
 
       // Câblage générique des 3 panneaux "Réglages avancés" (le principal + les 2 roues
       // par machine ajoutées le 05/09/2026) — ouverture/fermeture identiques.
@@ -3838,7 +3868,13 @@ var svg = document.getElementById("cvChart");
           else if (f.type === "radio") texte = el.parentNode.textContent.trim();
           else if (f.type === "heure") texte = decimalVersHeureLabel(parseFloat(valeur) || 0);
           else if (f.type === "kwh") texte = eurosCent.format(parseFloat(valeur) || 0);
-          else if (f.type === "montant") texte = euros.format(valeurMilliers({ value: valeur }));
+          else if (f.type === "montant") {
+            texte = euros.format(valeurMilliers({ value: valeur }));
+            // cvNetMerm change d'unité (mensuel/annuel) — le préciser dans le texte
+            // affiché (tableau d'écarts entre mémoires), sinon un même montant brut
+            // pourrait sembler identique entre 2 mémoires alors que l'unité diffère.
+            if (f.id === "cvNetMerm") texte += cvNetMermModeAnnuel ? " / an" : " / mois";
+          }
           else texte = String(valeur) + (f.suffixe || "");
           etat[f.id] = { valeur: valeur, texte: texte };
         });
@@ -3856,6 +3892,10 @@ var svg = document.getElementById("cvChart");
         etat.__modeChacuneSaCapacite = modeChacuneSaCapacite;
         etat.__modeSansAI = modeSansAI;
         etat.__horizonBarres = horizonBarres;
+        // Toggle mensuel/annuel du salaire MERM (voir cvNetMermSetUnite) — variable JS
+        // pure elle aussi, pas un champ CV_MEMOIRE_FIELDS classique, même raison que
+        // les modes ci-dessus.
+        etat.__cvNetMermModeAnnuel = cvNetMermModeAnnuel;
         return etat;
       }
 
@@ -3927,6 +3967,18 @@ var svg = document.getElementById("cvChart");
           btn.classList.toggle("btn--ghost", k !== horizonBarres);
           btn.setAttribute("aria-pressed", String(k === horizonBarres));
         });
+
+        // Toggle mensuel/annuel du salaire MERM (voir capturerParametres()) — le champ
+        // #cvNetMerm lui-même a déjà été restauré tel quel (valeur brute + texte, via
+        // CV_MEMOIRE_FIELDS/definirChamp ci-dessus) ; seule la variable de mode et
+        // l'apparence des 2 boutons restent à remettre, avant le recalculer() final.
+        cvNetMermModeAnnuel = etat.__cvNetMermModeAnnuel === true;
+        document.getElementById("cvNetMermSuffix").textContent = cvNetMermModeAnnuel ? "€ / an" : "€ / mois";
+        document.getElementById("cvNetMermBtnAn").classList.toggle("btn--ghost", !cvNetMermModeAnnuel);
+        document.getElementById("cvNetMermBtnAn").setAttribute("aria-pressed", String(cvNetMermModeAnnuel));
+        document.getElementById("cvNetMermBtnMois").classList.toggle("btn--ghost", cvNetMermModeAnnuel);
+        document.getElementById("cvNetMermBtnMois").setAttribute("aria-pressed", String(!cvNetMermModeAnnuel));
+
         recalculer();
       }
 
