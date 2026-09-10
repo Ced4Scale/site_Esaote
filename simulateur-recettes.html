@@ -128,6 +128,65 @@
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .sim-info-pop[hidden] { display: none; }
+
+    /* Mémoires de simulation + mode Comparer (étape 4 du chantier d'harmonisation,
+       10/09/2026) — motif porté tel quel de simulateur-ct-vs-irm.html /
+       simulateur-bascule-oscan.html (skill ced4scale-simulateur-web, "Mémoriser/
+       rappeler un instantané complet du formulaire" et "Comparer 2 mémoires
+       enregistrées sans dupliquer les formules de calcul"). Contrairement à ces 2
+       simulateurs (2 machines comparées), ici une mémoire fige un scénario complet
+       (machine, zone, volume, 2 dates, hypothèses) — comparer 2 mémoires compare donc
+       2 scénarios entièrement différents, pas 2 réglages d'un même scénario. */
+    .sim-memoire-row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; margin: 1.1rem 0 .3rem; }
+    .sim-btn-memoire { --btn-bg: #ded4f2; --btn-fg: #4a3a78; --btn-bd: #ded4f2; }
+    .sim-btn-memoire:hover { background: #d0c2ee; border-color: #d0c2ee; }
+    .sim-btn-memoire.btn--ghost { --btn-bg: transparent; --btn-fg: #7767a3; --btn-bd: #d0c2ee; }
+    .sim-btn-memoire.btn--ghost:hover { --btn-fg: #4a3a78; background: #f4f0fb; border-color: #d0c2ee; }
+    .sim-btn-comparer { --btn-bg: #fbe0c8; --btn-fg: #8a5321; --btn-bd: #fbe0c8; }
+    .sim-btn-comparer:hover { background: #f6cd9f; border-color: #f6cd9f; }
+    .sim-btn-comparer.btn--ghost { --btn-bg: transparent; --btn-fg: #a56a2e; --btn-bd: #f6cd9f; }
+    .sim-btn-comparer.btn--ghost:hover { --btn-fg: #8a5321; background: #fdf3e8; border-color: #f6cd9f; }
+    .sim-memoire-slot { display: inline-flex; align-items: center; gap: .1rem; }
+    .sim-memoire-clear {
+      border: 0; background: transparent; color: var(--red-crimson); line-height: 1;
+      width: 1.6rem; height: 1.6rem; border-radius: 50%; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .sim-memoire-clear:hover { background: #fbe9ec; }
+    .sim-memoire-clear:disabled { cursor: default; }
+    .sim-memoire-clear:disabled:hover { background: transparent; }
+    .sim-memoire-clear.is-ouvert { color: var(--success-bd); }
+    .sim-lock-icon { overflow: visible; }
+    .sim-lock-shackle-ouverte { display: none; }
+    .sim-memoire-clear.is-ouvert .sim-lock-shackle-fermee { display: none; }
+    .sim-memoire-clear.is-ouvert .sim-lock-shackle-ouverte { display: inline; }
+    .sim-memoire-hint { flex-basis: 100%; margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
+    .sim-memoire-row button[data-tip] { position: relative; }
+    .sim-memoire-row button[data-tip]::after {
+      content: attr(data-tip);
+      position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%);
+      margin-bottom: 8px; background: var(--ink); color: #fff; font-size: .72rem;
+      font-weight: 500; line-height: 1.35; padding: .45rem .65rem; border-radius: 6px;
+      white-space: normal; width: max-content; max-width: 200px; box-shadow: var(--shadow-md);
+      z-index: 20; pointer-events: none; opacity: 0; visibility: hidden;
+      transition: opacity .1s ease, visibility .1s ease;
+    }
+    .sim-memoire-row button[data-tip]:hover::after,
+    .sim-memoire-row button[data-tip]:focus-visible::after {
+      opacity: 1; visibility: visible; transition-delay: .25s;
+    }
+    .sim-memoire-row .sim-btn-memoire[data-tip]::after { background: #ded4f2; color: #4a3a78; }
+    .sim-memoire-row .sim-btn-comparer[data-tip]::after { background: #fbe0c8; color: #8a5321; }
+
+    .sim-comparaison-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; }
+    @media (max-width: 700px) { .sim-comparaison-grille { grid-template-columns: 1fr; } }
+    .sim-comparaison-cote select {
+      width: 100%; padding: .55rem .7rem; border: 1px solid var(--line-2); border-radius: 6px;
+      font-family: inherit; font-size: .88rem; background: #fff; color: var(--ink); margin-bottom: .5rem;
+    }
+    .sim-comparaison-cote svg { width: 100%; height: 140px; display: block; margin-bottom: .5rem; }
+    .sim-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
+    .sim-compare-chute { margin: .4rem 0 0; font-size: .82rem; color: var(--muted); }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -203,6 +262,66 @@
              résultats, jamais masquée avec le panneau, cachée par défaut et montrée
              uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
         <button type="button" class="btn btn--sm" id="simBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
+
+        <!-- Mémoires de simulation + mode Comparer (étape 4, 10/09/2026) : jusqu'à 3
+             emplacements. Cliquer sur un emplacement VIDE y enregistre le scénario
+             complet actuel (machine, zone, volume, dates 1/2, hypothèses) ; cliquer sur
+             un emplacement REMPLI le rappelle dans le formulaire. "Comparer" affiche 2
+             scénarios enregistrés côte à côte, chacun figé sur sa mémoire — voir
+             activerComparaison()/redessinerComparaison(). -->
+        <div class="sim-memoire-row" id="simMemoireRow">
+          <button type="button" class="btn btn--sm btn--ghost sim-btn-comparer" id="simBtnComparer" aria-pressed="false" data-tip="Affiche 2 scénarios côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 scénarios côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
+          <span class="sim-memoire-slot" data-slot="0">
+            <button type="button" class="btn btn--sm btn--ghost sim-btn-memoire" id="simBtnMemoire1" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 1." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 1.">Mémoire 1</button>
+            <button type="button" class="sim-memoire-clear" id="simBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="sim-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="sim-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="sim-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="sim-memoire-slot" data-slot="1">
+            <button type="button" class="btn btn--sm btn--ghost sim-btn-memoire" id="simBtnMemoire2" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 2." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 2.">Mémoire 2</button>
+            <button type="button" class="sim-memoire-clear" id="simBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="sim-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="sim-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="sim-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="sim-memoire-slot" data-slot="2">
+            <button type="button" class="btn btn--sm btn--ghost sim-btn-memoire" id="simBtnMemoire3" data-tip="Cliquez pour enregistrer le scénario actuel dans la mémoire 3." title="Cliquez pour enregistrer le scénario actuel dans la mémoire 3.">Mémoire 3</button>
+            <button type="button" class="sim-memoire-clear" id="simBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="sim-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="sim-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="sim-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+          </span>
+          <span class="sim-info-wrap" style="align-self:center">
+            <button type="button" class="sim-info-btn" id="simInfoMemoireBtn" aria-expanded="false" aria-controls="simInfoMemoirePop" aria-label="Comment marchent les mémoires">💡</button>
+            <div class="sim-info-pop" id="simInfoMemoirePop" hidden>Enregistrez jusqu'à 3 scénarios complets (machine, zone, volume, dates, hypothèses) pour les rappeler d'un clic, et utilisez "Comparer" pour en voir 2 côte à côte.</div>
+          </span>
+          <p class="sim-memoire-hint" id="simMemoireTxt"></p>
+        </div>
+
+        <div id="simVueComparaison" hidden>
+          <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
+            <button type="button" class="btn btn--sm btn--ghost" id="simBtnFermerComparaison">✕ Fermer la comparaison</button>
+          </div>
+          <div class="sim-comparaison-grille">
+            <div class="sim-comparaison-cote">
+              <select id="simCompareSelectGauche" aria-label="Mémoire affichée à gauche">
+                <option value="">— Choisir une mémoire —</option>
+                <option value="0">Mémoire 1</option>
+                <option value="1">Mémoire 2</option>
+                <option value="2">Mémoire 3</option>
+              </select>
+              <svg id="simCompareChartGauche" viewBox="0 0 640 150" preserveAspectRatio="none" role="img" aria-label="Trajectoire de recettes sur 7 ans de la mémoire affichée à gauche"></svg>
+              <div id="simCompareStatsGauche"></div>
+              <p class="sim-compare-chute" id="simCompareChuteGauche"></p>
+            </div>
+            <div class="sim-comparaison-cote">
+              <select id="simCompareSelectDroite" aria-label="Mémoire affichée à droite">
+                <option value="">— Choisir une mémoire —</option>
+                <option value="0">Mémoire 1</option>
+                <option value="1">Mémoire 2</option>
+                <option value="2">Mémoire 3</option>
+              </select>
+              <svg id="simCompareChartDroite" viewBox="0 0 640 150" preserveAspectRatio="none" role="img" aria-label="Trajectoire de recettes sur 7 ans de la mémoire affichée à droite"></svg>
+              <div id="simCompareStatsDroite"></div>
+              <p class="sim-compare-chute" id="simCompareChuteDroite"></p>
+            </div>
+          </div>
+          <p class="simulator__hint" style="margin-top:.4rem">Pour le détail complet (camemberts, tableau année par année), rappelez la mémoire dans le formulaire — le bouton "Comparer" reste réservé à une vue d'ensemble rapide.</p>
+        </div>
+
+        <div id="simVueSimple">
         <div class="simulator__chart-card">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
             <h3 style="margin:0">Composition des recettes de l'année 1</h3>
@@ -307,6 +426,7 @@
             ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
           </div>
           <p class="simulator__export-error" id="simExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+        </div>
         </div>
       </div>
     </div>
@@ -1168,6 +1288,208 @@
         recalculer();
       });
 
+      // ---- Mémoires de simulation + mode Comparer (étape 4, 10/09/2026) — motif porté
+      // de simulateur-ct-vs-irm.html / simulateur-bascule-oscan.html, voir le
+      // commentaire CSS plus haut et le skill ced4scale-simulateur-web. Un scénario
+      // complet = machine, zone, volume, dates 1/2, hypothèses (rejoue/inflation) — pas
+      // les graphes eux-mêmes, qui sont recalculés à chaque restauration.
+      var SIM_MEMOIRE_FIELDS = [
+        { id: "simMachine", evt: "change", label: "Choix du champ / machine", type: "select" },
+        { id: "simZone", evt: "change", label: "Zone géographique", type: "select" },
+        { id: "simVolume", evt: "input", label: "Nombre d'examens IRM par an" },
+        { id: "simDateSel0", evt: "change", label: "Date 1", type: "select" },
+        { id: "simDateSel1", evt: "change", label: "Date 2", type: "select" },
+        // Groupes de radios (pas de vrai `id`, seulement `name` partagé) — capturés/
+        // restaurés via querySelector('input[name="..."]:checked'), voir
+        // definirChamp()/capturerParametres() ci-dessous.
+        { id: "simRejoue", evt: "change", label: "Décrets postérieurs appliqués ensuite ?", type: "radio" },
+        { id: "simInflation", evt: "change", label: "Correction inflation (euros constants) ?", type: "radio" }
+      ];
+
+      function capturerParametres() {
+        var etat = {};
+        SIM_MEMOIRE_FIELDS.forEach(function (f) {
+          var el = f.type === "radio"
+            ? document.querySelector('input[name="' + f.id + '"]:checked')
+            : document.getElementById(f.id);
+          if (!el) return;
+          etat[f.id] = { valeur: el.value };
+        });
+        return etat;
+      }
+
+      function definirChamp(f, valeur) {
+        if (f.type === "radio") {
+          var radio = document.querySelector('input[name="' + f.id + '"][value="' + valeur + '"]');
+          if (!radio || radio.checked) return;
+          radio.checked = true;
+          radio.dispatchEvent(new Event(f.evt, { bubbles: true }));
+          return;
+        }
+        var el = document.getElementById(f.id);
+        if (!el) return;
+        el.value = valeur;
+        el.dispatchEvent(new Event(f.evt, { bubbles: true }));
+      }
+
+      // simMachine d'abord (son changement repeuple simDateSel0/1 via remplirSelectsDates,
+      // voir le listener ci-dessus) — sinon les dates enregistrées pourraient ne pas
+      // exister encore comme options au moment où on essaie de les restaurer.
+      function restaurerParametres(etat) {
+        var fMachine = SIM_MEMOIRE_FIELDS.filter(function (f) { return f.id === "simMachine"; })[0];
+        if (etat.simMachine) definirChamp(fMachine, etat.simMachine.valeur);
+        SIM_MEMOIRE_FIELDS.forEach(function (f) {
+          if (f.id === "simMachine") return;
+          if (etat[f.id] === undefined) return;
+          definirChamp(f, etat[f.id].valeur);
+        });
+        afficherSeuils();
+        recalculer();
+      }
+
+      // 3 emplacements ; null = vide. simBtnMemoireN vide -> enregistre, rempli -> rappelle.
+      var memoires = [null, null, null];
+      function majBoutonMemoire(i) {
+        var btn = document.getElementById("simBtnMemoire" + (i + 1));
+        var clear = document.getElementById("simBtnMemoire" + (i + 1) + "Clear");
+        var rempli = memoires[i] !== null;
+        btn.classList.toggle("btn--ghost", !rempli);
+        btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
+        btn.title = rempli
+          ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
+          : "Cliquez pour enregistrer le scénario actuel dans la mémoire " + (i + 1) + ".";
+        btn.setAttribute("data-tip", btn.title);
+        clear.disabled = !rempli;
+        clear.classList.toggle("is-ouvert", !rempli);
+        clear.title = rempli
+          ? "Cliquez pour effacer la mémoire " + (i + 1) + " et libérer l'emplacement."
+          : "Mémoire " + (i + 1) + " pas encore enregistrée.";
+        clear.setAttribute("aria-label", clear.title);
+        majOptionsCompareSelects();
+      }
+      [0, 1, 2].forEach(function (i) {
+        document.getElementById("simBtnMemoire" + (i + 1)).addEventListener("click", function () {
+          if (memoires[i] === null) {
+            memoires[i] = capturerParametres();
+            document.getElementById("simMemoireTxt").textContent = "Mémoire " + (i + 1) + " enregistrée.";
+          } else {
+            restaurerParametres(memoires[i]);
+            document.getElementById("simMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
+          }
+          majBoutonMemoire(i);
+          if (compareMode) redessinerComparaison();
+        });
+        document.getElementById("simBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
+          memoires[i] = null;
+          majBoutonMemoire(i);
+          document.getElementById("simMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
+          if (compareMode) redessinerComparaison();
+        });
+      });
+      [0, 1, 2].forEach(majBoutonMemoire);
+
+      // Instantané figé d'une mémoire, sans toucher au formulaire visible ni au reste de
+      // la page : restaure temporairement la mémoire choisie (déclenche recalculer() en
+      // cascade comme un vrai rappel), lit les résultats déjà calculés dans
+      // derniereSerie/derniereBaremes (remplis par recalculer()), puis restaure
+      // IMMÉDIATEMENT l'état d'avant — le tout de façon synchrone, donc invisible pour le
+      // visiteur. Vue volontairement plus simple qu'un rappel complet (pas de camemberts
+      // ni de tableau année par année, juste la trajectoire 7 ans + les totaux) — voir
+      // skill ced4scale-simulateur-web, "Rendu volontairement plus simple pour une vue
+      // secondaire/réduite".
+      function calculerSnapshotPourMemoire(idx) {
+        if (idx === null || !memoires[idx]) return null;
+        var avant = capturerParametres();
+        restaurerParametres(memoires[idx]);
+        var snap = {
+          machineLabel: machineSelect.options[machineSelect.selectedIndex].textContent,
+          zoneLabel: { paris: "Paris", idf: "Île-de-France (hors Paris)", province: "Province" }[document.getElementById("simZone").value],
+          volume: parseInt(document.getElementById("simVolume").value, 10) || 0,
+          scenarios: derniereSerie.map(function (s) { return { label: s.label, color: s.color, cumulMensuel: s.cumulMensuel }; }),
+          chuteHtml: document.getElementById("simChute").innerHTML
+        };
+        snap = JSON.parse(JSON.stringify(snap));
+        restaurerParametres(avant);
+        return snap;
+      }
+
+      function dessinerCoteComparaison(svgId, statsId, chuteId, snap) {
+        var svgC = document.getElementById(svgId);
+        var statsEl = document.getElementById(statsId);
+        var chuteEl = document.getElementById(chuteId);
+        if (!snap || snap.scenarios.length === 0) {
+          svgC.innerHTML = "";
+          statsEl.innerHTML = "<p class=\"simulator__hint\" style=\"margin:0\">Choisissez une mémoire ci-dessus.</p>";
+          chuteEl.innerHTML = "";
+          return;
+        }
+        var W = 640, H = 150, padL = 10, padR = 10, padT = 10, padB = 10;
+        var maxVal = 0;
+        snap.scenarios.forEach(function (s) { s.cumulMensuel.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
+        var yMax = maxVal > 0 ? maxVal * 1.05 : 1;
+        function xAt(i) { return padL + ((W - padL - padR) * i) / 84; }
+        function yAt(v) { return padT + (H - padT - padB) - ((H - padT - padB) * v) / yMax; }
+        var svgParts = ['<line x1="' + padL + '" y1="' + yAt(0).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + yAt(0).toFixed(1) + '" stroke="var(--line)" stroke-width="1"></line>'];
+        snap.scenarios.forEach(function (s) {
+          var pts = s.cumulMensuel.map(function (v, i) { return xAt(i).toFixed(1) + "," + yAt(v).toFixed(1); }).join(" ");
+          svgParts.push('<polyline points="' + pts + '" fill="none" stroke="' + s.color + '" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>');
+        });
+        svgC.innerHTML = svgParts.join("");
+        var statsHtml = '<div class="sim-compare-ligne" style="font-weight:700"><span>' + snap.machineLabel + '</span><span>' + snap.zoneLabel + '</span></div>' +
+          '<div class="sim-compare-ligne"><span>Volume</span><span>' + seuilsEntiers.format(snap.volume) + ' examens/an</span></div>';
+        snap.scenarios.forEach(function (s) {
+          var total = s.cumulMensuel[s.cumulMensuel.length - 1];
+          statsHtml += '<div class="sim-compare-ligne" style="color:' + s.color + '"><span>' + s.label + '</span><span>' + euros.format(total) + ' sur 7 ans</span></div>';
+        });
+        statsEl.innerHTML = statsHtml;
+        chuteEl.innerHTML = snap.chuteHtml;
+      }
+
+      function majOptionsCompareSelects() {
+        ["simCompareSelectGauche", "simCompareSelectDroite"].forEach(function (id) {
+          var sel = document.getElementById(id);
+          [0, 1, 2].forEach(function (i) { sel.options[i + 1].disabled = !memoires[i]; });
+        });
+      }
+
+      var compareMode = false, compareGaucheIdx = null, compareDroiteIdx = null;
+      function redessinerComparaison() {
+        dessinerCoteComparaison("simCompareChartGauche", "simCompareStatsGauche", "simCompareChuteGauche", calculerSnapshotPourMemoire(compareGaucheIdx));
+        dessinerCoteComparaison("simCompareChartDroite", "simCompareStatsDroite", "simCompareChuteDroite", calculerSnapshotPourMemoire(compareDroiteIdx));
+      }
+      function activerComparaison() {
+        compareMode = true;
+        document.getElementById("simVueSimple").hidden = true;
+        document.getElementById("simVueComparaison").hidden = false;
+        majOptionsCompareSelects();
+        compareGaucheIdx = memoires[0] ? 0 : null;
+        compareDroiteIdx = memoires[1] ? 1 : null;
+        document.getElementById("simCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
+        document.getElementById("simCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
+        redessinerComparaison();
+        document.getElementById("simBtnComparer").classList.remove("btn--ghost");
+        document.getElementById("simBtnComparer").setAttribute("aria-pressed", "true");
+      }
+      function desactiverComparaison() {
+        compareMode = false;
+        document.getElementById("simVueSimple").hidden = false;
+        document.getElementById("simVueComparaison").hidden = true;
+        document.getElementById("simBtnComparer").classList.add("btn--ghost");
+        document.getElementById("simBtnComparer").setAttribute("aria-pressed", "false");
+      }
+      document.getElementById("simBtnComparer").addEventListener("click", function () {
+        if (compareMode) desactiverComparaison(); else activerComparaison();
+      });
+      document.getElementById("simBtnFermerComparaison").addEventListener("click", desactiverComparaison);
+      document.getElementById("simCompareSelectGauche").addEventListener("change", function () {
+        compareGaucheIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+      document.getElementById("simCompareSelectDroite").addEventListener("change", function () {
+        compareDroiteIdx = this.value === "" ? null : +this.value;
+        redessinerComparaison();
+      });
+
       /* URL du déclencheur Power Automate "Simulateur_Recettes_Envoi_PDF_V1" (branché le
          07/08/2026, même principe que "Site_Envoi_Documents_V3" dans document.html). Reçoit du
          JSON { prenom, nom, email, etablissement, filename, pdfBase64, volume, zone }. Le PDF
@@ -1769,6 +2091,7 @@
         });
         simInfoPopsOuverts.push(fermer);
       }
+      wireInfoBtn("simInfoMemoireBtn", "simInfoMemoirePop");
       wireInfoBtn("simInfoAnnee1Btn", "simInfoAnnee1Pop");
       wireInfoBtn("simInfoLegendeBtn", "simInfoLegendePop");
       wireInfoBtn("simInfoExportBtn", "simInfoExportPop");
