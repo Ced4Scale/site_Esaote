@@ -27,6 +27,7 @@
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260910-bascule-oscan"></script>
   <style>
     /* Réglages propres à ce simulateur (curseur + courbe), pas encore dans styles.css partagé. */
     .bascule-champ { margin-bottom: 1rem; }
@@ -776,6 +777,29 @@
             <div class="bascule-info-pop" id="boHypCommunesPop" hidden>Communes aux deux machines. Ces réglages ne sont pas mémorisés : à ta prochaine visite, le simulateur repart des valeurs par défaut.</div>
           </span>
           <div class="field">
+            <label for="boHypDate">Date de forfait technique</label>
+            <select id="boHypDate"></select>
+          </div>
+          <div class="field">
+            <label for="boHypZone">Zone tarifaire (forfait technique)</label>
+            <select id="boHypZone">
+              <option value="province">Province</option>
+              <option value="idf">Île-de-France</option>
+              <option value="paris">Paris</option>
+            </select>
+            <span class="bascule-info-wrap">
+              <button type="button" class="bascule-info-btn" id="boHypZoneInfoBtn" aria-expanded="false" aria-controls="boHypZoneInfoPop" aria-label="Ce que change la zone tarifaire">💡</button>
+              <div class="bascule-info-pop" id="boHypZoneInfoPop" hidden>Seul le tarif plein change selon la zone — les paliers réduits et le plafond sont identiques partout.</div>
+            </span>
+          </div>
+          <div class="field">
+            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="boAmorti" value="nonAmorti" checked /> Non amortie</label>
+              <label><input type="radio" name="boAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
+            </div>
+          </div>
+          <div class="field">
             <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="21.600" /><span id="boHypNetMermSuffix">€/an</span></div>
             <div style="display:flex;gap:.4rem;margin-top:.35rem">
@@ -809,24 +833,12 @@
               <div class="bascule-info-pop" id="boHypModeleInfoPop" hidden>Estimations Ced4Scale à partir des guides d'implantation officiels, pas des données constructeur — détail et niveau de confiance par modèle sur la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</div>
             </span>
           </div>
-          <div class="field">
+          <div class="field" style="margin-bottom:0">
             <label for="boHypDureeAcqA">Durée d'acquisition pure — Machine A</label>
             <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypDureeAcqA" value="8" /><span>min/examen</span></div>
             <span class="bascule-info-wrap">
               <button type="button" class="bascule-info-btn" id="boHypDureeAcqAInfoBtn" aria-expanded="false" aria-controls="boHypDureeAcqAInfoPop" aria-label="À quoi sert cette durée">💡</button>
               <div class="bascule-info-pop" id="boHypDureeAcqAInfoPop" hidden>Gradients actifs seulement (pas la prise en charge complète du patient) — sert à répartir les heures d'ouverture entre "prêt sans patient" et "en cours d'acquisition" pour le calcul électrique.</div>
-            </span>
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label for="boHypZone">Zone tarifaire (forfait technique)</label>
-            <select id="boHypZone">
-              <option value="province">Province</option>
-              <option value="idf">Île-de-France</option>
-              <option value="paris">Paris</option>
-            </select>
-            <span class="bascule-info-wrap">
-              <button type="button" class="bascule-info-btn" id="boHypZoneInfoBtn" aria-expanded="false" aria-controls="boHypZoneInfoPop" aria-label="Ce que change la zone tarifaire">💡</button>
-              <div class="bascule-info-pop" id="boHypZoneInfoPop" hidden>Seul le tarif plein change selon la zone — les paliers réduits et le plafond sont identiques partout.</div>
             </span>
           </div>
           <span class="bascule-info-wrap" style="margin-top:.4rem">
@@ -949,19 +961,42 @@
         return html;
       }
 
-      // Barème UNCAM au 1er janvier 2027 (tarif "non amorti"), forfait technique —
-      // seul le tarif plein varie par zone (Paris/IDF/Province), les paliers réduits
-      // et le plafond sont identiques dans les 3 zones. Source : même jeu de données
-      // que assets/forfaits-techniques-data.js (non chargé ici pour éviter un conflit
-      // de nom sur FT_CLASSES, qui a une forme différente sur cette page).
-      var FT_CLASSES = {
-        t15:   { REF: 4750, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 154.71, idf: 151.46, province: 150.30 }, reduit1: 52.72, reduit2: 44.58, plafond: 29.30 },
-        sup15: { REF: 4500, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 178.15, idf: 176.47, province: 176.05 }, reduit1: 75.40, reduit2: 65.65, plafond: 42.47 },
-        le05:  { REF: 3500, SEUIL1: 8000, SEUIL2: 11000, pleinParZone: { paris: 114.56, idf: 111.39, province: 106.41 }, reduit1: 73.94, reduit2: 59.53, plafond: 29.95 }
-      };
+      // Barème UNCAM, forfait technique — reconstruit à partir de la source unique
+      // assets/forfaits-techniques-data.js (var globale FT_CLASSES, chargée dans le
+      // <head>) à chaque changement de date/amortissement, dans FT_CLASSES_PLEIN
+      // (nom local distinct exprès du FT_CLASSES partagé, qui a une forme différente
+      // — organisée par date — pour ne jamais les confondre). FT_CLASSES_PLEIN garde
+      // EXACTEMENT la même forme que l'ancienne table figée en dur ci-dessus
+      // (REF/SEUIL1/SEUIL2/pleinParZone/reduit1/reduit2/plafond par classe), pour ne
+      // toucher aucune des fonctions de calcul existantes (ftAnnuel, totalPour,
+      // trouverOptimum, dessinerCourbe, dessinerBaremeMini) — seule la construction de
+      // cette table change, pas sa forme ni son usage en aval.
+      var FT_DATE_ISO = "2027-01-01"; // date du barème choisie via la roue crantée
+      var FT_AMORTI = false; // false = non amorti — comportement historique de cette page
+      var FT_CLASSES_PLEIN = {};
+      function reconstruireFtClassesPlein() {
+        var cleAmorti = FT_AMORTI ? "amorti" : "nonAmorti";
+        ["le05", "t15", "sup15"].forEach(function (classeKey) {
+          var classe = FT_CLASSES[classeKey];
+          var ligne = classe.dates.filter(function (d) { return d.iso === FT_DATE_ISO; })[0] || classe.dates[classe.dates.length - 1];
+          var pleinParZone = {};
+          ["paris", "idf", "province"].forEach(function (z) {
+            var p = ligne.plein[z];
+            // Repli explicite sur "non amorti" si cette classe/date n'a plus de tarif
+            // "amorti" (ex. sup15 à partir de 2025) — jamais de NaN/undefined affiché.
+            pleinParZone[z] = p[cleAmorti] != null ? p[cleAmorti] : p.nonAmorti;
+          });
+          FT_CLASSES_PLEIN[classeKey] = {
+            REF: classe.REF, SEUIL1: classe.SEUIL1, SEUIL2: classe.SEUIL2,
+            pleinParZone: pleinParZone,
+            reduit1: ligne.reduits.seuil1, reduit2: ligne.reduits.seuil2, plafond: ligne.reduits.plafond
+          };
+        });
+      }
+      reconstruireFtClassesPlein();
       var ZONE_TARIFAIRE = "province"; // "paris" | "idf" | "province", réglable via la roue crantée
       function ftAnnuel(classeKey, volumeAnnuel) {
-        var c = FT_CLASSES[classeKey];
+        var c = FT_CLASSES_PLEIN[classeKey];
         var plein = c.pleinParZone[ZONE_TARIFAIRE];
         var v = Math.max(0, volumeAnnuel);
         var total = Math.min(v, c.REF) * plein;
@@ -1151,8 +1186,8 @@
         var Xmin = Math.max(0, N - maxOscan);
         Xmin = Math.ceil(Xmin / 10) * 10;
         var candidats = [Xmin, N,
-          FT_CLASSES[classeA].REF, FT_CLASSES[classeA].SEUIL1, FT_CLASSES[classeA].SEUIL2,
-          N - FT_CLASSES.le05.REF, N - FT_CLASSES.le05.SEUIL1, N - FT_CLASSES.le05.SEUIL2];
+          FT_CLASSES_PLEIN[classeA].REF, FT_CLASSES_PLEIN[classeA].SEUIL1, FT_CLASSES_PLEIN[classeA].SEUIL2,
+          N - FT_CLASSES_PLEIN.le05.REF, N - FT_CLASSES_PLEIN.le05.SEUIL1, N - FT_CLASSES_PLEIN.le05.SEUIL2];
         var meilleurX = Xmin, meilleurVal = -Infinity;
         candidats.forEach(function (X) {
           if (X < Xmin || X > N) return;
@@ -1169,8 +1204,8 @@
         var xs = [];
         for (var i = 0; i <= 200; i++) { xs.push(Math.round(N * i / 200)); }
         xs = xs.concat([0, 1, Math.max(0, N - 1), N,
-          FT_CLASSES[classeA].REF, FT_CLASSES[classeA].SEUIL1, FT_CLASSES[classeA].SEUIL2,
-          N - FT_CLASSES.le05.REF, N - FT_CLASSES.le05.SEUIL1, N - FT_CLASSES.le05.SEUIL2]);
+          FT_CLASSES_PLEIN[classeA].REF, FT_CLASSES_PLEIN[classeA].SEUIL1, FT_CLASSES_PLEIN[classeA].SEUIL2,
+          N - FT_CLASSES_PLEIN.le05.REF, N - FT_CLASSES_PLEIN.le05.SEUIL1, N - FT_CLASSES_PLEIN.le05.SEUIL2]);
         xs = xs.filter(function (x) { return x >= 0 && x <= N; });
         xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
 
@@ -1252,7 +1287,7 @@
 
       function dessinerBaremeMini(classeA, nomClasseA) {
         document.getElementById("boNomClasseA3").textContent = nomClasseA;
-        var cA = FT_CLASSES[classeA], cO = FT_CLASSES.le05;
+        var cA = FT_CLASSES_PLEIN[classeA], cO = FT_CLASSES_PLEIN.le05;
         var lignes = [
           { label: "Plein",    jusquaA: cA.REF,    tarifA: cA.pleinParZone[ZONE_TARIFAIRE],   jusquaO: cO.REF,    tarifO: cO.pleinParZone[ZONE_TARIFAIRE] },
           { label: "Palier 1", jusquaA: cA.SEUIL1, tarifA: cA.reduit1, jusquaO: cO.SEUIL1, tarifO: cO.reduit1 },
@@ -1376,9 +1411,23 @@
       var HYP_DEFAUTS = {
         netMerm: NET_MERM, heuresLegales: HEURES_LEGALES_MOIS,
         heuresSemaine: AMPLITUDE_A_SEMAINE, heuresSamedi: AMPLITUDE_A_SAMEDI, heuresDimanche: AMPLITUDE_A_DIMANCHE,
-        zone: ZONE_TARIFAIRE
+        zone: ZONE_TARIFAIRE, dateIso: FT_DATE_ISO, amorti: FT_AMORTI
       };
       var hypOverlay = document.getElementById("boHypOverlay");
+
+      // Peuple #boHypDate depuis FT_DATES (assets/forfaits-techniques-data.js) — toutes
+      // les classes partagent le même jeu de dates, une seule liste suffit (même motif
+      // que simulateur-point-mort.html/simulateur-recettes.html).
+      (function remplirSelectDate() {
+        var select = document.getElementById("boHypDate");
+        FT_DATES.forEach(function (d) {
+          var opt = document.createElement("option");
+          opt.value = d.iso;
+          opt.textContent = d.label;
+          select.appendChild(opt);
+        });
+        select.value = FT_DATE_ISO;
+      })();
 
       // Modèle d'IRM réel choisi pour la Machine A (électricité) — "" = valeur
       // générique par défaut (ELEC_GENERIC.t15/sup15). Réutilise le fichier partagé
@@ -1450,7 +1499,8 @@
           ligne("Amplitude O-scan (capacité)", fmt(AMPLITUDE_O_SEMAINE, 1) + " h lun-ven / " + fmt(AMPLITUDE_O_SAMEDI, 1) +
             " h samedi / " + fmt(AMPLITUDE_O_DIMANCHE, 1) + " h dimanche, × son débit horaire × " +
             fmt(SEMAINES_PAR_AN) + " semaines/an") +
-          ligne("Forfait technique", "Barème dégressif réel UNCAM au 1ᵉʳ janvier 2027, zone " + NOM_ZONE[ZONE_TARIFAIRE] +
+          ligne("Forfait technique", "Barème dégressif réel UNCAM au " + (ftDateByIso(FT_DATE_ISO) || {}).label + ", zone " +
+            NOM_ZONE[ZONE_TARIFAIRE] + ", machine " + (FT_AMORTI ? "amortie" : "non amortie") +
             ", hors acte intellectuel (perçu par les deux machines, neutre dans la comparaison)");
       }
 
@@ -1461,7 +1511,10 @@
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
         document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
+        document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
+        var radioAmorti = document.querySelector('input[name="boAmorti"][value="' + (FT_AMORTI ? "amorti" : "nonAmorti") + '"]');
+        if (radioAmorti) radioAmorti.checked = true;
         remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
@@ -1492,7 +1545,10 @@
         if (heuresDimanche >= 0) AMPLITUDE_A_DIMANCHE = heuresDimanche;
         if (dureeAcqA >= 0) DUREE_ACQ_A = dureeAcqA;
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
+        FT_DATE_ISO = document.getElementById("boHypDate").value;
         ZONE_TARIFAIRE = document.getElementById("boHypZone").value;
+        FT_AMORTI = document.querySelector('input[name="boAmorti"]:checked').value === "amorti";
+        reconstruireFtClassesPlein();
         majResumeHypotheses();
         repositionnerCurseur();
       }
@@ -1511,13 +1567,19 @@
         document.getElementById(id).addEventListener("input", appliquerHypotheses);
       });
       document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
+      document.getElementById("boHypDate").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypZone").addEventListener("change", appliquerHypotheses);
+      document.querySelectorAll('input[name="boAmorti"]').forEach(function (radio) {
+        radio.addEventListener("change", appliquerHypotheses);
+      });
       document.getElementById("boHypNetMermBtnMois").addEventListener("click", function () { boNetMermSetUnite(false); });
       document.getElementById("boHypNetMermBtnAn").addEventListener("click", function () { boNetMermSetUnite(true); });
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
         AMPLITUDE_A_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_A_SAMEDI = HYP_DEFAUTS.heuresSamedi;
         AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = ""; ZONE_TARIFAIRE = HYP_DEFAUTS.zone;
+        FT_DATE_ISO = HYP_DEFAUTS.dateIso; FT_AMORTI = HYP_DEFAUTS.amorti;
+        reconstruireFtClassesPlein();
         DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS[document.getElementById("boClasseA").value];
         boNetMermAppliquerUI();
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
@@ -1525,7 +1587,10 @@
         document.getElementById("boHypHeuresSamedi").value = AMPLITUDE_A_SAMEDI;
         document.getElementById("boHypHeuresDimanche").value = AMPLITUDE_A_DIMANCHE;
         document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
+        document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
+        var radioAmortiReset = document.querySelector('input[name="boAmorti"][value="' + (FT_AMORTI ? "amorti" : "nonAmorti") + '"]');
+        if (radioAmortiReset) radioAmortiReset.checked = true;
         remplirModelesA();
         majResumeHypotheses();
         repositionnerCurseur();
@@ -1915,6 +1980,7 @@
             NET_MERM: NET_MERM, HEURES_LEGALES_MOIS: HEURES_LEGALES_MOIS,
             AMPLITUDE_A_SEMAINE: AMPLITUDE_A_SEMAINE, AMPLITUDE_A_SAMEDI: AMPLITUDE_A_SAMEDI, AMPLITUDE_A_DIMANCHE: AMPLITUDE_A_DIMANCHE,
             MODELE_A_KEY: MODELE_A_KEY, ZONE_TARIFAIRE: ZONE_TARIFAIRE, DUREE_ACQ_A: DUREE_ACQ_A,
+            FT_DATE_ISO: FT_DATE_ISO, FT_AMORTI: FT_AMORTI,
             AMPLITUDE_O_SEMAINE: AMPLITUDE_O_SEMAINE, AMPLITUDE_O_SAMEDI: AMPLITUDE_O_SAMEDI, AMPLITUDE_O_DIMANCHE: AMPLITUDE_O_DIMANCHE,
             DUREE_ACQ_O: DUREE_ACQ_O,
             // Toggle mensuel/annuel du salaire MERM (voir boNetMermModeAnnuel) — pas
@@ -1945,6 +2011,9 @@
         AMPLITUDE_A_DIMANCHE = etat.vars.AMPLITUDE_A_DIMANCHE;
         MODELE_A_KEY = etat.vars.MODELE_A_KEY;
         ZONE_TARIFAIRE = etat.vars.ZONE_TARIFAIRE;
+        FT_DATE_ISO = etat.vars.FT_DATE_ISO !== undefined ? etat.vars.FT_DATE_ISO : FT_DATE_ISO;
+        FT_AMORTI = etat.vars.FT_AMORTI === true;
+        reconstruireFtClassesPlein();
         DUREE_ACQ_A = etat.vars.DUREE_ACQ_A;
         AMPLITUDE_O_SEMAINE = etat.vars.AMPLITUDE_O_SEMAINE;
         AMPLITUDE_O_SAMEDI = etat.vars.AMPLITUDE_O_SAMEDI;
@@ -2299,7 +2368,7 @@
 
           drawSectionTitle("Forfait technique par palier (barème dégressif UNCAM)");
           drawRecapRow("", [e.nomClasseA, "O-scan"], true);
-          var cA = FT_CLASSES[e.classeA], cO = FT_CLASSES.le05;
+          var cA = FT_CLASSES_PLEIN[e.classeA], cO = FT_CLASSES_PLEIN.le05;
           [
             ["Plein", cA.REF, cA.pleinParZone[ZONE_TARIFAIRE], cO.REF, cO.pleinParZone[ZONE_TARIFAIRE]],
             ["Palier 1", cA.SEUIL1, cA.reduit1, cO.SEUIL1, cO.reduit1],
