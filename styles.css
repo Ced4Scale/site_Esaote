@@ -1758,6 +1758,20 @@ ul { margin: 0; padding: 0; list-style: none; }
    plus grand qu'elle. */
 .simulator__chart-card:fullscreen {
   overflow: auto; padding: 2.6rem clamp(1.2rem, 4vw, 4rem) 2rem; background: #fff;
+  display: flex; flex-direction: column;
+}
+/* Le graphique SVG (pas les tableaux) doit vraiment occuper l'écran, pas juste
+   profiter d'une marge plus généreuse autour d'une taille inchangée (demande de
+   Cédric le 11/09/2026) : le conteneur du graphe grandit pour prendre toute la
+   hauteur restante, et le SVG grandit avec lui dans les 2 sens (largeur ET
+   hauteur) — `preserveAspectRatio="xMidYMid meet"` (déjà posé sur chaque SVG)
+   garde alors les proportions sans déformer le dessin, quelle que soit la forme
+   de l'écran. */
+.simulator__chart-card:fullscreen .simulator__chart-wrap {
+  flex: 1 1 auto; min-height: 0; display: flex;
+}
+.simulator__chart-card:fullscreen .simulator__chart-wrap .simulator__chart {
+  flex: 1 1 auto; width: 100%; height: 100%; min-height: 0;
 }
 .simulator__hero-result { background: var(--success-bg); border: 1px solid var(--success-bd); color: var(--success-tx); border-radius: var(--radius); padding: 1rem 1.3rem; margin: 1rem 0 1.6rem; font-size: 1.05rem; line-height: 1.45; }
 .simulator__hero-result strong { font-size: 1.2rem; }
