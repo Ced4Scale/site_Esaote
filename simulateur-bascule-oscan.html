@@ -163,6 +163,17 @@
        l'équilibrage de hauteur du navigateur (comportement déjà documenté comme
        imprévisible, skill ced4scale-simulateur-web). */
     .chart-card-slide-canvas--split .bascule-ftmoy-group { break-inside: avoid; }
+    /* "Tarif moyen" doit TOUJOURS démarrer en haut de la 2ᵉ colonne (11/09/2026,
+       signalé par Cédric : ses titres "Forfait technique" et "Tarif moyen" n'étaient
+       pas alignés en haut de leurs colonnes respectives) — sans ce `break-before`, le
+       navigateur équilibre les 2 colonnes selon la hauteur totale du contenu : si
+       "Forfait technique" (1ʳᵉ colonne) laisse de la place, une partie de "Tarif
+       moyen" peut remonter dans CETTE MÊME colonne au lieu de commencer en haut de la
+       2ᵉ, ce qui décale son titre par rapport à celui de "Forfait technique". Force
+       le passage à la colonne suivante, quelle que soit la hauteur de "Forfait
+       technique" ce jour-là (case "Afficher tous les CA" cochée ou non, lignes de
+       total ajoutées ou pas). */
+    .chart-card-slide-canvas--split .bascule-ftmoy-group { break-before: column; }
     /* Même protection pour "Répartition de l'activité" (11/09/2026, correction d'un
        chevauchement signalé par Cédric en mode "2 colonnes") — chaque groupe logique
        de #boGrapheSimple reste D'UN SEUL BLOC, jamais coupé au milieu par le partage
@@ -664,12 +675,21 @@
        marge réduite entre eux) — il ne reste plus qu'UNE SEULE boîte visible (le
        cadre extérieur), dans le coin de laquelle l'icône partagée peut être ancrée
        sans ambiguïté. */
-    #boCardBaremeFtMoy > #boCardBareme,
+    /* Sélecteur `#boCardBaremeFtMoy #boCardBareme` en DESCENDANT (pas `>` enfant
+       direct) depuis le 11/09/2026 (suite) : en plein écran/mode présentation,
+       #boCardBareme est reparenté dans un `.chart-card-slide-canvas` généré par
+       presEntrerCard() (JS), qui s'intercale entre lui et #boCardBaremeFtMoy — un
+       sélecteur en enfant direct ne matchait alors plus DU TOUT, #boCardBareme
+       retrouvait son padding-top d'origine (~19px) tandis que #boFtMoyCard (déjà en
+       descendant, via `.bascule-ftmoy-group > #boFtMoyCard`) restait bien à 0 : les
+       2 titres "Forfait technique"/"Tarif moyen" n'étaient plus alignés en haut de
+       leurs colonnes respectives (signalé par Cédric). */
+    #boCardBaremeFtMoy #boCardBareme,
     #boCardBaremeFtMoy .bascule-ftmoy-group > #boFtMoyCard {
       border: none; box-shadow: none; background: none; padding: 0;
       margin-bottom: .5rem;
     }
-    #boCardBaremeFtMoy > #boCardBareme > summary,
+    #boCardBaremeFtMoy #boCardBareme > summary,
     #boCardBaremeFtMoy .bascule-ftmoy-group > #boFtMoyCard > summary {
       padding-right: 0;
     }
