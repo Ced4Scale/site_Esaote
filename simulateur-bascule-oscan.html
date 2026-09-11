@@ -803,15 +803,25 @@
 
       <div id="boResultsCol">
         <button type="button" class="btn btn--sm" id="boBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
-        <div class="simulator__chart-card" id="boCardPrincipal">
-          <button type="button" class="chart-card-fullscreen-btn" id="boChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
-            <h3 style="margin:0;font-size:1.05rem">Répartition de l'activité</h3>
+        <!-- Fermé par défaut (11/09/2026, demande de Cédric — "nouvelle règle pour tous
+             les simulateurs") : à l'ouverture de la page, TOUS les cadres de résultats
+             restent repliés — seul le titre + les icônes "ouvrir" (▸/▾ natif du
+             <details>) et "plein écran" sont visibles ; l'utilisateur choisit lui-même
+             lequel ouvrir et comment (en ligne ou plein écran). Reprend le motif déjà en
+             place sur "Forfait technique"/"Hypothèses" (jamais l'attribut `open`) —
+             généralisé ici à "Répartition de l'activité", qui n'était pas repliable
+             jusque-là. Voir skill ced4scale-simulateur-web, "Tous les cadres de
+             résultats fermés par défaut à l'ouverture de la page". -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardPrincipal">
+          <summary>Répartition de l'activité
+            <button type="button" class="chart-card-fullscreen-btn" id="boChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <div style="display:flex;align-items:center;justify-content:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
             <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale<span id="boBtnOptimumPct" style="font-size:.72rem;opacity:.85"></span></button>
           </div>
 
@@ -987,6 +997,64 @@
           </div>
 
           <div class="bascule-capnote" id="boCapaciteNote"></div>
+          </div>
+
+
+          <!-- Mémoires de simulation + mode Comparer (07/09/2026, portés du simulateur
+               CT vs IRM). Contrairement à ce dernier, ici le curseur de répartition ET
+               "Activité totale" sont mémorisés PROPRES à chaque mémoire (pas partagés) :
+               chaque emplacement fige un scénario de répartition complet, pas seulement
+               des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire().
+               Reste un frère de #boGrapheSimple (pas nested dedans) : doit rester visible/
+               cliquable même quand #boGrapheSimple est masqué en mode Comparer. Rejoint
+               #boFtMoyGroup, sous le graphe "Tarif moyen", UNIQUEMENT pendant le plein écran
+               fusionné Forfait technique + Tarif moyen (11/09/2026, extraIds/extraTargetId de
+               wireCardFullscreen) — remplace le rattachement précédent au joker (#boStatsRow). -->
+          <div class="bascule-btn-row" id="boBtnRow">
+            <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
+            <span class="bascule-memoire-slot" data-slot="0">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="1">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire2" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="2">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire3" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
+          </div>
+
+          <div id="boGrapheComparaison" hidden>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
+            </div>
+            <div class="bascule-comparaison-grille">
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectGauche" aria-label="Mémoire affichée à gauche">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartGauche" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à gauche"></svg>
+                <div id="boCompareStatsGauche"></div>
+              </div>
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectDroite" aria-label="Mémoire affichée à droite">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartDroite" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à droite"></svg>
+                <div id="boCompareStatsDroite"></div>
+              </div>
+            </div>
+          </div>
+        </details>
 
           <!-- Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique -
                barème dégressif" et "Tarif moyen du forfait technique" partagent
@@ -998,15 +1066,25 @@
                ci-dessus). Remplace les 2 boutons séparés + le rattachement des boutons
                Mémoire au joker (#boStatsRow) posés le 11/09/2026 plus tôt dans la
                journée. -->
+          <!-- Fermé par défaut (11/09/2026, "tous les cadres fermés à l'ouverture" —
+               voir plus haut sur #boCardPrincipal) : chaque section (barème / Tarif
+               moyen) est un <details> INDÉPENDANT avec sa PROPRE icône plein écran dans
+               son résumé — remplace l'unique bouton partagé posé plus tôt le même jour
+               sur #boCardBaremeFtMoy (retiré). Les 2 boutons ciblent le MÊME
+               #boCardBaremeFtMoy (2 colonnes, barème + Tarif moyen ensemble) : peu
+               importe lequel des 2 on clique, le <details> qui n'est pas encore ouvert
+               s'ouvre automatiquement avant le plein écran (voir `card.querySelectorAll
+               ("details")` dans wireCardFullscreen). -->
           <div class="simulator__chart-card" id="boCardBaremeFtMoy">
-            <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
             <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardBareme">
-              <summary>Forfait technique - barème dégressif</summary>
+              <summary>Forfait technique - barème dégressif
+                <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                  </svg>
+                </button>
+              </summary>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="boBaremeTable">
                   <thead>
@@ -1042,8 +1120,8 @@
                  extraTargetId de wireCardFullscreen — même mécanisme que pour le joker
                  auparavant, cible différente. -->
             <div class="bascule-ftmoy-group" id="boFtMoyGroup">
-              <div class="simulator__chart-card" id="boFtMoyCard">
-                <h3 style="margin:0 0 .6rem">Tarif moyen du forfait technique selon le volume
+              <details class="simulator__chart-card simulator__chart-card--collapsible" id="boFtMoyCard">
+                <summary>Tarif moyen du forfait technique selon le volume
                   <span class="bascule-info-wrap">
                     <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
                     <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Traits pleins : tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Traits fins en pointillé serré ("en marches") : tarif RÉEL de la tranche où tombe ce volume précis, sans moyenner — un palier par tranche, une chute nette à chaque seuil. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus. Utilisez 🧰 pour choisir quoi afficher.</div>
@@ -1068,7 +1146,13 @@
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" checked /> Seuils du barème</label>
                     </div>
                   </span>
-                </h3>
+                  <button type="button" class="chart-card-fullscreen-btn" id="boFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                      <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                      <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    </svg>
+                  </button>
+                </summary>
                 <div class="simulator__chart-wrap">
                   <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
                 </div>
@@ -1174,66 +1258,10 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </details>
             </div>
-          </div>
           </div>
 
-          <!-- Mémoires de simulation + mode Comparer (07/09/2026, portés du simulateur
-               CT vs IRM). Contrairement à ce dernier, ici le curseur de répartition ET
-               "Activité totale" sont mémorisés PROPRES à chaque mémoire (pas partagés) :
-               chaque emplacement fige un scénario de répartition complet, pas seulement
-               des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire().
-               Reste un frère de #boGrapheSimple (pas nested dedans) : doit rester visible/
-               cliquable même quand #boGrapheSimple est masqué en mode Comparer. Rejoint
-               #boFtMoyGroup, sous le graphe "Tarif moyen", UNIQUEMENT pendant le plein écran
-               fusionné Forfait technique + Tarif moyen (11/09/2026, extraIds/extraTargetId de
-               wireCardFullscreen) — remplace le rattachement précédent au joker (#boStatsRow). -->
-          <div class="bascule-btn-row" id="boBtnRow">
-            <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
-            <span class="bascule-memoire-slot" data-slot="0">
-              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
-              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire1Clear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
-            </span>
-            <span class="bascule-memoire-slot" data-slot="1">
-              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire2" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
-              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire2Clear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
-            </span>
-            <span class="bascule-memoire-slot" data-slot="2">
-              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire3" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
-              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire3Clear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
-            </span>
-            <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
-          </div>
-
-          <div id="boGrapheComparaison" hidden>
-            <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
-              <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
-            </div>
-            <div class="bascule-comparaison-grille">
-              <div class="bascule-comparaison-cote">
-                <select id="boCompareSelectGauche" aria-label="Mémoire affichée à gauche">
-                  <option value="">— Choisir une mémoire —</option>
-                  <option value="0">Mémoire 1</option>
-                  <option value="1">Mémoire 2</option>
-                  <option value="2">Mémoire 3</option>
-                </select>
-                <svg id="boCompareChartGauche" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à gauche"></svg>
-                <div id="boCompareStatsGauche"></div>
-              </div>
-              <div class="bascule-comparaison-cote">
-                <select id="boCompareSelectDroite" aria-label="Mémoire affichée à droite">
-                  <option value="">— Choisir une mémoire —</option>
-                  <option value="0">Mémoire 1</option>
-                  <option value="1">Mémoire 2</option>
-                  <option value="2">Mémoire 3</option>
-                </select>
-                <svg id="boCompareChartDroite" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à droite"></svg>
-                <div id="boCompareStatsDroite"></div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardHyp">
           <summary>Hypothèses de ce simulateur
@@ -4042,7 +4070,11 @@
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
-            Array.prototype.forEach.call(card.querySelectorAll(":scope > details"), function (d) { d.open = true; });
+            // `details` (tous descendants), pas seulement `:scope > details` (11/09/2026) :
+            // un cadre fusionné peut contenir un <details> niché plus profond qu'un
+            // enfant direct (ex. #boFtMoyCard, lui-même dans #boFtMoyGroup) — il doit
+            // quand même s'ouvrir avant le plein écran, comme n'importe quel autre.
+            Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
             if (bodyId) {
               var body = document.getElementById(bodyId);
               if (body && body.hidden) {
@@ -4087,7 +4119,13 @@
       // Tarif moyen + boutons Mémoire/Comparer (extraIds, déplacés dans #boFtMoyGroup
       // via extraTargetId) en page 2. Remplace boBaremeFullscreenBtn/boFtMoyFullscreenBtn
       // et le rattachement des boutons Mémoire au joker.
-      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, ["boBtnRow", "boGrapheComparaison"], true, "boFtMoyGroup");
+      // 2 boutons distincts (11/09/2026, un par <details> désormais indépendant —
+      // "Forfait technique" et "Tarif moyen" ont chacun leur propre icône plein écran
+      // dans leur résumé) qui ciblent le MÊME cadre fusionné #boCardBaremeFtMoy : peu
+      // importe lequel des 2 on clique, le <details> pas encore ouvert s'ouvre tout
+      // seul avant le plein écran (voir card.querySelectorAll("details") plus haut).
+      wireCardFullscreen("boBaremeFullscreenBtn", "boCardBaremeFtMoy", null, ["boBtnRow", "boGrapheComparaison"], true, "boFtMoyGroup");
+      wireCardFullscreen("boFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, ["boBtnRow", "boGrapheComparaison"], true, "boFtMoyGroup");
 
       majResumeHypotheses();
       repositionnerCurseur();
