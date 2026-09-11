@@ -1010,6 +1010,31 @@
           </div>
 
           <div class="bascule-capnote" id="boCapaciteNote"></div>
+
+          <!-- Copie du bloc Mémoire/Comparer, visible ICI EN PLUS de sa place sous
+               "Tarif moyen" (demande de Cédric le 11/09/2026 : "aux 2 endroits") — ids
+               suffixés "R" (Répartition), mêmes boutons/mêmes actions, généralisés en
+               JS avec un suffixe (voir majBoutonMemoire()/activerComparaison() plus
+               bas) plutôt que dupliqués. Pas de sélecteurs de comparaison ici (ils
+               pilotent #boGrapheComparaison, qui reste physiquement sous "Tarif
+               moyen") — cliquer "Comparer" ici bascule le même mode partagé, visible
+               en ouvrant le cadre "Forfait technique - barème dégressif". -->
+          <div class="bascule-btn-row" id="boBtnRowR">
+            <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparerR" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée (visible sous « Forfait technique »). Recliquez pour fermer la comparaison." title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée (visible sous « Forfait technique »). Recliquez pour fermer la comparaison.">Comparer</button>
+            <span class="bascule-memoire-slot" data-slot="0">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire1R" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire1RClear" aria-label="Mémoire 1 pas encore enregistrée" title="Mémoire 1 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="1">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire2R" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 2.">Mémoire 2</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire2RClear" aria-label="Mémoire 2 pas encore enregistrée" title="Mémoire 2 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <span class="bascule-memoire-slot" data-slot="2">
+              <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire3R" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 3.">Mémoire 3</button>
+              <button type="button" class="bascule-memoire-clear" id="boBtnMemoire3RClear" aria-label="Mémoire 3 pas encore enregistrée" title="Mémoire 3 pas encore enregistrée" disabled><svg class="bascule-lock-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
+            </span>
+            <p class="bascule-memoire-hint" id="boMemoireTxtR">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
+          </div>
           </div>
         </details>
 
@@ -3606,40 +3631,52 @@
       }
 
       // 3 emplacements ; null = vide. boBtnMemoireN vide -> enregistre, rempli -> rappelle.
+      // Bloc dupliqué à 2 endroits (ids suffixés "R" sous "Répartition de l'activité",
+      // demande de Cédric le 11/09/2026 : "aux 2 endroits") — un seul état partagé
+      // (`memoires`), les 2 jeux de boutons généralisés avec un suffixe plutôt que
+      // dupliqués en JS, toujours synchronisés (mêmes classes, même message).
       var memoires = [null, null, null];
+      var BO_MEMOIRE_SUFFIXES = ["", "R"];
+      function afficherMessageMemoire(texte) {
+        BO_MEMOIRE_SUFFIXES.forEach(function (s) { document.getElementById("boMemoireTxt" + s).textContent = texte; });
+      }
       function majBoutonMemoire(i) {
-        var btn = document.getElementById("boBtnMemoire" + (i + 1));
-        var clear = document.getElementById("boBtnMemoire" + (i + 1) + "Clear");
-        var rempli = memoires[i] !== null;
-        btn.classList.toggle("btn--ghost", !rempli);
-        btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
-        btn.title = rempli
-          ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
-          : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
-        btn.dataset.tip = btn.title; // bulle au survol (data-tip), suit le même texte que title
-        clear.disabled = !rempli;
-        clear.classList.toggle("is-ouvert", !rempli);
-        clear.title = rempli
-          ? "Cliquez pour effacer la mémoire " + (i + 1) + " et libérer l'emplacement."
-          : "Mémoire " + (i + 1) + " pas encore enregistrée.";
-        clear.setAttribute("aria-label", clear.title);
+        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
+          var btn = document.getElementById("boBtnMemoire" + (i + 1) + s);
+          var clear = document.getElementById("boBtnMemoire" + (i + 1) + s + "Clear");
+          var rempli = memoires[i] !== null;
+          btn.classList.toggle("btn--ghost", !rempli);
+          btn.textContent = (rempli ? "✓ " : "") + "Mémoire " + (i + 1);
+          btn.title = rempli
+            ? "Cliquez pour rappeler la mémoire " + (i + 1) + " dans le formulaire."
+            : "Cliquez pour enregistrer les paramètres actuels dans la mémoire " + (i + 1) + ".";
+          btn.dataset.tip = btn.title; // bulle au survol (data-tip), suit le même texte que title
+          clear.disabled = !rempli;
+          clear.classList.toggle("is-ouvert", !rempli);
+          clear.title = rempli
+            ? "Cliquez pour effacer la mémoire " + (i + 1) + " et libérer l'emplacement."
+            : "Mémoire " + (i + 1) + " pas encore enregistrée.";
+          clear.setAttribute("aria-label", clear.title);
+        });
         majOptionsCompareSelects();
       }
       [0, 1, 2].forEach(function (i) {
-        document.getElementById("boBtnMemoire" + (i + 1)).addEventListener("click", function () {
-          if (memoires[i] === null) {
-            memoires[i] = capturerParametres();
-            document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " enregistrée.";
-          } else {
-            restaurerParametres(memoires[i]);
-            document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " rappelée dans le formulaire.";
-          }
-          majBoutonMemoire(i);
-        });
-        document.getElementById("boBtnMemoire" + (i + 1) + "Clear").addEventListener("click", function () {
-          memoires[i] = null;
-          majBoutonMemoire(i);
-          document.getElementById("boMemoireTxt").textContent = "Mémoire " + (i + 1) + " effacée.";
+        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
+          document.getElementById("boBtnMemoire" + (i + 1) + s).addEventListener("click", function () {
+            if (memoires[i] === null) {
+              memoires[i] = capturerParametres();
+              afficherMessageMemoire("Mémoire " + (i + 1) + " enregistrée.");
+            } else {
+              restaurerParametres(memoires[i]);
+              afficherMessageMemoire("Mémoire " + (i + 1) + " rappelée dans le formulaire.");
+            }
+            majBoutonMemoire(i);
+          });
+          document.getElementById("boBtnMemoire" + (i + 1) + s + "Clear").addEventListener("click", function () {
+            memoires[i] = null;
+            majBoutonMemoire(i);
+            afficherMessageMemoire("Mémoire " + (i + 1) + " effacée.");
+          });
         });
       });
       [0, 1, 2].forEach(majBoutonMemoire);
@@ -3731,18 +3768,24 @@
         document.getElementById("boCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
         document.getElementById("boCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
         redessinerComparaison();
-        document.getElementById("boBtnComparer").classList.remove("btn--ghost");
-        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "true");
+        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
+          document.getElementById("boBtnComparer" + s).classList.remove("btn--ghost");
+          document.getElementById("boBtnComparer" + s).setAttribute("aria-pressed", "true");
+        });
       }
       function desactiverComparaison() {
         compareMode = false;
         document.getElementById("boGrapheSimple").hidden = false;
         document.getElementById("boGrapheComparaison").hidden = true;
-        document.getElementById("boBtnComparer").classList.add("btn--ghost");
-        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "false");
+        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
+          document.getElementById("boBtnComparer" + s).classList.add("btn--ghost");
+          document.getElementById("boBtnComparer" + s).setAttribute("aria-pressed", "false");
+        });
       }
-      document.getElementById("boBtnComparer").addEventListener("click", function () {
-        if (compareMode) desactiverComparaison(); else activerComparaison();
+      BO_MEMOIRE_SUFFIXES.forEach(function (s) {
+        document.getElementById("boBtnComparer" + s).addEventListener("click", function () {
+          if (compareMode) desactiverComparaison(); else activerComparaison();
+        });
       });
       document.getElementById("boBtnFermerComparaison").addEventListener("click", desactiverComparaison);
       document.getElementById("boCompareSelectGauche").addEventListener("change", function () {
