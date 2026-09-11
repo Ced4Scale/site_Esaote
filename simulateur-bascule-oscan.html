@@ -1342,14 +1342,20 @@
                              son commentaire plus haut. -->
                         <img class="bascule-joker-icon bascule-joker-icon--sm" src="assets/joker.png" alt="" aria-hidden="true">
                       </button>
+                      <!-- Dos remplacé le 11/09/2026 (demande de Cédric) : montrait la
+                           comparaison de tarif moyen avant/après (avant, après,
+                           écart) — remplacé par les 2 mêmes informations que sous
+                           "Total des 2 machines" du tableau "Forfait technique"
+                           (mêmes valeurs, capaciteJokerActuelle/gainCAJokerActuelle,
+                           voir dessinerBaremeMini() et recalculer()), pour rester
+                           cohérent partout où ce chiffre apparaît. -->
                       <div class="bascule-joker-face bascule-joker-back">
                         <button type="button" class="bascule-joker-retour" id="boFtMoyJokerBackBtn" aria-label="Retourner la carte">↩</button>
-                        <div class="bascule-stat-label">🃏 Tarif moyen si on comble la réserve O-scan</div>
+                        <div class="bascule-stat-label">🃏 Réserve O-scan à combler</div>
                         <div class="bascule-ftmoy-joker-compare">
-                          <div class="bascule-stat-detail-row"><span>Tarif moyen actuel</span><span id="boFtMoyJokerAvant">—</span></div>
-                          <div class="bascule-stat-detail-row"><span id="boFtMoyJokerApresLabel">Avec l'O-scan à 100&nbsp;% (+0 FT/an)</span><span id="boFtMoyJokerApres">—</span></div>
+                          <div class="bascule-stat-detail-row"><span>Examens réalisables (O-scan à 100&nbsp;%)</span><span id="boFtMoyJokerExamens">—</span></div>
+                          <div class="bascule-stat-detail-row"><span>CA équivalent</span><span id="boFtMoyJokerCaEquiv">—</span></div>
                         </div>
-                        <div class="bascule-ftmoy-joker-ecart" id="boFtMoyJokerGainLine"><span id="boFtMoyJokerEcart">—</span></div>
                       </div>
                     </div>
                   </div>
@@ -2256,6 +2262,12 @@
       // "CA de la tranche" au clic (voir plus bas) et pour le graphe "Tarif moyen" —
       // mis à jour à chaque recalcul, dans recalculer() juste après le calcul de volA/volO.
       var volActuelA = 0, volActuelO = 0;
+      // Capacité restante de l'O-scan (examens réalisables pour atteindre 100 % de sa
+      // capacité) + CA équivalent (11/09/2026, demande de Cédric) — mêmes valeurs que
+      // le joker (capaciteJoker/gainCAJoker, calculées dans recalculer()), exposées au
+      // niveau du module pour que dessinerBaremeMini() (sous "Forfait technique") et le
+      // dos du joker "Tarif moyen" les affichent sans dupliquer le calcul.
+      var capaciteJokerActuelle = 0, gainCAJokerActuelle = 0;
       // Tranches {debut, fin, montant} d'une classe de forfait technique, même motif
       // que tranchesAvecMontant() sur simulateur-ct-vs-irm.html (voir skill
       // ced4scale-simulateur-web, "Forfait technique - barème dégressif").
@@ -2371,6 +2383,32 @@
         tdTotal2Val.appendChild(spanTotal2);
         trTotal2.appendChild(tdTotal2Val);
         tbody.appendChild(trTotal2);
+
+        // Sous "Total des 2 machines" (11/09/2026, demande de Cédric) : capacité
+        // restante de l'O-scan (examens réalisables pour atteindre 100 % de sa
+        // capacité) + CA équivalent — mêmes valeurs que le joker "Tarif moyen"
+        // (capaciteJokerActuelle/gainCAJokerActuelle, calculées dans recalculer()),
+        // affichées ici aussi pour ne pas avoir à ouvrir/retourner le joker pour les
+        // consulter. Reprises telles quelles sur le dos de ce joker (voir plus bas).
+        var trExamens = document.createElement("tr");
+        var tdExamensLabel = document.createElement("td");
+        tdExamensLabel.innerHTML = "<strong>Examens réalisables (O-scan à 100&nbsp;%)</strong>";
+        trExamens.appendChild(tdExamensLabel);
+        var tdExamensVal = document.createElement("td");
+        tdExamensVal.colSpan = 2;
+        tdExamensVal.innerHTML = "<span class=\"bo-bareme-ca\">+" + fmt(capaciteJokerActuelle) + " FT/an</span>";
+        trExamens.appendChild(tdExamensVal);
+        tbody.appendChild(trExamens);
+
+        var trCaEquiv = document.createElement("tr");
+        var tdCaEquivLabel = document.createElement("td");
+        tdCaEquivLabel.innerHTML = "<strong>CA équivalent</strong>";
+        trCaEquiv.appendChild(tdCaEquivLabel);
+        var tdCaEquivVal = document.createElement("td");
+        tdCaEquivVal.colSpan = 2;
+        tdCaEquivVal.innerHTML = "<span class=\"bo-bareme-ca\">+" + eur(gainCAJokerActuelle, 2) + "</span>";
+        trCaEquiv.appendChild(tdCaEquivVal);
+        tbody.appendChild(trCaEquiv);
       }
       // ---- "Tarif moyen du forfait technique selon le volume" (11/09/2026, motif
       // "Forfait technique - barème dégressif" — skill ced4scale-simulateur-web).
@@ -3554,27 +3592,16 @@
         // marginal élevé, c'est tout l'argument du joker.
         var capaciteJoker = Math.max(0, Math.round(capaciteAnnuelleO - volO));
 
-        // Joker "Tarif moyen" (11/09/2026, demande de Cédric) : même capaciteJoker
-        // ci-dessus (capacité RESTANTE de l'O-scan comblée par de l'activité EN PLUS,
-        // Machine A inchangée) mais exprimé en tarif moyen pondéré de l'ensemble de
-        // l'activité plutôt qu'en résultat net. Tranches calculées ici une seule fois,
-        // réutilisées plus bas par dessinerFtMoyenBascule() (jamais recalculées 2 fois).
+        // Tranches du joker "Tarif moyen" — réutilisées plus bas par
+        // dessinerFtMoyenBascule() (jamais recalculées 2 fois).
         var trJokerA = tranchesDepuisClasse(FT_CLASSES_PLEIN[classeA]);
         var trJokerO = tranchesDepuisClasse(FT_CLASSES_PLEIN.le05);
-        var volOApresJoker = volO + capaciteJoker;
-        var volumeTotalApresJoker = volumeTotal + capaciteJoker;
-        var tarifPondereActuel = volumeTotal > 0
-          ? (tarifMoyenPourVolumeBascule(trJokerA, volA) * volA + tarifMoyenPourVolumeBascule(trJokerO, volO) * volO) / volumeTotal
-          : 0;
-        var tarifPondereApresJoker = volumeTotalApresJoker > 0
-          ? (tarifMoyenPourVolumeBascule(trJokerA, volA) * volA + tarifMoyenPourVolumeBascule(trJokerO, volOApresJoker) * volOApresJoker) / volumeTotalApresJoker
-          : 0;
-        var ecartTarifJoker = tarifPondereApresJoker - tarifPondereActuel;
-        document.getElementById("boFtMoyJokerAvant").textContent = eur(tarifPondereActuel, 2);
-        document.getElementById("boFtMoyJokerApresLabel").textContent = "Avec l'O-scan à 100 % (+" + fmt(capaciteJoker) + " FT/an)";
-        document.getElementById("boFtMoyJokerApres").textContent = eur(tarifPondereApresJoker, 2);
-        document.getElementById("boFtMoyJokerEcart").textContent =
-          (ecartTarifJoker >= 0 ? "+ " : "− ") + eur(Math.abs(ecartTarifJoker), 2) + " sur le tarif moyen pondéré";
+        // Dos du joker "Tarif moyen" (11/09/2026, demande de Cédric) : mêmes 2
+        // informations que sous "Total des 2 machines" du tableau "Forfait
+        // technique" (capaciteJokerActuelle/gainCAJokerActuelle) — remplace
+        // l'ancienne comparaison de tarif moyen avant/après.
+        document.getElementById("boFtMoyJokerExamens").textContent = "+" + fmt(capaciteJokerActuelle) + " FT/an";
+        document.getElementById("boFtMoyJokerCaEquiv").textContent = "+" + eur(gainCAJokerActuelle, 2);
 
         // Heures/jour encore disponibles : capacité restante ÷ débit = heures
         // restantes sur l'année, réparties sur les jours réellement ouverts.
@@ -3584,6 +3611,7 @@
         // Recette additionnelle (barème dégressif, à la suite du volume O-scan déjà
         // posé) et coûts variables additionnels, au débit de l'O-scan lui-même.
         var gainCAJoker = ftAnnuel("le05", volO + capaciteJoker) - ftAnnuel("le05", volO);
+        capaciteJokerActuelle = capaciteJoker; gainCAJokerActuelle = gainCAJoker; // pour le tableau du barème + le dos du joker
         var elecLe05 = elecPourClasse("le05");
         // Postes marginaux ajoutés le 10/09/2026 (aide-manip/infirmière/alternance de
         // l'O-scan) inclus dans le coût du joker, même forme que coutManipJoker (coût
