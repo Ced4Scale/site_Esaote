@@ -4367,7 +4367,14 @@
       // réglage réellement mémorisé par l'utilisateur est relu depuis le stockage local
       // à la sortie (pas restauré depuis une simple variable), pour ne pas écraser un
       // changement qu'il aurait fait manuellement pendant qu'il était forcé.
-      function wireCardFullscreen(btnId, cardId, bodyId, extraIds, forceSplit, extraTargetId) {
+      // `forceFormat` (optionnel, 11/09/2026, même principe que `forceSplit`) : ce cadre
+      // précis s'ouvre TOUJOURS dans ce format de présentation (ex. "auto"), quel que
+      // soit le format 16:9/4:3/Automatique mémorisé — utilisé pour "Répartition de
+      // l'activité", qui doit toujours démarrer en "Automatique" + "2 colonnes". Comme
+      // `forceSplit`, l'utilisateur peut changer le format manuellement une fois dans
+      // le cadre (les boutons Automatique/16:9/4:3 restent actifs), et le vrai réglage
+      // mémorisé est relu depuis le stockage local à la sortie, jamais écrasé.
+      function wireCardFullscreen(btnId, cardId, bodyId, extraIds, forceSplit, extraTargetId, forceFormat) {
         var btn = document.getElementById(btnId), card = document.getElementById(cardId);
         if (!btn || !card) return;
         var extras = (extraIds || []).map(function (id) { return document.getElementById(id); }).filter(Boolean);
@@ -4393,6 +4400,7 @@
             var target = (extraTargetId && document.getElementById(extraTargetId)) || card;
             extras.forEach(function (el) { target.appendChild(el); });
             if (forceSplit) presSplitActuel = true;
+            if (forceFormat) presFormatActuel = forceFormat;
             card.requestFullscreen();
           }
         });
@@ -4413,6 +4421,7 @@
           } else if (presCardActif === card) {
             presSortirCard(card);
             if (forceSplit) presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
+            if (forceFormat) presFormatActuel = presLire("ced4scale-presentation-format", "auto");
             extras.forEach(function (el, i) {
               var home = extrasHomes[i];
               if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
@@ -4427,7 +4436,9 @@
       // séparés (#boChartFullscreenBtn sur le graphe seul, #boStatsFullscreenBtn sur
       // #boStatsRow seul). #boStatsRow reste un descendant normal de #boCardPrincipal,
       // donc il suit automatiquement en plein écran sans mécanisme extraIds.
-      wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
+      // Forcé en "Automatique" + "2 colonnes" (11/09/2026, demande de Cédric) — voir
+      // commentaire de wireCardFullscreen() plus bas pour forceSplit/forceFormat.
+      wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal", null, null, true, null, "auto");
       wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
       // Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique - barème
       // dégressif" + "Tarif moyen du forfait technique" partagent un seul bouton plein
