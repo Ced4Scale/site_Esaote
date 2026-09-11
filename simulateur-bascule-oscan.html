@@ -267,6 +267,53 @@
        pixellise, contrairement à un tracé SVG qui reste net à n'importe quelle taille
        (même motif que les icônes plein écran/cadenas déjà en SVG sur ce site). */
     .bascule-joker-icon { width: clamp(4.8rem, 19.2vw, 16.3rem); height: clamp(4.8rem, 19.2vw, 16.3rem); display: block; }
+    /* Variante compacte pour le joker "Tarif moyen" (11/09/2026) — carte secondaire,
+       hors de la grille de stats, pas besoin d'une icône aussi grande que le joker
+       principal. */
+    .bascule-joker-icon--sm { width: clamp(3rem, 8vw, 4.6rem); height: clamp(3rem, 8vw, 4.6rem); }
+    /* Réglages miroir (répartition/activité/part membres-extrémités) sous le graphe
+       "Tarif moyen" (11/09/2026, demande de Cédric) — voir mirrorField() dans le JS. */
+    .bascule-ftmoy-controls { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    /* Ce curseur miroir vit 3 niveaux de cadres imbriqués plus profond que l'original
+       (#boFtMoyCard dans #boCardBaremeFtMoy dans #boCardPrincipal, chacun avec son
+       propre padding .simulator__chart-card) : sur un mobile étroit, sa largeur réelle
+       tombe sous 260px alors que l'original en garde ~335px — les libellés "Machine A"/
+       "O-scan", positionnés en absolu et centrés sur leur %, se chevauchent (vécu le
+       11/09/2026). Sous 480px, on repasse en flux normal (space-between) plutôt que de
+       suivre la position exacte du curseur — perd la nuance visuelle mais élimine tout
+       chevauchement, quelle que soit la répartition choisie. */
+    @media (max-width: 480px) {
+      #boFtMoyCard .bascule-slider-labels {
+        position: static; height: auto; display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
+      }
+      #boFtMoyCard .bascule-slider-labels .lbl { position: static; transform: none; }
+    }
+    .bascule-ftmoy-fields { display: flex; flex-wrap: wrap; gap: 1.2rem 1.6rem; margin-top: 1rem; }
+    .bascule-ftmoy-fields .field, .bascule-ftmoy-fields .bascule-champ { flex: 1 1 220px; min-width: 200px; margin-bottom: 0; }
+    /* Variante compacte au verso du joker principal : la carte y est bien plus
+       étroite qu'en pleine largeur, les 2 champs restent empilés (jamais côte à
+       côte) plutôt que de se tasser illisiblement. */
+    .bascule-ftmoy-fields--sm { flex-direction: column; gap: .7rem; margin: .6rem 0; }
+    .bascule-ftmoy-fields--sm .field, .bascule-ftmoy-fields--sm .bascule-champ { flex: 1 1 auto; min-width: 0; }
+    /* Joker "Tarif moyen" (11/09/2026) : carte compacte centrée, hors de la grille de
+       stats à 3 colonnes du joker principal — un simple bloc sous les réglages miroir. */
+    /* `position:relative` obligatoire ici : `.bascule-stat-joker.is-flipped` passe en
+       `position:absolute; inset:0` (motif déjà en place pour le joker principal, qui
+       vit lui dans une grille de stats à 3 colonnes dont les cellules voisines
+       maintiennent la hauteur) — sans ancêtre positionné DÉDIÉ à ce joker précis, le
+       "inset:0" s'appliquerait à l'ancêtre positionné suivant (`#boFtMoyCard`,
+       `.simulator__chart-card` a déjà `position:relative`), étalant la carte retournée
+       sur TOUTE la carte "Tarif moyen" au lieu de rester dans son propre encadré (bug
+       vécu le 11/09/2026). `min-height` fixe (pas géré par une grille voisine ici) pour
+       que ce bloc ne s'effondre pas à 0 quand son unique enfant devient absolute. */
+    .bascule-ftmoy-joker-wrap { display: flex; justify-content: center; margin-top: 1.2rem; position: relative; min-height: 190px; }
+    #boFtMoyJokerCard { max-width: 340px; width: 100%; min-height: 190px; }
+    .bascule-ftmoy-joker-compare { display: flex; flex-direction: column; gap: .35rem; margin: .5rem 0; }
+    /* Écart de TARIF MOYEN (pas un résultat net) : jamais vert/rouge comme
+       .bascule-stat-gain — un tarif moyen qui baisse en ajoutant du volume O-scan
+       n'est pas une perte (le résultat net reste positif, voir le joker principal),
+       juste neutre, une information descriptive. */
+    .bascule-ftmoy-joker-ecart { margin-top: .4rem; padding-top: .4rem; border-top: 1px dashed var(--line); font-size: .86rem; font-weight: 700; color: var(--ink); }
     .bascule-joker-back {
       transform: rotateY(180deg); text-align: left; padding: 1rem 1.2rem; overflow: hidden;
       background: var(--white); border-radius: 8px;
@@ -820,6 +867,25 @@
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
                   <div class="bascule-stat-label">🃏 Capacité restante sur l'O-scan</div>
+                  <!-- Champs miroir (11/09/2026, demande de Cédric) : ajuster l'activité
+                       totale et la part membres/extrémités directement depuis le verso du
+                       joker, sans le refermer pour aller au formulaire principal. -->
+                  <div class="bascule-ftmoy-fields bascule-ftmoy-fields--sm">
+                    <div class="field" style="margin-bottom:0">
+                      <label for="boVolumeA3">Activité totale actuelle</label>
+                      <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA3" value="12000" style="width:5rem" /><span>FT/an</span></div>
+                    </div>
+                    <div class="bascule-champ" style="margin-bottom:0">
+                      <label for="boPartExtremites3">Part membres/extrémités (IRM tunnel, hors épaule)</label>
+                      <div class="bascule-range">
+                        <div class="bo-partext-track-wrap">
+                          <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill3"></div></div>
+                          <input type="range" id="boPartExtremites3" min="0" max="100" value="35" />
+                        </div>
+                        <span class="val" id="boPartExtremitesVal3">35 %</span>
+                      </div>
+                    </div>
+                  </div>
                   <table class="bascule-mini-table" style="margin:.4rem 0"><tbody id="boJokerCapaciteNote"></tbody></table>
                   <div class="bascule-joker-camembert">
                     <div class="bascule-joker-pie-unit">
@@ -942,6 +1008,78 @@
                 </h3>
                 <div class="simulator__chart-wrap">
                   <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
+                </div>
+
+                <!-- Réglages miroir de l'activité (11/09/2026, demande de Cédric) :
+                     répartition, activité totale et part membres/extrémités modifiables
+                     directement sous ce graphe, sans repasser par le formulaire
+                     principal (pas visible en plein écran fusionné). Champs miroirs de
+                     #boCurseur/#boVolumeA/#boPartExtremites, synchronisés dans les 2 sens
+                     — voir mirrorField() plus bas. -->
+                <div class="bascule-ftmoy-controls">
+                  <div class="bascule-slider-labels">
+                    <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+                    <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
+                  </div>
+                  <div class="bascule-track-wrap">
+                    <div class="bascule-slider-track">
+                      <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
+                    </div>
+                    <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
+                    <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
+                  </div>
+                  <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
+                  <div class="bascule-ftmoy-fields">
+                    <div class="field" style="margin-bottom:0">
+                      <label for="boVolumeA2">Activité totale actuelle</label>
+                      <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA2" value="12000" style="width:5rem" /><span>FT/an</span></div>
+                    </div>
+                    <div class="bascule-champ" style="margin-bottom:0">
+                      <label for="boPartExtremites2">Part membres/extrémités (IRM tunnel, hors épaule)</label>
+                      <div class="bascule-range">
+                        <div class="bo-partext-track-wrap">
+                          <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill2"></div></div>
+                          <input type="range" id="boPartExtremites2" min="0" max="100" value="35" />
+                        </div>
+                        <span class="val" id="boPartExtremitesVal2">35 %</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Joker "Tarif moyen" (11/09/2026, demande de Cédric) : même mécanique
+                     que le joker principal (capacité RESTANTE de l'O-scan comblée par de
+                     l'activité EN PLUS, Machine A inchangée) mais montre l'effet sur le
+                     TARIF MOYEN pondéré de l'ensemble plutôt que sur le résultat net —
+                     carte compacte, pas de camembert ni de graphe à barres (motif "rendu
+                     volontairement plus simple pour une vue secondaire", skill
+                     ced4scale-simulateur-web). -->
+                <div class="bascule-ftmoy-joker-wrap">
+                  <div class="bascule-stat-joker" id="boFtMoyJokerCard">
+                    <div class="bascule-joker-flip" id="boFtMoyJokerFlip">
+                      <button type="button" class="bascule-joker-face bascule-joker-front" id="boFtMoyJokerFrontBtn" aria-expanded="false" aria-label="Et si on comblait la réserve d'activité disponible sur l'O-scan ? Effet sur le tarif moyen. Cliquer pour essayer.">
+                        <svg class="bascule-joker-icon bascule-joker-icon--sm" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                          <rect x="10" y="70" width="80" height="16" rx="8" fill="var(--red)"/>
+                          <polygon points="20,72 36,72 14,20" fill="var(--red)"/>
+                          <polygon points="42,72 58,72 50,6" fill="var(--red)"/>
+                          <polygon points="64,72 80,72 86,20" fill="var(--red)"/>
+                          <circle cx="14" cy="16" r="7" fill="#e0a92e"/>
+                          <circle cx="50" cy="6" r="7" fill="#e0a92e"/>
+                          <circle cx="86" cy="16" r="7" fill="#e0a92e"/>
+                        </svg>
+                        <span class="bascule-stat-label">Et si on comblait la réserve O-scan ?</span>
+                      </button>
+                      <div class="bascule-joker-face bascule-joker-back">
+                        <button type="button" class="bascule-joker-retour" id="boFtMoyJokerBackBtn" aria-label="Retourner la carte">↩</button>
+                        <div class="bascule-stat-label">🃏 Tarif moyen si on comble la réserve O-scan</div>
+                        <div class="bascule-ftmoy-joker-compare">
+                          <div class="bascule-stat-detail-row"><span>Tarif moyen actuel</span><span id="boFtMoyJokerAvant">—</span></div>
+                          <div class="bascule-stat-detail-row"><span id="boFtMoyJokerApresLabel">Avec l'O-scan à 100&nbsp;% (+0 FT/an)</span><span id="boFtMoyJokerApres">—</span></div>
+                        </div>
+                        <div class="bascule-ftmoy-joker-ecart" id="boFtMoyJokerGainLine"><span id="boFtMoyJokerEcart">—</span></div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1709,6 +1847,9 @@
       }
 
       var curseur = document.getElementById("boCurseur");
+      // Curseur miroir sous le graphe "Tarif moyen" (11/09/2026, demande de Cédric) —
+      // voir mirrorField() plus bas pour la synchronisation dans les 2 sens.
+      var curseur2 = document.getElementById("boCurseur2");
       var dernierEtat = null;
 
       function trouverOptimum(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites, extraA, extraO) {
@@ -1915,9 +2056,40 @@
         courbe(trA, function (x) { return x; }, "#2a78d6");
         courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
 
-        // Repère vertical à la répartition actuelle du curseur (volA), commun aux 2 courbes.
-        var xr = px(Math.max(0, Math.min(volumeTotal, volA)));
+        // 3ᵉ courbe "Tarif moyen pondéré de l'ensemble" (11/09/2026, demande de
+        // Cédric) : à chaque position x, la moyenne des 2 tarifs (Machine A / O-scan)
+        // pondérée par le volume RÉEL de chacune à ce point — pas une simple moyenne
+        // arithmétique des 2 courbes, qui ignorerait le déséquilibre des volumes.
+        // Tracée en tireté neutre (ni bleu ni orange, pour ne pas laisser croire que
+        // c'est une 3ᵉ machine) — se relit comme une référence globale.
+        function tarifPondere(x) {
+          var vO = volumeTotal - x;
+          if (volumeTotal <= 0) return trA[0].montant;
+          return (tarifMoyenPourVolumeBascule(trA, x) * x + tarifMoyenPourVolumeBascule(trO, vO) * vO) / volumeTotal;
+        }
+        var Np = 80, ptsPond = [];
+        for (var ip = 0; ip <= Np; ip++) {
+          var xp = (xMax * ip) / Np;
+          ptsPond.push(px(xp) + "," + py(tarifPondere(xp)));
+        }
+        svg.appendChild(el("path", { d: "M" + ptsPond.join(" L"), fill: "none", stroke: "#6b5a45", "stroke-width": 2.2, "stroke-dasharray": "7,4" }));
+
+        // Repère vertical à la répartition actuelle du curseur (volA), commun aux 3 courbes.
+        var volAr = Math.max(0, Math.min(volumeTotal, volA));
+        var xr = px(volAr);
         svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
+
+        // Bulle de valeur de la courbe pondérée à la répartition actuelle — seule des 3
+        // courbes à porter une bulle (les 2 autres sont déjà lisibles via les libellés
+        // "Machine A"/"O-scan" au-dessus du curseur de répartition).
+        var yPondActuel = py(tarifPondere(volAr));
+        svg.appendChild(el("circle", { cx: xr, cy: yPondActuel, r: 4, fill: "#6b5a45" }));
+        var bulle = el("text", {
+          x: xr, y: yPondActuel - 10, "font-size": 13, "font-weight": 800,
+          fill: "#6b5a45", "text-anchor": xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle")
+        });
+        bulle.textContent = "Moyenne : " + eur(tarifPondere(volAr), 2);
+        svg.appendChild(bulle);
 
         // Repères d'axe minimaux (0 / total en X, 0 / max en Y).
         var lbl0 = el("text", { x: pad.left, y: pad.top + plotH + 16, "font-size": 10, fill: "var(--muted)", "text-anchor": "start" });
@@ -2001,6 +2173,11 @@
         curseur.max = N;
         document.getElementById("boEndMax").textContent = fmt(N);
         curseur.value = trouverOptimum(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites, extraA, extraO);
+        // Curseur miroir sous "Tarif moyen" : même borne/valeur — recalculer() (appelé
+        // juste après) resynchronise aussi son remplissage visuel.
+        curseur2.max = N;
+        document.getElementById("boEndMax2").textContent = fmt(N);
+        curseur2.value = curseur.value;
         dessinerCourbe(N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, partExtremites, extraA, extraO);
         recalculer();
       }
@@ -2031,46 +2208,85 @@
       // 8.000, plus large au-delà (demandé par Cédric le 04/09/2026, pour ne pas avoir
       // à cliquer des dizaines de fois sur les gros volumes).
       var boVolumeAEl = document.getElementById("boVolumeA");
+      var boVolumeAMiroirs = ["boVolumeA2", "boVolumeA3"].map(function (id) { return document.getElementById(id); });
       function ajusterStepVolumeA() {
         var v = parseFloat(boVolumeAEl.value) || 0;
-        boVolumeAEl.step = v > 10000 ? 500 : v > 8000 ? 200 : 100;
+        var step = v > 10000 ? 500 : v > 8000 ? 200 : 100;
+        boVolumeAEl.step = step;
+        boVolumeAMiroirs.forEach(function (el) { el.step = step; });
       }
       ajusterStepVolumeA();
       boVolumeAEl.addEventListener("input", ajusterStepVolumeA);
+      // Champs miroirs "Activité totale actuelle" (11/09/2026, demande de Cédric) : au
+      // verso du joker (#boVolumeA3) et sous le graphe "Tarif moyen" (#boVolumeA2) —
+      // modifier l'un recopie sur #boVolumeA (la source lue par recalculer()) puis
+      // relance le calcul, qui resynchronise ensuite tous les miroirs entre eux
+      // (voir plus bas dans recalculer()).
+      boVolumeAMiroirs.forEach(function (el) {
+        el.addEventListener("input", function () {
+          boVolumeAEl.value = this.value;
+          ajusterStepVolumeA();
+          repositionnerCurseur();
+        });
+      });
       // Remplissage du curseur #boPartExtremites, piloté en JS (piste native abandonnée,
       // voir CSS) — appelé ici (min/max/value changés par script, sans évènement "input",
       // ex. au chargement ou au rappel d'une mémoire) et depuis l'évènement "input"
-      // ci-dessous (glisser-déposer utilisateur).
+      // ci-dessous (glisser-déposer utilisateur). Généralisé avec un suffixe (11/09/2026)
+      // pour piloter aussi les 2 miroirs (#boPartExtremites2/3).
       var boPartExtremitesEl = document.getElementById("boPartExtremites");
-      function majPartExtremitesFill() {
-        var min = parseFloat(boPartExtremitesEl.min), max = parseFloat(boPartExtremitesEl.max);
-        var val = parseFloat(boPartExtremitesEl.value);
+      function majPartExtremitesFillSuffixe(suffixe) {
+        var el = document.getElementById("boPartExtremites" + suffixe);
+        var min = parseFloat(el.min), max = parseFloat(el.max);
+        var val = parseFloat(el.value);
         var pct = max > min ? ((val - min) / (max - min)) * 100 : 0;
-        document.getElementById("boPartExtremitesFill").style.width = pct + "%";
+        document.getElementById("boPartExtremitesFill" + suffixe).style.width = pct + "%";
       }
+      function majPartExtremitesFill() { majPartExtremitesFillSuffixe(""); }
       majPartExtremitesFill();
       boPartExtremitesEl.addEventListener("input", function () {
         document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
         majPartExtremitesFill();
         repositionnerCurseur();
       });
+      // Champs miroirs "Part membres/extrémités" (11/09/2026) : même principe que
+      // "Activité totale" ci-dessus — recopie sur #boPartExtremites puis relance le
+      // calcul, qui resynchronise les 2 miroirs (valeur, texte, remplissage visuel).
+      ["2", "3"].forEach(function (suffixe) {
+        document.getElementById("boPartExtremites" + suffixe).addEventListener("input", function () {
+          boPartExtremitesEl.value = this.value;
+          document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
+          majPartExtremitesFill();
+          repositionnerCurseur();
+        });
+      });
       curseur.addEventListener("input", recalculer);
-      document.getElementById("boJokerFrontBtn").addEventListener("click", function () {
-        document.getElementById("boJokerCard").classList.add("is-flipped");
-        this.setAttribute("aria-expanded", "true");
+      // Curseur miroir sous "Tarif moyen" (11/09/2026) : recopie sur #boCurseur (source
+      // lue par recalculer()) — pas de repositionnerCurseur() ici, la répartition
+      // choisie à la main ne doit pas être remplacée par l'optimum.
+      curseur2.addEventListener("input", function () { curseur.value = this.value; recalculer(); });
+      function ouvrirJoker(cardId, btnId) {
+        document.getElementById(cardId).classList.add("is-flipped");
+        document.getElementById(btnId).setAttribute("aria-expanded", "true");
         // Mesure la hauteur du contenu une fois la carte en pleine largeur
         // (donc après l'ajout de la classe qui déclenche ce changement de
         // largeur), jamais avant.
         ajusterHauteurJoker();
-      });
-      document.getElementById("boJokerBackBtn").addEventListener("click", function () {
-        document.getElementById("boJokerCard").classList.remove("is-flipped");
-        document.getElementById("boJokerFrontBtn").setAttribute("aria-expanded", "false");
+      }
+      function fermerJoker(cardId, btnId) {
+        document.getElementById(cardId).classList.remove("is-flipped");
+        document.getElementById(btnId).setAttribute("aria-expanded", "false");
         // Repliée, la carte n'a plus besoin de la hauteur calculée pour le
-        // contenu ouvert — on retire la valeur forcée, la grille reprend la
-        // main (étirée à la hauteur des 2 cases voisines).
-        document.getElementById("boJokerCard").style.minHeight = "";
-      });
+        // contenu ouvert — on retire la valeur forcée, la grille/le bloc reprend
+        // la main (étirée à la hauteur naturelle).
+        document.getElementById(cardId).style.minHeight = "";
+      }
+      document.getElementById("boJokerFrontBtn").addEventListener("click", function () { ouvrirJoker("boJokerCard", "boJokerFrontBtn"); });
+      document.getElementById("boJokerBackBtn").addEventListener("click", function () { fermerJoker("boJokerCard", "boJokerFrontBtn"); });
+      // Joker "Tarif moyen" (11/09/2026, demande de Cédric) : même mécanique de carte
+      // retournée que le joker principal, voir plus haut.
+      document.getElementById("boFtMoyJokerFrontBtn").addEventListener("click", function () { ouvrirJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); });
+      document.getElementById("boFtMoyJokerBackBtn").addEventListener("click", function () { fermerJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); });
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
       // Masquer/réafficher la colonne de gauche entière (motif porté de
@@ -2475,13 +2691,18 @@
       // cases voisines) — mesurer dans cet état donnerait une valeur fausse
       // (colonne étroite, camembert qui repasse à la ligne, plus haut que
       // nécessaire une fois la carte réellement ouverte en pleine largeur).
+      // Généralisé le 11/09/2026 (2ᵉ joker "Tarif moyen") : ajuste les 2 cartes à
+      // chaque appel, sans effet sur celle qui n'est pas actuellement ouverte (garde
+      // déjà en place).
       function ajusterHauteurJoker() {
-        var card = document.getElementById("boJokerCard");
-        if (!card || !card.classList.contains("is-flipped")) return;
-        var back = card.querySelector(".bascule-joker-back");
-        card.style.minHeight = "0px";
-        var needed = back.scrollHeight;
-        card.style.minHeight = (needed + 4) + "px";
+        ["boJokerCard", "boFtMoyJokerCard"].forEach(function (cardId) {
+          var card = document.getElementById(cardId);
+          if (!card || !card.classList.contains("is-flipped")) return;
+          var back = card.querySelector(".bascule-joker-back");
+          card.style.minHeight = "0px";
+          var needed = back.scrollHeight;
+          card.style.minHeight = (needed + 4) + "px";
+        });
       }
       var jokerResizeTimer = null;
       window.addEventListener("resize", function () {
@@ -2522,6 +2743,26 @@
         document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " FT/an";
         document.getElementById("boLblO").style.left = (pct + (100 - pct) / 2) + "%";
         document.getElementById("boLblO").textContent = "O-scan : " + fmt(volO) + " FT/an";
+
+        // Resynchronise les 3 miroirs (11/09/2026, demande de Cédric) — quel que soit
+        // ce qui a déclenché ce recalcul (champ d'origine, l'un des miroirs, un
+        // rappel de mémoire, le bouton "Rentabilité maximale"...), tous les champs
+        // reflètent la même valeur réelle. Curseur miroir sous "Tarif moyen" :
+        curseur2.value = X;
+        document.getElementById("boFillOscan2").style.width = (100 - pct) + "%";
+        document.getElementById("boCurseurHint2").style.left = pct + "%";
+        document.getElementById("boLblA2").style.left = (pct / 2) + "%";
+        document.getElementById("boLblA2").textContent = "Machine A : " + fmt(volA) + " FT/an";
+        document.getElementById("boLblO2").style.left = (pct + (100 - pct) / 2) + "%";
+        document.getElementById("boLblO2").textContent = "O-scan : " + fmt(volO) + " FT/an";
+        // "Activité totale actuelle" (verso du joker + sous "Tarif moyen") :
+        boVolumeAMiroirs.forEach(function (el) { el.value = volumeTotal; });
+        // "Part membres/extrémités" (verso du joker + sous "Tarif moyen") :
+        ["2", "3"].forEach(function (suffixe) {
+          document.getElementById("boPartExtremites" + suffixe).value = boPartExtremitesEl.value;
+          document.getElementById("boPartExtremitesVal" + suffixe).textContent = boPartExtremitesEl.value + " %";
+          majPartExtremitesFillSuffixe(suffixe);
+        });
 
         var rA = resultat(classeA, volA, manipA, debitA, loyerA, kwh, extraA);
         var rO = resultat("le05", volO, 1, debitO, loyerO, kwh, extraO);
@@ -2648,6 +2889,29 @@
         // charge fixe à couvrir, juste le variable (manip + élec) — d'où un gain
         // marginal élevé, c'est tout l'argument du joker.
         var capaciteJoker = Math.max(0, Math.round(capaciteAnnuelleO - volO));
+
+        // Joker "Tarif moyen" (11/09/2026, demande de Cédric) : même capaciteJoker
+        // ci-dessus (capacité RESTANTE de l'O-scan comblée par de l'activité EN PLUS,
+        // Machine A inchangée) mais exprimé en tarif moyen pondéré de l'ensemble de
+        // l'activité plutôt qu'en résultat net. Tranches calculées ici une seule fois,
+        // réutilisées plus bas par dessinerFtMoyenBascule() (jamais recalculées 2 fois).
+        var trJokerA = tranchesDepuisClasse(FT_CLASSES_PLEIN[classeA]);
+        var trJokerO = tranchesDepuisClasse(FT_CLASSES_PLEIN.le05);
+        var volOApresJoker = volO + capaciteJoker;
+        var volumeTotalApresJoker = volumeTotal + capaciteJoker;
+        var tarifPondereActuel = volumeTotal > 0
+          ? (tarifMoyenPourVolumeBascule(trJokerA, volA) * volA + tarifMoyenPourVolumeBascule(trJokerO, volO) * volO) / volumeTotal
+          : 0;
+        var tarifPondereApresJoker = volumeTotalApresJoker > 0
+          ? (tarifMoyenPourVolumeBascule(trJokerA, volA) * volA + tarifMoyenPourVolumeBascule(trJokerO, volOApresJoker) * volOApresJoker) / volumeTotalApresJoker
+          : 0;
+        var ecartTarifJoker = tarifPondereApresJoker - tarifPondereActuel;
+        document.getElementById("boFtMoyJokerAvant").textContent = eur(tarifPondereActuel, 2);
+        document.getElementById("boFtMoyJokerApresLabel").textContent = "Avec l'O-scan à 100 % (+" + fmt(capaciteJoker) + " FT/an)";
+        document.getElementById("boFtMoyJokerApres").textContent = eur(tarifPondereApresJoker, 2);
+        document.getElementById("boFtMoyJokerEcart").textContent =
+          (ecartTarifJoker >= 0 ? "+ " : "− ") + eur(Math.abs(ecartTarifJoker), 2) + " sur le tarif moyen pondéré";
+
         // Heures/jour encore disponibles : capacité restante ÷ débit = heures
         // restantes sur l'année, réparties sur les jours réellement ouverts.
         var heuresRestantesAn = debitO > 0 ? capaciteJoker / debitO : 0;
@@ -2769,7 +3033,7 @@
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
-        dessinerFtMoyenBascule(volumeTotal, volA, tranchesDepuisClasse(FT_CLASSES_PLEIN[classeA]), tranchesDepuisClasse(FT_CLASSES_PLEIN.le05));
+        dessinerFtMoyenBascule(volumeTotal, volA, trJokerA, trJokerO);
         ajusterHauteurJoker();
 
         dernierEtat = {
