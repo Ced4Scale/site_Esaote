@@ -143,17 +143,17 @@
     .simulator__chart-card:fullscreen .bascule-courbe-zone svg { height: auto; aspect-ratio: 7.24 / 1; }
     .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
     /* Découpage en zones projetables distinctes (11/09/2026, demande de Cédric) : la
-       "vue principale" (#boCardPrincipal, graphe + curseur) ne doit PAS entraîner avec
-       elle la ligne de stats (#boStatsRow, qui contient le joker), le cadre fusionné
-       "Forfait technique + Tarif moyen" (#boCardBaremeFtMoy, voir plus bas), ni les
-       boutons Mémoire/Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) —
-       ces 2 derniers restent des frères de #boCardBaremeFtMoy dans le DOM normal (ils
-       doivent rester visibles/cliquables pendant le mode Comparer, qui masque le reste
-       de la vue principale) et ne le rejoignent physiquement QUE pendant le plein écran
-       fusionné, via extraIds/extraTargetId de wireCardFullscreen. Sélecteur à 2 ID +
-       :fullscreen, spécificité largement suffisante pour gagner sur n'importe quelle
-       classe (display:grid/flex) posée par ailleurs sur ces blocs. */
-    #boCardPrincipal:fullscreen #boStatsRow,
+       "vue principale" (#boCardPrincipal — graphe + curseur + ligne de stats/joker
+       #boStatsRow depuis le 11/09/2026, un seul bouton plein écran désormais pour les
+       deux) ne doit PAS entraîner avec elle le cadre fusionné "Forfait technique +
+       Tarif moyen" (#boCardBaremeFtMoy, voir plus bas), ni les boutons Mémoire/
+       Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) — ces 2 derniers
+       restent des frères de #boCardBaremeFtMoy dans le DOM normal (ils doivent rester
+       visibles/cliquables pendant le mode Comparer, qui masque le reste de la vue
+       principale) et ne le rejoignent physiquement QUE pendant le plein écran fusionné,
+       via extraIds/extraTargetId de wireCardFullscreen. Sélecteur à 2 ID + :fullscreen,
+       spécificité largement suffisante pour gagner sur n'importe quelle classe
+       (display:grid/flex) posée par ailleurs sur ces blocs. */
     #boCardPrincipal:fullscreen #boCardBaremeFtMoy,
     #boCardPrincipal:fullscreen #boBtnRow,
     #boCardPrincipal:fullscreen #boGrapheComparaison { display: none; }
@@ -768,12 +768,6 @@
           <div class="bascule-ends"><span>0</span><span id="boEndMax">12.000</span></div>
 
           <div class="bascule-stats" id="boStatsRow">
-            <button type="button" class="chart-card-fullscreen-btn" id="boStatsFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
             <div class="bascule-stat result" id="boStatResultBox">
               <div class="bascule-stat-label">Résultat net total</div>
               <div class="bascule-stat-value" id="boStatResultat">—</div>
@@ -3492,8 +3486,13 @@
           }
         });
       }
+      // Fusionné le 11/09/2026 (demande de Cédric) : un seul bouton plein écran pour
+      // toute la "vue principale" (graphe + curseur ET la ligne de stats/joker
+      // #boStatsRow, résultat net total + joker + C.A. total) — remplace les 2 boutons
+      // séparés (#boChartFullscreenBtn sur le graphe seul, #boStatsFullscreenBtn sur
+      // #boStatsRow seul). #boStatsRow reste un descendant normal de #boCardPrincipal,
+      // donc il suit automatiquement en plein écran sans mécanisme extraIds.
       wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
-      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow");
       wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
       // Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique - barème
       // dégressif" + "Tarif moyen du forfait technique" partagent un seul bouton plein
