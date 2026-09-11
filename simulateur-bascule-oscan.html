@@ -572,7 +572,14 @@
     .bascule-info-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
     /* Boîte à outils du graphe "Tarif moyen" (11/09/2026) : même popover que la bulle
        💡, contenu interactif (cases à cocher) au lieu d'un texte fixe. */
-    .bascule-outils-titre { font-weight: 700; margin-bottom: .4rem; white-space: nowrap; }
+    .bascule-outils-titre { font-weight: 700; margin-bottom: .4rem; white-space: nowrap; display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+    /* Poignée de déplacement de la boîte à outils (11/09/2026, demande de Cédric) —
+       même principe que la poignée ⠿ de la barre de présentation (styles.css),
+       glisser-déposer démarré UNIQUEMENT depuis elle, pas depuis tout le popover
+       (pour ne pas gêner le clic sur les cases à cocher). */
+    .bascule-outils-drag { cursor: grab; opacity: .55; touch-action: none; user-select: none; }
+    .bascule-outils-drag:hover { opacity: .9; }
+    .bascule-outils-drag:active { cursor: grabbing; }
     .bascule-outils-check { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; padding: .15rem 0; }
     .bascule-outils-check input { width: 15px; height: 15px; flex: none; }
 
@@ -1130,13 +1137,15 @@
                   <span class="bascule-info-wrap">
                     <button type="button" class="bascule-info-btn" id="boFtMoyOutilsBtn" aria-expanded="false" aria-controls="boFtMoyOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
                     <div class="bascule-info-pop" id="boFtMoyOutilsPop" hidden>
-                      <div class="bascule-outils-titre">Afficher sur le graphe</div>
+                      <div class="bascule-outils-titre">Afficher sur le graphe
+                        <span class="bascule-outils-drag" id="boFtMoyOutilsDragHandle" title="Glisser pour déplacer" aria-hidden="true">⠿</span>
+                      </div>
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheIrm" /> Courbe Machine A (moyenne)</label>
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheOscan" /> Courbe O-scan (moyenne)</label>
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheReelA" checked /> Tarif réel Machine A (marches)</label>
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheReelO" checked /> Tarif réel O-scan (marches)</label>
-                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheMoyenne" checked /> Courbe moyenne pondérée globale</label>
-                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" checked /> Seuils du barème</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheMoyenne" /> Courbe moyenne pondérée globale</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" /> Seuils du barème</label>
                     </div>
                   </span>
                   <button type="button" class="chart-card-fullscreen-btn" id="boFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
@@ -4105,7 +4114,12 @@
       // le bouton par wireInfoBtn().
       function wireOutilsBtn(btnId, popId) {
         var btn = document.getElementById(btnId), pop = document.getElementById(popId);
-        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function fermer() {
+          pop.hidden = true; btn.setAttribute("aria-expanded", "false");
+          // Réinitialise aussi la position glissée (11/09/2026, voir wireOutilsDrag()
+          // plus bas) — le popover revient à son ancrage normal à la prochaine ouverture.
+          pop.style.transform = ""; pop.style.position = ""; pop.style.left = ""; pop.style.top = "";
+        }
         function ouvrir() {
           boInfoPopsOuverts.forEach(function (f) { f(); });
           pop.hidden = false; btn.setAttribute("aria-expanded", "true");
@@ -4121,7 +4135,43 @@
         pop.addEventListener("click", function (e) { e.stopPropagation(); });
         boInfoPopsOuverts.push(fermer);
       }
+      // Glisser-déposer de la boîte à outils (11/09/2026, demande de Cédric) — démarré
+      // uniquement depuis la poignée ⠿ (jamais tout le popover, pour ne pas gêner le
+      // clic sur les cases à cocher) ; passe en `position:fixed` pendant le
+      // déplacement (coordonnées écran), clampé pour ne jamais sortir du viewport.
+      // Pas de mémorisation entre 2 ouvertures (contrairement à la barre de
+      // présentation) : revient à son ancrage normal à chaque réouverture (voir
+      // fermer() ci-dessus), suffisant pour un simple popover ouvert ponctuellement.
+      function wireOutilsDrag(popId, handleId) {
+        var pop = document.getElementById(popId), handle = document.getElementById(handleId);
+        var actif = false, decalX = 0, decalY = 0;
+        handle.addEventListener("pointerdown", function (e) {
+          actif = true;
+          handle.setPointerCapture(e.pointerId);
+          var r = pop.getBoundingClientRect();
+          pop.style.position = "fixed";
+          pop.style.left = r.left + "px";
+          pop.style.top = r.top + "px";
+          pop.style.transform = "";
+          decalX = e.clientX - r.left; decalY = e.clientY - r.top;
+          e.preventDefault();
+          e.stopPropagation();
+        });
+        handle.addEventListener("pointermove", function (e) {
+          if (!actif) return;
+          var w = pop.offsetWidth, h = pop.offsetHeight, marge = 4;
+          var left = Math.max(marge, Math.min(window.innerWidth - w - marge, e.clientX - decalX));
+          var top = Math.max(marge, Math.min(window.innerHeight - h - marge, e.clientY - decalY));
+          pop.style.left = left + "px";
+          pop.style.top = top + "px";
+        });
+        handle.addEventListener("pointerup", function (e) {
+          actif = false;
+          handle.releasePointerCapture(e.pointerId);
+        });
+      }
       wireOutilsBtn("boFtMoyOutilsBtn", "boFtMoyOutilsPop");
+      wireOutilsDrag("boFtMoyOutilsPop", "boFtMoyOutilsDragHandle");
       ["boFtMoyAfficheIrm", "boFtMoyAfficheOscan", "boFtMoyAfficheReelA", "boFtMoyAfficheReelO", "boFtMoyAfficheMoyenne", "boFtMoyAfficheSeuils"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", recalculer);
       });
