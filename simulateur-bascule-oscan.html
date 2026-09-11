@@ -1062,33 +1062,29 @@
 
           <!-- Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique -
                barème dégressif" et "Tarif moyen du forfait technique" partagent
-               désormais UN SEUL bouton plein écran (#boBaremeFtMoyFullscreenBtn), qui
-               s'ouvre directement en mode présentation "2 colonnes" (forceSplit, voir
-               wireCardFullscreen) — le barème occupe la 1ʳᵉ colonne/page, le graphe
-               "Tarif moyen" + les boutons Mémoire/Comparer la 2ᵉ (regroupés dans
-               .bascule-ftmoy-group pour rester ensemble, voir styles.css local
-               ci-dessus). Remplace les 2 boutons séparés + le rattachement des boutons
-               Mémoire au joker (#boStatsRow) posés le 11/09/2026 plus tôt dans la
-               journée. -->
-          <!-- Fermé par défaut (11/09/2026, "tous les cadres fermés à l'ouverture" —
-               voir plus haut sur #boCardPrincipal) : chaque section (barème / Tarif
-               moyen) est un <details> INDÉPENDANT avec sa PROPRE icône plein écran dans
-               son résumé — remplace l'unique bouton partagé posé plus tôt le même jour
-               sur #boCardBaremeFtMoy (retiré). Les 2 boutons ciblent le MÊME
-               #boCardBaremeFtMoy (2 colonnes, barème + Tarif moyen ensemble) : peu
-               importe lequel des 2 on clique, le <details> qui n'est pas encore ouvert
-               s'ouvre automatiquement avant le plein écran (voir `card.querySelectorAll
-               ("details")` dans wireCardFullscreen). -->
+               désormais UN SEUL bouton plein écran, qui s'ouvre directement en mode
+               présentation "2 colonnes" (forceSplit, voir wireCardFullscreen) — le
+               barème occupe la 1ʳᵉ colonne/page, le graphe "Tarif moyen" + les boutons
+               Mémoire/Comparer la 2ᵉ (regroupés dans .bascule-ftmoy-group pour rester
+               ensemble, voir styles.css local ci-dessus).
+               2ᵉ correction le 11/09/2026 (Cédric : ces 2 sections sont "liées", une
+               seule icône doit apparaître, pas une par ligne) : le bouton retiré des 2
+               `<summary>` (#boCardBareme/#boFtMoyCard, chacun avait sa propre icône
+               ciblant pourtant déjà le même #boCardBaremeFtMoy) et posé une seule fois
+               en enfant direct de #boCardBaremeFtMoy, ancré en BAS à droite du cadre
+               qui les regroupe tous les deux (`.chart-card-fullscreen-btn--bas-droite`,
+               seule dérogation du site à la règle "toujours en haut à droite" — ici
+               volontaire, pour signifier que l'icône s'applique aux 2 sections à la
+               fois, pas à l'une ou l'autre en particulier). -->
           <div class="simulator__chart-card" id="boCardBaremeFtMoy">
+            <button type="button" class="chart-card-fullscreen-btn chart-card-fullscreen-btn--bas-droite" id="boBaremeFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardBareme">
-              <summary>Forfait technique - barème dégressif
-                <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  </svg>
-                </button>
-              </summary>
+              <summary>Forfait technique - barème dégressif</summary>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="boBaremeTable">
                   <thead>
@@ -1163,12 +1159,6 @@
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" /> Seuils du barème</label>
                     </div>
                   </span>
-                  <button type="button" class="chart-card-fullscreen-btn" id="boFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                      <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                      <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                    </svg>
-                  </button>
                 </summary>
                 <div class="simulator__chart-wrap">
                   <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
@@ -4486,15 +4476,12 @@
       // écran, forcé en mode présentation "2 colonnes" (forceSplit) — barème en page 1,
       // Tarif moyen (avec les boutons Mémoire/Comparer, désormais à demeure à côté du
       // joker, plus besoin d'extraIds/extraTargetId pour les y amener) en page 2.
-      // Remplace boBaremeFullscreenBtn/boFtMoyFullscreenBtn et le rattachement des
-      // boutons Mémoire au joker.
-      // 2 boutons distincts (11/09/2026, un par <details> désormais indépendant —
-      // "Forfait technique" et "Tarif moyen" ont chacun leur propre icône plein écran
-      // dans leur résumé) qui ciblent le MÊME cadre fusionné #boCardBaremeFtMoy : peu
-      // importe lequel des 2 on clique, le <details> pas encore ouvert s'ouvre tout
-      // seul avant le plein écran (voir card.querySelectorAll("details") plus haut).
-      wireCardFullscreen("boBaremeFullscreenBtn", "boCardBaremeFtMoy", null, null, true);
-      wireCardFullscreen("boFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, null, true);
+      // Un seul bouton (11/09/2026, posé en bas à droite du cadre extérieur
+      // #boCardBaremeFtMoy — voir commentaire HTML plus haut) : les 2 anciens boutons
+      // par <details> (redondants, ciblaient déjà le même cadre) ont été retirés.
+      // "Forfait technique"/"Tarif moyen" pas encore ouverts s'ouvrent tout seuls
+      // avant le plein écran (card.querySelectorAll("details") plus haut).
+      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, null, true);
 
       majResumeHypotheses();
       repositionnerCurseur();
