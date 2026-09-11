@@ -548,6 +548,11 @@
     }
     .bascule-info-pop[hidden] { display: none; }
     .bascule-info-pop--up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+    /* Boîte à outils du graphe "Tarif moyen" (11/09/2026) : même popover que la bulle
+       💡, contenu interactif (cases à cocher) au lieu d'un texte fixe. */
+    .bascule-outils-titre { font-weight: 700; margin-bottom: .4rem; white-space: nowrap; }
+    .bascule-outils-check { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; padding: .15rem 0; }
+    .bascule-outils-check input { width: 15px; height: 15px; flex: none; }
 
     /* CA de la tranche au clic (11/09/2026, motif "Forfait technique - barème
        dégressif" documenté dans le skill ced4scale-simulateur-web, même CSS que
@@ -1016,6 +1021,24 @@
                   <span class="bascule-info-wrap">
                     <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
                     <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus.</div>
+                  </span>
+                  <!-- Boîte à outils (11/09/2026, demande de Cédric) : choisir quelles
+                       courbes/lignes de seuil afficher sur ce graphe précis, sans rien
+                       recalculer d'autre — mêmes classes .bascule-info-wrap/-btn/-pop
+                       que la bulle d'aide 💡 juste au-dessus (même mécanisme d'ouverture/
+                       fermeture), mais le contenu est interactif (cases à cocher) au lieu
+                       d'un simple texte : voir wireOutilsBtn() plus bas, qui ajoute un
+                       stopPropagation() sur le popover pour qu'un clic sur une case ne le
+                       referme pas comme le ferait un clic "à l'extérieur". -->
+                  <span class="bascule-info-wrap">
+                    <button type="button" class="bascule-info-btn" id="boFtMoyOutilsBtn" aria-expanded="false" aria-controls="boFtMoyOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
+                    <div class="bascule-info-pop" id="boFtMoyOutilsPop" hidden>
+                      <div class="bascule-outils-titre">Afficher sur le graphe</div>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheIrm" checked /> Courbe Machine A</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheOscan" checked /> Courbe O-scan</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheMoyenne" checked /> Courbe moyenne pondérée</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" checked /> Seuils du barème</label>
+                    </div>
                   </span>
                 </h3>
                 <div class="simulator__chart-wrap">
@@ -2061,6 +2084,16 @@
         var yMax = Math.max(trA[0].montant, trO[0].montant) * 1.05;
         function py(y) { return pad.top + plotH - (y / yMax) * plotH; }
 
+        // Boîte à outils (11/09/2026, demande de Cédric) : quelles courbes/lignes de
+        // seuil afficher — lus directement sur les cases à cocher, jamais un état dupliqué
+        // ailleurs (une seule source de vérité). L'échelle Y (yMax ci-dessus) reste
+        // calculée sur les 2 machines qu'elles soient affichées ou non, pour ne pas
+        // faire sauter l'échelle du graphe à chaque coche.
+        var afficherIrm = document.getElementById("boFtMoyAfficheIrm").checked;
+        var afficherOscan = document.getElementById("boFtMoyAfficheOscan").checked;
+        var afficherMoyenne = document.getElementById("boFtMoyAfficheMoyenne").checked;
+        var afficherSeuils = document.getElementById("boFtMoyAfficheSeuils").checked;
+
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
 
@@ -2094,28 +2127,31 @@
         // Seuils du barème en pointillé (11/09/2026, demande de Cédric), même motif que
         // simulateur-ct-vs-irm.html : un trait pointillé par seuil de tranche (jamais
         // la dernière, "au-delà", qui n'a pas de fin), coloré par machine, avec un
-        // petit libellé au-dessus. Dessinés AVANT les courbes pour que celles-ci
+        // petit libellé au-dessus qui porte maintenant la VALEUR réelle du seuil
+        // (nombre d'examens/an de CETTE machine, pas un simple numéro d'ordre — demande
+        // de Cédric le 11/09/2026). Dessinés AVANT les courbes pour que celles-ci
         // passent par-dessus (traits pointillés, restent lisibles dans les creux).
         // Libellés triés par position X puis alternés sur 2 hauteurs, pour ne jamais
         // se chevaucher quand 2 seuils sont proches ou identiques (motif déjà utilisé
-        // sur ct-vs-irm). Le seuil O-scan (un volume O-scan) est ramené sur le MÊME
-        // axe X que Machine A via `volumeTotal - t.fin` (les 2 machines se partagent
-        // un même total ici, contrairement à ct-vs-irm).
+        // sur ct-vs-irm). Le seuil O-scan est positionné sur le MÊME axe X que Machine A
+        // via `volumeTotal - t.fin` (les 2 machines se partagent un même total ici,
+        // contrairement à ct-vs-irm) mais affiche la valeur O-SCAN (t.fin), celle qui a
+        // un sens pour cette machine précise. Gouverné par la case "Seuils du barème" ET,
+        // par machine, par la case de sa propre courbe (masquer une courbe masque aussi
+        // ses seuils, ça n'aurait pas de sens de les garder seuls).
         var seuilsListe = [];
         function collecterSeuils(tranches, calcXDepuisFin, couleur, nomCourt) {
-          var numero = 1;
           tranches.forEach(function (t, i) {
             if (i === tranches.length - 1 || t.fin == null) return;
             var xv = calcXDepuisFin(t.fin);
             if (xv < 0 || xv > xMax) return;
             var x = px(xv);
             svg.appendChild(el("line", { x1: x, x2: x, y1: pad.top, y2: pad.top + plotH, stroke: couleur, "stroke-width": 1.2, "stroke-dasharray": "4,3", opacity: 0.55 }));
-            seuilsListe.push({ x: x, texte: nomCourt + " — seuil " + numero, couleur: couleur });
-            numero++;
+            seuilsListe.push({ x: x, texte: nomCourt + " : " + fmt(t.fin), couleur: couleur });
           });
         }
-        collecterSeuils(trA, function (fin) { return fin; }, "#2a78d6", "IRM " + nomClasseA);
-        collecterSeuils(trO, function (fin) { return volumeTotal - fin; }, "#eb6834", "O-scan");
+        if (afficherSeuils && afficherIrm) collecterSeuils(trA, function (fin) { return fin; }, "#2a78d6", "IRM " + nomClasseA);
+        if (afficherSeuils && afficherOscan) collecterSeuils(trO, function (fin) { return volumeTotal - fin; }, "#eb6834", "O-scan");
         seuilsListe.sort(function (a, b) { return a.x - b.x; });
         seuilsListe.forEach(function (s, i) {
           // Décalé plus bas que sur ct-vs-irm (pad.top+9/21 à l'origine) : ce
@@ -2140,40 +2176,48 @@
           }
           svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 2.5 }));
         }
-        courbe(trA, function (x) { return x; }, "#2a78d6");
-        courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
+        if (afficherIrm) courbe(trA, function (x) { return x; }, "#2a78d6");
+        if (afficherOscan) courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
 
         // Noms des courbes au tout début du graphe (11/09/2026, demande de Cédric) :
         // "IRM <classe>" au-dessus de la courbe bleue, "O-scan" en dessous de la
         // courbe orange — au même x (début), jamais l'inverse (au-dessus de l'orange
         // ferait chevaucher le texte avec la courbe bleue, qui démarre plus haut).
+        // Chacun gouverné par la case de SA courbe (pas de nom sans la courbe).
         var xDebut = px(0) + 4;
-        var yDebutA = py(tarifMoyenPourVolumeBascule(trA, 0));
-        var lblNomA = el("text", { x: xDebut, y: yDebutA - 8, "font-size": 12, "font-weight": 800, fill: "#2a78d6", "text-anchor": "start" });
-        lblNomA.textContent = "IRM " + nomClasseA;
-        svg.appendChild(lblNomA);
-        var yDebutO = py(tarifMoyenPourVolumeBascule(trO, volumeTotal));
-        var lblNomO = el("text", { x: xDebut, y: yDebutO + 16, "font-size": 12, "font-weight": 800, fill: "#eb6834", "text-anchor": "start" });
-        lblNomO.textContent = "O-scan";
-        svg.appendChild(lblNomO);
+        if (afficherIrm) {
+          var yDebutA = py(tarifMoyenPourVolumeBascule(trA, 0));
+          var lblNomA = el("text", { x: xDebut, y: yDebutA - 8, "font-size": 12, "font-weight": 800, fill: "#2a78d6", "text-anchor": "start" });
+          lblNomA.textContent = "IRM " + nomClasseA;
+          svg.appendChild(lblNomA);
+        }
+        if (afficherOscan) {
+          var yDebutO = py(tarifMoyenPourVolumeBascule(trO, volumeTotal));
+          var lblNomO = el("text", { x: xDebut, y: yDebutO + 16, "font-size": 12, "font-weight": 800, fill: "#eb6834", "text-anchor": "start" });
+          lblNomO.textContent = "O-scan";
+          svg.appendChild(lblNomO);
+        }
 
         // 3ᵉ courbe "Tarif moyen pondéré de l'ensemble" (11/09/2026, demande de
         // Cédric) : à chaque position x, la moyenne des 2 tarifs (Machine A / O-scan)
         // pondérée par le volume RÉEL de chacune à ce point — pas une simple moyenne
         // arithmétique des 2 courbes, qui ignorerait le déséquilibre des volumes.
         // Tracée en tireté neutre (ni bleu ni orange, pour ne pas laisser croire que
-        // c'est une 3ᵉ machine) — se relit comme une référence globale.
+        // c'est une 3ᵉ machine) — se relit comme une référence globale. `tarifPondere`
+        // reste calculée même case décochée (le repère vertical en a toujours besoin).
         function tarifPondere(x) {
           var vO = volumeTotal - x;
           if (volumeTotal <= 0) return trA[0].montant;
           return (tarifMoyenPourVolumeBascule(trA, x) * x + tarifMoyenPourVolumeBascule(trO, vO) * vO) / volumeTotal;
         }
-        var Np = 80, ptsPond = [];
-        for (var ip = 0; ip <= Np; ip++) {
-          var xp = (xMax * ip) / Np;
-          ptsPond.push(px(xp) + "," + py(tarifPondere(xp)));
+        if (afficherMoyenne) {
+          var Np = 80, ptsPond = [];
+          for (var ip = 0; ip <= Np; ip++) {
+            var xp = (xMax * ip) / Np;
+            ptsPond.push(px(xp) + "," + py(tarifPondere(xp)));
+          }
+          svg.appendChild(el("path", { d: "M" + ptsPond.join(" L"), fill: "none", stroke: "#6b5a45", "stroke-width": 2.2, "stroke-dasharray": "7,4" }));
         }
-        svg.appendChild(el("path", { d: "M" + ptsPond.join(" L"), fill: "none", stroke: "#6b5a45", "stroke-width": 2.2, "stroke-dasharray": "7,4" }));
 
         // Repère vertical à la répartition actuelle du curseur (volA), commun aux 3 courbes.
         var volAr = Math.max(0, Math.min(volumeTotal, volA));
@@ -2182,7 +2226,9 @@
 
         // Bulle de valeur de la courbe pondérée à la répartition actuelle — seule des 3
         // courbes à porter une bulle (les 2 autres sont déjà lisibles via les libellés
-        // "Machine A"/"O-scan" au-dessus du curseur de répartition).
+        // "Machine A"/"O-scan" au-dessus du curseur de répartition). N'a de sens que si
+        // la courbe moyenne pondérée est elle-même affichée.
+        if (afficherMoyenne) {
         var yPondActuel = py(tarifPondere(volAr));
         svg.appendChild(el("circle", { cx: xr, cy: yPondActuel, r: 4, fill: "#6b5a45" }));
 
@@ -2221,6 +2267,7 @@
           bulle = el("text", { x: xr, y: candidatsY[0], "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
           bulle.textContent = texteBulle;
           svg.appendChild(bulle);
+        }
         }
       }
 
@@ -3762,6 +3809,35 @@
       wireInfoBtn("boHypDureeAcqOInfoBtn", "boHypDureeAcqOInfoPop");
       wireInfoBtn("boHypOLiveInfoBtn", "boHypOLiveInfoPop");
       wireInfoBtn("boFtMoyInfoBtn", "boFtMoyInfoPop");
+      // Boîte à outils du graphe "Tarif moyen" (11/09/2026, demande de Cédric) : même
+      // mécanisme d'ouverture/fermeture que wireInfoBtn(), MAIS le contenu est
+      // interactif (cases à cocher) — un clic dedans ne doit jamais le refermer comme le
+      // ferait un clic "à l'extérieur" (`document.addEventListener("click", ...)` plus
+      // bas, qui ferme tous les popovers de `boInfoPopsOuverts`). D'où le
+      // `stopPropagation()` posé sur le popover lui-même, en plus de celui déjà posé sur
+      // le bouton par wireInfoBtn().
+      function wireOutilsBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          boInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+        boInfoPopsOuverts.push(fermer);
+      }
+      wireOutilsBtn("boFtMoyOutilsBtn", "boFtMoyOutilsPop");
+      ["boFtMoyAfficheIrm", "boFtMoyAfficheOscan", "boFtMoyAfficheMoyenne", "boFtMoyAfficheSeuils"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", recalculer);
+      });
       document.addEventListener("click", function () {
         boInfoPopsOuverts.forEach(function (f) { f(); });
       });
