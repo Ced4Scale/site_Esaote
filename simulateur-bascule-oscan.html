@@ -2064,6 +2064,33 @@
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
 
+        // Graduations des 2 axes (11/09/2026, demande de Cédric) — même motif que
+        // simulateur-ct-vs-irm.html : 5 repères par axe (0 à max), quadrillage
+        // horizontal pour l'axe Y (tarif €), juste des graduations pour l'axe X
+        // (le quadrillage vertical serait redondant avec le repère de répartition déjà
+        // tracé). g=0/p=0 réutilisent les 2 axes déjà dessinés plus haut (juste un
+        // libellé en plus, pas une 2ᵉ ligne superposée). Dessinées ICI (avant tout le
+        // reste) pour que la bulle "Moyenne" plus bas puisse détecter ces libellés
+        // comme des textes à éviter (voir plus bas, anti-chevauchement).
+        for (var g = 0; g <= 4; g++) {
+          var valY = (yMax * g) / 4;
+          var yy = py(valY);
+          if (g > 0) svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: yy, y2: yy, class: "simulator__gridline" }));
+          var lblY = el("text", { x: pad.left - 8, y: yy + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          lblY.textContent = eur(valY, 0);
+          svg.appendChild(lblY);
+        }
+        for (var p = 0; p <= 4; p++) {
+          var xv = (xMax * p) / 4;
+          var xx = px(xv);
+          var lblX = el("text", {
+            x: xx, y: pad.top + plotH + 16, class: "simulator__axis-label",
+            "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle")
+          });
+          lblX.textContent = fmt(xv) + (p === 4 ? " examens/an" : "");
+          svg.appendChild(lblX);
+        }
+
         // Seuils du barème en pointillé (11/09/2026, demande de Cédric), même motif que
         // simulateur-ct-vs-irm.html : un trait pointillé par seuil de tranche (jamais
         // la dernière, "au-delà", qui n'a pas de fin), coloré par machine, avec un
@@ -2158,36 +2185,42 @@
         // "Machine A"/"O-scan" au-dessus du curseur de répartition).
         var yPondActuel = py(tarifPondere(volAr));
         svg.appendChild(el("circle", { cx: xr, cy: yPondActuel, r: 4, fill: "#6b5a45" }));
-        var bulle = el("text", {
-          x: xr, y: yPondActuel - 10, "font-size": 13, "font-weight": 800,
-          fill: "#6b5a45", "text-anchor": xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle")
-        });
-        bulle.textContent = "Moyenne : " + eur(tarifPondere(volAr), 2);
-        svg.appendChild(bulle);
 
-        // Graduations des 2 axes (11/09/2026, demande de Cédric) — même motif que
-        // simulateur-ct-vs-irm.html : 5 repères par axe (0 à max), quadrillage
-        // horizontal pour l'axe Y (tarif €), juste des graduations pour l'axe X
-        // (le quadrillage vertical serait redondant avec le repère de répartition déjà
-        // tracé). g=0/p=0 réutilisent les 2 axes déjà dessinés plus haut (juste un
-        // libellé en plus, pas une 2ᵉ ligne superposée).
-        for (var g = 0; g <= 4; g++) {
-          var valY = (yMax * g) / 4;
-          var yy = py(valY);
-          if (g > 0) svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: yy, y2: yy, class: "simulator__gridline" }));
-          var lblY = el("text", { x: pad.left - 8, y: yy + 3, class: "simulator__axis-label", "text-anchor": "end" });
-          lblY.textContent = eur(valY, 0);
-          svg.appendChild(lblY);
+        // Anti-chevauchement (11/09/2026, demande de Cédric : "toujours lisible, jamais
+        // en superposition avec un autre texte") — la bulle peut tomber n'importe où
+        // sur le graphe selon la répartition/l'activité choisies, et risque alors de
+        // recouvrir un nom de courbe, un libellé de seuil ou une graduation d'axe (tous
+        // déjà dessinés à ce stade). Mesure RÉELLE (getBBox(), jamais une estimation par
+        // nombre de caractères — même réflexe que "Optimiser la taille de police d'un
+        // texte contraint" plus haut sur ce même skill) de chaque texte déjà présent,
+        // puis essaie plusieurs positions candidates (au-dessus/en dessous du point, à
+        // distance croissante) et retient la première totalement libre.
+        function seChevauchent(a, b) {
+          return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y);
         }
-        for (var p = 0; p <= 4; p++) {
-          var xv = (xMax * p) / 4;
-          var xx = px(xv);
-          var lblX = el("text", {
-            x: xx, y: pad.top + plotH + 16, class: "simulator__axis-label",
-            "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle")
-          });
-          lblX.textContent = fmt(xv) + (p === 4 ? " examens/an" : "");
-          svg.appendChild(lblX);
+        var texteAnchor = xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle");
+        var texteBulle = "Moyenne : " + eur(tarifPondere(volAr), 2);
+        var textesExistants = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
+        var candidatsY = [yPondActuel - 10, yPondActuel + 16, yPondActuel - 22, yPondActuel + 28, yPondActuel - 34, yPondActuel + 40];
+        var bulle = null;
+        for (var ci = 0; ci < candidatsY.length; ci++) {
+          var yCandidat = candidatsY[ci];
+          if (yCandidat < pad.top + 6 || yCandidat > pad.top + plotH - 2) continue;
+          var essai = el("text", { x: xr, y: yCandidat, "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
+          essai.textContent = texteBulle;
+          svg.appendChild(essai);
+          var bbEssai = essai.getBBox();
+          var libre = !textesExistants.some(function (b) { return seChevauchent(bbEssai, b); });
+          if (libre) { bulle = essai; break; }
+          svg.removeChild(essai);
+        }
+        if (!bulle) {
+          // Aucune position n'est totalement libre (graphe très chargé) : garder quand
+          // même la 1ʳᵉ position (au-dessus du point) plutôt que de faire disparaître la
+          // bulle — un léger chevauchement reste préférable à une info manquante.
+          bulle = el("text", { x: xr, y: candidatsY[0], "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
+          bulle.textContent = texteBulle;
+          svg.appendChild(bulle);
         }
       }
 
