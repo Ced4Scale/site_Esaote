@@ -2025,7 +2025,7 @@
       // volume RÉEL de l'O-scan est (volumeTotal - x), pas x. Résultat visuel demandé par
       // Cédric : la courbe O-scan démarre à l'activité totale (à gauche) et descend vers 0
       // (à droite), pendant que la courbe Machine A fait l'inverse.
-      function dessinerFtMoyenBascule(volumeTotal, volA, trA, trO) {
+      function dessinerFtMoyenBascule(volumeTotal, volA, trA, trO, nomClasseA) {
         var svg = document.getElementById("boFtMoyChart");
         svg.innerHTML = "";
         var NS = "http://www.w3.org/2000/svg";
@@ -2055,6 +2055,20 @@
         }
         courbe(trA, function (x) { return x; }, "#2a78d6");
         courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        // Noms des courbes au tout début du graphe (11/09/2026, demande de Cédric) :
+        // "IRM <classe>" au-dessus de la courbe bleue, "O-scan" en dessous de la
+        // courbe orange — au même x (début), jamais l'inverse (au-dessus de l'orange
+        // ferait chevaucher le texte avec la courbe bleue, qui démarre plus haut).
+        var xDebut = px(0) + 4;
+        var yDebutA = py(tarifMoyenPourVolumeBascule(trA, 0));
+        var lblNomA = el("text", { x: xDebut, y: yDebutA - 8, "font-size": 12, "font-weight": 800, fill: "#2a78d6", "text-anchor": "start" });
+        lblNomA.textContent = "IRM " + nomClasseA;
+        svg.appendChild(lblNomA);
+        var yDebutO = py(tarifMoyenPourVolumeBascule(trO, volumeTotal));
+        var lblNomO = el("text", { x: xDebut, y: yDebutO + 16, "font-size": 12, "font-weight": 800, fill: "#eb6834", "text-anchor": "start" });
+        lblNomO.textContent = "O-scan";
+        svg.appendChild(lblNomO);
 
         // 3ᵉ courbe "Tarif moyen pondéré de l'ensemble" (11/09/2026, demande de
         // Cédric) : à chaque position x, la moyenne des 2 tarifs (Machine A / O-scan)
@@ -3033,7 +3047,7 @@
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
-        dessinerFtMoyenBascule(volumeTotal, volA, trJokerA, trJokerO);
+        dessinerFtMoyenBascule(volumeTotal, volA, trJokerA, trJokerO, nomClasseA);
         ajusterHauteurJoker();
 
         dernierEtat = {
