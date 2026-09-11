@@ -341,8 +341,16 @@
        sur TOUTE la carte "Tarif moyen" au lieu de rester dans son propre encadré (bug
        vécu le 11/09/2026). `min-height` fixe (pas géré par une grille voisine ici) pour
        que ce bloc ne s'effondre pas à 0 quand son unique enfant devient absolute. */
+    /* justify-content centré→flex-start (11/09/2026, demande de Cédric : aligner le
+       pack Comparer/Mémoire avec le joker) — utile tant que joker et pack de
+       boutons tenaient CÔTE À CÔTE (centrage de l'ensemble à 2 blocs). Depuis que le
+       pack de boutons passe seul sur sa propre ligne dès qu'il ne tient plus à côté
+       du joker (`flex-basis:100%`, voir plus bas), le centrage donnait un joker
+       centré au-dessus d'un pack resté à gauche — plus du tout aligné. flex-start
+       aligne les 2 sur le même bord gauche, qu'ils soient côte à côte (fenêtre
+       large) ou empilés (fenêtre étroite/plein écran "2 colonnes"). */
     .bascule-ftmoy-joker-wrap {
-      display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;
+      display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: flex-start;
       margin-top: 1.2rem; position: relative; min-height: 190px;
     }
     #boFtMoyJokerCard { max-width: 340px; width: 100%; min-height: 190px; flex: 1 1 260px; }
