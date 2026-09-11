@@ -2329,12 +2329,6 @@
               tarifSpan.style.color = o.couleur;
               tarifSpan.textContent = eur(o.t.montant, 2);
               ligne1.appendChild(tarifSpan);
-              td.appendChild(ligne1);
-              var caSpan = document.createElement("span");
-              caSpan.className = "bo-bareme-ca";
-              caSpan.style.color = o.couleur;
-              caSpan.textContent = eur(ca, 2);
-              td.appendChild(caSpan);
             } else {
               var btn = document.createElement("button");
               btn.type = "button"; btn.className = "bo-ca-tranche-btn";
@@ -2344,19 +2338,35 @@
               btn.dataset.montant = o.t.montant; btn.dataset.label = label; btn.dataset.machine = o.machine;
               btn.dataset.cote = o.cote;
               ligne1.appendChild(btn);
-              td.appendChild(ligne1);
             }
+            td.appendChild(ligne1);
+            // caSpan TOUJOURS créé, même case décochée (11/09/2026, demande de
+            // Cédric : la barre à curseur sous le tableau changeait de position
+            // selon la case/le joker) — visibility:hidden réserve la 2ᵉ ligne de
+            // chaque tranche sans l'afficher, pour que la hauteur du tableau (et
+            // donc la position de tout ce qui suit) reste FIXE, case cochée ou non.
+            var caSpan = document.createElement("span");
+            caSpan.className = "bo-bareme-ca";
+            caSpan.style.color = o.couleur;
+            caSpan.style.visibility = afficherTousLesCa ? "visible" : "hidden";
+            caSpan.textContent = eur(ca, 2);
+            td.appendChild(caSpan);
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         });
-        // Lignes de total (11/09/2026, demande de Cédric) — affichées UNIQUEMENT
-        // quand la case "Afficher tous les CA" est cochée, comme le CA de chaque
-        // tranche : sinon un total serait affiché alors qu'aucun CA de détail ne
-        // l'est, incohérent avec le reste du tableau.
-        if (!afficherTousLesCa) return;
-        // Ligne 1 : total du CA par machine (colonne 1,5 T / colonne O-scan).
+        // Lignes de total (11/09/2026, demande de Cédric) — TOUJOURS créées, mais
+        // rendues invisibles (visibility:hidden, pas display:none) quand leur
+        // condition n'est pas remplie : Cédric a signalé que la barre à curseur
+        // (juste sous ce tableau) changeait de position selon que la case
+        // "Afficher tous les CA" et/ou le joker "Tarif moyen" soient ouverts —
+        // logique, le tableau n'avait alors pas toujours le même nombre de lignes.
+        // visibility:hidden réserve l'espace de la ligne sans l'afficher : la
+        // hauteur du tableau reste FIXE dans tous les cas, donc la barre à curseur
+        // ne bouge plus jamais.
+        var afficherTotal = afficherTousLesCa;
         var trTotal = document.createElement("tr");
+        trTotal.style.visibility = afficherTotal ? "visible" : "hidden";
         var tdTotalLabel = document.createElement("td");
         tdTotalLabel.innerHTML = "<strong>Total</strong>";
         trTotal.appendChild(tdTotalLabel);
@@ -2372,6 +2382,7 @@
         tbody.appendChild(trTotal);
         // Ligne 2 : total des 2 machines réunies (une seule valeur, sur toute la largeur).
         var trTotal2 = document.createElement("tr");
+        trTotal2.style.visibility = afficherTotal ? "visible" : "hidden";
         var tdTotal2Label = document.createElement("td");
         tdTotal2Label.innerHTML = "<strong>Total des 2 machines</strong>";
         trTotal2.appendChild(tdTotal2Label);
@@ -2388,7 +2399,7 @@
         // restante de l'O-scan (examens réalisables pour atteindre 100 % de sa
         // capacité) + CA équivalent — mêmes valeurs que le joker "Tarif moyen"
         // (capaciteJokerActuelle/gainCAJokerActuelle, calculées dans recalculer()),
-        // reprises telles quelles sur le dos de ce joker (voir plus bas). Affichées
+        // reprises telles quelles sur le dos de ce joker (voir plus bas). Visibles
         // UNIQUEMENT quand ce joker est ouvert (carte retournée) — pas seulement la
         // case "Afficher tous les CA" — pour rester une info "à la demande", pas
         // permanente. Couleur orange (O-scan) plutôt que noire : cette info concerne
@@ -2397,35 +2408,36 @@
         // ouverture/fermeture de ce joker (voir ouvrirJoker/fermerJoker plus bas)
         // pour que ce test reste à jour.
         var jokerOuvert = document.getElementById("boFtMoyJokerCard").classList.contains("is-flipped");
-        if (jokerOuvert) {
-          // Libellé "Examens réalisables (O-scan à 100 %)" trop long pour la 1ʳᵉ
-          // colonne (20% de large, dimensionnée pour "Tarif plein"/"Au-delà" etc.) —
-          // repassait à la ligne (11/09/2026, signalé par Cédric). Une seule case
-          // sur toute la largeur (colSpan=3, label + valeur en flex) plutôt que
-          // d'élargir la colonne, ce qui aurait aussi élargi la 1ʳᵉ colonne des 4
-          // lignes de tranche au-dessus et risqué de faire repasser LEURS montants
-          // à la ligne (motif déjà corrigé une fois, commit c2df625).
-          var trExamens = document.createElement("tr");
-          var tdExamens = document.createElement("td");
-          tdExamens.colSpan = 3;
-          // `width:100%` en inline (bat le `width:20%` de `td:first-child`, cette
-          // case étant la SEULE de sa ligne) : sans ça la case entière — pas
-          // seulement son texte — restait cantonnée à la largeur de la 1ʳᵉ colonne.
-          tdExamens.style.width = "100%";
-          tdExamens.innerHTML = "<div style=\"display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; white-space:nowrap;\"><strong>Examens réalisables (O-scan à 100&nbsp;%)</strong><span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + fmt(capaciteJokerActuelle) + " FT/an</span></div>";
-          trExamens.appendChild(tdExamens);
-          tbody.appendChild(trExamens);
+        var afficherExamens = afficherTotal && jokerOuvert;
+        // Libellé "Examens réalisables (O-scan à 100 %)" trop long pour la 1ʳᵉ
+        // colonne (20% de large, dimensionnée pour "Tarif plein"/"Au-delà" etc.) —
+        // repassait à la ligne (11/09/2026, signalé par Cédric). Une seule case
+        // sur toute la largeur (colSpan=3, label + valeur en flex) plutôt que
+        // d'élargir la colonne, ce qui aurait aussi élargi la 1ʳᵉ colonne des 4
+        // lignes de tranche au-dessus et risqué de faire repasser LEURS montants
+        // à la ligne (motif déjà corrigé une fois, commit c2df625).
+        var trExamens = document.createElement("tr");
+        trExamens.style.visibility = afficherExamens ? "visible" : "hidden";
+        var tdExamens = document.createElement("td");
+        tdExamens.colSpan = 3;
+        // `width:100%` en inline (bat le `width:20%` de `td:first-child`, cette
+        // case étant la SEULE de sa ligne) : sans ça la case entière — pas
+        // seulement son texte — restait cantonnée à la largeur de la 1ʳᵉ colonne.
+        tdExamens.style.width = "100%";
+        tdExamens.innerHTML = "<div style=\"display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; white-space:nowrap;\"><strong>Examens réalisables (O-scan à 100&nbsp;%)</strong><span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + fmt(capaciteJokerActuelle) + " FT/an</span></div>";
+        trExamens.appendChild(tdExamens);
+        tbody.appendChild(trExamens);
 
-          var trCaEquiv = document.createElement("tr");
-          var tdCaEquivLabel = document.createElement("td");
-          tdCaEquivLabel.innerHTML = "<strong>CA équivalent</strong>";
-          trCaEquiv.appendChild(tdCaEquivLabel);
-          var tdCaEquivVal = document.createElement("td");
-          tdCaEquivVal.colSpan = 2;
-          tdCaEquivVal.innerHTML = "<span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + eur(gainCAJokerActuelle, 2) + "</span>";
-          trCaEquiv.appendChild(tdCaEquivVal);
-          tbody.appendChild(trCaEquiv);
-        }
+        var trCaEquiv = document.createElement("tr");
+        trCaEquiv.style.visibility = afficherExamens ? "visible" : "hidden";
+        var tdCaEquivLabel = document.createElement("td");
+        tdCaEquivLabel.innerHTML = "<strong>CA équivalent</strong>";
+        trCaEquiv.appendChild(tdCaEquivLabel);
+        var tdCaEquivVal = document.createElement("td");
+        tdCaEquivVal.colSpan = 2;
+        tdCaEquivVal.innerHTML = "<span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + eur(gainCAJokerActuelle, 2) + "</span>";
+        trCaEquiv.appendChild(tdCaEquivVal);
+        tbody.appendChild(trCaEquiv);
       }
       // ---- "Tarif moyen du forfait technique selon le volume" (11/09/2026, motif
       // "Forfait technique - barème dégressif" — skill ced4scale-simulateur-web).
