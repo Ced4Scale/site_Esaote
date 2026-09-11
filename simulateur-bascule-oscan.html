@@ -2388,27 +2388,36 @@
         // restante de l'O-scan (examens réalisables pour atteindre 100 % de sa
         // capacité) + CA équivalent — mêmes valeurs que le joker "Tarif moyen"
         // (capaciteJokerActuelle/gainCAJokerActuelle, calculées dans recalculer()),
-        // affichées ici aussi pour ne pas avoir à ouvrir/retourner le joker pour les
-        // consulter. Reprises telles quelles sur le dos de ce joker (voir plus bas).
-        var trExamens = document.createElement("tr");
-        var tdExamensLabel = document.createElement("td");
-        tdExamensLabel.innerHTML = "<strong>Examens réalisables (O-scan à 100&nbsp;%)</strong>";
-        trExamens.appendChild(tdExamensLabel);
-        var tdExamensVal = document.createElement("td");
-        tdExamensVal.colSpan = 2;
-        tdExamensVal.innerHTML = "<span class=\"bo-bareme-ca\">+" + fmt(capaciteJokerActuelle) + " FT/an</span>";
-        trExamens.appendChild(tdExamensVal);
-        tbody.appendChild(trExamens);
+        // reprises telles quelles sur le dos de ce joker (voir plus bas). Affichées
+        // UNIQUEMENT quand ce joker est ouvert (carte retournée) — pas seulement la
+        // case "Afficher tous les CA" — pour rester une info "à la demande", pas
+        // permanente. Couleur orange (O-scan) plutôt que noire : cette info concerne
+        // spécifiquement l'O-scan, pas la comparaison des 2 machines comme les
+        // lignes de total au-dessus. dessinerBaremeMini() est rappelée à chaque
+        // ouverture/fermeture de ce joker (voir ouvrirJoker/fermerJoker plus bas)
+        // pour que ce test reste à jour.
+        var jokerOuvert = document.getElementById("boFtMoyJokerCard").classList.contains("is-flipped");
+        if (jokerOuvert) {
+          var trExamens = document.createElement("tr");
+          var tdExamensLabel = document.createElement("td");
+          tdExamensLabel.innerHTML = "<strong>Examens réalisables (O-scan à 100&nbsp;%)</strong>";
+          trExamens.appendChild(tdExamensLabel);
+          var tdExamensVal = document.createElement("td");
+          tdExamensVal.colSpan = 2;
+          tdExamensVal.innerHTML = "<span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + fmt(capaciteJokerActuelle) + " FT/an</span>";
+          trExamens.appendChild(tdExamensVal);
+          tbody.appendChild(trExamens);
 
-        var trCaEquiv = document.createElement("tr");
-        var tdCaEquivLabel = document.createElement("td");
-        tdCaEquivLabel.innerHTML = "<strong>CA équivalent</strong>";
-        trCaEquiv.appendChild(tdCaEquivLabel);
-        var tdCaEquivVal = document.createElement("td");
-        tdCaEquivVal.colSpan = 2;
-        tdCaEquivVal.innerHTML = "<span class=\"bo-bareme-ca\">+" + eur(gainCAJokerActuelle, 2) + "</span>";
-        trCaEquiv.appendChild(tdCaEquivVal);
-        tbody.appendChild(trCaEquiv);
+          var trCaEquiv = document.createElement("tr");
+          var tdCaEquivLabel = document.createElement("td");
+          tdCaEquivLabel.innerHTML = "<strong>CA équivalent</strong>";
+          trCaEquiv.appendChild(tdCaEquivLabel);
+          var tdCaEquivVal = document.createElement("td");
+          tdCaEquivVal.colSpan = 2;
+          tdCaEquivVal.innerHTML = "<span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + eur(gainCAJokerActuelle, 2) + "</span>";
+          trCaEquiv.appendChild(tdCaEquivVal);
+          tbody.appendChild(trCaEquiv);
+        }
       }
       // ---- "Tarif moyen du forfait technique selon le volume" (11/09/2026, motif
       // "Forfait technique - barème dégressif" — skill ced4scale-simulateur-web).
@@ -2976,9 +2985,13 @@
       document.getElementById("boJokerFrontBtn").addEventListener("click", function () { ouvrirJoker("boJokerCard", "boJokerFrontBtn"); });
       document.getElementById("boJokerBackBtn").addEventListener("click", function () { fermerJoker("boJokerCard", "boJokerFrontBtn"); });
       // Joker "Tarif moyen" (11/09/2026, demande de Cédric) : même mécanique de carte
-      // retournée que le joker principal, voir plus haut.
-      document.getElementById("boFtMoyJokerFrontBtn").addEventListener("click", function () { ouvrirJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); });
-      document.getElementById("boFtMoyJokerBackBtn").addEventListener("click", function () { fermerJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); });
+      // retournée que le joker principal, voir plus haut. `recalculer()` en plus
+      // (11/09/2026, suite) : le tableau "Forfait technique" affiche "Examens
+      // réalisables"/"CA équivalent" UNIQUEMENT quand CE joker est ouvert (voir
+      // dessinerBaremeMini()) — sans ce recalcul, ouvrir/fermer la carte ne
+      // redessinait pas le tableau, qui restait sur son ancien état.
+      document.getElementById("boFtMoyJokerFrontBtn").addEventListener("click", function () { ouvrirJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); recalculer(); });
+      document.getElementById("boFtMoyJokerBackBtn").addEventListener("click", function () { fermerJoker("boFtMoyJokerCard", "boFtMoyJokerFrontBtn"); recalculer(); });
       document.getElementById("boBtnOptimum").addEventListener("click", repositionnerCurseur);
 
       // Masquer/réafficher la colonne de gauche entière (motif porté de
