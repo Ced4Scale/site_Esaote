@@ -590,15 +590,17 @@
         </div>
 
         <div id="pmVueSimple">
-        <div class="simulator__chart-card" id="pmVerdictCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="pmVerdictFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <p id="pmVerdict" style="margin:0;font-size:1.15rem;line-height:1.5"></p>
-        </div>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="pmVerdictCard">
+          <summary>Verdict
+            <button type="button" class="chart-card-fullscreen-btn" id="pmVerdictFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <p id="pmVerdict" style="margin:.6rem 0 0;font-size:1.15rem;line-height:1.5"></p>
+        </details>
 
         <div style="overflow-x:auto">
           <table class="stats-table simulator__table simulator__table--compare2" id="pmTable">
@@ -613,40 +615,41 @@
         </table>
         </div>
 
-        <div class="simulator__chart-card" id="pmGrapheCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="pmGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
-            <h3 style="margin:0">Résultat mensuel selon l'activité</h3>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="pmGrapheCard">
+          <summary>Résultat mensuel selon l'activité
+            <button type="button" class="chart-card-fullscreen-btn" id="pmGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <span class="pm-info-wrap">
               <button type="button" class="pm-info-btn" id="pmInfoLegendeBtn" aria-expanded="false" aria-controls="pmInfoLegendePop" aria-label="Comment lire ce graphe">💡</button>
               <div class="pm-info-pop" id="pmInfoLegendePop" hidden>Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</div>
             </span>
-          </div>
-          <div class="simulator__legend" id="pmLegend"></div>
+          </summary>
+          <div class="simulator__legend" id="pmLegend" style="margin-top:.6rem"></div>
           <div class="simulator__chart-wrap">
             <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel selon le nombre de patients par jour, avec le point mort de chaque machine"></svg>
             <div class="simulator__tooltip" id="pmTooltip" hidden></div>
           </div>
-        </div>
+        </details>
 
         <span class="pm-info-wrap">
           <button type="button" class="pm-info-btn" id="pmInfoHypBtn" aria-expanded="false" aria-controls="pmInfoHypPop" aria-label="Hypothèses de calcul">💡</button>
           <div class="pm-info-pop" id="pmInfoHypPop" hidden>Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</div>
         </span>
 
-        <div class="simulator__chart-card" id="pmRecap">
-          <button type="button" class="chart-card-fullscreen-btn" id="pmRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 class="simulator__collapse-toggle" id="pmRecapToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail complet des données utilisées <span aria-hidden="true">▾</span></h3>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="pmRecap">
+          <summary>Récapitulatif
+            <button type="button" class="chart-card-fullscreen-btn" id="pmRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <h3 class="simulator__collapse-toggle" id="pmRecapToggle" style="margin:.6rem 0;cursor:pointer">Voir le détail complet des données utilisées <span aria-hidden="true">▾</span></h3>
           <div id="pmRecapBody" hidden>
           <span class="pm-info-wrap" style="margin-bottom:.8rem">
             <button type="button" class="pm-info-btn" id="pmInfoRecapBtn" aria-expanded="false" aria-controls="pmInfoRecapPop" aria-label="À quoi sert ce récapitulatif">💡</button>
@@ -680,7 +683,7 @@
             </table>
           </div>
           </div>
-        </div>
+        </details>
 
         <div class="simulator__export" id="pmExport">
           <button type="button" class="btn btn--lg" id="pmExportToggle">Recevoir ce comparatif par e-mail</button>

@@ -746,10 +746,14 @@
     .cv-ca-tranche-info[hidden] { display: none; }
     .cv-ca-tranche-info strong { color: var(--red); }
     /* Case "Afficher tous les CA" (11/09/2026, même motif que bascule-oscan) : bascule
-       TOUTES les cases sur l'affichage CA en direct plutôt que de cliquer une par une. */
-    .cv-bareme-plage, .cv-bareme-ca { white-space: nowrap; display: inline-block; }
+       TOUTES les cases sur l'affichage CA en direct plutôt que de cliquer une par une.
+       Plage + tarif toujours sur la MÊME ligne (.cv-bareme-ligne1, nowrap) ; le CA
+       (case cochée) reste sur SA PROPRE ligne, EN PLUS du tarif, jamais à sa place. */
+    .cv-bareme-ligne1 { white-space: nowrap; display: block; }
+    .cv-bareme-plage, .cv-bareme-tarif, .cv-bareme-ca { white-space: nowrap; display: inline-block; }
     .cv-bareme-plage { font-size: .78rem; color: var(--muted); }
-    .cv-bareme-ca { font-weight: 700; }
+    .cv-bareme-tarif { font-weight: 400; }
+    .cv-bareme-ca { font-weight: 700; display: block; }
     .cv-bareme-showall { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; font-size: .85rem; cursor: pointer; }
     .cv-bareme-showall input { width: 15px; height: 15px; flex: none; }
     /* Variante pour une ampoule posée en bas d'un cadre (ex. coin bas-gauche du graphe) :
@@ -1118,14 +1122,16 @@
              colonne de résultats, jamais masquée, cachée par défaut (`hidden`) et montrée
              uniquement quand le panneau est masqué (voir appliquerVisibilitePanel()). -->
         <button type="button" class="btn btn--sm" id="cvBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
-        <div class="simulator__chart-card" id="cvSyntheseCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="cvSyntheseFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 style="margin-bottom:.6rem">Résultat à votre activité</h3>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvSyntheseCard">
+          <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="cvSyntheseFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Résultat à votre activité
+          </summary>
           <p class="simulator__hint" style="margin:0 0 .6rem" id="cvSyntheseSousTitre"></p>
           <!-- Cadre vert dessiné par-dessus les 2 lignes vertes du tableau, en JS (voir
                positionnerCadreVert()) — pas de border-radius directement sur les <td> :
@@ -1200,15 +1206,18 @@
               <p class="simulator__hint cv-activite-slider-equiv" id="cvHeuresTotalTxtB" style="text-align:right"></p>
             </div>
           </div>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="cvGrapheCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="cvGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvGrapheCard">
+          <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="cvGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Recette, charges et résultat net
+          </summary>
           <!-- Cadre d'écart de résultat, au-dessus du graphe à barres (demande de Cédric le
                07/09/2026) — reprend l'écart déjà visible en comparant les 2 barres, mais en
                un chiffre unique lisible d'un coup d'œil, qui suit les 3 groupes de boutons
@@ -1356,7 +1365,7 @@
             </span>
           </div>
           <p class="simulator__hint" style="margin:.35rem 0 0" id="cvMemoireTxt"></p>
-        </div>
+        </details>
 
         <span class="simulator__hint" style="font-weight:600; margin-right:.3rem">Hypothèses :</span>
         <span class="cv-info-wrap">
@@ -2075,26 +2084,47 @@
           var tdLabel = document.createElement("td");
           tdLabel.innerHTML = "<strong>" + label + "</strong>";
           tr.appendChild(tdLabel);
-          [{ t: trIrm[i], machine: "IRM Esaote" }, { t: trCt[i], machine: "Scanner (CT)" }].forEach(function (o) {
+          [{ t: trIrm[i], machine: "IRM Esaote", couleur: SLOT_COLORS[0] }, { t: trCt[i], machine: "Scanner (CT)", couleur: SLOT_COLORS[1] }].forEach(function (o) {
             var td = document.createElement("td");
+            // Plage + tarif toujours sur la MÊME ligne (demande de Cédric, 11/09/2026) —
+            // wrapper .cv-bareme-ligne1 en nowrap pour ne jamais les séparer.
+            var ligne1 = document.createElement("span");
+            ligne1.className = "cv-bareme-ligne1";
+            var plageSpan = document.createElement("span");
+            plageSpan.className = "cv-bareme-plage";
+            plageSpan.textContent = plage(o.t);
+            ligne1.appendChild(plageSpan);
+            ligne1.appendChild(document.createTextNode(" "));
             if (afficherTousLesCa) {
+              // Case cochée : le tarif reste affiché (couleur de colonne, sans gras),
+              // le CA s'ajoute EN DESSOUS plutôt que de le remplacer.
+              var tarifSpan = document.createElement("span");
+              tarifSpan.className = "cv-bareme-tarif";
+              tarifSpan.style.color = o.couleur;
+              tarifSpan.textContent = eurosCent.format(o.t.montant);
+              ligne1.appendChild(tarifSpan);
+              td.appendChild(ligne1);
               var volume = patientsAnnuelsActuels;
               var examens = Math.max(0, Math.min(volume, o.t.fin != null ? o.t.fin : volume) - (o.t.debut - 1));
               var ca = examens * o.t.montant;
-              td.innerHTML = "<span class=\"cv-bareme-plage\">" + plage(o.t) + "</span><br>"
-                + "<span class=\"cv-bareme-ca\">" + eurosCent.format(ca) + "</span>";
+              var caSpan = document.createElement("span");
+              caSpan.className = "cv-bareme-ca";
+              caSpan.style.color = o.couleur;
+              caSpan.textContent = eurosCent.format(ca);
+              td.appendChild(caSpan);
             } else {
-              td.innerHTML = plage(o.t) + "<br>";
               var btn = document.createElement("button");
               btn.type = "button";
               btn.className = "cv-ca-tranche-btn";
+              btn.style.color = o.couleur;
               btn.textContent = eurosCent.format(o.t.montant);
               btn.dataset.debut = o.t.debut;
               btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
               btn.dataset.montant = o.t.montant;
               btn.dataset.label = label;
               btn.dataset.machine = o.machine;
-              td.appendChild(btn);
+              ligne1.appendChild(btn);
+              td.appendChild(ligne1);
             }
             tr.appendChild(td);
           });

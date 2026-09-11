@@ -417,19 +417,22 @@
         </div>
 
         <div id="eneVueSimple">
-        <div class="simulator__chart-card" id="eneCardPrincipal">
-          <button type="button" class="chart-card-fullscreen-btn" id="eneChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 style="margin-bottom:.6rem">Coût énergétique annuel — trois couches
+        <!-- Tous les cadres de résultats sont fermés par défaut (jamais l'attribut
+             `open`) — voir skill ced4scale-simulateur-web, "Tous les cadres de
+             résultats fermés par défaut à l'ouverture de la page". -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardPrincipal">
+          <summary>Coût énergétique annuel — trois couches
+            <button type="button" class="chart-card-fullscreen-btn" id="eneChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <span class="ene-info-wrap ene-info-wrap--violet">
               <button type="button" class="ene-info-btn" id="eneInfoSocleBtn" aria-expanded="false" aria-controls="eneInfoSoclePop" aria-label="Définition des trois couches et du talon de consommation">💡</button>
               <div class="ene-info-pop" id="eneInfoSoclePop" hidden>Le <strong>socle</strong>, c'est le talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage. <strong>Entre deux patients</strong> est le coût ajouté simplement parce que le cabinet est ouvert. <strong>Examens</strong> est le coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale.<br /><br /><strong>Définition (Ced4Scale) — talon de consommation :</strong> le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. C'est un plancher théorique, pas un scénario réel : au-delà, les coûts réels s'ajoutent au prorata de l'activité (nombre de patients dans la plage d'ouverture) — c'est ce que mesurent les couches "Entre deux patients" et "Examens".</div>
             </span>
-          </h3>
+          </summary>
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
@@ -438,36 +441,41 @@
             <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Comment voir le détail du socle">💡</button>
             <div class="ene-info-pop" id="eneInfoSocleClicPop" hidden>Cliquez sur le socle (couleur violette) d'une barre pour voir sa composition en détail.</div>
           </span>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="eneCardSocleDetail" hidden>
-          <button type="button" class="chart-card-fullscreen-btn" id="eneSocleDetailFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 style="margin-bottom:.6rem">Composition du socle</h3>
+        <!-- `hidden` reste le mécanisme séparé qui montre/masque entièrement ce
+             cadre au clic sur le socle d'une barre (voir toggleSocleDetail()) —
+             indépendant de l'état ouvert/fermé du <details> lui-même, qui est mis
+             à `open=true` par ce même toggle au moment où le cadre est révélé. -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardSocleDetail" hidden>
+          <summary>Composition du socle
+            <button type="button" class="chart-card-fullscreen-btn" id="eneSocleDetailFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
           <p class="simulator__hint" style="margin:0 0 .6rem" id="eneSocleDetailHint"></p>
           <div class="simulator__legend" id="eneLegendSocleDetail"></div>
           <div class="simulator__chart-wrap">
             <svg id="eneChartSocleDetail" class="simulator__chart" viewBox="0 0 640 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du socle en IRM, local technique et climatisation, pour la machine choisie"></svg>
           </div>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="eneCardCo2">
-          <button type="button" class="chart-card-fullscreen-btn" id="eneCo2FullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 style="margin-bottom:.6rem">Empreinte carbone (mix électrique français)
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardCo2">
+          <summary>Empreinte carbone (mix électrique français)
+            <button type="button" class="chart-card-fullscreen-btn" id="eneCo2FullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <span class="ene-info-wrap">
               <button type="button" class="ene-info-btn" id="eneInfoCo2Btn" aria-expanded="false" aria-controls="eneInfoCo2Pop" aria-label="Source de la conversion CO2">💡</button>
               <div class="ene-info-pop" id="eneInfoCo2Pop" hidden>Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</div>
             </span>
-          </h3>
+          </summary>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2" id="eneTableCo2">
             <thead>
@@ -480,21 +488,21 @@
             <tbody id="eneTableCo2Body"></tbody>
           </table>
           </div>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="eneCardHistoPrix">
-          <button type="button" class="chart-card-fullscreen-btn" id="eneHistoPrixFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 style="margin-bottom:.6rem">Évolution du prix du kWh en France depuis 2000
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardHistoPrix">
+          <summary>Évolution du prix du kWh en France depuis 2000
+            <button type="button" class="chart-card-fullscreen-btn" id="eneHistoPrixFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <span class="ene-info-wrap">
               <button type="button" class="ene-info-btn" id="eneInfoTarifBtn" aria-expanded="false" aria-controls="eneInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button>
               <div class="ene-info-pop" id="eneInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.<br /><br /><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div>
             </span>
-          </h3>
+          </summary>
           <div class="simulator__chart-wrap">
             <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
             <div class="simulator__tooltip" id="eneHistoTooltip" hidden></div>
@@ -503,30 +511,35 @@
             <button type="button" class="ene-info-btn" id="eneInfoTarifClicBtn" aria-expanded="false" aria-controls="eneInfoTarifClicPop" aria-label="Interaction et sources de ce graphe">💡</button>
             <div class="ene-info-pop" id="eneInfoTarifClicPop" hidden>Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée) — l'info s'affiche quelques secondes puis disparaît.<br /><br />Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</div>
           </span>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="eneDetailCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="eneDetailFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 class="simulator__collapse-toggle" id="eneDetailToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail des calculs <span aria-hidden="true">▾</span></h3>
-          <div id="eneDetailBody" hidden>
-            <div class="simulator__chart-card" id="eneCardTech">
-              <button type="button" class="chart-card-fullscreen-btn" id="eneTechFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                </svg>
-              </button>
-              <h3 style="margin-bottom:.6rem">Valeurs techniques utilisées
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneDetailCard">
+          <summary>Voir le détail des calculs
+            <button type="button" class="chart-card-fullscreen-btn" id="eneDetailFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <div id="eneDetailBody">
+            <!-- 3 cadres INTÉRIEURS légitimes (motif documenté dans le skill, "CAS DES
+                 CADRES IMBRIQUÉS") : chacun reste indépendamment repliable/dépliable
+                 et garde son propre bouton plein écran, ancré à SON PROPRE coin
+                 haut-droit (position:relative posé par .simulator__chart-card). -->
+            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardTech">
+              <summary>Valeurs techniques utilisées
+                <button type="button" class="chart-card-fullscreen-btn" id="eneTechFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                  </svg>
+                </button>
                 <span class="ene-info-wrap">
                   <button type="button" class="ene-info-btn" id="eneInfoTechBtn" aria-expanded="false" aria-controls="eneInfoTechPop" aria-label="À propos de ce tableau">💡</button>
                   <div class="ene-info-pop" id="eneInfoTechPop" hidden>Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</div>
                 </span>
-              </h3>
+              </summary>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="eneTableTech">
                 <thead>
@@ -543,21 +556,21 @@
                 <button type="button" class="ene-info-btn" id="eneInfoTechSourcesBtn" aria-expanded="false" aria-controls="eneInfoTechSourcesPop" aria-label="Où trouver les sources détaillées">💡</button>
                 <div class="ene-info-pop" id="eneInfoTechSourcesPop" hidden>Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</div>
               </span>
-            </div>
+            </details>
 
-            <div class="simulator__chart-card" id="eneCardSocleTable">
-              <button type="button" class="chart-card-fullscreen-btn" id="eneSocleTableFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                </svg>
-              </button>
-              <h3 style="margin-bottom:.6rem">Détail du socle — d'où vient le coût incompressible
+            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardSocleTable">
+              <summary>Détail du socle — d'où vient le coût incompressible
+                <button type="button" class="chart-card-fullscreen-btn" id="eneSocleTableFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                  </svg>
+                </button>
                 <span class="ene-info-wrap ene-info-wrap--violet">
                   <button type="button" class="ene-info-btn" id="eneInfoSocleDetailBtn" aria-expanded="false" aria-controls="eneInfoSocleDetailPop" aria-label="Composition du socle">💡</button>
                   <div class="ene-info-pop" id="eneInfoSocleDetailPop" hidden>Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit entre l'IRM elle-même, le local technique (maintien en froid de l'aimant) et la climatisation de la salle d'examen — <strong>obligatoire pour toute IRM</strong>, y compris les modèles Esaote sans hélium.</div>
                 </span>
-              </h3>
+              </summary>
               <div style="overflow-x:auto">
                 <table class="stats-table simulator__table simulator__table--compare2" id="eneTableSocle">
                 <thead>
@@ -570,7 +583,7 @@
                 <tbody id="eneTableSocleBody"></tbody>
               </table>
               </div>
-            </div>
+            </details>
 
             <div style="overflow-x:auto">
               <table class="stats-table simulator__table simulator__table--compare2" id="eneTable">
@@ -584,19 +597,19 @@
               <tbody id="eneTableBody"></tbody>
             </table>
             </div>
-            <div class="simulator__chart-card" id="eneRecap">
-              <button type="button" class="chart-card-fullscreen-btn" id="eneRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                </svg>
-              </button>
-              <h3 style="margin-bottom:.6rem">Paramètres saisis avant de lancer la simulation
+            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneRecap">
+              <summary>Paramètres saisis avant de lancer la simulation
+                <button type="button" class="chart-card-fullscreen-btn" id="eneRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                  </svg>
+                </button>
                 <span class="ene-info-wrap">
                   <button type="button" class="ene-info-btn" id="eneInfoRecapBtn" aria-expanded="false" aria-controls="eneInfoRecapPop" aria-label="À quoi sert ce récapitulatif">💡</button>
                   <div class="ene-info-pop" id="eneInfoRecapPop" hidden>Les valeurs techniques des équipements et les résultats calculés sont déjà détaillés dans les tableaux ci-dessus — voici en plus tout ce que tu as toi-même renseigné, repris à l'identique dans le PDF envoyé par e-mail.</div>
                 </span>
-              </h3>
+              </summary>
               <table class="stats-table simulator__table" id="eneRecapParamsCommunsTable">
                 <tbody id="eneRecapParamsCommunsBody"></tbody>
               </table>
@@ -612,26 +625,27 @@
                   <tbody id="eneRecapParamsBody"></tbody>
                 </table>
               </div>
-            </div>
+            </details>
           </div>
-        </div>
+        </details>
 
-        <div class="simulator__chart-card" id="eneEtudesCard">
-          <button type="button" class="chart-card-fullscreen-btn" id="eneEtudesFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-            </svg>
-          </button>
-          <h3 class="simulator__collapse-toggle" id="eneEtudesToggle" style="margin-bottom:.6rem;cursor:pointer">Ce que disent les études indépendantes <span aria-hidden="true">▾</span></h3>
-          <div id="eneEtudesBody" hidden>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneEtudesCard">
+          <summary>Ce que disent les études indépendantes
+            <button type="button" class="chart-card-fullscreen-btn" id="eneEtudesFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <div id="eneEtudesBody">
             <span class="ene-info-wrap" style="margin:0 0 .6rem">
               <button type="button" class="ene-info-btn" id="eneInfoEtudesBtn" aria-expanded="false" aria-controls="eneInfoEtudesPop" aria-label="À propos de ces études">💡</button>
               <div class="ene-info-pop" id="eneInfoEtudesPop" hidden>L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</div>
             </span>
             <ul id="eneEtudesListe" style="margin:.6rem 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
           </div>
-        </div>
+        </details>
 
         <div class="simulator__export" id="eneExport">
           <button type="button" class="btn btn--lg" id="eneExportToggle">Recevoir ce comparatif par e-mail</button>
@@ -1523,7 +1537,11 @@
       function toggleSocleDetail(resultats) {
         var card = document.getElementById("eneCardSocleDetail");
         card.hidden = !card.hidden;
-        if (!card.hidden) dessinerCamembertSocle(resultats);
+        // eneCardSocleDetail est un <details> fermé par défaut (règle "tous les
+        // cadres fermés") — mais ce mécanisme `hidden` (montrer/masquer le cadre
+        // en entier au clic sur le socle) reste distinct : quand on le révèle, on
+        // l'ouvre aussi directement pour ne pas imposer un 2e clic sur le chevron.
+        if (!card.hidden) { card.open = true; dessinerCamembertSocle(resultats); }
       }
 
       function dessinerLegendeSocleDetail() {
@@ -1932,21 +1950,11 @@
         });
       }
 
-      var etudesToggle = document.getElementById("eneEtudesToggle");
-      var etudesBody = document.getElementById("eneEtudesBody");
-      etudesToggle.addEventListener("click", function () {
-        var ouvert = !etudesBody.hidden;
-        etudesBody.hidden = ouvert;
-        etudesToggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
-      });
-
-      var detailToggle = document.getElementById("eneDetailToggle");
-      var detailBody = document.getElementById("eneDetailBody");
-      detailToggle.addEventListener("click", function () {
-        var ouvert = !detailBody.hidden;
-        detailBody.hidden = ouvert;
-        detailToggle.querySelector("span").textContent = ouvert ? "▾" : "▴";
-      });
+      // eneDetailCard/eneEtudesCard sont désormais de vrais <details> natifs (voir
+      // skill ced4scale-simulateur-web, "Tous les cadres de résultats fermés par
+      // défaut") — le chevron ▸/▾ et l'ouverture/fermeture viennent gratuitement du
+      // navigateur, plus besoin du mécanisme "maison" (h3.simulator__collapse-toggle
+      // + div hidden) qui vivait ici.
 
       var exportForm = document.getElementById("eneExportForm");
       var exportSuccess = document.getElementById("eneExportSuccess");
@@ -2372,6 +2380,12 @@
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
+            // Ouvre aussi tout <details> NESTÉ (ex. les 3 cadres intérieurs
+            // eneCardTech/eneCardSocleTable/eneRecap dans eneDetailCard) — sinon leur
+            // contenu resterait invisible (juste le résumé) une fois eneDetailCard
+            // passé en plein écran. Voir skill ced4scale-simulateur-web, motif repris
+            // de simulateur-bascule-oscan.html (11/09/2026).
+            Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
             if (bodyId) {
               var body = document.getElementById(bodyId);
               if (body && body.hidden) {
@@ -2392,11 +2406,11 @@
       wireCardFullscreen("eneSocleDetailFullscreenBtn", "eneCardSocleDetail");
       wireCardFullscreen("eneCo2FullscreenBtn", "eneCardCo2");
       wireCardFullscreen("eneHistoPrixFullscreenBtn", "eneCardHistoPrix");
-      wireCardFullscreen("eneDetailFullscreenBtn", "eneDetailCard", "eneDetailBody");
+      wireCardFullscreen("eneDetailFullscreenBtn", "eneDetailCard");
       wireCardFullscreen("eneTechFullscreenBtn", "eneCardTech");
       wireCardFullscreen("eneSocleTableFullscreenBtn", "eneCardSocleTable");
       wireCardFullscreen("eneRecapFullscreenBtn", "eneRecap");
-      wireCardFullscreen("eneEtudesFullscreenBtn", "eneEtudesCard", "eneEtudesBody");
+      wireCardFullscreen("eneEtudesFullscreenBtn", "eneEtudesCard");
     })();
   </script>
   <script src="assets/site-gate.js"></script>
