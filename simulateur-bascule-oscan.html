@@ -2367,7 +2367,7 @@
           for (var k in attrs) e.setAttribute(k, attrs[k]);
           return e;
         }
-        var pad = { left: 62, right: 16, top: 20, bottom: 34 };
+        var pad = { left: 62, right: 16, top: 20, bottom: 46 };
         var W = 640, H = 300, plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
         var xMax = Math.max(volumeTotal, 1);
         function px(x) { return pad.left + (x / xMax) * plotW; }
@@ -2405,15 +2405,31 @@
           lblY.textContent = eur(valY, 0);
           svg.appendChild(lblY);
         }
+        // Double abscisse (11/09/2026, demande de Cédric) : les 2 machines se
+        // PARTAGENT le même axe X géométrique, mais l'O-scan y avance en MIROIR (son
+        // volume réel à une position x est `volumeTotal - x`, voir le commentaire de
+        // dessinerFtMoyenBascule ci-dessus) — un seul rang de graduations ne
+        // montrait donc que les valeurs de Machine A, fausses pour lire l'O-scan.
+        // 2ᵉ rang de graduations ajouté juste en dessous, valeurs mirroir, coloré
+        // comme la courbe O-scan pour qu'on sache tout de suite à quelle machine
+        // chaque rang se rapporte (bleu = Machine A, orange = O-scan) — même position
+        // x à l'écran, 2 valeurs différentes empilées verticalement.
         for (var p = 0; p <= 4; p++) {
           var xv = (xMax * p) / 4;
           var xx = px(xv);
           var lblX = el("text", {
-            x: xx, y: pad.top + plotH + 16, class: "simulator__axis-label",
-            "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle")
+            x: xx, y: pad.top + plotH + 15, class: "simulator__axis-label",
+            "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle"), fill: "#2a78d6"
           });
-          lblX.textContent = fmt(xv) + (p === 4 ? " examens/an" : "");
+          lblX.textContent = fmt(xv) + (p === 4 ? " ex./an (" + nomClasseA + ")" : "");
           svg.appendChild(lblX);
+          var xvO = xMax - xv;
+          var lblXO = el("text", {
+            x: xx, y: pad.top + plotH + 27, class: "simulator__axis-label",
+            "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle"), fill: "#eb6834"
+          });
+          lblXO.textContent = fmt(xvO) + (p === 0 ? " ex./an (O-scan)" : "");
+          svg.appendChild(lblXO);
         }
 
         // Seuils du barème en pointillé (11/09/2026, demande de Cédric), même motif que
