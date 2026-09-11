@@ -163,6 +163,23 @@
        l'équilibrage de hauteur du navigateur (comportement déjà documenté comme
        imprévisible, skill ced4scale-simulateur-web). */
     .chart-card-slide-canvas--split .bascule-ftmoy-group { break-inside: avoid; }
+    /* Même protection pour "Répartition de l'activité" (11/09/2026, correction d'un
+       chevauchement signalé par Cédric en mode "2 colonnes") — chaque groupe logique
+       de #boGrapheSimple reste D'UN SEUL BLOC, jamais coupé au milieu par le partage
+       automatique en colonnes du navigateur. `.bascule-graphe-groupe` = activité
+       totale + graphe + curseur de répartition (voir commentaire HTML) ; les 3
+       autres blocs (joker/stats, note de capacité, bloc Mémoire dupliqué) protégés
+       individuellement, pas forcément ensemble. */
+    .chart-card-slide-canvas--split .bascule-graphe-groupe,
+    .chart-card-slide-canvas--split #boStatsRow,
+    .chart-card-slide-canvas--split #boCapaciteNote,
+    .chart-card-slide-canvas--split #boBtnRowR { break-inside: avoid; }
+    /* Espace augmenté entre les grands blocs de "Répartition de l'activité"
+       (11/09/2026, demande de Cédric — les blocs se touchaient de trop près) : marge
+       basse sur chaque groupe plutôt qu'un espace ad hoc par élément. */
+    .bascule-graphe-groupe { margin-bottom: 1.6rem; }
+    #boStatsRow { margin-bottom: 1.4rem; }
+    #boCapaciteNote { margin-bottom: 1.2rem; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
     .bascule-track-wrap { position: relative; margin-bottom: 1.3rem; }
@@ -913,12 +930,23 @@
           </div>
 
           <div id="boGrapheSimple">
+          <!-- Groupe "activité + graphe + curseur de répartition" (11/09/2026) —
+               Cédric a signalé un chevauchement (la ligne "Activité totale actuelle"
+               se retrouvait DANS le graphe) en plein écran mode "2 colonnes" : ces
+               blocs, jusque-là de simples enfants successifs de #boGrapheSimple sans
+               protection, pouvaient être coupés n'importe où par le partage
+               automatique en 2 colonnes du navigateur (`column-count`) — un SVG ne se
+               fragmente pas proprement, contrairement à du texte. `break-inside:avoid`
+               (même motif que .bascule-ftmoy-group, voir plus haut) garde tout ce
+               groupe D'UN SEUL BLOC, jamais coupé au milieu par un partage en
+               colonnes. -->
+          <div class="bascule-graphe-groupe">
           <!-- Copie du champ + curseur "Activité totale actuelle", directement visible
                ici EN PLUS du panneau "Paramètres" et du verso du joker (demande de
                Cédric le 11/09/2026 : il ne la trouvait pas sans retourner la carte).
                Id suffixé "R" (Répartition), généralisé en JS avec les autres miroirs
                (voir boVolumeAMiroirs/BO_VOLUMEA_SLIDER_SUFFIXES plus bas). -->
-          <div class="field" style="margin-bottom:.8rem">
+          <div class="field" style="margin-bottom:1.4rem">
             <label for="boVolumeAR">Activité totale actuelle</label>
             <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeAR" value="12000" style="width:5rem" /><span>FT/an</span></div>
             <div class="bascule-range" style="margin-top:.5rem">
@@ -957,6 +985,7 @@
             <div class="bascule-curseur-hint" id="boCurseurHint" aria-hidden="true">↔</div>
           </div>
           <div class="bascule-ends"><span>0</span><span id="boEndMax">12.000</span></div>
+          </div>
 
           <div class="bascule-stats" id="boStatsRow">
             <div class="bascule-stat result" id="boStatResultBox">
