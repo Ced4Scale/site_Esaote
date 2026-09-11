@@ -133,6 +133,15 @@
 
     .bascule-courbe-zone { position: relative; margin: 2.2rem 0 .5rem; }
     .bascule-courbe-zone svg { width: 100%; height: 100px; display: block; overflow: visible; }
+    /* En plein écran RÉEL (bouton du 10-11/09/2026, voir skill ced4scale-simulateur-web) :
+       ce graphe utilise preserveAspectRatio="none" par choix (rendu volontairement plus
+       plat que son viewBox) — une hauteur FIXE en pixels combinée à une largeur qui
+       grandit jusqu'à celle du moniteur étirait le texte horizontalement (chiffres
+       "élargis", signalé par Cédric le 11/09/2026). Corrigé en gardant le MÊME rapport
+       largeur/hauteur qu'en vue normale (mesuré empiriquement, ~7,24:1) au lieu d'une
+       hauteur figée — le graphe grandit alors sans se déformer davantage. */
+    .simulator__chart-card:fullscreen .bascule-courbe-zone svg { height: auto; aspect-ratio: 7.24 / 1; }
+    .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
     .bascule-track-wrap { position: relative; margin-bottom: 1.3rem; }
