@@ -1411,7 +1411,7 @@
                         <option value="1">Mémoire 2</option>
                         <option value="2">Mémoire 3</option>
                       </select>
-                      <svg id="boCompareChartGauche" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à gauche"></svg>
+                      <svg id="boCompareChartGauche" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Tarif moyen du forfait technique de la mémoire affichée à gauche"></svg>
                       <div id="boCompareStatsGauche"></div>
                     </div>
                     <div class="bascule-comparaison-cote">
@@ -1421,7 +1421,7 @@
                         <option value="1">Mémoire 2</option>
                         <option value="2">Mémoire 3</option>
                       </select>
-                      <svg id="boCompareChartDroite" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Répartition de la mémoire affichée à droite"></svg>
+                      <svg id="boCompareChartDroite" viewBox="0 0 640 120" preserveAspectRatio="none" role="img" aria-label="Tarif moyen du forfait technique de la mémoire affichée à droite"></svg>
                       <div id="boCompareStatsDroite"></div>
                     </div>
                   </div>
@@ -3977,26 +3977,37 @@
       // Instantané figé d'une mémoire, sans toucher au formulaire visible : restaure
       // temporairement la mémoire choisie (déclenche recalculer() en cascade comme un
       // vrai rappel), lit le résultat déjà calculé dans `dernierEtat`, échantillonne la
-      // courbe avec les globales de CETTE mémoire encore actives (totalPour()/resultat()
-      // lisent ZONE_TARIFAIRE/AMPLITUDE_*/DUREE_ACQ_*/etc. comme variables de module, pas
-      // en paramètres — il faut donc les échantillonner ICI, pas après restauration de
-      // l'état d'avant), puis restaure IMMÉDIATEMENT l'état capturé au début. Tout ça de
-      // façon synchrone : le navigateur ne peint qu'une fois le script terminé, donc les
-      // états intermédiaires restent invisibles pour le visiteur.
+      // courbe avec les globales de CETTE mémoire encore actives (tarifMoyenPourVolume
+      // Bascule()/ftAnnuel() lisent ZONE_TARIFAIRE/FT_CLASSES_PLEIN/etc. comme variables
+      // de module, pas en paramètres — il faut donc les échantillonner ICI, pas après
+      // restauration de l'état d'avant), puis restaure IMMÉDIATEMENT l'état capturé au
+      // début. Tout ça de façon synchrone : le navigateur ne peint qu'une fois le script
+      // terminé, donc les états intermédiaires restent invisibles pour le visiteur.
+      // Réécrit le 11/09/2026 (signalé par Cédric : "les boutons mémoire ne
+      // sauvegardent pas le bon graphe") — ce mode Comparer vit désormais à côté du
+      // joker de "Tarif moyen" (déplacé le même jour), mais dessinait encore
+      // l'ANCIEN graphe hérité de "Répartition de l'activité" (courbe de résultat
+      // net selon le volume, via totalPour()). Remplacé par ce que ce bloc montre
+      // réellement aujourd'hui : la courbe "Tarif moyen" (moyenne pondérée,
+      // Machine A + O-scan en miroir, même calcul que dessinerFtMoyenBascule()) et
+      // les totaux du tableau "Forfait technique" (CA par machine + total des 2
+      // machines) — pas le tableau détaillé par tranche, trop grand pour ce format
+      // compact 2 colonnes.
       function calculerSnapshotPourMemoire(idx) {
         if (idx === null || !memoires[idx]) return null;
         var avant = capturerParametres();
         restaurerParametres(memoires[idx]);
-        var N = dernierEtat.volumeTotal, classeA = dernierEtat.classeA;
+        var N = dernierEtat.volumeTotal, classeA = dernierEtat.classeA, volA = dernierEtat.volA, volO = dernierEtat.volO;
+        var trA = tranchesDepuisClasse(FT_CLASSES_PLEIN[classeA]);
+        var trO = tranchesDepuisClasse(FT_CLASSES_PLEIN.le05);
         var xs = [];
-        for (var i = 0; i <= 100; i++) { xs.push(Math.round(N * i / 100)); }
-        xs = xs.filter(function (x) { return x >= 0 && x <= N; });
+        for (var i = 0; i <= 40; i++) { xs.push(Math.round(N * i / 40)); }
         xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
-        var pts = xs.map(function (x) {
-          return { x: x, y: totalPour(x, N, classeA, dernierEtat.loyerA, dernierEtat.manipA, dernierEtat.debitA, dernierEtat.loyerO, dernierEtat.debitO, dernierEtat.kwh, dernierEtat.extraA, dernierEtat.extraO) };
-        });
         var snap = JSON.parse(JSON.stringify(dernierEtat));
-        snap.pts = pts;
+        snap.ptsA = xs.map(function (x) { return { x: x, y: tarifMoyenPourVolumeBascule(trA, x) }; });
+        snap.ptsO = xs.map(function (x) { return { x: x, y: tarifMoyenPourVolumeBascule(trO, N - x) }; });
+        snap.totalCaA = ftAnnuel(classeA, volA);
+        snap.totalCaO = ftAnnuel("le05", volO);
         restaurerParametres(avant);
         return snap;
       }
@@ -4012,31 +4023,24 @@
         var W = 640, H = 120, top = 8, bottom = 8;
         var N = snap.volumeTotal;
         function px(x) { return N > 0 ? (x / N) * W : 0; }
-        var yMin = Math.min.apply(null, snap.pts.map(function (p) { return p.y; }));
-        var yMax = Math.max.apply(null, snap.pts.map(function (p) { return p.y; }));
+        var tousY = snap.ptsA.map(function (p) { return p.y; }).concat(snap.ptsO.map(function (p) { return p.y; }));
+        var yMin = Math.min.apply(null, tousY);
+        var yMax = Math.max.apply(null, tousY);
         if (yMin === yMax) { yMin -= 1; yMax += 1; }
         var pad = (yMax - yMin) * 0.08;
         yMin -= pad; yMax += pad;
         function py(y) { return top + (1 - (y - yMin) / (yMax - yMin)) * (H - top - bottom); }
-        var d = snap.pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
-        var yZeroPx = py(0);
-        var zeroLigne = (yZeroPx >= top - 1 && yZeroPx <= H - bottom + 1)
-          ? "<line x1=\"0\" y1=\"" + yZeroPx.toFixed(1) + "\" x2=\"" + W + "\" y2=\"" + yZeroPx.toFixed(1) + "\" stroke=\"var(--line)\" stroke-width=\"1\"></line>"
-          : "";
-        var cx = px(snap.volA).toFixed(1), cy = py(snap.netTotal).toFixed(1);
-        svg.innerHTML = zeroLigne +
-          "<path d=\"" + d + "\" fill=\"none\" stroke=\"#eb6834\" stroke-width=\"2.5\"></path>" +
-          "<circle cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"6\" fill=\"#fcfcfb\"></circle>" +
-          "<circle cx=\"" + cx + "\" cy=\"" + cy + "\" r=\"4\" fill=\"#eb6834\"></circle>";
+        function chemin(pts) { return pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" "); }
+        svg.innerHTML =
+          "<path d=\"" + chemin(snap.ptsA) + "\" fill=\"none\" stroke=\"#2a78d6\" stroke-width=\"2.5\"></path>" +
+          "<path d=\"" + chemin(snap.ptsO) + "\" fill=\"none\" stroke=\"#eb6834\" stroke-width=\"2.5\"></path>";
         function ligne(label, valeur, style) {
           return "<div class=\"bascule-compare-ligne\"" + (style ? " style=\"" + style + "\"" : "") + "><span>" + label + "</span><span>" + valeur + "</span></div>";
         }
         statsEl.innerHTML =
-          ligne(snap.nomClasseA, fmt(snap.volA) + " FT/an", "color:#2a78d6") +
-          ligne("O-scan", fmt(snap.volO) + " FT/an", "color:#eb6834") +
-          ligne("Résultat net total", eur(snap.netTotal), "font-weight:800;border-top:1px dashed var(--line);padding-top:.3rem;margin-top:.2rem") +
-          ligne("C.A. total (FT)", eur(snap.caTotal)) +
-          ligne((snap.gainOscan >= 0 ? "+ " : "− ") + eur(Math.abs(snap.gainOscan)) + " grâce à l'O-scan", "", "color:#1a7a3d;font-weight:600");
+          ligne(snap.nomClasseA, eur(snap.totalCaA), "color:#2a78d6") +
+          ligne("O-scan", eur(snap.totalCaO), "color:#eb6834") +
+          ligne("Total des 2 machines", eur(snap.totalCaA + snap.totalCaO), "font-weight:800;border-top:1px dashed var(--line);padding-top:.3rem;margin-top:.2rem");
       }
 
       function majOptionsCompareSelects() {
