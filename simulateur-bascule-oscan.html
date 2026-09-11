@@ -2398,14 +2398,22 @@
         // pour que ce test reste à jour.
         var jokerOuvert = document.getElementById("boFtMoyJokerCard").classList.contains("is-flipped");
         if (jokerOuvert) {
+          // Libellé "Examens réalisables (O-scan à 100 %)" trop long pour la 1ʳᵉ
+          // colonne (20% de large, dimensionnée pour "Tarif plein"/"Au-delà" etc.) —
+          // repassait à la ligne (11/09/2026, signalé par Cédric). Une seule case
+          // sur toute la largeur (colSpan=3, label + valeur en flex) plutôt que
+          // d'élargir la colonne, ce qui aurait aussi élargi la 1ʳᵉ colonne des 4
+          // lignes de tranche au-dessus et risqué de faire repasser LEURS montants
+          // à la ligne (motif déjà corrigé une fois, commit c2df625).
           var trExamens = document.createElement("tr");
-          var tdExamensLabel = document.createElement("td");
-          tdExamensLabel.innerHTML = "<strong>Examens réalisables (O-scan à 100&nbsp;%)</strong>";
-          trExamens.appendChild(tdExamensLabel);
-          var tdExamensVal = document.createElement("td");
-          tdExamensVal.colSpan = 2;
-          tdExamensVal.innerHTML = "<span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + fmt(capaciteJokerActuelle) + " FT/an</span>";
-          trExamens.appendChild(tdExamensVal);
+          var tdExamens = document.createElement("td");
+          tdExamens.colSpan = 3;
+          // `width:100%` en inline (bat le `width:20%` de `td:first-child`, cette
+          // case étant la SEULE de sa ligne) : sans ça la case entière — pas
+          // seulement son texte — restait cantonnée à la largeur de la 1ʳᵉ colonne.
+          tdExamens.style.width = "100%";
+          tdExamens.innerHTML = "<div style=\"display:flex; justify-content:space-between; align-items:baseline; gap:.6rem; white-space:nowrap;\"><strong>Examens réalisables (O-scan à 100&nbsp;%)</strong><span class=\"bo-bareme-ca\" style=\"color:#eb6834\">+" + fmt(capaciteJokerActuelle) + " FT/an</span></div>";
+          trExamens.appendChild(tdExamens);
           tbody.appendChild(trExamens);
 
           var trCaEquiv = document.createElement("tr");
