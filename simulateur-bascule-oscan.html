@@ -3417,7 +3417,10 @@
           canvas.style.width = ""; canvas.style.height = ""; canvas.style.transform = "";
         }
         canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
-        canvas.style.overflowY = presSplitActuel ? "hidden" : "auto";
+        // "auto" dans les 2 cas (pas "hidden" en 2 colonnes, corrigé le 11/09/2026) :
+        // un contenu qui déborderait malgré la répartition en 2 colonnes reste
+        // consultable au défilement plutôt que d'être coupé en silence.
+        canvas.style.overflowY = "auto";
         var toggle = document.getElementById("presSplitToggle");
         toggle.textContent = presSplitActuel ? "2 colonnes" : "Défilement";
         toggle.setAttribute("aria-pressed", String(presSplitActuel));

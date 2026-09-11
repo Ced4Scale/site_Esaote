@@ -1758,10 +1758,17 @@ ul { margin: 0; padding: 0; list-style: none; }
    plus grand qu'elle. Règle GÉNÉRIQUE (`:fullscreen`, pas seulement
    `.simulator__chart-card:fullscreen`) — s'applique à tout cadre qui passe en plein
    écran, quelle que soit sa classe (carte joker, mode Comparer... voir skill
-   ced4scale-simulateur-web, "Mode présentation"). */
+   ced4scale-simulateur-web, "Mode présentation").
+   `align-items`/`justify-content:center` (11/09/2026, demande de Cédric — centrer le
+   contenu "au milieu de l'écran") : posé ici UNIVERSELLEMENT (pas seulement pour le
+   format verrouillé 16:9/4:3 comme avant) — sans effet visible sur un cadre dont le
+   canvas reste `width/height:100%` (un graphique en "Automatique", déjà plein écran :
+   centrer une boîte qui remplit exactement son parent ne bouge rien), ne change
+   quelque chose que pour un contenu qui ne remplit pas toute la hauteur — voir le mode
+   "2 colonnes" plus bas, seul cas concerné à ce jour. */
 :fullscreen {
   overflow: auto; padding: 2.6rem clamp(1.2rem, 4vw, 4rem) 2rem; background: #fff;
-  display: flex; flex-direction: column;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
 }
 /* Le graphique SVG (pas les tableaux) doit vraiment occuper l'écran, pas juste
    profiter d'une marge plus généreuse autour d'une taille inchangée (demande de
@@ -1798,13 +1805,27 @@ ul { margin: 0; padding: 0; list-style: none; }
 .presentation-toolbar__sep { width: 1px; height: 18px; background: var(--line); margin: 0 .2rem; flex: none; }
 
 .chart-card-slide-canvas { transform-origin: center center; background: #fff; }
-:fullscreen.is-presentation-locked { align-items: center; justify-content: center; }
 :fullscreen:not(.is-presentation-locked) > .chart-card-slide-canvas {
   width: 100%; height: 100%; display: flex; flex-direction: column; min-height: 0;
 }
 /* Division en 2 colonnes (alternative au défilement) : colonnes CSS natives, un
-   cadre/tableau ne se coupe jamais AU MILIEU d'une colonne à l'autre. */
-.chart-card-slide-canvas--split { column-count: 2; column-gap: 2.4rem; overflow-y: hidden; }
+   cadre/tableau ne se coupe jamais AU MILIEU d'une colonne à l'autre.
+   Bug corrigé le 11/09/2026 (signalé par Cédric, repéré en vérifiant : le contenu
+   restait empilé en 1 seule colonne au lieu de 2 côte à côte) : `column-count` n'a
+   AUCUN effet sur un conteneur `display:flex`, silencieusement, sans erreur — or la
+   règle juste au-dessus pose justement `display:flex` sur ce même canvas. Ce
+   sélecteur, plus spécifique (2 classes au lieu d'1), repasse en `display:block`
+   pour que les colonnes s'affichent réellement, et remplace la hauteur `100%` par
+   `auto` (+ `max-height:100%`) pour que le bloc ne remplisse plus tout l'écran de
+   force — condition nécessaire pour que le centrage vertical
+   (`align-items`/`justify-content:center` posé sur `:fullscreen` plus haut) ait un
+   effet visible : un bloc à `height:100%` occupe déjà tout l'espace, le centrer ne
+   change rien, alors qu'un bloc à hauteur naturelle peut vraiment se retrouver au
+   milieu de l'écran plutôt que plaqué en haut. */
+:fullscreen:not(.is-presentation-locked) > .chart-card-slide-canvas.chart-card-slide-canvas--split {
+  display: block; height: auto; max-height: 100%; width: 100%;
+  column-count: 2; column-gap: 2.4rem; overflow-y: auto;
+}
 .chart-card-slide-canvas--split .simulator__chart-card,
 .chart-card-slide-canvas--split table,
 .chart-card-slide-canvas--split .bascule-mini,
