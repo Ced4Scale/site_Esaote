@@ -329,9 +329,18 @@
     .bascule-capnote-table td:last-child { text-align: left; font-weight: 600; white-space: nowrap; }
     .bascule-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .8rem; }
 
-    .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); }
+    .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); position: relative; }
     .bascule-mini h3, .bascule-mini summary { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
     .bascule-mini summary ~ * { margin-top: .6rem; }
+    /* .bascule-mini n'a volontairement pas la classe .simulator__chart-card (pas de
+       boîte/bordure, juste un filet de séparation) — équivalent local des règles
+       partagées pour le bouton plein écran RÉEL (motif du 10-11/09/2026, skill
+       ced4scale-simulateur-web), sans changer son apparence habituelle. */
+    .bascule-mini:fullscreen {
+      overflow: auto; padding: 2.6rem clamp(1.2rem, 4vw, 4rem) 2rem; background: #fff;
+      border-top: none;
+    }
+    .bascule-mini > summary { padding-right: 2.4rem; }
     .bascule-mini-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
     .bascule-mini-table th, .bascule-mini-table td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
     .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
@@ -665,7 +674,13 @@
 
       <div id="boResultsCol">
         <button type="button" class="btn btn--sm" id="boBtnShowPanel" hidden style="margin-bottom:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="boCardPrincipal">
+          <button type="button" class="chart-card-fullscreen-btn" id="boChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
             <h3 style="margin:0;font-size:1.05rem">Répartition de l'activité</h3>
             <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale<span id="boBtnOptimumPct" style="font-size:.72rem;opacity:.85"></span></button>
@@ -782,8 +797,15 @@
 
           <div class="bascule-capnote" id="boCapaciteNote"></div>
 
-          <details class="bascule-mini simulator__chart-card--collapsible">
-            <summary>Forfait technique par palier</summary>
+          <details class="bascule-mini simulator__chart-card--collapsible" id="boCardBareme">
+            <summary>Forfait technique par palier
+              <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                  <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                  <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                </svg>
+              </button>
+            </summary>
             <div style="overflow-x:auto">
               <table class="bascule-mini-table">
                 <thead><tr><th>Palier</th><th>Jusqu'à</th><th><span id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th><th>Jusqu'à</th><th style="color:#eb6834">O-scan</th></tr></thead>
@@ -844,8 +866,15 @@
           </div>
         </div>
 
-        <details class="simulator__chart-card simulator__chart-card--collapsible">
-          <summary>Hypothèses de ce simulateur</summary>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardHyp">
+          <summary>Hypothèses de ce simulateur
+            <button type="button" class="chart-card-fullscreen-btn" id="boHypChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
           <div style="overflow-x:auto">
             <table class="bascule-mini-table bascule-hyp-table">
               <tbody id="boHypSummary"></tbody>
@@ -3097,6 +3126,32 @@
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") boInfoPopsOuverts.forEach(function (f) { f(); });
       });
+
+      // Bouton plein écran RÉEL sur chaque cadre de la colonne de résultats (motif
+      // déjà posé sur ct-vs-irm/recettes/point-mort/energie le 10-11/09/2026, voir
+      // skill ced4scale-simulateur-web) — API Fullscreen standard, distinct du
+      // bouton ⛶ du panneau ⚙ qui ne remplit que la fenêtre du navigateur.
+      function wireCardFullscreen(btnId, cardId) {
+        var btn = document.getElementById(btnId), card = document.getElementById(cardId);
+        if (!btn || !card) return;
+        btn.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (document.fullscreenElement === card) {
+            document.exitFullscreen();
+          } else {
+            if (card.tagName === "DETAILS") card.open = true;
+            card.requestFullscreen();
+          }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          var actif = document.fullscreenElement === card;
+          btn.classList.toggle("is-fullscreen", actif);
+          btn.setAttribute("aria-pressed", String(actif));
+        });
+      }
+      wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
+      wireCardFullscreen("boBaremeFullscreenBtn", "boCardBareme");
+      wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
 
       majResumeHypotheses();
       repositionnerCurseur();
