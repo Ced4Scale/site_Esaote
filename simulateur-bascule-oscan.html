@@ -626,6 +626,26 @@
     .bo-ca-tranche-info[hidden] { display: none; }
     .bo-ca-tranche-info strong { color: var(--red); }
     .bo-bareme-showall { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; font-size: .85rem; cursor: pointer; }
+    /* Rapproché le 11/09/2026 (demande de Cédric) : "Forfait technique" et "Tarif
+       moyen" gardaient chacun leur PROPRE boîte (bordure/ombre/marge de
+       `.simulator__chart-card`, hérité par les 2 `<details>` intérieurs), en plus de
+       celle du cadre extérieur #boCardBaremeFtMoy qui les regroupe — 2 boîtes
+       imbriquées l'une dans l'autre. Résultat gênant signalé : l'icône plein écran
+       unique (posée sur le cadre EXTÉRIEUR, bas à droite) tombait dans l'angle de la
+       boîte INTÉRIEURE de "Tarif moyen" plutôt que clairement en dehors des 2. Retire
+       la boîte propre des 2 `<details>` intérieurs (bordure/ombre/fond/padding latéral,
+       marge réduite entre eux) — il ne reste plus qu'UNE SEULE boîte visible (le
+       cadre extérieur), dans le coin de laquelle l'icône partagée peut être ancrée
+       sans ambiguïté. */
+    #boCardBaremeFtMoy > #boCardBareme,
+    #boCardBaremeFtMoy .bascule-ftmoy-group > #boFtMoyCard {
+      border: none; box-shadow: none; background: none; padding: 0;
+      margin-bottom: .5rem;
+    }
+    #boCardBaremeFtMoy > #boCardBareme > summary,
+    #boCardBaremeFtMoy .bascule-ftmoy-group > #boFtMoyCard > summary {
+      padding-right: 0;
+    }
     .bo-bareme-showall input { width: 15px; height: 15px; flex: none; }
 
     /* Charte "Apple Arcade" (10/09/2026, validée par Cédric) : boutons d'action
