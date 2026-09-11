@@ -2203,9 +2203,15 @@
         // sur ct-vs-irm). Le seuil O-scan est positionné sur le MÊME axe X que Machine A
         // via `volumeTotal - t.fin` (les 2 machines se partagent un même total ici,
         // contrairement à ct-vs-irm) mais affiche la valeur O-SCAN (t.fin), celle qui a
-        // un sens pour cette machine précise. Gouverné par la case "Seuils du barème" ET,
-        // par machine, par la case de sa propre courbe (masquer une courbe masque aussi
-        // ses seuils, ça n'aurait pas de sens de les garder seuls).
+        // un sens pour cette machine précise. Gouverné par la case "Seuils du barème"
+        // ET, par machine, par au moins UNE de ses 2 courbes (moyenne OU réelle) —
+        // corrigé le 18/09/2026 : couplé au départ à la seule case "moyenne" de
+        // chaque machine, "Seuils du barème" n'avait plus aucun effet visible une
+        // fois ces cases décochées par défaut (11/09/2026) — signalé par Cédric
+        // ("je coche/décoche et il ne se passe rien"). Masquer les 2 courbes d'une
+        // machine masque bien ses seuils (les garder seuls n'aurait pas de sens),
+        // mais il suffit que l'UNE des 2 soit visible pour que ses seuils gardent un
+        // sens.
         var seuilsListe = [];
         function collecterSeuils(tranches, calcXDepuisFin, couleur, nomCourt) {
           tranches.forEach(function (t, i) {
@@ -2217,8 +2223,8 @@
             seuilsListe.push({ x: x, texte: nomCourt + " : " + fmt(t.fin), couleur: couleur });
           });
         }
-        if (afficherSeuils && afficherIrm) collecterSeuils(trA, function (fin) { return fin; }, "#2a78d6", "IRM " + nomClasseA);
-        if (afficherSeuils && afficherOscan) collecterSeuils(trO, function (fin) { return volumeTotal - fin; }, "#eb6834", "O-scan");
+        if (afficherSeuils && (afficherIrm || afficherReelA)) collecterSeuils(trA, function (fin) { return fin; }, "#2a78d6", "IRM " + nomClasseA);
+        if (afficherSeuils && (afficherOscan || afficherReelO)) collecterSeuils(trO, function (fin) { return volumeTotal - fin; }, "#eb6834", "O-scan");
         seuilsListe.sort(function (a, b) { return a.x - b.x; });
         seuilsListe.forEach(function (s, i) {
           // Décalé plus bas que sur ct-vs-irm (pad.top+9/21 à l'origine) : ce
