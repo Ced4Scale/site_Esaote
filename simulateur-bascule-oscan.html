@@ -602,6 +602,17 @@
     .bo-bareme-tarif { font-size: clamp(.7rem, 2.8vw, 1.05rem); font-weight: 400; }
     .bo-bareme-ca { font-size: clamp(.7rem, 2.8vw, 1.05rem); font-weight: 700; display: block; }
     #boBaremeTable td:not(:first-child), #boBaremeTable th:not(:first-child) { padding-left: .12rem; padding-right: .12rem; }
+    /* Colonnes resserrées sur la 1ʳᵉ (11/09/2026, demande de Cédric) — override local
+       de `.simulator__table--compare2` (styles.css, 36/32/32 par défaut, partagé par
+       des tableaux sans rapport sur les 4 autres simulateurs, jamais touché ici) :
+       1ʳᵉ colonne (nom de tranche, texte court) réduite pour élargir les 2 colonnes de
+       montants. Combiné à `text-align:right` sur ces 2 colonnes, aligne tous les
+       montants au niveau du symbole € (le bord droit de la case, fixe une fois la
+       largeur de colonne fixée) plutôt qu'au petit bonheur selon la longueur du texte. */
+    #boBaremeTable.simulator__table--compare2 th:first-child,
+    #boBaremeTable.simulator__table--compare2 td:first-child { width: 20%; }
+    #boBaremeTable.simulator__table--compare2 th:not(:first-child),
+    #boBaremeTable.simulator__table--compare2 td:not(:first-child) { width: 40%; text-align: right; }
     .bo-ca-tranche-btn {
       background: none; border: none; padding: 0; margin: 0; font: inherit; cursor: pointer;
       color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px;
