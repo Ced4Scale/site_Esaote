@@ -365,7 +365,13 @@
         </div>
 
         <div id="simVueSimple">
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="simCompoCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="simCompoFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
             <h3 style="margin:0">Composition des recettes de l'année 1</h3>
             <span class="sim-info-wrap">
@@ -378,7 +384,13 @@
             <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
           </div>
         </div>
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="simTrajectoireCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="simTrajectoireFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <h3 style="margin-bottom:.6rem">Trajectoire des recettes sur 7 ans</h3>
           <div class="simulator__legend" id="simLegend"></div>
           <div class="simulator__chart-wrap">
@@ -399,6 +411,12 @@
         <p class="simulator__hint" id="simChute"></p>
 
         <div class="simulator__chart-card" id="simActeCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="simActeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <h3 style="margin-bottom:.6rem">Recettes de l'acte intellectuel du radiologue</h3>
           <div style="overflow-x:auto; margin:0 0 .8rem">
             <table class="stats-table" style="max-width:420px">
@@ -2174,6 +2192,33 @@
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape") simInfoPopsOuverts.forEach(function (f) { f(); });
       });
+
+      // Bouton plein écran RÉEL par cadre de la colonne de résultats (motif porté de
+      // simulateur-ct-vs-irm.html le 10/09/2026, voir skill ced4scale-simulateur-web) —
+      // API Fullscreen standard, distinct du bouton ⛶ du panneau ⚙ qui ne remplit que
+      // la fenêtre du navigateur. Aucun cadre repliable (<details>) sur cette page, donc
+      // pas besoin de forcer l'ouverture avant requestFullscreen().
+      function wireCardFullscreen(btnId, cardId) {
+        var btn = document.getElementById(btnId), card = document.getElementById(cardId);
+        if (!btn || !card) return;
+        btn.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (document.fullscreenElement === card) {
+            document.exitFullscreen();
+          } else {
+            if (card.tagName === "DETAILS") card.open = true;
+            card.requestFullscreen();
+          }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          var actif = document.fullscreenElement === card;
+          btn.classList.toggle("is-fullscreen", actif);
+          btn.setAttribute("aria-pressed", String(actif));
+        });
+      }
+      wireCardFullscreen("simCompoFullscreenBtn", "simCompoCard");
+      wireCardFullscreen("simTrajectoireFullscreenBtn", "simTrajectoireCard");
+      wireCardFullscreen("simActeFullscreenBtn", "simActeCard");
 
       recalculer();
     })();
