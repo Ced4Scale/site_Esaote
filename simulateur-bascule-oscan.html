@@ -2277,7 +2277,10 @@
         // Construit un VRAI tracé en marches (paliers horizontaux + chutes verticales)
         // plutôt qu'une simple interpolation entre points échantillonnés, qui donnerait
         // des diagonales au lieu de vrais paliers nets. Échantillonnage fin (400 points)
-        // pour que chaque chute reste bien verticale à l'écran.
+        // pour que chaque chute reste bien verticale à l'écran. Ligne CONTINUE (11/09/2026,
+        // demande de Cédric — un 1er essai en pointillé serré a été jugé pas assez clair) :
+        // se distingue de la courbe moyenne (même couleur) par un trait plus fin
+        // (stroke-width 1.6 contre 2.5) plutôt que par un style de trait différent.
         function courbeMarches(tranches, calcVolumeDepuisX, couleur) {
           var N = 400, pts = [], yPrec = null;
           for (var i = 0; i <= N; i++) {
@@ -2288,10 +2291,65 @@
             pts.push(xp + "," + yp);
             yPrec = yp;
           }
-          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 1.6, "stroke-dasharray": "1,2.4", opacity: 0.9 }));
+          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 1.6, opacity: 0.9 }));
         }
         if (afficherReelA) courbeMarches(trA, function (x) { return x; }, "#2a78d6");
         if (afficherReelO) courbeMarches(trO, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        // Anti-chevauchement générique (11/09/2026), réutilisé ci-dessous pour les noms
+        // des 2 courbes "réel" — même motif que la bulle "Moyenne" plus bas (mesure
+        // réelle via getBBox(), plusieurs positions candidates, retient la 1ʳᵉ libre).
+        // Les courbes "réel" et "moyenne" d'une même machine se CONFONDENT exactement à
+        // une extrémité du graphe (n=0 pour l'une des deux, selon la machine) — jamais
+        // de position fixe unique pour ces noms, ça collerait sur celui de la moyenne.
+        function seChevauchent(a, b) {
+          return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y);
+        }
+        function placerTexteSansChevauchement(texte, candidats, couleur) {
+          var textesExistants = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
+          for (var ci = 0; ci < candidats.length; ci++) {
+            var c = candidats[ci];
+            var essai = el("text", { x: c.x, y: c.y, "font-size": 11, "font-weight": 800, fill: couleur, "text-anchor": c.anchor || "middle" });
+            essai.textContent = texte;
+            svg.appendChild(essai);
+            var bb = essai.getBBox();
+            var libre = !textesExistants.some(function (b) { return seChevauchent(bb, b); });
+            if (libre) return;
+            svg.removeChild(essai);
+          }
+          var c0 = candidats[0];
+          var fallback = el("text", { x: c0.x, y: c0.y, "font-size": 11, "font-weight": 800, fill: couleur, "text-anchor": c0.anchor || "middle" });
+          fallback.textContent = texte;
+          svg.appendChild(fallback);
+        }
+        // Candidats répartis le long de la courbe (25/50/75/90 % du volume), au-dessus
+        // ET en dessous — laisse le choix le plus libre au moment du rendu plutôt que de
+        // parier sur une seule position géométriquement "sûre".
+        function candidatsLeLongDe(calcVolumeDepuisX, fnTarif, tranches) {
+          var fractions = [0.9, 0.75, 0.5, 0.25, 0.6, 0.4];
+          var candidats = [];
+          fractions.forEach(function (f) {
+            var xv = xMax * f;
+            var y = py(fnTarif(tranches, calcVolumeDepuisX(xv)));
+            candidats.push({ x: px(xv), y: y - 8, anchor: "middle" });
+            candidats.push({ x: px(xv), y: y + 15, anchor: "middle" });
+          });
+          return candidats;
+        }
+        if (afficherReelA) {
+          placerTexteSansChevauchement(
+            "IRM " + nomClasseA + " (réel)",
+            candidatsLeLongDe(function (x) { return x; }, tarifReelPourVolume, trA),
+            "#2a78d6"
+          );
+        }
+        if (afficherReelO) {
+          placerTexteSansChevauchement(
+            "O-scan (réel)",
+            candidatsLeLongDe(function (x) { return volumeTotal - x; }, tarifReelPourVolume, trO),
+            "#eb6834"
+          );
+        }
 
         // Noms des courbes au tout début du graphe (11/09/2026, demande de Cédric) :
         // "IRM <classe>" au-dessus de la courbe bleue, "O-scan" en dessous de la
@@ -2354,10 +2412,8 @@
         // nombre de caractères — même réflexe que "Optimiser la taille de police d'un
         // texte contraint" plus haut sur ce même skill) de chaque texte déjà présent,
         // puis essaie plusieurs positions candidates (au-dessus/en dessous du point, à
-        // distance croissante) et retient la première totalement libre.
-        function seChevauchent(a, b) {
-          return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y);
-        }
+        // distance croissante) et retient la première totalement libre. `seChevauchent()`
+        // déjà défini plus haut (réutilisé pour les noms des courbes "réel").
         var texteAnchor = xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle");
         var texteBulle = "Moyenne : " + eur(tarifPondere(volAr), 2);
         var textesExistants = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
