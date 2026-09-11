@@ -882,6 +882,21 @@
           </div>
 
           <div id="boGrapheSimple">
+          <!-- Copie du champ + curseur "Activité totale actuelle", directement visible
+               ici EN PLUS du panneau "Paramètres" et du verso du joker (demande de
+               Cédric le 11/09/2026 : il ne la trouvait pas sans retourner la carte).
+               Id suffixé "R" (Répartition), généralisé en JS avec les autres miroirs
+               (voir boVolumeAMiroirs/BO_VOLUMEA_SLIDER_SUFFIXES plus bas). -->
+          <div class="field" style="margin-bottom:.8rem">
+            <label for="boVolumeAR">Activité totale actuelle</label>
+            <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeAR" value="12000" style="width:5rem" /><span>FT/an</span></div>
+            <div class="bascule-range" style="margin-top:.5rem">
+              <div class="bo-partext-track-wrap">
+                <div class="bo-partext-track"><div class="bo-partext-fill" id="boVolumeAFillR"></div></div>
+                <input type="range" id="boVolumeASliderR" min="0" max="24000" step="100" value="12000" aria-label="Activité totale actuelle" />
+              </div>
+            </div>
+          </div>
           <div class="bascule-courbe-zone">
             <svg id="boCourbeSvg" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total selon la répartition de l'activité">
               <line id="boCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
@@ -2612,7 +2627,11 @@
       // 8.000, plus large au-delà (demandé par Cédric le 04/09/2026, pour ne pas avoir
       // à cliquer des dizaines de fois sur les gros volumes).
       var boVolumeAEl = document.getElementById("boVolumeA");
-      var boVolumeAMiroirs = ["boVolumeA2", "boVolumeA3"].map(function (id) { return document.getElementById(id); });
+      // 3 miroirs (11/09/2026) : verso du joker (#boVolumeA3), sous "Tarif moyen"
+      // (#boVolumeA2), directement sur la face avant de "Répartition de l'activité"
+      // (#boVolumeAR, ajouté le 11/09/2026 — Cédric cherchait ce champ sans avoir à
+      // retourner le joker).
+      var boVolumeAMiroirs = ["boVolumeA2", "boVolumeA3", "boVolumeAR"].map(function (id) { return document.getElementById(id); });
       function ajusterStepVolumeA() {
         var v = parseFloat(boVolumeAEl.value) || 0;
         var step = v > 10000 ? 500 : v > 8000 ? 200 : 100;
@@ -2621,8 +2640,7 @@
       }
       ajusterStepVolumeA();
       boVolumeAEl.addEventListener("input", ajusterStepVolumeA);
-      // Champs miroirs "Activité totale actuelle" (11/09/2026, demande de Cédric) : au
-      // verso du joker (#boVolumeA3) et sous le graphe "Tarif moyen" (#boVolumeA2) —
+      // Champs miroirs "Activité totale actuelle" (11/09/2026, demande de Cédric) :
       // modifier l'un recopie sur #boVolumeA (la source lue par recalculer()) puis
       // relance le calcul, qui resynchronise ensuite tous les miroirs entre eux
       // (voir plus bas dans recalculer()).
@@ -2633,44 +2651,59 @@
           repositionnerCurseur();
         });
       });
-      // Curseur "Activité totale actuelle" (11/09/2026, demande de Cédric) — en plus du
-      // champ nombre ci-dessus (gardé), même motif que .bo-partext-track-wrap (piste
-      // custom, aucun accent-color). Plafond = capacité physique combinée des 2
-      // machines (capaciteTotaleMax()), recalculé à chaque changement de débit —
-      // jamais une valeur arbitraire (voir skill ced4scale-simulateur-web).
-      var boVolumeASliderEl = document.getElementById("boVolumeASlider");
+      // Curseur(s) "Activité totale actuelle" (11/09/2026, demande de Cédric) — en plus
+      // du champ nombre (gardé), même motif que .bo-partext-track-wrap (piste custom,
+      // aucun accent-color). 2 exemplaires (panneau "Paramètres" + face avant de
+      // "Répartition de l'activité", ids suffixés "R") généralisés avec un suffixe,
+      // même principe que le bloc Mémoire/Comparer plus haut. Plafond = capacité
+      // physique combinée des 2 machines (capaciteTotaleMax()), recalculé à chaque
+      // changement de débit — jamais une valeur arbitraire (skill ced4scale-simulateur-web).
+      var BO_VOLUMEA_SLIDER_SUFFIXES = ["", "R"];
+      function boVolumeASliderEl(s) { return document.getElementById("boVolumeASlider" + s); }
       function majVolumeAFill() {
-        var min = parseFloat(boVolumeASliderEl.min), max = parseFloat(boVolumeASliderEl.max);
-        var val = parseFloat(boVolumeASliderEl.value);
-        var pct = max > min ? Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100)) : 0;
-        document.getElementById("boVolumeAFill").style.width = pct + "%";
+        BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s) {
+          var slider = boVolumeASliderEl(s);
+          var min = parseFloat(slider.min), max = parseFloat(slider.max);
+          var val = parseFloat(slider.value);
+          var pct = max > min ? Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100)) : 0;
+          document.getElementById("boVolumeAFill" + s).style.width = pct + "%";
+        });
       }
       function majVolumeASliderMax() {
-        boVolumeASliderEl.max = Math.max(1, Math.round(capaciteTotaleMax()));
-        if (parseFloat(boVolumeASliderEl.value) > parseFloat(boVolumeASliderEl.max)) {
-          boVolumeASliderEl.value = boVolumeASliderEl.max;
-        }
+        var max = Math.max(1, Math.round(capaciteTotaleMax()));
+        BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s) {
+          var slider = boVolumeASliderEl(s);
+          slider.max = max;
+          if (parseFloat(slider.value) > max) slider.value = max;
+        });
         majVolumeAFill();
       }
       majVolumeASliderMax();
-      boVolumeASliderEl.addEventListener("input", function () {
-        boVolumeAEl.value = this.value;
-        ajusterStepVolumeA();
-        boVolumeAMiroirs.forEach(function (el) { el.value = boVolumeAEl.value; });
-        majVolumeAFill();
-        repositionnerCurseur();
-      });
-      // Synchronise le curseur quand le champ nombre (ou un de ses miroirs) change —
-      // ajusterStepVolumeA() est déjà appelée par les 3 (champ direct + 2 miroirs).
-      boVolumeAEl.addEventListener("input", function () {
-        boVolumeASliderEl.value = Math.min(parseFloat(boVolumeASliderEl.max), Math.max(0, parseFloat(this.value) || 0));
-        majVolumeAFill();
-      });
-      boVolumeAMiroirs.forEach(function (el) {
-        el.addEventListener("input", function () {
-          boVolumeASliderEl.value = Math.min(parseFloat(boVolumeASliderEl.max), Math.max(0, parseFloat(this.value) || 0));
+      BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s) {
+        boVolumeASliderEl(s).addEventListener("input", function () {
+          var v = this.value;
+          boVolumeAEl.value = v;
+          ajusterStepVolumeA();
+          boVolumeAMiroirs.forEach(function (el) { el.value = v; });
+          BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s2) { boVolumeASliderEl(s2).value = v; });
           majVolumeAFill();
+          repositionnerCurseur();
         });
+      });
+      // Synchronise le(s) curseur(s) quand le champ nombre (ou un de ses miroirs)
+      // change — ajusterStepVolumeA() est déjà appelée par les 4 (champ direct + 3
+      // miroirs).
+      function syncVolumeASlidersDepuisChamp(valeur) {
+        var v = Math.max(0, parseFloat(valeur) || 0);
+        BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s) {
+          var slider = boVolumeASliderEl(s);
+          slider.value = Math.min(parseFloat(slider.max), v);
+        });
+        majVolumeAFill();
+      }
+      boVolumeAEl.addEventListener("input", function () { syncVolumeASlidersDepuisChamp(this.value); });
+      boVolumeAMiroirs.forEach(function (el) {
+        el.addEventListener("input", function () { syncVolumeASlidersDepuisChamp(this.value); });
       });
       // Recalcule le plafond du curseur dès que le débit d'une des 2 machines change
       // (le débit d'ouverture/amplitude passe par appliquerHypotheses()/
@@ -3206,8 +3239,16 @@
         document.getElementById("boLblA2").textContent = "Machine A : " + fmt(volA) + " FT/an";
         document.getElementById("boLblO2").style.left = (pct + (100 - pct) / 2) + "%";
         document.getElementById("boLblO2").textContent = "O-scan : " + fmt(volO) + " FT/an";
-        // "Activité totale actuelle" (verso du joker + sous "Tarif moyen") :
+        // "Activité totale actuelle" (verso du joker + sous "Tarif moyen" + face avant
+        // de "Répartition de l'activité") : champs ET curseurs, pour rester synchro
+        // même quand volumeTotal change par un autre chemin que la saisie directe
+        // (rappel de mémoire, bouton "Rentabilité maximale"...).
         boVolumeAMiroirs.forEach(function (el) { el.value = volumeTotal; });
+        BO_VOLUMEA_SLIDER_SUFFIXES.forEach(function (s) {
+          var slider = boVolumeASliderEl(s);
+          slider.value = Math.min(parseFloat(slider.max), volumeTotal);
+        });
+        majVolumeAFill();
         // "Part membres/extrémités" (verso du joker + sous "Tarif moyen") :
         ["2", "3"].forEach(function (suffixe) {
           document.getElementById("boPartExtremites" + suffixe).value = boPartExtremitesEl.value;
