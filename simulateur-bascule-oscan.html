@@ -2214,6 +2214,12 @@
         // (chiffre d'affaires réel de l'ensemble des forfaits techniques de cette
         // tranche pour le volume actuel), sans avoir à cliquer.
         var afficherTousLesCa = document.getElementById("boBaremeShowAllCa").checked;
+        // Totaux du CA par machine (11/09/2026, demande de Cédric) — calculés sur les 4
+        // tranches quel que soit l'état de la case "Afficher tous les CA" (un total a du
+        // sens même quand les CA de tranche sont masqués/à cliquer un par un), affichés
+        // dans 2 lignes ajoutées après le tableau des tranches : le total par colonne,
+        // puis le total des 2 machines réunies.
+        var totalCaA = 0, totalCaO = 0;
         labels.forEach(function (label, i) {
           function plage(t) {
             return (t.fin != null ? "de " + fmt(t.debut) + " à " + fmt(t.fin) : "au-delà de " + fmt(t.debut - 1)) + " ex./an";
@@ -2234,6 +2240,9 @@
             plageSpan.textContent = plage(o.t);
             ligne1.appendChild(plageSpan);
             ligne1.appendChild(document.createTextNode(" "));
+            var examens = Math.max(0, Math.min(o.volume, o.t.fin != null ? o.t.fin : o.volume) - (o.t.debut - 1));
+            var ca = examens * o.t.montant;
+            if (o.cote === "a") totalCaA += ca; else totalCaO += ca;
             if (afficherTousLesCa) {
               // Case cochée : le tarif reste affiché (couleur de colonne, sans gras),
               // le CA s'ajoute EN DESSOUS plutôt que de le remplacer.
@@ -2243,8 +2252,6 @@
               tarifSpan.textContent = eur(o.t.montant, 2);
               ligne1.appendChild(tarifSpan);
               td.appendChild(ligne1);
-              var examens = Math.max(0, Math.min(o.volume, o.t.fin != null ? o.t.fin : o.volume) - (o.t.debut - 1));
-              var ca = examens * o.t.montant;
               var caSpan = document.createElement("span");
               caSpan.className = "bo-bareme-ca";
               caSpan.style.color = o.couleur;
@@ -2265,6 +2272,34 @@
           });
           tbody.appendChild(tr);
         });
+        // Ligne 1 : total du CA par machine (colonne 1,5 T / colonne O-scan).
+        var trTotal = document.createElement("tr");
+        var tdTotalLabel = document.createElement("td");
+        tdTotalLabel.innerHTML = "<strong>Total</strong>";
+        trTotal.appendChild(tdTotalLabel);
+        [{ total: totalCaA, couleur: "#2a78d6" }, { total: totalCaO, couleur: "#eb6834" }].forEach(function (o) {
+          var td = document.createElement("td");
+          var span = document.createElement("span");
+          span.className = "bo-bareme-ca";
+          span.style.color = o.couleur;
+          span.textContent = eur(o.total, 2);
+          td.appendChild(span);
+          trTotal.appendChild(td);
+        });
+        tbody.appendChild(trTotal);
+        // Ligne 2 : total des 2 machines réunies (une seule valeur, sur toute la largeur).
+        var trTotal2 = document.createElement("tr");
+        var tdTotal2Label = document.createElement("td");
+        tdTotal2Label.innerHTML = "<strong>Total des 2 machines</strong>";
+        trTotal2.appendChild(tdTotal2Label);
+        var tdTotal2Val = document.createElement("td");
+        tdTotal2Val.colSpan = 2;
+        var spanTotal2 = document.createElement("span");
+        spanTotal2.className = "bo-bareme-ca";
+        spanTotal2.textContent = eur(totalCaA + totalCaO, 2);
+        tdTotal2Val.appendChild(spanTotal2);
+        trTotal2.appendChild(tdTotal2Val);
+        tbody.appendChild(trTotal2);
       }
       // ---- "Tarif moyen du forfait technique selon le volume" (11/09/2026, motif
       // "Forfait technique - barème dégressif" — skill ced4scale-simulateur-web).
