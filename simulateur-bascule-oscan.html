@@ -144,13 +144,17 @@
     .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
     /* Découpage en zones projetables distinctes (11/09/2026, demande de Cédric) : la
        "vue principale" (#boCardPrincipal, graphe + curseur) ne doit PAS entraîner avec
-       elle la ligne de stats (#boStatsRow, qui contient le joker), le barème
-       (#boCardBareme) ni le mode Comparer (#boGrapheComparaison) quand elle passe seule
-       en plein écran — chacun de ces 3 blocs a son propre bouton plein écran séparé.
-       Sélecteur à 2 ID + :fullscreen, spécificité largement suffisante pour gagner sur
-       n'importe quelle classe (display:grid/flex) posée par ailleurs sur ces blocs. */
+       elle la ligne de stats (#boStatsRow, qui contient le joker), les boutons Mémoire/
+       Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) — ces 3 derniers
+       "vont avec le joker" (demande de Cédric) et voyagent ensemble via `extraIds` de
+       wireCardFullscreen — ni le barème (#boCardBareme) ni le graphe "Tarif moyen"
+       (#boFtMoyCard), chacun avec son propre bouton. Sélecteur à 2 ID + :fullscreen,
+       spécificité largement suffisante pour gagner sur n'importe quelle classe
+       (display:grid/flex) posée par ailleurs sur ces blocs. */
     #boCardPrincipal:fullscreen #boStatsRow,
+    #boCardPrincipal:fullscreen #boBtnRow,
     #boCardPrincipal:fullscreen #boCardBareme,
+    #boCardPrincipal:fullscreen #boFtMoyCard,
     #boCardPrincipal:fullscreen #boGrapheComparaison { display: none; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
@@ -348,18 +352,12 @@
     .bascule-capnote-table td:last-child { text-align: left; font-weight: 600; white-space: nowrap; }
     .bascule-capnote-hint { margin-top: .4rem; font-style: italic; font-size: .8rem; }
 
-    .bascule-mini { margin-top: 1.3rem; padding-top: 1rem; border-top: 1px solid var(--line); position: relative; }
-    .bascule-mini h3, .bascule-mini summary { font-size: .9rem; font-weight: 700; margin: 0 0 .6rem; }
-    .bascule-mini summary ~ * { margin-top: .6rem; }
-    /* .bascule-mini n'a volontairement pas la classe .simulator__chart-card (pas de
-       boîte/bordure, juste un filet de séparation) — équivalent local des règles
-       partagées pour le bouton plein écran RÉEL (motif du 10-11/09/2026, skill
-       ced4scale-simulateur-web), sans changer son apparence habituelle. */
-    .bascule-mini:fullscreen {
-      overflow: auto; padding: 2.6rem clamp(1.2rem, 4vw, 4rem) 2rem; background: #fff;
-      border-top: none;
-    }
-    .bascule-mini > summary { padding-right: 2.4rem; }
+    /* .bascule-mini (cadre "léger" sans boîte, utilisé auparavant pour le barème)
+       retiré le 11/09/2026 : le tableau "Forfait technique - barème dégressif" est
+       passé à la présentation standard .simulator__chart-card (même présentation que
+       ct-vs-irm, demande de Cédric) — voir skill ced4scale-simulateur-web. La classe
+       .bascule-mini-table (tableau seul, sans le cadre) reste utilisée ailleurs
+       (récapitulatif joker, hypothèses). */
     .bascule-mini-table { width: 100%; border-collapse: collapse; font-size: .85rem; }
     .bascule-mini-table th, .bascule-mini-table td { padding: .4rem .5rem; text-align: right; border-bottom: 1px solid var(--line); font-variant-numeric: tabular-nums; }
     .bascule-mini-table th:first-child, .bascule-mini-table td:first-child { text-align: left; color: var(--muted); font-weight: 600; }
@@ -471,6 +469,22 @@
     }
     .bascule-info-pop[hidden] { display: none; }
     .bascule-info-pop--up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+
+    /* CA de la tranche au clic (11/09/2026, motif "Forfait technique - barème
+       dégressif" documenté dans le skill ced4scale-simulateur-web, même CSS que
+       simulateur-ct-vs-irm.html) : le montant de chaque tranche devient un bouton
+       cliquable, encadré fixe sous le tableau, disparaît tout seul. */
+    .bo-ca-tranche-btn {
+      background: none; border: none; padding: 0; margin: 0; font: inherit; cursor: pointer;
+      color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px;
+    }
+    .bo-ca-tranche-btn:hover { color: var(--red); }
+    .bo-ca-tranche-info {
+      margin-top: .6rem; background: var(--wash); border-radius: 8px; padding: .6rem .8rem;
+      font-size: .85rem; line-height: 1.4;
+    }
+    .bo-ca-tranche-info[hidden] { display: none; }
+    .bo-ca-tranche-info strong { color: var(--red); }
 
     /* Charte "Apple Arcade" (10/09/2026, validée par Cédric) : boutons d'action
        générique (email/PDF/rentabilité max/fermer/afficher paramètres) en dégradé
@@ -831,8 +845,8 @@
 
           <div class="bascule-capnote" id="boCapaciteNote"></div>
 
-          <details class="bascule-mini simulator__chart-card--collapsible" id="boCardBareme">
-            <summary>Forfait technique par palier
+          <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardBareme">
+            <summary>Forfait technique - barème dégressif
               <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
                 <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                   <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
@@ -841,12 +855,48 @@
               </button>
             </summary>
             <div style="overflow-x:auto">
-              <table class="bascule-mini-table">
-                <thead><tr><th>Palier</th><th>Jusqu'à</th><th><span id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th><th>Jusqu'à</th><th style="color:#eb6834">O-scan</th></tr></thead>
+              <table class="stats-table simulator__table simulator__table--compare2" id="boBaremeTable">
+                <thead>
+                  <tr>
+                    <th></th>
+                    <th><span class="simulator__swatch-text" data-slot="0" id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th>
+                    <th><span class="simulator__swatch-text" data-slot="1" style="color:#eb6834">O-scan</span></th>
+                  </tr>
+                </thead>
                 <tbody id="boBaremeMini"></tbody>
               </table>
             </div>
+            <!-- CA de la tranche au clic (motif "Forfait technique - barème dégressif",
+                 skill ced4scale-simulateur-web) — encadré fixe sous le tableau. -->
+            <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
           </details>
+
+          <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
+               motif que simulateur-ct-vs-irm.html, mais volontairement SIMPLIFIÉ : pas
+               de curseur dédié (bascule-oscan pilote déjà le volume via le curseur de
+               répartition ci-dessus), pas de bascule Avec/Sans AI ni d'échelle de temps
+               (sans équivalent naturel ici) — juste les 2 courbes. Particularité de ce
+               simulateur : les 2 machines se PARTAGENT un même total d'examens (pas 2
+               volumes indépendants comme sur ct-vs-irm) — la courbe O-scan est donc
+               tracée en MIROIR, de l'activité totale actuelle (à gauche) vers 0 (à
+               droite), pendant que la courbe Machine A va de 0 vers le total. -->
+          <div class="simulator__chart-card" id="boFtMoyCard">
+            <button type="button" class="chart-card-fullscreen-btn" id="boFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            <h3 style="margin:0 0 .6rem">Tarif moyen du forfait technique selon le volume
+              <span class="bascule-info-wrap">
+                <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
+                <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus.</div>
+              </span>
+            </h3>
+            <div class="simulator__chart-wrap">
+              <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
+            </div>
+          </div>
           </div>
 
           <!-- Mémoires de simulation + mode Comparer (07/09/2026, portés du simulateur
@@ -854,7 +904,7 @@
                "Activité totale" sont mémorisés PROPRES à chaque mémoire (pas partagés) :
                chaque emplacement fige un scénario de répartition complet, pas seulement
                des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire(). -->
-          <div class="bascule-btn-row">
+          <div class="bascule-btn-row" id="boBtnRow">
             <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
             <span class="bascule-memoire-slot" data-slot="0">
               <button type="button" class="btn btn--sm btn--ghost bascule-btn-memoire" id="boBtnMemoire1" data-tip="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1." title="Cliquez pour enregistrer les paramètres actuels dans la mémoire 1.">Mémoire 1</button>
@@ -871,13 +921,11 @@
             <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
           </div>
 
-          <div id="boGrapheComparaison" hidden style="position:relative">
-            <button type="button" class="chart-card-fullscreen-btn" id="boCompareFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
+          <!-- Pas de bouton plein écran propre à ce bloc : il voyage avec la ligne de
+               stats/joker (#boStatsRow) via `extraIds` de wireCardFullscreen, demande de
+               Cédric le 11/09/2026 ("les boutons mémoires et comparer vont avec
+               l'affichage du joker") — voir skill ced4scale-simulateur-web. -->
+          <div id="boGrapheComparaison" hidden>
             <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
               <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
             </div>
@@ -1719,25 +1767,136 @@
         courbeEchelle = { N: N, classeA: classeA, loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh, extraA: extraA, extraO: extraO, px: px, py: py };
       }
 
+      // Volumes réels actuels (Machine A / O-scan), exposés au niveau du module pour
+      // "CA de la tranche" au clic (voir plus bas) et pour le graphe "Tarif moyen" —
+      // mis à jour à chaque recalcul, dans recalculer() juste après le calcul de volA/volO.
+      var volActuelA = 0, volActuelO = 0;
+      // Tranches {debut, fin, montant} d'une classe de forfait technique, même motif
+      // que tranchesAvecMontant() sur simulateur-ct-vs-irm.html (voir skill
+      // ced4scale-simulateur-web, "Forfait technique - barème dégressif").
+      function tranchesDepuisClasse(c) {
+        return [
+          { debut: 1, fin: c.REF, montant: c.pleinParZone[ZONE_TARIFAIRE] },
+          { debut: c.REF + 1, fin: c.SEUIL1, montant: c.reduit1 },
+          { debut: c.SEUIL1 + 1, fin: c.SEUIL2, montant: c.reduit2 },
+          { debut: c.SEUIL2 + 1, fin: null, montant: c.plafond }
+        ];
+      }
       function dessinerBaremeMini(classeA, nomClasseA) {
         document.getElementById("boNomClasseA3").textContent = nomClasseA;
         var cA = FT_CLASSES_PLEIN[classeA], cO = FT_CLASSES_PLEIN.le05;
-        var lignes = [
-          { label: "Plein",    jusquaA: cA.REF,    tarifA: cA.pleinParZone[ZONE_TARIFAIRE],   jusquaO: cO.REF,    tarifO: cO.pleinParZone[ZONE_TARIFAIRE] },
-          { label: "Palier 1", jusquaA: cA.SEUIL1, tarifA: cA.reduit1, jusquaO: cO.SEUIL1, tarifO: cO.reduit1 },
-          { label: "Palier 2", jusquaA: cA.SEUIL2, tarifA: cA.reduit2, jusquaO: cO.SEUIL2, tarifO: cO.reduit2 },
-          { label: "Plafond",  jusquaA: Infinity,  tarifA: cA.plafond, jusquaO: Infinity,  tarifO: cO.plafond }
-        ];
-        var html = "";
-        lignes.forEach(function (l) {
-          var txtA = l.jusquaA === Infinity ? "au-delà" : fmt(l.jusquaA) + " FT/an";
-          var txtO = l.jusquaO === Infinity ? "au-delà" : fmt(l.jusquaO) + " FT/an";
-          html += "<tr><td>" + l.label + "</td>"
-            + "<td>" + txtA + "</td><td><strong>" + eur(l.tarifA, 2) + "</strong></td>"
-            + "<td>" + txtO + "</td><td><strong>" + eur(l.tarifO, 2) + "</strong></td></tr>";
+        var trA = tranchesDepuisClasse(cA), trO = tranchesDepuisClasse(cO);
+        var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
+        var tbody = document.getElementById("boBaremeMini");
+        tbody.innerHTML = "";
+        labels.forEach(function (label, i) {
+          function plage(t) {
+            return (t.fin != null ? "de " + fmt(t.debut) + " à " + fmt(t.fin) : "au-delà de " + fmt(t.debut - 1)) + " examens/an";
+          }
+          var tr = document.createElement("tr");
+          var tdLabel = document.createElement("td");
+          tdLabel.innerHTML = "<strong>" + label + "</strong>";
+          tr.appendChild(tdLabel);
+          [{ t: trA[i], machine: nomClasseA }, { t: trO[i], machine: "O-scan" }].forEach(function (o) {
+            var td = document.createElement("td");
+            td.innerHTML = plage(o.t) + "<br>";
+            var btn = document.createElement("button");
+            btn.type = "button"; btn.className = "bo-ca-tranche-btn";
+            btn.textContent = eur(o.t.montant, 2);
+            btn.dataset.debut = o.t.debut; btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
+            btn.dataset.montant = o.t.montant; btn.dataset.label = label; btn.dataset.machine = o.machine;
+            btn.dataset.cote = o.machine === "O-scan" ? "o" : "a";
+            td.appendChild(btn);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
         });
-        document.getElementById("boBaremeMini").innerHTML = html;
       }
+      // ---- "Tarif moyen du forfait technique selon le volume" (11/09/2026, motif
+      // "Forfait technique - barème dégressif" — skill ced4scale-simulateur-web).
+      // Moyenne PONDÉRÉE sur les tranches du barème, pas le tarif de la seule tranche
+      // où tombe le volume (même fonction que simulateur-ct-vs-irm.html).
+      function tarifMoyenPourVolumeBascule(tranches, n) {
+        if (n <= 0) return tranches[0].montant;
+        var reste = n, total = 0;
+        tranches.forEach(function (t) {
+          if (reste <= 0) return;
+          var largeurTranche = t.fin != null ? (t.fin - t.debut + 1) : reste;
+          var qte = Math.min(reste, largeurTranche);
+          total += qte * t.montant;
+          reste -= qte;
+        });
+        return total / n;
+      }
+      // Les 2 machines se PARTAGENT un même total d'examens (pas 2 volumes indépendants
+      // comme sur ct-vs-irm) : la courbe Machine A va de 0 (x=0) au total (x=volumeTotal),
+      // la courbe O-scan est tracée en MIROIR sur le MÊME axe — à chaque position x, le
+      // volume RÉEL de l'O-scan est (volumeTotal - x), pas x. Résultat visuel demandé par
+      // Cédric : la courbe O-scan démarre à l'activité totale (à gauche) et descend vers 0
+      // (à droite), pendant que la courbe Machine A fait l'inverse.
+      function dessinerFtMoyenBascule(volumeTotal, volA, trA, trO) {
+        var svg = document.getElementById("boFtMoyChart");
+        svg.innerHTML = "";
+        var NS = "http://www.w3.org/2000/svg";
+        function el(tag, attrs) {
+          var e = document.createElementNS(NS, tag);
+          for (var k in attrs) e.setAttribute(k, attrs[k]);
+          return e;
+        }
+        var pad = { left: 62, right: 16, top: 20, bottom: 34 };
+        var W = 640, H = 300, plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+        var xMax = Math.max(volumeTotal, 1);
+        function px(x) { return pad.left + (x / xMax) * plotW; }
+        var yMax = Math.max(trA[0].montant, trO[0].montant) * 1.05;
+        function py(y) { return pad.top + plotH - (y / yMax) * plotH; }
+
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
+
+        function courbe(tranches, calcVolumeDepuisX, couleur) {
+          var N = 80, pts = [];
+          for (var i = 0; i <= N; i++) {
+            var x = (xMax * i) / N;
+            var tarif = tarifMoyenPourVolumeBascule(tranches, calcVolumeDepuisX(x));
+            pts.push(px(x) + "," + py(tarif));
+          }
+          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 2.5 }));
+        }
+        courbe(trA, function (x) { return x; }, "#2a78d6");
+        courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        // Repère vertical à la répartition actuelle du curseur (volA), commun aux 2 courbes.
+        var xr = px(Math.max(0, Math.min(volumeTotal, volA)));
+        svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
+
+        // Repères d'axe minimaux (0 / total en X, 0 / max en Y).
+        var lbl0 = el("text", { x: pad.left, y: pad.top + plotH + 16, "font-size": 10, fill: "var(--muted)", "text-anchor": "start" });
+        lbl0.textContent = "0"; svg.appendChild(lbl0);
+        var lblMax = el("text", { x: pad.left + plotW, y: pad.top + plotH + 16, "font-size": 10, fill: "var(--muted)", "text-anchor": "end" });
+        lblMax.textContent = fmt(volumeTotal) + " examens/an"; svg.appendChild(lblMax);
+      }
+
+      // CA de la tranche au clic (motif "Forfait technique - barème dégressif", skill
+      // ced4scale-simulateur-web) — délégation sur le tbody, survit à la reconstruction
+      // du tableau à chaque recalcul.
+      var boCaTrancheTimer = null;
+      document.getElementById("boBaremeMini").addEventListener("click", function (e) {
+        var btn = e.target.closest(".bo-ca-tranche-btn");
+        if (!btn) return;
+        var debut = Number(btn.dataset.debut), fin = btn.dataset.fin === "" ? null : Number(btn.dataset.fin);
+        var montant = Number(btn.dataset.montant);
+        var volume = btn.dataset.cote === "o" ? volActuelO : volActuelA;
+        var examens = Math.max(0, Math.min(volume, fin != null ? fin : volume) - (debut - 1));
+        var ca = examens * montant;
+        var info = document.getElementById("boBaremeCaInfo");
+        info.innerHTML = btn.dataset.machine + " — " + btn.dataset.label + " : <strong>" + fmt(examens)
+          + " examen" + (examens > 1 ? "s" : "") + "/an</strong> dans cette tranche (sur "
+          + fmt(volume) + " au total) × " + eur(montant, 2)
+          + " = <strong>" + eur(ca, 2) + " de CA sur cette tranche</strong>.";
+        info.hidden = false;
+        clearTimeout(boCaTrancheTimer);
+        boCaTrancheTimer = setTimeout(function () { info.hidden = true; }, 6000);
+      });
 
       // Postes/charges ajoutées le 10/09/2026 — lit un champ nombre en le bornant à ≥ 0
       // (ETP, montants, fractions), comme effectif()/pourcent() de simulateur-point-mort.html.
@@ -2304,6 +2463,7 @@
         if (X > volumeTotal) X = volumeTotal;
         var volA = X;
         var volO = volumeTotal - X;
+        volActuelA = volA; volActuelO = volO; // pour "CA de la tranche" + graphe "Tarif moyen"
         var pct = volumeTotal > 0 ? (X / volumeTotal * 100) : 100;
 
         document.getElementById("boFillOscan").style.width = (100 - pct) + "%";
@@ -2559,6 +2719,7 @@
           + "<div class=\"bascule-joker-legend-row\"><span class=\"bascule-joker-swatch\" style=\"background:#eb6834\"></span>Disponibles : " + fmt(heuresRestantesParJour, 1) + " h/jour</div>";
 
         dessinerBaremeMini(classeA, nomClasseA);
+        dessinerFtMoyenBascule(volumeTotal, volA, tranchesDepuisClasse(FT_CLASSES_PLEIN[classeA]), tranchesDepuisClasse(FT_CLASSES_PLEIN.le05));
         ajusterHauteurJoker();
 
         dernierEtat = {
@@ -3160,6 +3321,7 @@
       wireInfoBtn("boHypOMiroirBtn", "boHypOMiroirPop");
       wireInfoBtn("boHypDureeAcqOInfoBtn", "boHypDureeAcqOInfoPop");
       wireInfoBtn("boHypOLiveInfoBtn", "boHypOLiveInfoPop");
+      wireInfoBtn("boFtMoyInfoBtn", "boFtMoyInfoPop");
       document.addEventListener("click", function () {
         boInfoPopsOuverts.forEach(function (f) { f(); });
       });
@@ -3249,15 +3411,32 @@
       document.getElementById("presSplitToggle").addEventListener("click", function () { presSplitActuel = !presSplitActuel; presEcrire("ced4scale-presentation-split", presSplitActuel ? "split" : "scroll"); presAppliquer(); });
       window.addEventListener("resize", function () { if (presCardActif) presAppliquer(); });
 
-      function wireCardFullscreen(btnId, cardId) {
+      // `extraIds` (optionnel) : éléments qui ne sont PAS des descendants de `card` en
+      // temps normal, mais doivent apparaître AVEC lui en plein écran — déplacés dans
+      // `card` juste avant `requestFullscreen()` (rejoint le canvas du mode présentation
+      // avec le reste), puis remis EXACTEMENT à leur place d'origine à la sortie (parent
+      // + frère suivant mémorisés une fois pour toutes). Cas d'usage du 11/09/2026 :
+      // les boutons Mémoire/Comparer et le mode Comparer lui-même doivent voyager avec
+      // la ligne de stats (le joker) quand elle passe seule en plein écran.
+      function wireCardFullscreen(btnId, cardId, bodyId, extraIds) {
         var btn = document.getElementById(btnId), card = document.getElementById(cardId);
         if (!btn || !card) return;
+        var extras = (extraIds || []).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+        var extrasHomes = extras.map(function (el) { return { parent: el.parentNode, next: el.nextSibling }; });
         btn.addEventListener("click", function (e) {
           e.preventDefault(); e.stopPropagation();
           if (document.fullscreenElement === card) {
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
+            if (bodyId) {
+              var body = document.getElementById(bodyId);
+              if (body && body.hidden) {
+                var toggle = card.querySelector(".simulator__collapse-toggle");
+                if (toggle) toggle.click();
+              }
+            }
+            extras.forEach(function (el) { card.appendChild(el); });
             card.requestFullscreen();
           }
         });
@@ -3265,15 +3444,23 @@
           var actif = document.fullscreenElement === card;
           btn.classList.toggle("is-fullscreen", actif);
           btn.setAttribute("aria-pressed", String(actif));
-          if (actif) presEntrerCard(card);
-          else if (presCardActif === card) presSortirCard(card);
+          if (actif) {
+            presEntrerCard(card);
+          } else if (presCardActif === card) {
+            presSortirCard(card);
+            extras.forEach(function (el, i) {
+              var home = extrasHomes[i];
+              if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
+              else home.parent.appendChild(el);
+            });
+          }
         });
       }
       wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
-      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow");
+      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow", null, ["boBtnRow", "boGrapheComparaison"]);
       wireCardFullscreen("boBaremeFullscreenBtn", "boCardBareme");
-      wireCardFullscreen("boCompareFullscreenBtn", "boGrapheComparaison");
       wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
+      wireCardFullscreen("boFtMoyFullscreenBtn", "boFtMoyCard");
 
       majResumeHypotheses();
       repositionnerCurseur();

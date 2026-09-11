@@ -729,6 +729,22 @@
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .cv-info-pop[hidden] { display: none; }
+    /* CA de la tranche au clic (11/09/2026, motif "Forfait technique - barème
+       dégressif" — voir skill ced4scale-simulateur-web) : le montant de chaque tranche
+       devient un bouton cliquable, encadré fixe sous le tableau (pas un popover en
+       position:absolute, qui suppose un ancêtre en position:relative — ici le tableau
+       n'en a pas), disparaît tout seul après quelques secondes. */
+    .cv-ca-tranche-btn {
+      background: none; border: none; padding: 0; margin: 0; font: inherit; cursor: pointer;
+      color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px;
+    }
+    .cv-ca-tranche-btn:hover { color: var(--red); }
+    .cv-ca-tranche-info {
+      margin-top: .6rem; background: var(--wash); border-radius: 8px; padding: .6rem .8rem;
+      font-size: .85rem; line-height: 1.4;
+    }
+    .cv-ca-tranche-info[hidden] { display: none; }
+    .cv-ca-tranche-info strong { color: var(--red); }
     /* Variante pour une ampoule posée en bas d'un cadre (ex. coin bas-gauche du graphe) :
        le popover s'ouvre vers le HAUT plutôt que vers le bas, pour ne jamais sortir de la
        carte qui la contient. */
@@ -1349,7 +1365,7 @@
                 <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
               </svg>
             </button>
-            Seuils du barème dégressif, par examen
+            Forfait technique - barème dégressif
           </summary>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvSeuilsTable">
@@ -1363,6 +1379,12 @@
             <tbody id="cvSeuilsBody"></tbody>
           </table>
           </div>
+          <!-- CA de la tranche au clic sur un montant (demande de Cédric le 11/09/2026,
+               motif documenté dans le skill ced4scale-simulateur-web pour tout tableau
+               "Forfait technique - barème dégressif") — encadré fixe sous le tableau
+               (pas un popover positionné en absolu comme .simulator__tooltip, qui suppose
+               un ancêtre .simulator__chart-wrap ici absent), disparaît tout seul. -->
+          <div class="cv-ca-tranche-info" id="cvSeuilsCaInfo" hidden></div>
         </details>
 
         <!-- "Tarif moyen du forfait technique selon le volume" (demande de Cédric le
@@ -2002,6 +2024,11 @@
       // technique par tranche dépend de la date/zone/statut amorti choisis — recalculé à chaque
       // changement de ces paramètres, pas seulement au chargement.
       var seuilsEntiers = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      // Volume annuel réel actuel (mis à jour dans recalculer(), même valeur pour les 2
+      // machines sur ce simulateur — voir "CA de la tranche" plus bas) — exposé au
+      // niveau du module car afficherSeuilsBareme()/le clic sur un montant en ont besoin
+      // en dehors de recalculer().
+      var patientsAnnuelsActuels = 0;
       function tranchesAvecMontant(classe, dateIso, zone, amortiKey) {
         var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
         var plein = ligne.plein[zone];
@@ -2032,15 +2059,49 @@
           var tdLabel = document.createElement("td");
           tdLabel.innerHTML = "<strong>" + label + "</strong>";
           tr.appendChild(tdLabel);
-          [trIrm[i], trCt[i]].forEach(function (t) {
+          [{ t: trIrm[i], machine: "IRM Esaote" }, { t: trCt[i], machine: "Scanner (CT)" }].forEach(function (o) {
             var td = document.createElement("td");
-            td.innerHTML = plage(t) + "<br><strong>" + eurosCent.format(t.montant) + "</strong>";
+            td.innerHTML = plage(o.t) + "<br>";
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "cv-ca-tranche-btn";
+            btn.textContent = eurosCent.format(o.t.montant);
+            btn.dataset.debut = o.t.debut;
+            btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
+            btn.dataset.montant = o.t.montant;
+            btn.dataset.label = label;
+            btn.dataset.machine = o.machine;
+            td.appendChild(btn);
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         });
         majFtMoyen();
       }
+      // ---- CA de la tranche au clic sur un montant (demande de Cédric le 11/09/2026,
+      // motif "Forfait technique - barème dégressif" documenté dans le skill
+      // ced4scale-simulateur-web, à reproduire partout où ce tableau apparaît) : le
+      // nombre d'examens qui tombent RÉELLEMENT dans cette tranche, au volume annuel
+      // actuel, × le tarif de la tranche — jamais toute la largeur théorique de la
+      // tranche (qui suppose le volume au-delà). Délégation d'évènement sur le tbody
+      // (survit à la reconstruction du tableau à chaque recalcul).
+      var caTrancheTimer = null;
+      document.getElementById("cvSeuilsBody").addEventListener("click", function (e) {
+        var btn = e.target.closest(".cv-ca-tranche-btn");
+        if (!btn) return;
+        var debut = Number(btn.dataset.debut), fin = btn.dataset.fin === "" ? null : Number(btn.dataset.fin);
+        var montant = Number(btn.dataset.montant), volume = patientsAnnuelsActuels;
+        var examens = Math.max(0, Math.min(volume, fin != null ? fin : volume) - (debut - 1));
+        var ca = examens * montant;
+        var info = document.getElementById("cvSeuilsCaInfo");
+        info.innerHTML = btn.dataset.machine + " — " + btn.dataset.label + " : <strong>" + seuilsEntiers.format(examens)
+          + " examen" + (examens > 1 ? "s" : "") + "/an</strong> dans cette tranche (sur "
+          + seuilsEntiers.format(volume) + " au total) × " + eurosCent.format(montant)
+          + " = <strong>" + eurosCent.format(ca) + " de CA sur cette tranche</strong>.";
+        info.hidden = false;
+        clearTimeout(caTrancheTimer);
+        caTrancheTimer = setTimeout(function () { info.hidden = true; }, 6000);
+      });
 
       // ---- Tarif moyen du forfait technique selon le volume (demande de Cédric le
       // 06/09/2026) — moyenne PONDÉRÉE sur les tranches du barème dégressif, pas le
@@ -3152,6 +3213,7 @@
       // 3 horizons. Écart = IRM Esaote (slot 0) moins scanner (slot 1).
       function dessinerSynthese(resultats, configs, params) {
         var patientsAnnuels = Math.max(params.activitePatientsJour * params.joursParMois * 12, 0.0001);
+        patientsAnnuelsActuels = patientsAnnuels; // pour "CA de la tranche" au clic, voir plus haut
 
         var lignes = resultats.map(function (r, i) {
           var loyerParPatient = (configs[i].loyer * 12) / patientsAnnuels;
