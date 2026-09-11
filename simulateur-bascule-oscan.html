@@ -146,17 +146,35 @@
        "vue principale" (#boCardPrincipal — graphe + curseur + ligne de stats/joker
        #boStatsRow depuis le 11/09/2026, un seul bouton plein écran désormais pour les
        deux) ne doit PAS entraîner avec elle le cadre fusionné "Forfait technique +
-       Tarif moyen" (#boCardBaremeFtMoy, voir plus bas), ni les boutons Mémoire/
-       Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) — ces 2 derniers
-       restent des frères de #boCardBaremeFtMoy dans le DOM normal (ils doivent rester
-       visibles/cliquables pendant le mode Comparer, qui masque le reste de la vue
-       principale) et ne le rejoignent physiquement QUE pendant le plein écran fusionné,
-       via extraIds/extraTargetId de wireCardFullscreen. Sélecteur à 2 ID + :fullscreen,
+       Tarif moyen" (#boCardBaremeFtMoy, voir plus bas). Sélecteur à 2 ID + :fullscreen,
        spécificité largement suffisante pour gagner sur n'importe quelle classe
        (display:grid/flex) posée par ailleurs sur ces blocs. */
-    #boCardPrincipal:fullscreen #boCardBaremeFtMoy,
-    #boCardPrincipal:fullscreen #boBtnRow,
-    #boCardPrincipal:fullscreen #boGrapheComparaison { display: none; }
+    #boCardPrincipal:fullscreen #boCardBaremeFtMoy { display: none; }
+    /* #boBtnRow (pack Mémoire 1/2/3 + Comparer) et #boGrapheComparaison restent des
+       frères physiques de #boCardPrincipal dans le DOM normal (ils doivent rester
+       visibles/cliquables pendant le mode Comparer, qui masque #boGrapheSimple), mais
+       ne sont plus masqués quand #boCardPrincipal (le joker) passe en plein écran
+       (11/09/2026, demande de Cédric) — le pack rejoint ce plein écran, ancré en bas de
+       l'écran, plutôt que sous le graphe comme dans #boFtMoyGroup (qu'il rejoint
+       physiquement via extraIds pour le plein écran fusionné barème + Tarif moyen).
+       `margin-top:auto` plutôt que `position:fixed` (essayé puis abandonné) : un
+       élément fixe à une distance fixe du bas du VIEWPORT peut chevaucher un contenu
+       naturellement plus haut que l'écran (aucune quantité de padding sur l'ancêtre ne
+       corrige ça, un `position:fixed` ignore totalement le flux du contenu qui
+       l'entoure) — `margin-top:auto` sur un enfant direct du canvas plein écran (déjà
+       en colonne flex) absorbe tout l'espace restant et ne pousse le pack qu'aussi bas
+       que le contenu le permet réellement, sans jamais le recouvrir : soit ancré en bas
+       de l'écran s'il reste de la place, soit juste après le contenu (défilement) sinon. */
+    #boCardPrincipal:fullscreen #boBtnRow {
+      margin-top: auto; align-self: center; flex: none;
+      background: rgba(255,255,255,.97); border: 1px solid var(--line);
+      border-radius: 999px; padding: .5rem 1.1rem; box-shadow: var(--shadow-md, var(--shadow-sm));
+      max-width: calc(100vw - 2.4rem); overflow-x: auto;
+    }
+    /* Le pack reste compact (juste les boutons) : la phrase d'aide en dessous (utile
+       dans le flux normal de la page, pas ici) est masquée pour ne pas grossir
+       inutilement la pastille. */
+    #boCardPrincipal:fullscreen #boBtnRow .bascule-memoire-hint { display: none; }
     /* Groupe "Tarif moyen" (#boFtMoyGroup, voir plus bas) : les boutons Mémoire/Comparer
        + le mode Comparer y sont ajoutés en JS (extraTargetId) juste avant le plein écran
        fusionné "Forfait technique + Tarif moyen" — break-inside:avoid pour qu'ils restent
@@ -241,8 +259,14 @@
     /* Taille de l'icône proportionnelle à la largeur disponible (clamp), plutôt
        qu'une taille fixe : sur un iPhone en paysage (ex. iPhone SE, 667px de large),
        la colonne de la carte est trop étroite pour 13,6rem à taille fixe — ça
-       débordait de la page (repéré le 04/09/2026 en testant le paysage). */
-    .bascule-joker-icon { font-size: clamp(4.8rem, 19.2vw, 16.3rem); line-height: 1; }
+       débordait de la page (repéré le 04/09/2026 en testant le paysage).
+       Redessiné en SVG le 11/09/2026 (signalé par Cédric : l'émoji 🃏 pixellisait
+       visiblement dans les différents modes plein écran) — un glyphe d'emoji est un
+       bitmap figé par la police système (Apple Color Emoji ne stocke qu'un nombre
+       limité de résolutions), et grandir au-delà de sa plus grande résolution native
+       pixellise, contrairement à un tracé SVG qui reste net à n'importe quelle taille
+       (même motif que les icônes plein écran/cadenas déjà en SVG sur ce site). */
+    .bascule-joker-icon { width: clamp(4.8rem, 19.2vw, 16.3rem); height: clamp(4.8rem, 19.2vw, 16.3rem); display: block; }
     .bascule-joker-back {
       transform: rotateY(180deg); text-align: left; padding: 1rem 1.2rem; overflow: hidden;
       background: var(--white); border-radius: 8px;
@@ -783,7 +807,15 @@
             <div class="bascule-stat-joker" id="boJokerCard">
               <div class="bascule-joker-flip" id="boJokerFlip">
                 <button type="button" class="bascule-joker-face bascule-joker-front" id="boJokerFrontBtn" aria-expanded="false" aria-label="Et si l'O-scan attirait plus d'activité MSK ? Cliquer pour essayer.">
-                  <span class="bascule-joker-icon" aria-hidden="true">🃏</span>
+                  <svg class="bascule-joker-icon" viewBox="0 0 100 100" aria-hidden="true" focusable="false">
+                    <rect x="10" y="70" width="80" height="16" rx="8" fill="var(--red)"/>
+                    <polygon points="20,72 36,72 14,20" fill="var(--red)"/>
+                    <polygon points="42,72 58,72 50,6" fill="var(--red)"/>
+                    <polygon points="64,72 80,72 86,20" fill="var(--red)"/>
+                    <circle cx="14" cy="16" r="7" fill="#e0a92e"/>
+                    <circle cx="50" cy="6" r="7" fill="#e0a92e"/>
+                    <circle cx="86" cy="16" r="7" fill="#e0a92e"/>
+                  </svg>
                 </button>
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
