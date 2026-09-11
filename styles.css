@@ -1796,6 +1796,17 @@ ul { margin: 0; padding: 0; list-style: none; }
   border: 1px solid var(--line); border-radius: 999px; padding: .35rem .5rem;
   box-shadow: var(--shadow-md, var(--shadow-sm));
 }
+/* Barre déplaçable à la souris/au doigt (11/09/2026, demande de Cédric — usage
+   Teams + vidéoprojecteur, la barre peut recouvrir un titre/graphe selon l'écran) :
+   une fois glissée, la barre passe en position explicite (voir wireDraggableToolbar
+   dans chaque simulateur) — cette classe retire le centrage par transform, qui
+   sinon fausserait tout positionnement en left/top explicite posé en JS. */
+.presentation-toolbar.is-positioned { left: 0; top: 0; transform: none; }
+.presentation-toolbar__handle {
+  cursor: grab; padding: 0 .25rem; color: var(--muted); font-size: 1rem; line-height: 1;
+  flex: none; touch-action: none; user-select: none;
+}
+.presentation-toolbar__handle:active { cursor: grabbing; }
 .presentation-toolbar button {
   border: 1px solid var(--line); background: #fff; border-radius: 999px;
   padding: .3rem .8rem; font-size: .78rem; font-weight: 700; cursor: pointer;
