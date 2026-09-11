@@ -1020,7 +1020,7 @@
                 <h3 style="margin:0 0 .6rem">Tarif moyen du forfait technique selon le volume
                   <span class="bascule-info-wrap">
                     <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
-                    <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus.</div>
+                    <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Traits pleins : tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Traits fins en pointillé serré ("en marches") : tarif RÉEL de la tranche où tombe ce volume précis, sans moyenner — un palier par tranche, une chute nette à chaque seuil. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus. Utilisez 🧰 pour choisir quoi afficher.</div>
                   </span>
                   <!-- Boîte à outils (11/09/2026, demande de Cédric) : choisir quelles
                        courbes/lignes de seuil afficher sur ce graphe précis, sans rien
@@ -1034,9 +1034,11 @@
                     <button type="button" class="bascule-info-btn" id="boFtMoyOutilsBtn" aria-expanded="false" aria-controls="boFtMoyOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
                     <div class="bascule-info-pop" id="boFtMoyOutilsPop" hidden>
                       <div class="bascule-outils-titre">Afficher sur le graphe</div>
-                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheIrm" checked /> Courbe Machine A</label>
-                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheOscan" checked /> Courbe O-scan</label>
-                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheMoyenne" checked /> Courbe moyenne pondérée</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheIrm" checked /> Courbe Machine A (moyenne)</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheOscan" checked /> Courbe O-scan (moyenne)</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheReelA" checked /> Tarif réel Machine A (marches)</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheReelO" checked /> Tarif réel O-scan (marches)</label>
+                      <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheMoyenne" checked /> Courbe moyenne pondérée globale</label>
                       <label class="bascule-outils-check"><input type="checkbox" id="boFtMoyAfficheSeuils" checked /> Seuils du barème</label>
                     </div>
                   </span>
@@ -2091,6 +2093,8 @@
         // faire sauter l'échelle du graphe à chaque coche.
         var afficherIrm = document.getElementById("boFtMoyAfficheIrm").checked;
         var afficherOscan = document.getElementById("boFtMoyAfficheOscan").checked;
+        var afficherReelA = document.getElementById("boFtMoyAfficheReelA").checked;
+        var afficherReelO = document.getElementById("boFtMoyAfficheReelO").checked;
         var afficherMoyenne = document.getElementById("boFtMoyAfficheMoyenne").checked;
         var afficherSeuils = document.getElementById("boFtMoyAfficheSeuils").checked;
 
@@ -2178,6 +2182,40 @@
         }
         if (afficherIrm) courbe(trA, function (x) { return x; }, "#2a78d6");
         if (afficherOscan) courbe(trO, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        // Tarif RÉEL par tranche, "en marches" (11/09/2026, demande de Cédric : "la
+        // représentation des forfaits techniques sans moyenner - la valeur réelle - ça
+        // devrait ressembler à des marches") — 2 nouvelles courbes, une par machine,
+        // DISTINCTES des 2 courbes ci-dessus qui montrent la moyenne CUMULÉE jusqu'à ce
+        // volume (toujours ≥ la valeur réelle, courbe lisse). Ici : le tarif de la
+        // tranche où tombe RÉELLEMENT le volume à ce point précis — un palier constant
+        // sur toute la largeur d'une tranche, une chute nette au seuil suivant, jamais
+        // une valeur intermédiaire.
+        function tarifReelPourVolume(tranches, n) {
+          for (var it = 0; it < tranches.length; it++) {
+            var t = tranches[it];
+            if (t.fin == null || n <= t.fin) return t.montant;
+          }
+          return tranches[tranches.length - 1].montant;
+        }
+        // Construit un VRAI tracé en marches (paliers horizontaux + chutes verticales)
+        // plutôt qu'une simple interpolation entre points échantillonnés, qui donnerait
+        // des diagonales au lieu de vrais paliers nets. Échantillonnage fin (400 points)
+        // pour que chaque chute reste bien verticale à l'écran.
+        function courbeMarches(tranches, calcVolumeDepuisX, couleur) {
+          var N = 400, pts = [], yPrec = null;
+          for (var i = 0; i <= N; i++) {
+            var x = (xMax * i) / N;
+            var tarif = tarifReelPourVolume(tranches, calcVolumeDepuisX(x));
+            var xp = px(x), yp = py(tarif);
+            if (yPrec !== null && yp !== yPrec) pts.push(xp + "," + yPrec);
+            pts.push(xp + "," + yp);
+            yPrec = yp;
+          }
+          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 1.6, "stroke-dasharray": "1,2.4", opacity: 0.9 }));
+        }
+        if (afficherReelA) courbeMarches(trA, function (x) { return x; }, "#2a78d6");
+        if (afficherReelO) courbeMarches(trO, function (x) { return volumeTotal - x; }, "#eb6834");
 
         // Noms des courbes au tout début du graphe (11/09/2026, demande de Cédric) :
         // "IRM <classe>" au-dessus de la courbe bleue, "O-scan" en dessous de la
@@ -3835,7 +3873,7 @@
         boInfoPopsOuverts.push(fermer);
       }
       wireOutilsBtn("boFtMoyOutilsBtn", "boFtMoyOutilsPop");
-      ["boFtMoyAfficheIrm", "boFtMoyAfficheOscan", "boFtMoyAfficheMoyenne", "boFtMoyAfficheSeuils"].forEach(function (id) {
+      ["boFtMoyAfficheIrm", "boFtMoyAfficheOscan", "boFtMoyAfficheReelA", "boFtMoyAfficheReelO", "boFtMoyAfficheMoyenne", "boFtMoyAfficheSeuils"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", recalculer);
       });
       document.addEventListener("click", function () {
