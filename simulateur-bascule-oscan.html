@@ -23,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=20260911-quicksend" />
+  <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/machines-energie-data.js"></script>
@@ -142,6 +142,16 @@
        hauteur figée — le graphe grandit alors sans se déformer davantage. */
     .simulator__chart-card:fullscreen .bascule-courbe-zone svg { height: auto; aspect-ratio: 7.24 / 1; }
     .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
+    /* Découpage en zones projetables distinctes (11/09/2026, demande de Cédric) : la
+       "vue principale" (#boCardPrincipal, graphe + curseur) ne doit PAS entraîner avec
+       elle la ligne de stats (#boStatsRow, qui contient le joker), le barème
+       (#boCardBareme) ni le mode Comparer (#boGrapheComparaison) quand elle passe seule
+       en plein écran — chacun de ces 3 blocs a son propre bouton plein écran séparé.
+       Sélecteur à 2 ID + :fullscreen, spécificité largement suffisante pour gagner sur
+       n'importe quelle classe (display:grid/flex) posée par ailleurs sur ces blocs. */
+    #boCardPrincipal:fullscreen #boStatsRow,
+    #boCardPrincipal:fullscreen #boCardBareme,
+    #boCardPrincipal:fullscreen #boGrapheComparaison { display: none; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
     .bascule-track-wrap { position: relative; margin-bottom: 1.3rem; }
@@ -478,6 +488,15 @@
   </style>
 </head>
 <body class="tool-page">
+  <!-- Mode présentation (11/09/2026, voir skill ced4scale-simulateur-web) : barre
+       d'outils UNIQUE, déplacée en JS dans le cadre actuellement plein écran. -->
+  <div class="presentation-toolbar" id="presentationToolbar" hidden>
+    <button type="button" data-format="auto" id="presFormatAuto" title="S'adapte à l'écran, sans format fixe">Automatique</button>
+    <button type="button" data-format="169" id="presFormat169" title="Format 16:9 (écran large)">16:9</button>
+    <button type="button" data-format="43" id="presFormat43" title="Format 4:3 (classique)">4:3</button>
+    <span class="presentation-toolbar__sep"></span>
+    <button type="button" id="presSplitToggle" aria-pressed="false" title="Si le contenu est trop long : défiler, ou diviser l'écran en 2 colonnes">Défilement</button>
+  </div>
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
       <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
@@ -726,7 +745,13 @@
           </div>
           <div class="bascule-ends"><span>0</span><span id="boEndMax">12.000</span></div>
 
-          <div class="bascule-stats">
+          <div class="bascule-stats" id="boStatsRow">
+            <button type="button" class="chart-card-fullscreen-btn" id="boStatsFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <div class="bascule-stat result" id="boStatResultBox">
               <div class="bascule-stat-label">Résultat net total</div>
               <div class="bascule-stat-value" id="boStatResultat">—</div>
@@ -846,7 +871,13 @@
             <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
           </div>
 
-          <div id="boGrapheComparaison" hidden>
+          <div id="boGrapheComparaison" hidden style="position:relative">
+            <button type="button" class="chart-card-fullscreen-btn" id="boCompareFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
             <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
               <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
             </div>
@@ -3140,6 +3171,84 @@
       // déjà posé sur ct-vs-irm/recettes/point-mort/energie le 10-11/09/2026, voir
       // skill ced4scale-simulateur-web) — API Fullscreen standard, distinct du
       // bouton ⛶ du panneau ⚙ qui ne remplit que la fenêtre du navigateur.
+      //
+      // Mode présentation (11/09/2026, demande de Cédric — usage Teams + vidéo-
+      // projecteur/grand écran) : à l'entrée en plein écran, le contenu du cadre est
+      // enveloppé dans un `.chart-card-slide-canvas` généré ici, et une barre d'outils
+      // UNIQUE (#presentationToolbar, partagée par tous les cadres) y est déplacée.
+      // 3 formats façon PowerPoint projeté (16:9/4:3/Automatique) + un choix
+      // défilement/division en 2 colonnes pour un contenu trop long pour tenir sans
+      // défiler. Réglages mémorisés sur l'appareil (localStorage), pensés pour être
+      // repris tels quels sur les 4 autres simulateurs.
+      var PRES_FORMATS = { auto: null, "169": { w: 1280, h: 720 }, "43": { w: 1024, h: 768 } };
+      function presLire(cle, defaut) {
+        try { return localStorage.getItem(cle) || defaut; } catch (e) { return defaut; }
+      }
+      function presEcrire(cle, val) {
+        try { localStorage.setItem(cle, val); } catch (e) {}
+      }
+      var presFormatActuel = presLire("ced4scale-presentation-format", "auto");
+      var presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
+      var presCardActif = null;
+
+      function presAppliquer() {
+        if (!presCardActif) return;
+        var canvas = presCardActif.querySelector(":scope > .chart-card-slide-canvas");
+        if (!canvas) return;
+        var fmt = PRES_FORMATS[presFormatActuel];
+        presCardActif.classList.toggle("is-presentation-locked", !!fmt);
+        if (fmt) {
+          canvas.style.width = fmt.w + "px";
+          canvas.style.height = fmt.h + "px";
+          canvas.style.transform = "scale(" + Math.min(window.innerWidth / fmt.w, window.innerHeight / fmt.h) + ")";
+        } else {
+          canvas.style.width = ""; canvas.style.height = ""; canvas.style.transform = "";
+        }
+        canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
+        canvas.style.overflowY = presSplitActuel ? "hidden" : "auto";
+        var toggle = document.getElementById("presSplitToggle");
+        toggle.textContent = presSplitActuel ? "2 colonnes" : "Défilement";
+        toggle.setAttribute("aria-pressed", String(presSplitActuel));
+        ["presFormatAuto", "presFormat169", "presFormat43"].forEach(function (id) {
+          var b = document.getElementById(id);
+          b.classList.toggle("active", b.dataset.format === presFormatActuel);
+        });
+      }
+      function presEntrerCard(card) {
+        var toolbar = document.getElementById("presentationToolbar");
+        var canvas = document.createElement("div");
+        canvas.className = "chart-card-slide-canvas";
+        Array.prototype.slice.call(card.childNodes).forEach(function (n) {
+          // Le bouton plein écran lui-même (enfant direct, sauf sur un <details> où il
+          // vit dans <summary>) reste hors du canvas mis à l'échelle — ancré au coin de
+          // l'écran, jamais rétréci/agrandi avec le format choisi.
+          if (n.nodeType === 1 && n.classList && n.classList.contains("chart-card-fullscreen-btn")) return;
+          canvas.appendChild(n);
+        });
+        card.appendChild(canvas);
+        card.appendChild(toolbar);
+        toolbar.hidden = false;
+        presCardActif = card;
+        presAppliquer();
+      }
+      function presSortirCard(card) {
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        if (canvas) {
+          Array.prototype.slice.call(canvas.childNodes).forEach(function (n) { card.insertBefore(n, canvas); });
+          canvas.remove();
+        }
+        var toolbar = document.getElementById("presentationToolbar");
+        toolbar.hidden = true;
+        document.body.appendChild(toolbar);
+        card.classList.remove("is-presentation-locked");
+        presCardActif = null;
+      }
+      document.getElementById("presFormatAuto").addEventListener("click", function () { presFormatActuel = "auto"; presEcrire("ced4scale-presentation-format", "auto"); presAppliquer(); });
+      document.getElementById("presFormat169").addEventListener("click", function () { presFormatActuel = "169"; presEcrire("ced4scale-presentation-format", "169"); presAppliquer(); });
+      document.getElementById("presFormat43").addEventListener("click", function () { presFormatActuel = "43"; presEcrire("ced4scale-presentation-format", "43"); presAppliquer(); });
+      document.getElementById("presSplitToggle").addEventListener("click", function () { presSplitActuel = !presSplitActuel; presEcrire("ced4scale-presentation-split", presSplitActuel ? "split" : "scroll"); presAppliquer(); });
+      window.addEventListener("resize", function () { if (presCardActif) presAppliquer(); });
+
       function wireCardFullscreen(btnId, cardId) {
         var btn = document.getElementById(btnId), card = document.getElementById(cardId);
         if (!btn || !card) return;
@@ -3156,10 +3265,14 @@
           var actif = document.fullscreenElement === card;
           btn.classList.toggle("is-fullscreen", actif);
           btn.setAttribute("aria-pressed", String(actif));
+          if (actif) presEntrerCard(card);
+          else if (presCardActif === card) presSortirCard(card);
         });
       }
       wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
+      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow");
       wireCardFullscreen("boBaremeFullscreenBtn", "boCardBareme");
+      wireCardFullscreen("boCompareFullscreenBtn", "boGrapheComparaison");
       wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
 
       majResumeHypotheses();
