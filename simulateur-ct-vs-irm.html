@@ -745,6 +745,13 @@
     }
     .cv-ca-tranche-info[hidden] { display: none; }
     .cv-ca-tranche-info strong { color: var(--red); }
+    /* Case "Afficher tous les CA" (11/09/2026, même motif que bascule-oscan) : bascule
+       TOUTES les cases sur l'affichage CA en direct plutôt que de cliquer une par une. */
+    .cv-bareme-plage, .cv-bareme-ca { white-space: nowrap; display: inline-block; }
+    .cv-bareme-plage { font-size: .78rem; color: var(--muted); }
+    .cv-bareme-ca { font-weight: 700; }
+    .cv-bareme-showall { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; font-size: .85rem; cursor: pointer; }
+    .cv-bareme-showall input { width: 15px; height: 15px; flex: none; }
     /* Variante pour une ampoule posée en bas d'un cadre (ex. coin bas-gauche du graphe) :
        le popover s'ouvre vers le HAUT plutôt que vers le bas, pour ne jamais sortir de la
        carte qui la contient. */
@@ -1379,11 +1386,16 @@
             <tbody id="cvSeuilsBody"></tbody>
           </table>
           </div>
+          <label class="cv-bareme-showall">
+            <input type="checkbox" id="cvSeuilsShowAllCa">
+            Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
+          </label>
           <!-- CA de la tranche au clic sur un montant (demande de Cédric le 11/09/2026,
                motif documenté dans le skill ced4scale-simulateur-web pour tout tableau
                "Forfait technique - barème dégressif") — encadré fixe sous le tableau
                (pas un popover positionné en absolu comme .simulator__tooltip, qui suppose
-               un ancêtre .simulator__chart-wrap ici absent), disparaît tout seul. -->
+               un ancêtre .simulator__chart-wrap ici absent), disparaît tout seul. Masqué
+               quand "Afficher tous les CA" est coché (redondant). -->
           <div class="cv-ca-tranche-info" id="cvSeuilsCaInfo" hidden></div>
         </details>
 
@@ -2049,6 +2061,10 @@
         var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
         var tbody = document.getElementById("cvSeuilsBody");
         tbody.innerHTML = "";
+        // Case "Afficher tous les CA" (11/09/2026) : si cochée, chaque case montre
+        // directement le CA de la tranche pour le volume actuel (patientsAnnuelsActuels),
+        // sans avoir à cliquer — sinon, comportement par défaut (tarif + clic).
+        var afficherTousLesCa = document.getElementById("cvSeuilsShowAllCa").checked;
         labels.forEach(function (label, i) {
           function plage(t) {
             return (t.fin != null
@@ -2061,17 +2077,25 @@
           tr.appendChild(tdLabel);
           [{ t: trIrm[i], machine: "IRM Esaote" }, { t: trCt[i], machine: "Scanner (CT)" }].forEach(function (o) {
             var td = document.createElement("td");
-            td.innerHTML = plage(o.t) + "<br>";
-            var btn = document.createElement("button");
-            btn.type = "button";
-            btn.className = "cv-ca-tranche-btn";
-            btn.textContent = eurosCent.format(o.t.montant);
-            btn.dataset.debut = o.t.debut;
-            btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
-            btn.dataset.montant = o.t.montant;
-            btn.dataset.label = label;
-            btn.dataset.machine = o.machine;
-            td.appendChild(btn);
+            if (afficherTousLesCa) {
+              var volume = patientsAnnuelsActuels;
+              var examens = Math.max(0, Math.min(volume, o.t.fin != null ? o.t.fin : volume) - (o.t.debut - 1));
+              var ca = examens * o.t.montant;
+              td.innerHTML = "<span class=\"cv-bareme-plage\">" + plage(o.t) + "</span><br>"
+                + "<span class=\"cv-bareme-ca\">" + eurosCent.format(ca) + "</span>";
+            } else {
+              td.innerHTML = plage(o.t) + "<br>";
+              var btn = document.createElement("button");
+              btn.type = "button";
+              btn.className = "cv-ca-tranche-btn";
+              btn.textContent = eurosCent.format(o.t.montant);
+              btn.dataset.debut = o.t.debut;
+              btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
+              btn.dataset.montant = o.t.montant;
+              btn.dataset.label = label;
+              btn.dataset.machine = o.machine;
+              td.appendChild(btn);
+            }
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -2085,6 +2109,7 @@
       // actuel, × le tarif de la tranche — jamais toute la largeur théorique de la
       // tranche (qui suppose le volume au-delà). Délégation d'évènement sur le tbody
       // (survit à la reconstruction du tableau à chaque recalcul).
+      document.getElementById("cvSeuilsShowAllCa").addEventListener("change", afficherSeuilsBareme);
       var caTrancheTimer = null;
       document.getElementById("cvSeuilsBody").addEventListener("click", function (e) {
         var btn = e.target.closest(".cv-ca-tranche-btn");

@@ -576,15 +576,33 @@
     .bascule-outils-check { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; padding: .15rem 0; }
     .bascule-outils-check input { width: 15px; height: 15px; flex: none; }
 
-    /* CA de la tranche affiché directement dans la case (corrigé le 11/09/2026, motif
-       "Forfait technique - barème dégressif", skill ced4scale-simulateur-web) : chaque
-       case montre la plage puis le CA (chiffre d'affaires) de la tranche pour le
-       volume actuel, en couleur de la colonne, chaque ligne forcée sur une seule
-       ligne (nowrap) — plus de pointillés, plus de bouton cliquable. */
+    /* Motif "Forfait technique - barème dégressif" (skill ced4scale-simulateur-web,
+       même CSS que simulateur-ct-vs-irm.html) : chaque case montre la plage puis le
+       tarif unitaire de la tranche, en pointillés cliquables — le clic affiche le CA
+       (chiffre d'affaires) réel de cette tranche dans un encadré fixe sous le tableau.
+       Revenu à ce comportement le 11/09/2026 (Cédric : "je me suis mal exprimé" sur la
+       correction du même jour qui affichait le CA en permanence dans la case) — voir
+       memory/site-web/decisions.md. La case à cocher "Afficher tous les CA" (ci-dessous)
+       bascule TOUTES les cases sur l'affichage CA en direct (l'ancien comportement
+       "corrigé"), sans avoir à cliquer une par une. */
     .bo-bareme-plage, .bo-bareme-ca { white-space: nowrap; display: inline-block; }
     .bo-bareme-plage { font-size: clamp(.44rem, 1.2vw, .78rem); color: var(--muted); }
     .bo-bareme-ca { font-size: clamp(.7rem, 2.8vw, 1.05rem); font-weight: 700; }
     #boBaremeTable td:not(:first-child), #boBaremeTable th:not(:first-child) { padding-left: .12rem; padding-right: .12rem; }
+    .bo-ca-tranche-btn {
+      background: none; border: none; padding: 0; margin: 0; font: inherit; cursor: pointer;
+      color: inherit; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 2px;
+      font-size: clamp(.7rem, 2.8vw, 1.05rem); font-weight: 700;
+    }
+    .bo-ca-tranche-btn:hover { color: var(--red); }
+    .bo-ca-tranche-info {
+      margin-top: .6rem; background: var(--wash); border-radius: 8px; padding: .6rem .8rem;
+      font-size: .85rem; line-height: 1.4;
+    }
+    .bo-ca-tranche-info[hidden] { display: none; }
+    .bo-ca-tranche-info strong { color: var(--red); }
+    .bo-bareme-showall { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; font-size: .85rem; cursor: pointer; }
+    .bo-bareme-showall input { width: 15px; height: 15px; flex: none; }
 
     /* Charte "Apple Arcade" (10/09/2026, validée par Cédric) : boutons d'action
        générique (email/PDF/rentabilité max/fermer/afficher paramètres) en dégradé
@@ -1019,6 +1037,14 @@
                   <tbody id="boBaremeMini"></tbody>
                 </table>
               </div>
+              <label class="bo-bareme-showall">
+                <input type="checkbox" id="boBaremeShowAllCa">
+                Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
+              </label>
+              <!-- CA de la tranche au clic (motif "Forfait technique - barème dégressif",
+                   skill ced4scale-simulateur-web) — encadré fixe sous le tableau, masqué
+                   quand la case "Afficher tous les CA" est cochée (redondant). -->
+              <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
             </details>
 
             <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
@@ -2045,12 +2071,12 @@
         var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
         var tbody = document.getElementById("boBaremeMini");
         tbody.innerHTML = "";
-        // Corrigé le 11/09/2026 (demande de Cédric) : la case n'affiche plus le tarif
-        // unitaire de la tranche (qui pouvait se lire comme une "moyenne"), mais le CA
-        // (chiffre d'affaires) réel de l'ENSEMBLE des forfaits techniques de cette
-        // tranche pour le volume actuellement saisi — examens de la tranche × tarif de
-        // la tranche —, calculé uniquement dans la case, en couleur de la colonne
-        // (bleu 1,5 T / orange O-scan), plus de bouton ni d'encadré au clic.
+        // Tarif unitaire de la tranche affiché par défaut (pointillés cliquables, le
+        // clic donne le CA dans l'encadré #boBaremeCaInfo) — sauf si la case "Afficher
+        // tous les CA" est cochée, auquel cas chaque case montre directement le CA
+        // (chiffre d'affaires réel de l'ensemble des forfaits techniques de cette
+        // tranche pour le volume actuel), sans avoir à cliquer.
+        var afficherTousLesCa = document.getElementById("boBaremeShowAllCa").checked;
         labels.forEach(function (label, i) {
           function plage(t) {
             return (t.fin != null ? "de " + fmt(t.debut) + " à " + fmt(t.fin) : "au-delà de " + fmt(t.debut - 1)) + " ex./an";
@@ -2059,13 +2085,25 @@
           var tdLabel = document.createElement("td");
           tdLabel.innerHTML = "<strong>" + label + "</strong>";
           tr.appendChild(tdLabel);
-          [{ t: trA[i], machine: nomClasseA, volume: volActuelA, couleur: "#2a78d6" },
-           { t: trO[i], machine: "O-scan", volume: volActuelO, couleur: "#eb6834" }].forEach(function (o) {
+          [{ t: trA[i], machine: nomClasseA, volume: volActuelA, couleur: "#2a78d6", cote: "a" },
+           { t: trO[i], machine: "O-scan", volume: volActuelO, couleur: "#eb6834", cote: "o" }].forEach(function (o) {
             var td = document.createElement("td");
-            var examens = Math.max(0, Math.min(o.volume, o.t.fin != null ? o.t.fin : o.volume) - (o.t.debut - 1));
-            var ca = examens * o.t.montant;
-            td.innerHTML = "<span class=\"bo-bareme-plage\">" + plage(o.t) + "</span><br>"
-              + "<span class=\"bo-bareme-ca\" style=\"color:" + o.couleur + "\">" + eur(ca, 2) + "</span>";
+            if (afficherTousLesCa) {
+              var examens = Math.max(0, Math.min(o.volume, o.t.fin != null ? o.t.fin : o.volume) - (o.t.debut - 1));
+              var ca = examens * o.t.montant;
+              td.innerHTML = "<span class=\"bo-bareme-plage\">" + plage(o.t) + "</span><br>"
+                + "<span class=\"bo-bareme-ca\" style=\"color:" + o.couleur + "\">" + eur(ca, 2) + "</span>";
+            } else {
+              td.innerHTML = "<span class=\"bo-bareme-plage\">" + plage(o.t) + "</span><br>";
+              var btn = document.createElement("button");
+              btn.type = "button"; btn.className = "bo-ca-tranche-btn";
+              btn.style.color = o.couleur;
+              btn.textContent = eur(o.t.montant, 2);
+              btn.dataset.debut = o.t.debut; btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
+              btn.dataset.montant = o.t.montant; btn.dataset.label = label; btn.dataset.machine = o.machine;
+              btn.dataset.cote = o.cote;
+              td.appendChild(btn);
+            }
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
@@ -3938,6 +3976,33 @@
       wireOutilsBtn("boFtMoyOutilsBtn", "boFtMoyOutilsPop");
       ["boFtMoyAfficheIrm", "boFtMoyAfficheOscan", "boFtMoyAfficheReelA", "boFtMoyAfficheReelO", "boFtMoyAfficheMoyenne", "boFtMoyAfficheSeuils"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", recalculer);
+      });
+
+      // Case "Afficher tous les CA" (motif "Forfait technique - barème dégressif",
+      // skill ced4scale-simulateur-web) — redessine le tableau dans l'un ou l'autre mode.
+      document.getElementById("boBaremeShowAllCa").addEventListener("change", recalculer);
+
+      // CA de la tranche au clic (motif "Forfait technique - barème dégressif", skill
+      // ced4scale-simulateur-web) — délégation sur le tbody, survit à la reconstruction
+      // du tableau à chaque recalcul. N'a d'effet que si un bouton .bo-ca-tranche-btn
+      // existe réellement (absent quand "Afficher tous les CA" est coché).
+      var boCaTrancheTimer = null;
+      document.getElementById("boBaremeMini").addEventListener("click", function (e) {
+        var btn = e.target.closest(".bo-ca-tranche-btn");
+        if (!btn) return;
+        var debut = Number(btn.dataset.debut), fin = btn.dataset.fin === "" ? null : Number(btn.dataset.fin);
+        var montant = Number(btn.dataset.montant);
+        var volume = btn.dataset.cote === "o" ? volActuelO : volActuelA;
+        var examens = Math.max(0, Math.min(volume, fin != null ? fin : volume) - (debut - 1));
+        var ca = examens * montant;
+        var info = document.getElementById("boBaremeCaInfo");
+        info.innerHTML = btn.dataset.machine + " — " + btn.dataset.label + " : <strong>" + fmt(examens)
+          + " examen" + (examens > 1 ? "s" : "") + "/an</strong> dans cette tranche (sur "
+          + fmt(volume) + " au total) × " + eur(montant, 2)
+          + " = <strong>" + eur(ca, 2) + " de CA sur cette tranche</strong>.";
+        info.hidden = false;
+        clearTimeout(boCaTrancheTimer);
+        boCaTrancheTimer = setTimeout(function () { info.hidden = true; }, 6000);
       });
       document.addEventListener("click", function () {
         boInfoPopsOuverts.forEach(function (f) { f(); });
