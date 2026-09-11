@@ -591,6 +591,12 @@
 
         <div id="pmVueSimple">
         <div class="simulator__chart-card" id="pmVerdictCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="pmVerdictFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <p id="pmVerdict" style="margin:0;font-size:1.15rem;line-height:1.5"></p>
         </div>
 
@@ -607,7 +613,13 @@
         </table>
         </div>
 
-        <div class="simulator__chart-card">
+        <div class="simulator__chart-card" id="pmGrapheCard">
+          <button type="button" class="chart-card-fullscreen-btn" id="pmGrapheFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
             <h3 style="margin:0">Résultat mensuel selon l'activité</h3>
             <span class="pm-info-wrap">
@@ -628,6 +640,12 @@
         </span>
 
         <div class="simulator__chart-card" id="pmRecap">
+          <button type="button" class="chart-card-fullscreen-btn" id="pmRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
           <h3 class="simulator__collapse-toggle" id="pmRecapToggle" style="margin-bottom:.6rem;cursor:pointer">Voir le détail complet des données utilisées <span aria-hidden="true">▾</span></h3>
           <div id="pmRecapBody" hidden>
           <span class="pm-info-wrap" style="margin-bottom:.8rem">
@@ -2342,6 +2360,42 @@
       wireInfoBtn("pmInfoTauxBtn", "pmInfoTauxPop");
       wireInfoBtn("pmInfoRisBtn", "pmInfoRisPop");
       wireInfoBtn("pmInfoChampsBtn", "pmInfoChampsPop");
+
+      // Bouton plein écran RÉEL par cadre de la colonne de résultats (motif porté de
+      // simulateur-ct-vs-irm.html le 10/09/2026, voir skill ced4scale-simulateur-web) —
+      // API Fullscreen standard, distinct du bouton ⛶ du panneau ⚙ qui ne remplit que
+      // la fenêtre du navigateur. `bodyId` optionnel : pour un cadre replié par un
+      // mécanisme "maison" (pas un <details> natif, voir brancherToggle() plus haut),
+      // simule un clic sur le vrai bouton de repli s'il est fermé — réutilise sa
+      // logique exacte plutôt que de dupliquer la mise à jour de la flèche ▾/▴.
+      function wireCardFullscreen(btnId, cardId, bodyId) {
+        var btn = document.getElementById(btnId), card = document.getElementById(cardId);
+        if (!btn || !card) return;
+        btn.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          if (document.fullscreenElement === card) {
+            document.exitFullscreen();
+          } else {
+            if (card.tagName === "DETAILS") card.open = true;
+            if (bodyId) {
+              var body = document.getElementById(bodyId);
+              if (body && body.hidden) {
+                var toggle = card.querySelector(".simulator__collapse-toggle");
+                if (toggle) toggle.click();
+              }
+            }
+            card.requestFullscreen();
+          }
+        });
+        document.addEventListener("fullscreenchange", function () {
+          var actif = document.fullscreenElement === card;
+          btn.classList.toggle("is-fullscreen", actif);
+          btn.setAttribute("aria-pressed", String(actif));
+        });
+      }
+      wireCardFullscreen("pmVerdictFullscreenBtn", "pmVerdictCard");
+      wireCardFullscreen("pmGrapheFullscreenBtn", "pmGrapheCard");
+      wireCardFullscreen("pmRecapFullscreenBtn", "pmRecap", "pmRecapBody");
       document.addEventListener("click", function () {
         pmInfoPopsOuverts.forEach(function (f) { f(); });
       });
