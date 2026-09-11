@@ -144,18 +144,26 @@
     .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
     /* Découpage en zones projetables distinctes (11/09/2026, demande de Cédric) : la
        "vue principale" (#boCardPrincipal, graphe + curseur) ne doit PAS entraîner avec
-       elle la ligne de stats (#boStatsRow, qui contient le joker), les boutons Mémoire/
-       Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) — ces 3 derniers
-       "vont avec le joker" (demande de Cédric) et voyagent ensemble via `extraIds` de
-       wireCardFullscreen — ni le barème (#boCardBareme) ni le graphe "Tarif moyen"
-       (#boFtMoyCard), chacun avec son propre bouton. Sélecteur à 2 ID + :fullscreen,
-       spécificité largement suffisante pour gagner sur n'importe quelle classe
-       (display:grid/flex) posée par ailleurs sur ces blocs. */
+       elle la ligne de stats (#boStatsRow, qui contient le joker), le cadre fusionné
+       "Forfait technique + Tarif moyen" (#boCardBaremeFtMoy, voir plus bas), ni les
+       boutons Mémoire/Comparer (#boBtnRow) et le mode Comparer (#boGrapheComparaison) —
+       ces 2 derniers restent des frères de #boCardBaremeFtMoy dans le DOM normal (ils
+       doivent rester visibles/cliquables pendant le mode Comparer, qui masque le reste
+       de la vue principale) et ne le rejoignent physiquement QUE pendant le plein écran
+       fusionné, via extraIds/extraTargetId de wireCardFullscreen. Sélecteur à 2 ID +
+       :fullscreen, spécificité largement suffisante pour gagner sur n'importe quelle
+       classe (display:grid/flex) posée par ailleurs sur ces blocs. */
     #boCardPrincipal:fullscreen #boStatsRow,
+    #boCardPrincipal:fullscreen #boCardBaremeFtMoy,
     #boCardPrincipal:fullscreen #boBtnRow,
-    #boCardPrincipal:fullscreen #boCardBareme,
-    #boCardPrincipal:fullscreen #boFtMoyCard,
     #boCardPrincipal:fullscreen #boGrapheComparaison { display: none; }
+    /* Groupe "Tarif moyen" (#boFtMoyGroup, voir plus bas) : les boutons Mémoire/Comparer
+       + le mode Comparer y sont ajoutés en JS (extraTargetId) juste avant le plein écran
+       fusionné "Forfait technique + Tarif moyen" — break-inside:avoid pour qu'ils restent
+       TOUJOURS ensemble dans la même colonne/page du mode présentation "2 colonnes"
+       forcé sur ce cadre, sans dépendre de l'équilibrage de hauteur du navigateur
+       (comportement déjà documenté comme imprévisible, skill ced4scale-simulateur-web). */
+    .chart-card-slide-canvas--split .bascule-ftmoy-group { break-inside: avoid; }
     .bascule-slider-labels { position: relative; height: 1.4rem; }
     .bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
     .bascule-track-wrap { position: relative; margin-bottom: 1.3rem; }
@@ -845,56 +853,71 @@
 
           <div class="bascule-capnote" id="boCapaciteNote"></div>
 
-          <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardBareme">
-            <summary>Forfait technique - barème dégressif
-              <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                  <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                </svg>
-              </button>
-            </summary>
-            <div style="overflow-x:auto">
-              <table class="stats-table simulator__table simulator__table--compare2" id="boBaremeTable">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th><span class="simulator__swatch-text" data-slot="0" id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th>
-                    <th><span class="simulator__swatch-text" data-slot="1" style="color:#eb6834">O-scan</span></th>
-                  </tr>
-                </thead>
-                <tbody id="boBaremeMini"></tbody>
-              </table>
-            </div>
-            <!-- CA de la tranche au clic (motif "Forfait technique - barème dégressif",
-                 skill ced4scale-simulateur-web) — encadré fixe sous le tableau. -->
-            <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
-          </details>
-
-          <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
-               motif que simulateur-ct-vs-irm.html, mais volontairement SIMPLIFIÉ : pas
-               de curseur dédié (bascule-oscan pilote déjà le volume via le curseur de
-               répartition ci-dessus), pas de bascule Avec/Sans AI ni d'échelle de temps
-               (sans équivalent naturel ici) — juste les 2 courbes. Particularité de ce
-               simulateur : les 2 machines se PARTAGENT un même total d'examens (pas 2
-               volumes indépendants comme sur ct-vs-irm) — la courbe O-scan est donc
-               tracée en MIROIR, de l'activité totale actuelle (à gauche) vers 0 (à
-               droite), pendant que la courbe Machine A va de 0 vers le total. -->
-          <div class="simulator__chart-card" id="boFtMoyCard">
-            <button type="button" class="chart-card-fullscreen-btn" id="boFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+          <!-- Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique -
+               barème dégressif" et "Tarif moyen du forfait technique" partagent
+               désormais UN SEUL bouton plein écran (#boBaremeFtMoyFullscreenBtn), qui
+               s'ouvre directement en mode présentation "2 colonnes" (forceSplit, voir
+               wireCardFullscreen) — le barème occupe la 1ʳᵉ colonne/page, le graphe
+               "Tarif moyen" + les boutons Mémoire/Comparer la 2ᵉ (regroupés dans
+               .bascule-ftmoy-group pour rester ensemble, voir styles.css local
+               ci-dessus). Remplace les 2 boutons séparés + le rattachement des boutons
+               Mémoire au joker (#boStatsRow) posés le 11/09/2026 plus tôt dans la
+               journée. -->
+          <div class="simulator__chart-card" id="boCardBaremeFtMoy">
+            <button type="button" class="chart-card-fullscreen-btn" id="boBaremeFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                 <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
                 <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
               </svg>
             </button>
-            <h3 style="margin:0 0 .6rem">Tarif moyen du forfait technique selon le volume
-              <span class="bascule-info-wrap">
-                <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
-                <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus.</div>
-              </span>
-            </h3>
-            <div class="simulator__chart-wrap">
-              <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
+            <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardBareme">
+              <summary>Forfait technique - barème dégressif</summary>
+              <div style="overflow-x:auto">
+                <table class="stats-table simulator__table simulator__table--compare2" id="boBaremeTable">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th><span class="simulator__swatch-text" data-slot="0" id="boNomClasseA3" style="color:#2a78d6">1,5 T</span></th>
+                      <th><span class="simulator__swatch-text" data-slot="1" style="color:#eb6834">O-scan</span></th>
+                    </tr>
+                  </thead>
+                  <tbody id="boBaremeMini"></tbody>
+                </table>
+              </div>
+              <!-- CA de la tranche au clic (motif "Forfait technique - barème dégressif",
+                   skill ced4scale-simulateur-web) — encadré fixe sous le tableau. -->
+              <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
+            </details>
+
+            <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
+                 motif que simulateur-ct-vs-irm.html, mais volontairement SIMPLIFIÉ : pas
+                 de curseur dédié (bascule-oscan pilote déjà le volume via le curseur de
+                 répartition ci-dessus), pas de bascule Avec/Sans AI ni d'échelle de temps
+                 (sans équivalent naturel ici) — juste les 2 courbes. Particularité de ce
+                 simulateur : les 2 machines se PARTAGENT un même total d'examens (pas 2
+                 volumes indépendants comme sur ct-vs-irm) — la courbe O-scan est donc
+                 tracée en MIROIR, de l'activité totale actuelle (à gauche) vers 0 (à
+                 droite), pendant que la courbe Machine A va de 0 vers le total.
+                 #boFtMoyGroup (11/09/2026) : les boutons Mémoire/Comparer + le mode
+                 Comparer (#boBtnRow, #boGrapheComparaison) restent HORS de ce groupe
+                 dans le DOM normal — ils doivent rester visibles/cliquables même quand
+                 ce cadre n'est pas plein écran, et surtout pendant le mode Comparer qui
+                 masque #boGrapheSimple (dont ce groupe fait partie). Ils ne rejoignent
+                 #boFtMoyGroup que PENDANT le plein écran fusionné, via extraIds/
+                 extraTargetId de wireCardFullscreen — même mécanisme que pour le joker
+                 auparavant, cible différente. -->
+            <div class="bascule-ftmoy-group" id="boFtMoyGroup">
+              <div class="simulator__chart-card" id="boFtMoyCard">
+                <h3 style="margin:0 0 .6rem">Tarif moyen du forfait technique selon le volume
+                  <span class="bascule-info-wrap">
+                    <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
+                    <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus.</div>
+                  </span>
+                </h3>
+                <div class="simulator__chart-wrap">
+                  <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
+                </div>
+              </div>
             </div>
           </div>
           </div>
@@ -903,7 +926,12 @@
                CT vs IRM). Contrairement à ce dernier, ici le curseur de répartition ET
                "Activité totale" sont mémorisés PROPRES à chaque mémoire (pas partagés) :
                chaque emplacement fige un scénario de répartition complet, pas seulement
-               des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire(). -->
+               des hypothèses de coût — voir restaurerParametres()/calculerSnapshotPourMemoire().
+               Reste un frère de #boGrapheSimple (pas nested dedans) : doit rester visible/
+               cliquable même quand #boGrapheSimple est masqué en mode Comparer. Rejoint
+               #boFtMoyGroup, sous le graphe "Tarif moyen", UNIQUEMENT pendant le plein écran
+               fusionné Forfait technique + Tarif moyen (11/09/2026, extraIds/extraTargetId de
+               wireCardFullscreen) — remplace le rattachement précédent au joker (#boStatsRow). -->
           <div class="bascule-btn-row" id="boBtnRow">
             <button type="button" class="btn btn--sm btn--ghost bascule-btn-comparer" id="boBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison." title="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
             <span class="bascule-memoire-slot" data-slot="0">
@@ -921,10 +949,6 @@
             <p class="bascule-memoire-hint" id="boMemoireTxt">Enregistrez jusqu'à 3 scénarios de répartition pour les comparer, puis cliquez sur "Comparer".</p>
           </div>
 
-          <!-- Pas de bouton plein écran propre à ce bloc : il voyage avec la ligne de
-               stats/joker (#boStatsRow) via `extraIds` de wireCardFullscreen, demande de
-               Cédric le 11/09/2026 ("les boutons mémoires et comparer vont avec
-               l'affichage du joker") — voir skill ced4scale-simulateur-web. -->
           <div id="boGrapheComparaison" hidden>
             <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
               <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaison">✕ Fermer la comparaison</button>
@@ -3413,12 +3437,20 @@
 
       // `extraIds` (optionnel) : éléments qui ne sont PAS des descendants de `card` en
       // temps normal, mais doivent apparaître AVEC lui en plein écran — déplacés dans
-      // `card` juste avant `requestFullscreen()` (rejoint le canvas du mode présentation
-      // avec le reste), puis remis EXACTEMENT à leur place d'origine à la sortie (parent
-      // + frère suivant mémorisés une fois pour toutes). Cas d'usage du 11/09/2026 :
-      // les boutons Mémoire/Comparer et le mode Comparer lui-même doivent voyager avec
-      // la ligne de stats (le joker) quand elle passe seule en plein écran.
-      function wireCardFullscreen(btnId, cardId, bodyId, extraIds) {
+      // `card` (ou dans `extraTargetId`, un descendant précis de `card`, si fourni)
+      // juste avant `requestFullscreen()` (rejoint le canvas du mode présentation avec
+      // le reste), puis remis EXACTEMENT à leur place d'origine à la sortie (parent +
+      // frère suivant mémorisés une fois pour toutes).
+      // `forceSplit` (optionnel, 11/09/2026) : ce cadre précis s'ouvre TOUJOURS en mode
+      // présentation "2 colonnes" (comme 2 pages projetées côte à côte), quel que soit
+      // le réglage Défilement/2 colonnes mémorisé sur l'appareil — utilisé pour le cadre
+      // fusionné "Forfait technique + Tarif moyen" (barème = page 1, graphe Tarif moyen
+      // + boutons Mémoire/Comparer = page 2, groupés dans #boFtMoyGroup avec
+      // break-inside:avoid pour rester ensemble, voir styles locaux plus haut). Le
+      // réglage réellement mémorisé par l'utilisateur est relu depuis le stockage local
+      // à la sortie (pas restauré depuis une simple variable), pour ne pas écraser un
+      // changement qu'il aurait fait manuellement pendant qu'il était forcé.
+      function wireCardFullscreen(btnId, cardId, bodyId, extraIds, forceSplit, extraTargetId) {
         var btn = document.getElementById(btnId), card = document.getElementById(cardId);
         if (!btn || !card) return;
         var extras = (extraIds || []).map(function (id) { return document.getElementById(id); }).filter(Boolean);
@@ -3429,6 +3461,7 @@
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
+            Array.prototype.forEach.call(card.querySelectorAll(":scope > details"), function (d) { d.open = true; });
             if (bodyId) {
               var body = document.getElementById(bodyId);
               if (body && body.hidden) {
@@ -3436,7 +3469,9 @@
                 if (toggle) toggle.click();
               }
             }
-            extras.forEach(function (el) { card.appendChild(el); });
+            var target = (extraTargetId && document.getElementById(extraTargetId)) || card;
+            extras.forEach(function (el) { target.appendChild(el); });
+            if (forceSplit) presSplitActuel = true;
             card.requestFullscreen();
           }
         });
@@ -3448,6 +3483,7 @@
             presEntrerCard(card);
           } else if (presCardActif === card) {
             presSortirCard(card);
+            if (forceSplit) presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
             extras.forEach(function (el, i) {
               var home = extrasHomes[i];
               if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
@@ -3457,10 +3493,15 @@
         });
       }
       wireCardFullscreen("boChartFullscreenBtn", "boCardPrincipal");
-      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow", null, ["boBtnRow", "boGrapheComparaison"]);
-      wireCardFullscreen("boBaremeFullscreenBtn", "boCardBareme");
+      wireCardFullscreen("boStatsFullscreenBtn", "boStatsRow");
       wireCardFullscreen("boHypChartFullscreenBtn", "boCardHyp");
-      wireCardFullscreen("boFtMoyFullscreenBtn", "boFtMoyCard");
+      // Fusionné le 11/09/2026 (demande de Cédric) : "Forfait technique - barème
+      // dégressif" + "Tarif moyen du forfait technique" partagent un seul bouton plein
+      // écran, forcé en mode présentation "2 colonnes" (forceSplit) — barème en page 1,
+      // Tarif moyen + boutons Mémoire/Comparer (extraIds, déplacés dans #boFtMoyGroup
+      // via extraTargetId) en page 2. Remplace boBaremeFullscreenBtn/boFtMoyFullscreenBtn
+      // et le rattachement des boutons Mémoire au joker.
+      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, ["boBtnRow", "boGrapheComparaison"], true, "boFtMoyGroup");
 
       majResumeHypotheses();
       repositionnerCurseur();
