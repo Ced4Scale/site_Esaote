@@ -1250,29 +1250,40 @@
                     </div>
                   </span>
                 </summary>
+                <!-- Ventilation Machine A / O-scan déplacée AU-DESSUS du graphe
+                     (11/09/2026, demande de Cédric : "au-dessus de la barre avec
+                     curseur", même habillage que "Répartition de l'activité" —
+                     libellés au-dessus, 0/activité totale aux extrémités, petite
+                     flèche sous le curseur) — reste le MÊME curseur #boCurseur2,
+                     juste repositionné avant le graphe plutôt qu'après, pour qu'on
+                     voie tout de suite la répartition actuelle avant de lire la
+                     courbe. -->
+                <div class="bascule-slider-labels">
+                  <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+                  <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
+                </div>
+                <div class="bascule-track-wrap">
+                  <div class="bascule-slider-track">
+                    <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
+                  </div>
+                  <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
+                  <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
+                </div>
+                <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
+
                 <div class="simulator__chart-wrap">
                   <svg id="boFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et O-scan"></svg>
                 </div>
 
                 <!-- Réglages miroir de l'activité (11/09/2026, demande de Cédric) :
-                     répartition, activité totale et part membres/extrémités modifiables
+                     activité totale et part membres/extrémités modifiables
                      directement sous ce graphe, sans repasser par le formulaire
                      principal (pas visible en plein écran fusionné). Champs miroirs de
-                     #boCurseur/#boVolumeA/#boPartExtremites, synchronisés dans les 2 sens
-                     — voir mirrorField() plus bas. -->
+                     #boVolumeA/#boPartExtremites, synchronisés dans les 2 sens — voir
+                     mirrorField() plus bas. La ventilation Machine A/O-scan
+                     (labels/barre/extrémités) est désormais AU-DESSUS du graphe,
+                     voir juste avant #boFtMoyChart. -->
                 <div class="bascule-ftmoy-controls">
-                  <div class="bascule-slider-labels">
-                    <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
-                    <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
-                  </div>
-                  <div class="bascule-track-wrap">
-                    <div class="bascule-slider-track">
-                      <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
-                    </div>
-                    <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
-                    <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
-                  </div>
-                  <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
                   <div class="bascule-ftmoy-fields">
                     <div class="field" style="margin-bottom:0">
                       <label for="boVolumeA2">Activité totale actuelle</label>
