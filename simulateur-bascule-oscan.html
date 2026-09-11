@@ -1244,7 +1244,6 @@
                           <path d="M40.5,76 q9.5,8.5 19,0 q-9.5,6.5 -19,0 Z" fill="#C62828"/>
                           <path d="M42.5,76.5 q7.5,4.8 15,0" stroke="#8a1c1c" stroke-width="0.6" fill="none"/>
                         </svg>
-                        <span class="bascule-stat-label">Et si on comblait la réserve O-scan ?</span>
                       </button>
                       <div class="bascule-joker-face bascule-joker-back">
                         <button type="button" class="bascule-joker-retour" id="boFtMoyJokerBackBtn" aria-label="Retourner la carte">↩</button>
@@ -4149,7 +4148,15 @@
           btn.classList.toggle("is-fullscreen", actif);
           btn.setAttribute("aria-pressed", String(actif));
           if (actif) {
-            presEntrerCard(card);
+            // Garde ajoutée le 11/09/2026 : 2 boutons distincts (barème + Tarif moyen)
+            // peuvent cibler le MÊME cadre fusionné — les 2 écoutent "fullscreenchange"
+            // sur `document`, donc les 2 déclenchaient `presEntrerCard(card)` à chaque
+            // entrée, empilant 2 canvas imbriqués (le 2ᵉ appel voyait le 1er canvas
+            // comme unique enfant du cadre et le ré-enveloppait) — la mise en page "2
+            // colonnes" s'effondrait alors en une seule colonne. `presCardActif` est
+            // déjà posé par le 1er appel : les appels suivants pour le MÊME cadre ne
+            // font plus rien.
+            if (presCardActif !== card) presEntrerCard(card);
           } else if (presCardActif === card) {
             presSortirCard(card);
             if (forceSplit) presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
