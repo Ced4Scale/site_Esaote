@@ -242,19 +242,29 @@
        la colonne de la carte est trop étroite pour 13,6rem à taille fixe — ça
        débordait de la page (repéré le 04/09/2026 en testant le paysage).
        Redessiné en SVG le 11/09/2026 (signalé par Cédric : l'émoji 🃏 pixellisait
-       visiblement dans les différents modes plein écran) — un glyphe d'emoji est un
-       bitmap figé par la police système (Apple Color Emoji ne stocke qu'un nombre
-       limité de résolutions), et grandir au-delà de sa plus grande résolution native
-       pixellise, contrairement à un tracé SVG qui reste net à n'importe quelle taille
-       (même motif que les icônes plein écran/cadenas déjà en SVG sur ce site). */
-    /* viewBox 100x140 (ratio carte à jouer 5:7, depuis le 11/09/2026 — voir plus bas) :
-       largeur pilotée par clamp, hauteur en `auto` + `aspect-ratio` plutôt qu'un 2ᵉ
-       clamp identique (qui redonnerait un carré, faux pour cette forme de carte). */
-    .bascule-joker-icon { width: clamp(4.2rem, 16.8vw, 14.3rem); height: auto; aspect-ratio: 5 / 7; display: block; }
+       visiblement dans les différents modes plein écran), puis REMPLACÉ le 11/09/2026
+       (même jour) par l'image PNG (512×512) fournie par Cédric, à sa demande explicite
+       malgré le risque de flou — voir memory/site-web/decisions.md. Pour limiter ce
+       risque, la taille reste plafonnée à un agrandissement modéré ci-dessous ET une
+       règle `:fullscreen` séparée (plus bas) resserre encore ce plafond, car le mode
+       présentation multiplie ensuite tout par `transform:scale()` (jusqu'à ×3 sur un
+       écran 4K en 16:9) — un plafond CSS normal ne suffit pas à lui seul à éviter
+       l'agrandissement au-delà de la résolution source de l'image. */
+    /* ratio carte à jouer 5:7 : largeur pilotée par clamp, hauteur en `auto` +
+       `aspect-ratio` plutôt qu'un 2ᵉ clamp identique (qui redonnerait un carré, faux
+       pour cette forme de carte). */
+    .bascule-joker-icon { width: clamp(4.2rem, 16.8vw, 9rem); height: auto; aspect-ratio: 5 / 7; display: block; object-fit: contain; }
     /* Variante compacte pour le joker "Tarif moyen" (11/09/2026) — carte secondaire,
        hors de la grille de stats, pas besoin d'une icône aussi grande que le joker
        principal. */
     .bascule-joker-icon--sm { width: clamp(2.6rem, 7vw, 4rem); height: auto; }
+    /* Plafond resserré en plein écran/mode présentation (11/09/2026) : le
+       `transform:scale()` du mode présentation (voir PRES_FORMATS plus bas dans le JS)
+       agrandit tout au-delà de ce que permet ce clamp seul — sans ce resserrement,
+       une image 512×512 dépasserait sa résolution native et pixelliserait sur grand
+       écran. Valeur "moyenne" choisie par Cédric plutôt que la taille maximale
+       précédente (14,3rem). */
+    :fullscreen .bascule-joker-icon { width: clamp(3.2rem, 6vw, 6rem); }
     /* Réglages miroir (répartition/activité/part membres-extrémités) sous le graphe
        "Tarif moyen" (11/09/2026, demande de Cédric) — voir mirrorField() dans le JS. */
     .bascule-ftmoy-controls { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -876,50 +886,14 @@
             <div class="bascule-stat-joker" id="boJokerCard">
               <div class="bascule-joker-flip" id="boJokerFlip">
                 <button type="button" class="bascule-joker-face bascule-joker-front" id="boJokerFrontBtn" aria-expanded="false" aria-label="Et si l'O-scan attirait plus d'activité MSK ? Cliquer pour essayer.">
-                  <!-- Carte joker en vectoriel, redessinée à la main le 11/09/2026 pour
-                       ressembler à la carte de référence envoyée par Cédric ("elle a les
-                       bonnes couleurs" — corne du chapeau orange en haut/rouge à
-                       gauche/bleue à droite, col violet au centre/rouge sur les côtés,
-                       coins de carte "J"/"r"). Remplace un essai Twemoji trop générique
-                       (pas assez fidèle à l'image donnée) et, avant lui, une couronne
-                       dessinée à la main ("le chapeau", retirée). Reste net à n'importe
-                       quelle taille (plein écran compris) : tracé 100% vectoriel, jamais
-                       un émoji de police (voir skill ced4scale-simulateur-web, "Icône
-                       qui doit rester nette à n'importe quelle taille"). -->
-                  <svg class="bascule-joker-icon" viewBox="0 0 100 140" aria-hidden="true" focusable="false">
-                    <defs>
-                      <linearGradient id="bjCapOrange" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFCA5C"/><stop offset="100%" stop-color="#FB8C00"/></linearGradient>
-                      <linearGradient id="bjCapRed" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0%" stop-color="#F06767"/><stop offset="100%" stop-color="#D32F2F"/></linearGradient>
-                      <linearGradient id="bjCapBlue" x1="0.8" y1="0" x2="0.2" y2="1"><stop offset="0%" stop-color="#5CC7F7"/><stop offset="100%" stop-color="#1976D2"/></linearGradient>
-                      <linearGradient id="bjCollarPurple" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A257D6"/><stop offset="100%" stop-color="#6A1B9A"/></linearGradient>
-                      <linearGradient id="bjCollarRed" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#EF5350"/><stop offset="100%" stop-color="#C62828"/></linearGradient>
-                    </defs>
-                    <rect x="3" y="3" width="94" height="134" rx="11" fill="#F4F5F6" stroke="#DADDE0" stroke-width="1.5"/>
-                    <text x="11" y="24" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2b2b33">J</text>
-                    <text x="89" y="124" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2b2b33" text-anchor="end">r</text>
-                    <path d="M50,80 C46,82 33,86 28,97 C25,104 30,109 35,104 C40,98 47,87 50,80 Z" fill="url(#bjCollarRed)"/>
-                    <path d="M50,80 C54,82 67,86 72,97 C75,104 70,109 65,104 C60,98 53,87 50,80 Z" fill="url(#bjCollarRed)"/>
-                    <path d="M50,81 C46,84 42,94 42,106 C42,113 58,113 58,106 C58,94 54,84 50,81 Z" fill="url(#bjCollarPurple)"/>
-                    <circle cx="29" cy="100" r="3.6" fill="#B71C1C"/>
-                    <circle cx="71" cy="100" r="3.6" fill="#B71C1C"/>
-                    <circle cx="50" cy="110" r="3.6" fill="#4A148C"/>
-                    <path d="M50,58 C48,54 38,50 30,44 C22,38 17,29 22,25 C27,21 33,28 37,36 C43,44 48,52 50,58 Z" fill="url(#bjCapRed)"/>
-                    <circle cx="20" cy="26" r="5" fill="#E53935"/>
-                    <path d="M50,58 C52,54 62,50 70,44 C78,38 83,29 78,25 C73,21 67,28 63,36 C57,44 52,52 50,58 Z" fill="url(#bjCapBlue)"/>
-                    <circle cx="80" cy="26" r="5" fill="#1E88E5"/>
-                    <path d="M50,58 C47,52 44,42 44,30 C44,20 48,14 50,14 C52,14 56,20 56,30 C56,42 53,52 50,58 Z" fill="url(#bjCapOrange)"/>
-                    <circle cx="50" cy="13" r="5.2" fill="#FFA726"/>
-                    <ellipse cx="50" cy="67" rx="16" ry="15" fill="#FDFDFD" stroke="#E3E3E3" stroke-width="0.6"/>
-                    <path d="M40,60.5 q3.5,-3 7,0" stroke="#4E342E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-                    <path d="M53,60.5 q3.5,-3 7,0" stroke="#4E342E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-                    <ellipse cx="43.5" cy="66" rx="2.4" ry="3" fill="#4E342E"/>
-                    <ellipse cx="56.5" cy="66" rx="2.4" ry="3" fill="#4E342E"/>
-                    <circle cx="37.5" cy="73" r="2.7" fill="#F48FB1" opacity="0.75"/>
-                    <circle cx="62.5" cy="73" r="2.7" fill="#F48FB1" opacity="0.75"/>
-                    <ellipse cx="50" cy="71" rx="2.3" ry="1.7" fill="#AFAFAF"/>
-                    <path d="M40.5,76 q9.5,8.5 19,0 q-9.5,6.5 -19,0 Z" fill="#C62828"/>
-                    <path d="M42.5,76.5 q7.5,4.8 15,0" stroke="#8a1c1c" stroke-width="0.6" fill="none"/>
-                  </svg>
+                  <!-- Carte joker : image fournie par Cédric (remplace le SVG dessiné à
+                       la main le 11/09/2026 — demande explicite du 11/09/2026 malgré le
+                       risque de flou en grand format, voir memory/site-web/decisions.md).
+                       Taille plafonnée volontairement à un agrandissement moyen
+                       (.bascule-joker-icon) pour limiter la pixellisation en plein écran/
+                       mode présentation, où le reste de la mise en page peut grossir
+                       beaucoup plus. -->
+                  <img class="bascule-joker-icon" src="assets/joker.png" alt="" aria-hidden="true">
                 </button>
                 <div class="bascule-joker-face bascule-joker-back">
                   <button type="button" class="bascule-joker-retour" id="boJokerBackBtn" aria-label="Retourner la carte">↩</button>
@@ -1156,45 +1130,9 @@
                   <div class="bascule-stat-joker" id="boFtMoyJokerCard">
                     <div class="bascule-joker-flip" id="boFtMoyJokerFlip">
                       <button type="button" class="bascule-joker-face bascule-joker-front" id="boFtMoyJokerFrontBtn" aria-expanded="false" aria-label="Et si on comblait la réserve d'activité disponible sur l'O-scan ? Effet sur le tarif moyen. Cliquer pour essayer.">
-                        <!-- Même carte joker vectorielle que le joker principal — voir
-                             son commentaire plus haut. Ids de dégradé suffixés "2" :
-                             un id SVG doit rester unique sur toute la PAGE, pas
-                             seulement dans son propre <svg> (sinon le navigateur peut
-                             résoudre `url(#...)` vers le mauvais dégradé). -->
-                        <svg class="bascule-joker-icon bascule-joker-icon--sm" viewBox="0 0 100 140" aria-hidden="true" focusable="false">
-                          <defs>
-                            <linearGradient id="bjCapOrange2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#FFCA5C"/><stop offset="100%" stop-color="#FB8C00"/></linearGradient>
-                            <linearGradient id="bjCapRed2" x1="0.2" y1="0" x2="0.8" y2="1"><stop offset="0%" stop-color="#F06767"/><stop offset="100%" stop-color="#D32F2F"/></linearGradient>
-                            <linearGradient id="bjCapBlue2" x1="0.8" y1="0" x2="0.2" y2="1"><stop offset="0%" stop-color="#5CC7F7"/><stop offset="100%" stop-color="#1976D2"/></linearGradient>
-                            <linearGradient id="bjCollarPurple2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#A257D6"/><stop offset="100%" stop-color="#6A1B9A"/></linearGradient>
-                            <linearGradient id="bjCollarRed2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#EF5350"/><stop offset="100%" stop-color="#C62828"/></linearGradient>
-                          </defs>
-                          <rect x="3" y="3" width="94" height="134" rx="11" fill="#F4F5F6" stroke="#DADDE0" stroke-width="1.5"/>
-                          <text x="11" y="24" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2b2b33">J</text>
-                          <text x="89" y="124" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#2b2b33" text-anchor="end">r</text>
-                          <path d="M50,80 C46,82 33,86 28,97 C25,104 30,109 35,104 C40,98 47,87 50,80 Z" fill="url(#bjCollarRed2)"/>
-                          <path d="M50,80 C54,82 67,86 72,97 C75,104 70,109 65,104 C60,98 53,87 50,80 Z" fill="url(#bjCollarRed2)"/>
-                          <path d="M50,81 C46,84 42,94 42,106 C42,113 58,113 58,106 C58,94 54,84 50,81 Z" fill="url(#bjCollarPurple2)"/>
-                          <circle cx="29" cy="100" r="3.6" fill="#B71C1C"/>
-                          <circle cx="71" cy="100" r="3.6" fill="#B71C1C"/>
-                          <circle cx="50" cy="110" r="3.6" fill="#4A148C"/>
-                          <path d="M50,58 C48,54 38,50 30,44 C22,38 17,29 22,25 C27,21 33,28 37,36 C43,44 48,52 50,58 Z" fill="url(#bjCapRed2)"/>
-                          <circle cx="20" cy="26" r="5" fill="#E53935"/>
-                          <path d="M50,58 C52,54 62,50 70,44 C78,38 83,29 78,25 C73,21 67,28 63,36 C57,44 52,52 50,58 Z" fill="url(#bjCapBlue2)"/>
-                          <circle cx="80" cy="26" r="5" fill="#1E88E5"/>
-                          <path d="M50,58 C47,52 44,42 44,30 C44,20 48,14 50,14 C52,14 56,20 56,30 C56,42 53,52 50,58 Z" fill="url(#bjCapOrange2)"/>
-                          <circle cx="50" cy="13" r="5.2" fill="#FFA726"/>
-                          <ellipse cx="50" cy="67" rx="16" ry="15" fill="#FDFDFD" stroke="#E3E3E3" stroke-width="0.6"/>
-                          <path d="M40,60.5 q3.5,-3 7,0" stroke="#4E342E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-                          <path d="M53,60.5 q3.5,-3 7,0" stroke="#4E342E" stroke-width="1.4" fill="none" stroke-linecap="round"/>
-                          <ellipse cx="43.5" cy="66" rx="2.4" ry="3" fill="#4E342E"/>
-                          <ellipse cx="56.5" cy="66" rx="2.4" ry="3" fill="#4E342E"/>
-                          <circle cx="37.5" cy="73" r="2.7" fill="#F48FB1" opacity="0.75"/>
-                          <circle cx="62.5" cy="73" r="2.7" fill="#F48FB1" opacity="0.75"/>
-                          <ellipse cx="50" cy="71" rx="2.3" ry="1.7" fill="#AFAFAF"/>
-                          <path d="M40.5,76 q9.5,8.5 19,0 q-9.5,6.5 -19,0 Z" fill="#C62828"/>
-                          <path d="M42.5,76.5 q7.5,4.8 15,0" stroke="#8a1c1c" stroke-width="0.6" fill="none"/>
-                        </svg>
+                        <!-- Même carte joker (image) que le joker principal — voir
+                             son commentaire plus haut. -->
+                        <img class="bascule-joker-icon bascule-joker-icon--sm" src="assets/joker.png" alt="" aria-hidden="true">
                       </button>
                       <div class="bascule-joker-face bascule-joker-back">
                         <button type="button" class="bascule-joker-retour" id="boFtMoyJokerBackBtn" aria-label="Retourner la carte">↩</button>
