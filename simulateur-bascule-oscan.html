@@ -548,6 +548,18 @@
     }
     .bascule-info-pop[hidden] { display: none; }
     .bascule-info-pop--up { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+    /* Légende "Tarif moyen" en tableau plutôt qu'en paragraphe (18/09/2026, demande de
+       Cédric) : plus large que le popover texte par défaut (340px) pour qu'une phrase
+       entière tienne dans la 2ᵉ colonne sans être trop écrasée. */
+    .bascule-info-pop--table { max-width: min(calc(100vw - 4.5rem), 420px); }
+    /* `table-layout:fixed` + largeur de colonne 1 en % (pas `white-space:nowrap`,
+       qui forçait le tableau à déborder sur mobile étroit — repéré le 18/09/2026) :
+       la colonne "élément" (Trait plein, Pointillé serré...) peut revenir à la
+       ligne, jamais le tableau lui-même. */
+    .bascule-info-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .bascule-info-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    .bascule-info-table tr:last-child td { border-bottom: none; }
+    .bascule-info-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
     /* Boîte à outils du graphe "Tarif moyen" (11/09/2026) : même popover que la bulle
        💡, contenu interactif (cases à cocher) au lieu d'un texte fixe. */
     .bascule-outils-titre { font-weight: 700; margin-bottom: .4rem; white-space: nowrap; }
@@ -1053,7 +1065,17 @@
                 <summary>Tarif moyen du forfait technique selon le volume
                   <span class="bascule-info-wrap">
                     <button type="button" class="bascule-info-btn" id="boFtMoyInfoBtn" aria-expanded="false" aria-controls="boFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
-                    <div class="bascule-info-pop" id="boFtMoyInfoPop" hidden>Traits pleins : tarif MOYEN réellement obtenu compte tenu du barème dégressif, pas le tarif de la seule tranche où tombe le volume. Traits fins en pointillé serré ("en marches") : tarif RÉEL de la tranche où tombe ce volume précis, sans moyenner — un palier par tranche, une chute nette à chaque seuil. Les 2 machines se partagent le même total d'examens : la courbe O-scan part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A. Le repère vertical suit la répartition actuelle du curseur ci-dessus. Utilisez 🧰 pour choisir quoi afficher.</div>
+                    <div class="bascule-info-pop bascule-info-pop--table" id="boFtMoyInfoPop" hidden>
+                      <table class="bascule-info-table">
+                        <tbody>
+                          <tr><td>Trait plein</td><td>Tarif <strong>MOYEN</strong> réellement obtenu compte tenu du barème dégressif — pas le tarif de la seule tranche où tombe le volume.</td></tr>
+                          <tr><td>Pointillé serré ("en marches")</td><td>Tarif <strong>RÉEL</strong> de la tranche où tombe ce volume précis, sans moyenner — un palier par tranche, une chute nette à chaque seuil.</td></tr>
+                          <tr><td>Courbe O-scan</td><td>Part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A — les 2 machines se partagent le même total d'examens.</td></tr>
+                          <tr><td>Repère vertical</td><td>Suit la répartition actuelle du curseur ci-dessus.</td></tr>
+                          <tr><td>🧰</td><td>Pour choisir quoi afficher.</td></tr>
+                        </tbody>
+                      </table>
+                    </div>
                   </span>
                   <!-- Boîte à outils (11/09/2026, demande de Cédric) : choisir quelles
                        courbes/lignes de seuil afficher sur ce graphe précis, sans rien
