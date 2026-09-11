@@ -195,6 +195,21 @@
        de "Tarif moyen", donc décalées par rapport au reste du barème. Le cadre
        #boCardBareme reste D'UN SEUL BLOC, comme les autres cadres de ce mode. */
     .chart-card-slide-canvas--split #boCardBareme { break-inside: avoid; }
+    /* Piège Chrome (11/09/2026, suite) : `#boCardBareme` a grossi (lignes toujours
+       présentes mais `visibility:hidden`, voir dessinerBaremeMini() — pour que la
+       barre à curseur en dessous ne bouge plus selon la case/le joker). Passé un
+       certain seuil de hauteur, Chrome n'arrive plus à équilibrer les 2 colonnes du
+       plein écran correctement : au lieu de rester dans la 1ʳᵉ colonne (moitié de
+       la largeur), `#boCardBareme` s'étale sur la largeur des 2 colonnes réunies,
+       poussant "Tarif moyen" hors de l'écran — un vrai bug de rendu Chrome (ni
+       `height`, ni `max-height`, même en `!important` inline via JS, posés sur le
+       canvas englobant n'ont d'effet mesurable sur ce comportement, vérifié). Fixer
+       une hauteur MAX directement sur `#boCardBareme` (pas le canvas) évite le
+       problème à la racine : la carte ne peut plus jamais dépasser cette hauteur
+       (mesurée : la carte fait ~520px de haut sans plein écran), donc jamais
+       assez "trop haute" pour perturber l'équilibrage. Défilement interne
+       (overflow-y:auto) si un jour son contenu dépassait quand même. */
+    .chart-card-slide-canvas--split #boCardBareme { max-height: 560px; overflow-y: auto; }
     /* Espace augmenté entre les grands blocs de "Répartition de l'activité"
        (11/09/2026, demande de Cédric — les blocs se touchaient de trop près) : marge
        basse sur chaque groupe plutôt qu'un espace ad hoc par élément. */
@@ -366,19 +381,14 @@
        un simple `min-height` sur la carte ne suffit pas (hauteur toujours "auto" au
        sens CSS). `align-self:flex-start` posé SEULEMENT sur ce bloc Mémoire (juste en
        dessous) l'empêche de s'étirer inutilement, sans toucher au joker. */
-    /* `flex-basis:100%` (11/09/2026, demande de Cédric : "Comparer" et les 3
-       "Mémoire" sur une seule ligne) — à `flex:1 1 260px`, ce bloc de 4 boutons
-       (chacun avec son icône cadenas, ~450px de large nécessaires) se partageait la
-       largeur À ÉGALITÉ avec le joker (lui aussi `flex:1 1 260px`, ~260-270px
-       chacun), retombait donc sur 2-3 lignes faute de place. Un essai avec une base
-       plus large (460px) a débordé de la colonne en plein écran "2 colonnes" (le
-       flex-shrink par défaut ne suffit pas à contraindre un enfant multi-colonnes à
-       la largeur de SA colonne). `flex-basis:100%` force ce bloc sur SA PROPRE
-       ligne, sous le joker plutôt qu'à côté (grâce à `flex-wrap` sur
-       `.bascule-ftmoy-joker-wrap`, inchangé) — il y récupère alors toute la largeur
-       disponible, largement assez pour les 4 boutons sur une seule ligne, sans
-       jamais déborder. */
-    .bascule-ftmoy-joker-wrap .bascule-btn-row { flex: 1 1 100%; max-width: 100%; margin-top: 0; padding-top: 0; border-top: none; align-self: flex-start; }
+    /* Revenu à `flex:1 1 260px` (11/09/2026, demande de Cédric : ce bloc à DROITE
+       du joker) — un essai précédent en `flex-basis:100%` le forçait sur sa propre
+       ligne SOUS le joker (pour caser les 4 boutons sur une seule ligne, voir
+       memory/site-web/decisions.md) ; Cédric préfère finalement le revoir à côté du
+       joker, quitte à ce que les 4 boutons se répartissent sur 2 lignes internes
+       faute de place (comportement par défaut de `.bascule-btn-row`, jamais
+       remplacé). */
+    .bascule-ftmoy-joker-wrap .bascule-btn-row { flex: 1 1 260px; margin-top: 0; padding-top: 0; border-top: none; align-self: flex-start; }
     /* Alignement joker/boutons (11/09/2026, demande de Cédric) : le cadre du joker et
        celui du bloc Comparer/Mémoires ont déjà le même haut (flex `align-items:
        stretch` par défaut sur `.bascule-ftmoy-joker-wrap`, jamais touché — voir le
