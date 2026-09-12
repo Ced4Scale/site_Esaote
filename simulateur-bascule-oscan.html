@@ -487,7 +487,13 @@
        la fonction JS pose presque toujours une valeur plus grande. Historique
        des valeurs fixes essayées sans jamais convenir partout : 400 → 470 →
        540 → 520 → 515px, avant le passage au calcul dynamique. */
-    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 270px; }
+    /* min-height relevé le 12/09/2026 (270→420) pour l'image doublée du joker
+       principal (#boJokerCard) — les 2 faces sont `position:absolute` (voir plus
+       bas), donc ne poussent JAMAIS la hauteur de ce conteneur par leur propre
+       contenu ; sans ce relevé, la carte fermée aurait rogné la nouvelle image plus
+       grande. `#boFtMoyJokerCard` garde son propre `min-height:190px` (règle par id,
+       plus spécifique, voir plus bas) — pas concerné par ce changement. */
+    .bascule-stat-joker { perspective: 1200px; display: flex; min-height: 420px; }
     .bascule-stat-joker.is-flipped { position: absolute; inset: 0; z-index: 5; }
     .bascule-joker-flip {
       position: relative; width: 100%; height: 100%; min-height: 100%;
@@ -522,7 +528,10 @@
     /* ratio carte à jouer 5:7 : largeur pilotée par clamp, hauteur en `auto` +
        `aspect-ratio` plutôt qu'un 2ᵉ clamp identique (qui redonnerait un carré, faux
        pour cette forme de carte). */
-    .bascule-joker-icon { width: clamp(4.2rem, 16.8vw, 9rem); height: auto; aspect-ratio: 5 / 7; display: block; object-fit: contain; }
+    /* Doublée le 12/09/2026 (demande explicite de Cédric, malgré le risque de
+       pixellisation déjà accepté à la création de cette carte — voir plus haut) :
+       chaque valeur du clamp × 2 par rapport à la taille "moyenne" précédente. */
+    .bascule-joker-icon { width: clamp(8.4rem, 33.6vw, 18rem); height: auto; aspect-ratio: 5 / 7; display: block; object-fit: contain; }
     /* Variante compacte pour le joker "Tarif moyen" (11/09/2026) — carte secondaire,
        hors de la grille de stats, pas besoin d'une icône aussi grande que le joker
        principal. */
@@ -533,7 +542,7 @@
        une image 512×512 dépasserait sa résolution native et pixelliserait sur grand
        écran. Valeur "moyenne" choisie par Cédric plutôt que la taille maximale
        précédente (14,3rem). */
-    :fullscreen .bascule-joker-icon { width: clamp(3.2rem, 6vw, 6rem); }
+    :fullscreen .bascule-joker-icon { width: clamp(6.4rem, 12vw, 12rem); }
     /* Réglages miroir (répartition/activité/part membres-extrémités) sous le graphe
        "Tarif moyen" (11/09/2026, demande de Cédric) — voir mirrorField() dans le JS. */
     .bascule-ftmoy-controls { margin-top: 1.4rem; padding-top: 1rem; border-top: 1px solid var(--line); }
@@ -4926,7 +4935,12 @@
       // qu'en CSS seulement — une disposition sauvegardée avec l'ancienne mesure
       // (~47px) rejouerait encore un facteur d'échelle démesuré au moindre
       // redimensionnement tant qu'elle n'est pas invalidée.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v9";
+      // Re-bumpée "-v10" (12/09/2026, suite) : les cartes simples à fond (`.bascule-
+      // stat`/`.bascule-capnote` — "C.A. Total" etc.) ont maintenant un inner de
+      // taille FIXE (voir presFreeActiver) au lieu de `100%` — une disposition
+      // sauvegardée avant ce correctif garderait l'ancien déséquilibre texte/fond au
+      // redimensionnement par coin tant qu'elle n'est pas invalidée.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v10";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
@@ -5104,12 +5118,31 @@
       function presFreeRognerBloc(el, canvas, id) {
         var canvasRect = canvas.getBoundingClientRect();
         var scale = (el._presState && el._presState.scale) || 1;
-        var secours = { w: parseFloat(el.dataset.presNaturalW), h: parseFloat(el.dataset.presNaturalH) };
-        var mesure = presFreeMesurerContenu(el, secours);
-        el.dataset.presNaturalW = mesure.w;
-        el.dataset.presNaturalH = mesure.h;
-        var wPct = mesure.w * scale / canvasRect.width * 100;
-        var hPct = mesure.h * scale / canvasRect.height * 100;
+        // Carte simple à fond (voir presFreeActiver, "Padding/bordure") : remesurer
+        // directement l'INNER (même réflexe qu'à l'activation), jamais reconstituer
+        // sa taille depuis celle de `el` — même motif que le reste du mécanisme
+        // "carte simple". Tout autre bloc garde l'ancien comportement inchangé.
+        var estCarteSimple = el.classList.contains("bascule-stat") || el.classList.contains("bascule-capnote");
+        var inner = el.querySelector(":scope > .pres-block__inner");
+        var wPct, hPct;
+        if (estCarteSimple && inner) {
+          var padW = parseFloat(el.dataset.presPadW) || 0;
+          var padH = parseFloat(el.dataset.presPadH) || 0;
+          var mesureInner = presFreeMesurerContenu(inner);
+          inner.style.width = mesureInner.w + "px";
+          inner.style.height = mesureInner.h + "px";
+          el.dataset.presNaturalW = mesureInner.w + padW;
+          el.dataset.presNaturalH = mesureInner.h + padH;
+          wPct = (mesureInner.w * scale + padW) / canvasRect.width * 100;
+          hPct = (mesureInner.h * scale + padH) / canvasRect.height * 100;
+        } else {
+          var secours = { w: parseFloat(el.dataset.presNaturalW), h: parseFloat(el.dataset.presNaturalH) };
+          var mesure = presFreeMesurerContenu(el, secours);
+          el.dataset.presNaturalW = mesure.w;
+          el.dataset.presNaturalH = mesure.h;
+          wPct = mesure.w * scale / canvasRect.width * 100;
+          hPct = mesure.h * scale / canvasRect.height * 100;
+        }
         el.style.width = wPct + "%"; el.style.height = hPct + "%";
         var state = el._presState || {};
         state.wPct = wPct; state.hPct = hPct;
@@ -5160,6 +5193,16 @@
             var startTopPct = parseFloat(el.style.top) || 0;
             var naturalW = parseFloat(el.dataset.presNaturalW) || (startWPct / 100 * canvasRect.width);
             var naturalH = parseFloat(el.dataset.presNaturalH) || (startHPct / 100 * canvasRect.height);
+            // Carte simple à fond (voir presFreeActiver, "Padding/bordure") : le
+            // padding ne doit jamais être multiplié par `scale` (fixe, contrairement
+            // au contenu) — sans quoi la boîte et le texte agrandi ne grandissent plus
+            // au même rythme. `padW/padH` valent 0 pour tout autre bloc (curseur,
+            // joker, rangée de boutons...), ce qui redonne exactement l'ancienne
+            // formule simple pour eux.
+            var padW = parseFloat(el.dataset.presPadW) || 0;
+            var padH = parseFloat(el.dataset.presPadH) || 0;
+            var contentNaturalW = Math.max(1, naturalW - padW);
+            var contentNaturalH = Math.max(1, naturalH - padH);
             var startScale = (el._presState && el._presState.scale) || 1;
             var isCorner = pos.length === 2;
             function onMove(ev) {
@@ -5168,10 +5211,10 @@
               if (isCorner) {
                 var signX = pos.indexOf("e") > -1 ? 1 : -1;
                 var signY = pos.indexOf("s") > -1 ? 1 : -1;
-                var startWpx = naturalW * startScale, startHpx = naturalH * startScale;
+                var startWpx = contentNaturalW * startScale + padW, startHpx = contentNaturalH * startScale + padH;
                 var deltaPx = (dx * signX + dy * signY) / 2;
-                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx) / naturalW));
-                var newWpx = naturalW * scale, newHpx = naturalH * scale;
+                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx - padW) / contentNaturalW));
+                var newWpx = contentNaturalW * scale + padW, newHpx = contentNaturalH * scale + padH;
                 wPct = newWpx / canvasRect.width * 100;
                 hPct = newHpx / canvasRect.height * 100;
                 var startLeftPx = startLeftPct / 100 * canvasRect.width;
@@ -5298,12 +5341,28 @@
           } else if (h.el.querySelector(".bo-partext-track-wrap")) {
             mesure.w = Math.max(mesure.w, 260);
           }
+          // Padding/bordure du bloc (12/09/2026, signalé par Cédric : "le fond gris de
+          // C.A. Total ne suit pas le texte") — mesurées seulement pour les cartes
+          // SIMPLES à fond (`.bascule-stat`/`.bascule-capnote` — étiquette + valeur,
+          // pas de rangée flex qui pourrait se replier différemment). Explicitement
+          // JAMAIS pour `.bascule-stat-joker` (carte flip, a son propre mécanisme de
+          // hauteur dynamique) ni `.bascule-btn-row` (rangée flex avec retour à la
+          // ligne, seul cas qui avait cassé la dernière fois que cette mesure "inner
+          // fixé en pixels" a été tentée plus largement — voir [[site-web/pieges]]).
+          var estCarteSimple = h.el.classList.contains("bascule-stat") || h.el.classList.contains("bascule-capnote");
+          var padW = 0, padH = 0;
+          if (estCarteSimple) {
+            var csEl = getComputedStyle(h.el);
+            padW = parseFloat(csEl.paddingLeft) + parseFloat(csEl.paddingRight) + parseFloat(csEl.borderLeftWidth) + parseFloat(csEl.borderRightWidth);
+            padH = parseFloat(csEl.paddingTop) + parseFloat(csEl.paddingBottom) + parseFloat(csEl.borderTopWidth) + parseFloat(csEl.borderBottomWidth);
+          }
           naturelles[h.id] = {
             xPct: 12 / canvasRect.width * 100,
             yPct: yOffsetPx / canvasRect.height * 100,
             wPct: mesure.w / canvasRect.width * 100,
             hPct: mesure.h / canvasRect.height * 100,
-            naturalW: mesure.w, naturalH: mesure.h
+            naturalW: mesure.w, naturalH: mesure.h,
+            estCarteSimple: estCarteSimple, padW: padW, padH: padH
           };
           yOffsetPx += mesure.h + 16;
         });
@@ -5329,6 +5388,24 @@
           el.classList.add("pres-block");
           el.dataset.presNaturalW = nat.naturalW;
           el.dataset.presNaturalH = nat.naturalH;
+          // Carte simple à fond (voir commentaire "Padding/bordure" en 1ʳᵉ passe) :
+          // taille de l'inner FIXÉE en pixels plutôt que laissée à `width/height:100%`
+          // (comportement par défaut, gardé pour tous les AUTRES blocs) — sinon
+          // appliquer le facteur d'échelle au redimensionnement par coin (onMove plus
+          // bas) sur un inner DÉJÀ scale-dépendant (100% d'un `el` qui grandit lui-même
+          // avec l'échelle) mettait le facteur au carré, le texte débordant largement
+          // du fond. Largeur mesurée directement sur l'inner une fois le contenu
+          // réellement à sa place, puis hauteur RE-mesurée à cette largeur (jamais
+          // supposer qu'elles coïncident avec la mesure d'avant emballage — piège déjà
+          // rencontré) ; enregistrées aussi sur `nat.padW/padH` pour le calcul
+          // d'échelle du redimensionnement (voir onMove/presFreeRognerBloc plus bas).
+          if (nat.estCarteSimple) {
+            el.dataset.presPadW = nat.padW;
+            el.dataset.presPadH = nat.padH;
+            var mesureInner = presFreeMesurerContenu(inner);
+            inner.style.width = mesureInner.w + "px";
+            inner.style.height = mesureInner.h + "px";
+          }
           var handle = document.createElement("div");
           handle.className = "pres-block__handle";
           handle.title = "Glisser pour déplacer ce bloc";
@@ -5376,6 +5453,7 @@
           el.classList.remove("pres-block", "is-dragging", "is-resizing", "is-locked");
           el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
           delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
+          delete el.dataset.presPadW; delete el.dataset.presPadH;
           Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize, :scope > .pres-block__lock-badge")).forEach(function (h2) { h2.remove(); });
           var inner = el.querySelector(":scope > .pres-block__inner");
           if (inner) {
