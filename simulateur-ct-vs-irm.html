@@ -832,6 +832,108 @@
       --cv-info-bg: #fbe0f5; --cv-info-bg-hover: #f6c4ea; --cv-info-bd: #e8a0d9;
       --cv-info-fg: #7a1d63; --cv-info-pop-bg: #fff0fa; --cv-info-pop-fg: #5c1548;
     }
+
+    /* Disposition libre en plein écran (propagé depuis simulateur-bascule-oscan.html /
+       simulateur-recettes.html — voir skill ced4scale-simulateur-web, section "Disposition
+       libre en plein écran : blocs déplaçables, redimensionnables, verrouillables", pour
+       l'historique complet des correctifs déjà payés une fois sur bascule-oscan). CSS repris
+       À L'IDENTIQUE (mêmes classes génériques `.pres-block*`/`.pres-ctx-menu*`) —
+       `:fullscreen`, `.presentation-toolbar*`, `.chart-card-slide-canvas*` de base vivent déjà
+       dans styles.css, partagés par toutes les pages, pas dupliqués ici. */
+    .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
+    .chart-card-slide-canvas--free > .pres-block {
+      position: absolute; box-sizing: border-box; z-index: 1; margin: 0 !important;
+      border: 1px dashed transparent; border-radius: 4px;
+    }
+    /* PAS de `overflow:hidden` ici (piège déjà payé sur bascule-oscan, voir skill) :
+       masquerait des données réelles dès qu'un bloc est plus étroit que son contenu —
+       une barre de défilement disgracieuse (`.pres-block__inner`, overflow:auto)
+       reste largement préférable à une donnée invisible. */
+    .chart-card-slide-canvas--free > .pres-block:hover { z-index: 10; }
+    .chart-card-slide-canvas--free:not(.chart-card-slide-canvas--locked) > .pres-block:not(.is-locked):hover,
+    .chart-card-slide-canvas--free > .pres-block.is-dragging,
+    .chart-card-slide-canvas--free > .pres-block.is-resizing { border-color: var(--red); }
+    .pres-block__inner { width: 100%; height: 100%; overflow: auto; transform-origin: top left; }
+    /* Curseurs "piste absolue, largeur 100%" (cv-activite-track-wrap / cv-horaire-track-wrap /
+       cv-ftmoy-track-wrap) : aucune largeur intrinsèque propre, s'effondrent en bloc libre
+       indépendant — piège déjà payé sur bascule-oscan (mémoire, 9ᵉ/10ᵉ piège). Plancher posé
+       sur le `.pres-block` EXTÉRIEUR, jamais sur le curseur seul. */
+    .pres-block:has(.cv-activite-track-wrap),
+    .pres-block:has(.cv-horaire-track-wrap),
+    .pres-block:has(.cv-ftmoy-track-wrap) { min-width: 300px; }
+    /* Poignées TOUJOURS à l'INTÉRIEUR de la boîte (jamais de décalage négatif) — motif
+       bascule-oscan : déplacement (⠿) en onglet centré en haut, "rogner" (⇲) symétrique
+       en bas, 4 coins + 4 bords pour le redimensionnement. */
+    .pres-block__handle {
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 30px; height: 16px; z-index: 7;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--red); color: #fff; border-radius: 0 0 8px 8px;
+      cursor: move; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
+      pointer-events: none;
+    }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__handle,
+    .pres-block.is-dragging .pres-block__handle { opacity: 1; pointer-events: auto; }
+    .pres-block__crop {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 26px; height: 16px; z-index: 7;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; color: var(--red); border: 1px solid var(--red); border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
+      pointer-events: none;
+    }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__crop { opacity: 1; pointer-events: auto; }
+    /* `pointer-events:none` par défaut sur chaque poignée (piège déjà payé sur
+       bascule-oscan) : `opacity:0` seul ne retire PAS un élément du hit-testing, un
+       contrôle du contenu situé géométriquement sous une poignée invisible ne
+       recevrait alors jamais le clic. */
+    .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; pointer-events: none; }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__resize,
+    .pres-block.is-resizing .pres-block__resize { opacity: 1; pointer-events: auto; }
+    .pres-block__resize--corner { width: 13px; height: 13px; background: var(--red); border-radius: 50%; }
+    .pres-block__resize--nw { top: 0; left: 0; cursor: nwse-resize; }
+    .pres-block__resize--ne { top: 0; right: 0; cursor: nesw-resize; }
+    .pres-block__resize--sw { bottom: 0; left: 0; cursor: nesw-resize; }
+    .pres-block__resize--se { bottom: 0; right: 0; cursor: nwse-resize; }
+    .pres-block__resize--edge { background: transparent; }
+    .pres-block__resize--n { top: 0; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+    .pres-block__resize--s { bottom: 0; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+    .pres-block__resize--w { left: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+    .pres-block__resize--e { right: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+    /* Verrouillage à 2 niveaux (par bloc + global, motif bascule-oscan) — poignées
+       cachées ET rendues inactives (pointer-events:none, indispensable), petit 🔒 au
+       survol pour rappeler qu'un bloc est figé. */
+    .pres-block.is-locked .pres-block__handle,
+    .pres-block.is-locked .pres-block__crop,
+    .pres-block.is-locked .pres-block__resize,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__handle,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__crop,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__resize {
+      opacity: 0 !important; pointer-events: none !important;
+    }
+    .pres-block__lock-badge {
+      position: absolute; top: 4px; left: 4px; z-index: 5; color: var(--red);
+      opacity: 0; transition: opacity .15s; pointer-events: none;
+    }
+    .pres-block.is-locked:hover .pres-block__lock-badge { opacity: .9; }
+    /* Menu contextuel "Figer/Libérer les dimensions" — un seul élément partagé
+       (#presCtxMenu), positionné en JS au clic droit. */
+    .pres-ctx-menu {
+      position: fixed; z-index: 999; background: #fff; border: 1px solid var(--line);
+      border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.2); padding: .3rem;
+    }
+    .pres-ctx-menu button {
+      display: block; width: 100%; text-align: left; padding: .5rem .9rem;
+      border: none; background: none; cursor: pointer; font-size: .85rem;
+      border-radius: 5px; white-space: nowrap; color: var(--ink); font-family: inherit;
+    }
+    .pres-ctx-menu button:hover { background: var(--wash); }
+    /* Réutilise les classes DÉJÀ stylées du cadenas de mémoire (.cv-lock-icon/
+       .cv-lock-shackle-fermee/-ouverte, voir plus haut) — motif "généraliser la classe
+       de bascule, jamais le balisage" du skill ced4scale-simulateur-web. */
+    .pres-lock-toggle.is-ouvert .cv-lock-shackle-fermee { display: none; }
+    .pres-lock-toggle.is-ouvert .cv-lock-shackle-ouverte { display: inline; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -839,6 +941,23 @@
   <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
 </head>
 <body class="tool-page">
+  <!-- Mode présentation (propagé depuis simulateur-bascule-oscan.html / simulateur-recettes.html —
+       voir skill ced4scale-simulateur-web) : barre d'outils UNIQUE, déplacée en JS dans le
+       cadre actuellement plein écran. -->
+  <div class="presentation-toolbar" id="presentationToolbar" hidden>
+    <span class="presentation-toolbar__handle" id="presToolbarHandle" title="Glisser pour déplacer la barre" aria-hidden="true">⠿</span>
+    <button type="button" data-format="auto" id="presFormatAuto" title="S'adapte à l'écran, sans format fixe">Automatique</button>
+    <button type="button" data-format="169" id="presFormat169" title="Format 16:9 (écran large)">16:9</button>
+    <button type="button" data-format="43" id="presFormat43" title="Format 4:3 (classique)">4:3</button>
+    <span class="presentation-toolbar__sep"></span>
+    <button type="button" id="presSplitToggle" aria-pressed="false" title="Si le contenu est trop long : défiler, ou diviser l'écran en 2 colonnes">Défilement</button>
+    <button type="button" id="presResetLayoutBtn" hidden title="Remet chaque bloc à sa position et sa taille d'origine">Réinitialiser la disposition</button>
+    <button type="button" id="presLockToggleBtn" hidden aria-pressed="false" title="Verrouille tous les blocs : plus aucun déplacement/redimensionnement possible dans la page">
+      <span id="presLockToggleIcon" aria-hidden="true"></span>
+      <span id="presLockToggleLabel">Déplacer les blocs</span>
+    </button>
+  </div>
+  <div class="pres-ctx-menu" id="presCtxMenu" hidden></div>
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
       <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
@@ -1169,7 +1288,7 @@
             <tbody id="cvSyntheseBody"></tbody>
           </table>
           </div>
-          <div class="cv-activite-slider">
+          <div class="cv-activite-slider" id="cvSyntheseActiviteBlock">
             <div class="cv-activite-track-wrap">
               <div class="cv-activite-track"><div class="cv-activite-fill" id="cvActiviteFill"></div></div>
               <input type="range" id="cvActiviteSlider" min="0" max="40" step="0.5" value="30" aria-label="Activité (patients)" />
@@ -1198,7 +1317,7 @@
                — testé et corrigé le 07/09/2026, la 1ʳᵉ version cassait "08:00 – 18:00" sur
                3 lignes au lieu de laisser la piste et la valeur se placer chacune sur sa
                propre ligne. -->
-          <div class="field cv-activite-slider" style="margin-top:.3rem; margin-bottom:0; flex-wrap:wrap">
+          <div class="field cv-activite-slider" id="cvSyntheseHoraireBlock" style="margin-top:.3rem; margin-bottom:0; flex-wrap:wrap">
             <div class="cv-horaire-range" id="cvHoraireMatinB" style="flex:1 1 160px; margin-top:0">
               <div class="cv-horaire-track-wrap">
                 <div class="cv-horaire-track">
@@ -1392,7 +1511,7 @@
             </button>
             Forfait technique - barème dégressif
           </summary>
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvSeuilsTableWrap">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvSeuilsTable">
             <thead>
               <tr>
@@ -1456,10 +1575,10 @@
                intellectuel n'a pas de barème dégressif), donc un simple décalage vertical
                des courbes, pas un recalcul de leur forme. Même classe `.cv-btn-ai` que le
                graphe des 2 barres plus bas (même couleur, même sens), ids distincts. -->
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvFtMoyChartWrap">
             <svg id="cvFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour l'IRM Esaote et le scanner"></svg>
           </div>
-          <div class="cv-ftmoy-slider">
+          <div class="cv-ftmoy-slider" id="cvFtMoySliderBlock">
             <div class="cv-ftmoy-slider-value" id="cvFtMoySliderLabel"></div>
             <div class="cv-ftmoy-track-wrap">
               <div class="cv-ftmoy-track"><div class="cv-ftmoy-fill" id="cvFtMoyFill"></div></div>
@@ -1484,7 +1603,7 @@
             <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon" id="cvBtnFtMoy5Ans" aria-pressed="false" data-tip="Recette totale sur 5 ans, au volume choisi sur le curseur.">5 ans</button>
             <button type="button" class="btn btn--sm btn--ghost cv-btn-horizon cv-tip-right" id="cvBtnFtMoy7Ans" aria-pressed="false" data-tip="Recette totale sur 7 ans, au volume choisi sur le curseur.">7 ans</button>
           </div>
-          <div class="cv-ftmoy-resultats">
+          <div class="cv-ftmoy-resultats" id="cvFtMoyResultatsBlock">
             <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="0">IRM Esaote</span><span class="cv-ftmoy-montant" id="cvFtMoyIrm"></span></div>
             <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span><span class="cv-ftmoy-montant" id="cvFtMoyCt"></span></div>
           </div>
@@ -1506,7 +1625,7 @@
           </span>
 
           <h4 style="margin:0 0 .5rem;font-size:.92rem">Équipements — valeurs utilisées dans le calcul</h4>
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvRecapEquipWrap">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvRecapEquipTable">
             <thead>
               <tr>
@@ -1520,7 +1639,7 @@
           </div>
 
           <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Forfait technique et acte intellectuel — valeurs calculées</h4>
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvRecapRecettesWrap">
             <table class="stats-table simulator__table simulator__table--compare2" id="cvRecapRecettesTable">
             <thead>
               <tr>
@@ -1534,12 +1653,12 @@
           </div>
 
           <h4 style="margin:1.2rem 0 .5rem;font-size:.92rem">Paramètres saisis avant de lancer la simulation</h4>
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvRecapParamsCommunsWrap">
             <table class="stats-table simulator__table" id="cvRecapParamsCommunsTable">
             <tbody id="cvRecapParamsCommunsBody"></tbody>
           </table>
           </div>
-          <div style="overflow-x:auto">
+          <div style="overflow-x:auto" id="cvRecapParamsWrap">
             <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem" id="cvRecapParamsTable">
             <thead>
               <tr>
@@ -4433,21 +4552,534 @@ var svg = document.getElementById("cvChart");
         if (e.key === "Escape") cvInfoPopsOuverts.forEach(function (f) { f(); });
       });
 
+      // Mode présentation (propagé depuis simulateur-bascule-oscan.html /
+      // simulateur-recettes.html — voir skill ced4scale-simulateur-web) : plein écran natif
+      // avec 3 formats (Automatique/16:9/4:3) + barre d'outils déplaçable, et disposition
+      // libre (blocs déplaçables/redimensionnables/verrouillables) sur les cartes qui ont un
+      // graphe/tableau — mécanisme identique à bascule-oscan/recettes, voir leur mémoire
+      // (site-web/simulateur-bascule-oscan.md et decisions.md/pieges.md) pour l'historique
+      // complet des correctifs déjà appliqués ici directement.
+      var PRES_FORMATS = { auto: null, "169": { w: 1280, h: 720 }, "43": { w: 1024, h: 768 } };
+      function presLire(cle, defaut) {
+        try { return localStorage.getItem(cle) || defaut; } catch (e) { return defaut; }
+      }
+      function presEcrire(cle, val) {
+        try { localStorage.setItem(cle, val); } catch (e) {}
+      }
+      var presFormatActuel = presLire("ced4scale-presentation-format", "auto");
+      var presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
+      var presCardActif = null;
+
+      // Clé DÉDIÉE à cette page (distincte de celle de bascule-oscan/recettes) : chaque
+      // simulateur a ses propres cartes/blocs, un layout enregistré ici n'a aucun sens sur
+      // un autre simulateur. Aucun bloc n'est imbriqué dans un autre ici (tous des frères au
+      // sein de leur carte) — l'ordre de chaque liste n'a donc pas d'importance.
+      var PRES_FREE_BLOCKS = {
+        cvSyntheseCard: ["cvSyntheseScroll", "cvSyntheseActiviteBlock", "cvSyntheseHoraireBlock"],
+        cvGrapheCard: ["cvGrapheSimple", "cvGrapheComparaison"],
+        cvSeuilsCard: ["cvSeuilsTableWrap"],
+        cvFtMoyCard: ["cvFtMoyChartWrap", "cvFtMoySliderBlock", "cvFtMoyResultatsBlock"],
+        cvRecap: ["cvRecapEquipWrap", "cvRecapRecettesWrap", "cvRecapParamsCommunsWrap", "cvRecapParamsWrap"]
+      };
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-ct-vs-irm-v1";
+      var presFreeCardActif = null;
+      var presFreeHomes = null;
+
+      // Réutilise les classes DÉJÀ stylées du cadenas de mémoire (.cv-lock-icon/
+      // .cv-lock-shackle-fermee/-ouverte, voir <style> plus haut) plutôt que de dupliquer un
+      // jeu de classes propre à un autre fichier — motif "généraliser la classe de bascule,
+      // jamais le balisage" du skill ced4scale-simulateur-web.
+      function presFreeIconeCadenasHTML(ouvert) {
+        return '<svg class="cv-lock-icon pres-lock-toggle' + (ouvert ? " is-ouvert" : "") + '" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+          '<path class="cv-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>' +
+          '<path class="cv-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>' +
+          '<rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/>' +
+          '</svg>';
+      }
+      function presFreeLireLayout() {
+        try { return JSON.parse(localStorage.getItem(PRES_FREE_LAYOUT_KEY) || "{}"); } catch (e) { return {}; }
+      }
+      function presFreeEcrireLayout(layout) {
+        try { localStorage.setItem(PRES_FREE_LAYOUT_KEY, JSON.stringify(layout)); } catch (e) {}
+      }
+      function presFreeSauverEtat(id, state) {
+        var layout = presFreeLireLayout();
+        layout[id] = state;
+        presFreeEcrireLayout(layout);
+      }
+      function presFreeAppliquerTransformInner(inner, scale) {
+        if (!inner) return;
+        inner.style.transform = (scale && Math.abs(scale - 1) > 0.001) ? "scale(" + scale + ")" : "";
+      }
+      function presFreeAppliquerEtat(el, state) {
+        el.style.left = state.xPct + "%";
+        el.style.top = state.yPct + "%";
+        el.style.width = state.wPct + "%";
+        el.style.height = state.hPct + "%";
+        presFreeAppliquerTransformInner(el.querySelector(":scope > .pres-block__inner"), state.scale);
+        el.classList.toggle("is-locked", !!state.locked);
+        el._presState = state;
+      }
+      function presFreeBasculerVerrouBloc(el, id) {
+        var verrouille = el.classList.toggle("is-locked");
+        var state = el._presState || {};
+        state.locked = verrouille;
+        presFreeSauverEtat(id, state);
+      }
+      function presFreeFermerMenuContextuel() {
+        var menu = document.getElementById("presCtxMenu");
+        menu.hidden = true;
+        menu.innerHTML = "";
+      }
+      document.addEventListener("click", presFreeFermerMenuContextuel);
+      document.addEventListener("scroll", presFreeFermerMenuContextuel, true);
+      function presFreeOuvrirMenuContextuel(e, el, id) {
+        e.preventDefault(); e.stopPropagation();
+        presFreeFermerMenuContextuel();
+        var menu = document.getElementById("presCtxMenu");
+        var verrouille = el.classList.contains("is-locked");
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.innerHTML = presFreeIconeCadenasHTML(!verrouille) + " " + (verrouille ? "Libérer les dimensions de ce bloc" : "Figer les dimensions de ce bloc");
+        btn.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          presFreeBasculerVerrouBloc(el, id);
+          presFreeFermerMenuContextuel();
+        });
+        menu.appendChild(btn);
+        menu.hidden = false;
+        var mw = menu.offsetWidth, mh = menu.offsetHeight;
+        menu.style.left = Math.min(e.clientX, window.innerWidth - mw - 8) + "px";
+        menu.style.top = Math.min(e.clientY, window.innerHeight - mh - 8) + "px";
+      }
+      // Mesure "au plus juste" (shrink-to-fit) : jamais la largeur/hauteur que le flux
+      // normal impose (un bloc s'étire par défaut sur toute la largeur du conteneur). Voir
+      // memory/site-web/simulateur-bascule-oscan.md pour l'historique des pièges déjà
+      // rencontrés sur ce mécanisme (SVG qui collapse, `<table style="width:100%">` qui ne
+      // se résout pas contre son contenu, blocs `hidden` mesurés à 0×0...) — tous les
+      // correctifs correspondants sont déjà repris ici tels quels.
+      function presFreeMesurerContenu(el, secours) {
+        var flowRect = el.getBoundingClientRect();
+        secours = secours || { w: flowRect.width, h: flowRect.height };
+        var inner = el.querySelector(":scope > .pres-block__inner");
+        document.documentElement.classList.add("pres-measuring");
+        var prev = { display: el.style.display, width: el.style.width, height: el.style.height };
+        el.style.display = "inline-block";
+        el.style.width = "auto";
+        el.style.height = "auto";
+        var prevInner;
+        if (inner) {
+          prevInner = { width: inner.style.width, height: inner.style.height, transform: inner.style.transform };
+          inner.style.width = "auto"; inner.style.height = "auto"; inner.style.transform = "none";
+        }
+        var tables = el.querySelectorAll("table");
+        var prevTables = Array.prototype.map.call(tables, function (t) { return t.style.width; });
+        Array.prototype.forEach.call(tables, function (t) { t.style.width = "auto"; });
+        var r = el.getBoundingClientRect();
+        el.style.display = prev.display; el.style.width = prev.width; el.style.height = prev.height;
+        if (inner) { inner.style.width = prevInner.width; inner.style.height = prevInner.height; inner.style.transform = prevInner.transform; }
+        Array.prototype.forEach.call(tables, function (t, i) { t.style.width = prevTables[i]; });
+        document.documentElement.classList.remove("pres-measuring");
+        return {
+          w: r.width < 20 ? secours.w : r.width,
+          h: r.height < 20 ? secours.h : r.height
+        };
+      }
+      function presFreeRognerBloc(el, canvas, id) {
+        var canvasRect = canvas.getBoundingClientRect();
+        var scale = (el._presState && el._presState.scale) || 1;
+        var secours = { w: parseFloat(el.dataset.presNaturalW), h: parseFloat(el.dataset.presNaturalH) };
+        var mesure = presFreeMesurerContenu(el, secours);
+        el.dataset.presNaturalW = mesure.w;
+        el.dataset.presNaturalH = mesure.h;
+        var wPct = mesure.w * scale / canvasRect.width * 100;
+        var hPct = mesure.h * scale / canvasRect.height * 100;
+        el.style.width = wPct + "%"; el.style.height = hPct + "%";
+        var state = el._presState || {};
+        state.wPct = wPct; state.hPct = hPct;
+        presFreeSauverEtat(id, state);
+      }
+      function presFreeBrancherBloc(el, canvas, id) {
+        el.addEventListener("contextmenu", function (e) { presFreeOuvrirMenuContextuel(e, el, id); });
+        var crop = el.querySelector(":scope > .pres-block__crop");
+        crop.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          presFreeRognerBloc(el, canvas, id);
+        });
+        var handle = el.querySelector(":scope > .pres-block__handle");
+        handle.addEventListener("pointerdown", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          el.classList.add("is-dragging");
+          var canvasRect = canvas.getBoundingClientRect();
+          var startX = e.clientX, startY = e.clientY;
+          var startLeftPx = (parseFloat(el.style.left) || 0) / 100 * canvasRect.width;
+          var startTopPx = (parseFloat(el.style.top) || 0) / 100 * canvasRect.height;
+          function onMove(ev) {
+            var newLeftPx = Math.max(-40, Math.min(canvasRect.width - 40, startLeftPx + (ev.clientX - startX)));
+            var newTopPx = Math.max(-40, Math.min(canvasRect.height - 40, startTopPx + (ev.clientY - startY)));
+            el.style.left = (newLeftPx / canvasRect.width * 100) + "%";
+            el.style.top = (newTopPx / canvasRect.height * 100) + "%";
+          }
+          function onUp() {
+            el.classList.remove("is-dragging");
+            document.removeEventListener("pointermove", onMove);
+            document.removeEventListener("pointerup", onUp);
+            // Un `:hover` (z-index:10) posé sur le bloc chevauché en dessous l'emporterait
+            // sur le simple ordre DOM une fois le curseur immobile dessus (voir memory
+            // bascule-oscan, piège "œil injoignable") — z-index explicite (11) posé en plus,
+            // pas seulement le réordonnancement DOM.
+            canvas.appendChild(el);
+            el.style.zIndex = "11";
+            var state = el._presState || {};
+            state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
+            presFreeSauverEtat(id, state);
+          }
+          document.addEventListener("pointermove", onMove);
+          document.addEventListener("pointerup", onUp);
+        });
+        Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__resize")).forEach(function (r) {
+          r.addEventListener("pointerdown", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            el.classList.add("is-resizing");
+            var pos = r.dataset.presResize;
+            var canvasRect = canvas.getBoundingClientRect();
+            var startX = e.clientX, startY = e.clientY;
+            var startWPct = parseFloat(el.style.width) || 10;
+            var startHPct = parseFloat(el.style.height) || 10;
+            var startLeftPct = parseFloat(el.style.left) || 0;
+            var startTopPct = parseFloat(el.style.top) || 0;
+            var naturalW = parseFloat(el.dataset.presNaturalW) || (startWPct / 100 * canvasRect.width);
+            var naturalH = parseFloat(el.dataset.presNaturalH) || (startHPct / 100 * canvasRect.height);
+            var padW = parseFloat(el.dataset.presPadW) || 0;
+            var padH = parseFloat(el.dataset.presPadH) || 0;
+            var contentNaturalW = Math.max(1, naturalW - padW);
+            var contentNaturalH = Math.max(1, naturalH - padH);
+            var startScale = (el._presState && el._presState.scale) || 1;
+            var isCorner = pos.length === 2;
+            function onMove(ev) {
+              var dx = ev.clientX - startX, dy = ev.clientY - startY;
+              var wPct = startWPct, hPct = startHPct, scale = startScale;
+              if (isCorner) {
+                var signX = pos.indexOf("e") > -1 ? 1 : -1;
+                var signY = pos.indexOf("s") > -1 ? 1 : -1;
+                var startWpx = contentNaturalW * startScale + padW, startHpx = contentNaturalH * startScale + padH;
+                var deltaPx = (dx * signX + dy * signY) / 2;
+                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx - padW) / contentNaturalW));
+                var newWpx = contentNaturalW * scale + padW, newHpx = contentNaturalH * scale + padH;
+                wPct = newWpx / canvasRect.width * 100;
+                hPct = newHpx / canvasRect.height * 100;
+                var startLeftPx = startLeftPct / 100 * canvasRect.width;
+                var startTopPx = startTopPct / 100 * canvasRect.height;
+                if (signX < 0) el.style.left = ((startLeftPx + (startWpx - newWpx)) / canvasRect.width * 100) + "%";
+                if (signY < 0) el.style.top = ((startTopPx + (startHpx - newHpx)) / canvasRect.height * 100) + "%";
+              } else if (pos === "n" || pos === "s") {
+                var startHpx2 = startHPct / 100 * canvasRect.height;
+                var newHpx2 = Math.max(30, pos === "s" ? startHpx2 + dy : startHpx2 - dy);
+                hPct = newHpx2 / canvasRect.height * 100;
+                if (pos === "n") {
+                  var startTopPx2 = startTopPct / 100 * canvasRect.height;
+                  el.style.top = ((startTopPx2 + (startHpx2 - newHpx2)) / canvasRect.height * 100) + "%";
+                }
+              } else {
+                var startWpx2 = startWPct / 100 * canvasRect.width;
+                var newWpx2 = Math.max(60, pos === "e" ? startWpx2 + dx : startWpx2 - dx);
+                wPct = newWpx2 / canvasRect.width * 100;
+                if (pos === "w") {
+                  var startLeftPx2 = startLeftPct / 100 * canvasRect.width;
+                  el.style.left = ((startLeftPx2 + (startWpx2 - newWpx2)) / canvasRect.width * 100) + "%";
+                }
+              }
+              el.style.width = wPct + "%"; el.style.height = hPct + "%";
+              presFreeAppliquerTransformInner(el.querySelector(":scope > .pres-block__inner"), scale);
+              el._presState = el._presState || {};
+              el._presState.scale = scale;
+            }
+            function onUp() {
+              el.classList.remove("is-resizing");
+              document.removeEventListener("pointermove", onMove);
+              document.removeEventListener("pointerup", onUp);
+              canvas.appendChild(el);
+              el.style.zIndex = "11";
+              var state = el._presState || {};
+              state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
+              state.wPct = parseFloat(el.style.width); state.hPct = parseFloat(el.style.height);
+              presFreeSauverEtat(id, state);
+            }
+            document.addEventListener("pointermove", onMove);
+            document.addEventListener("pointerup", onUp);
+          });
+        });
+      }
+      function presFreeActiver(card) {
+        if (presFreeCardActif === card) return;
+        var ids = PRES_FREE_BLOCKS[card.id];
+        if (!ids) return;
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        if (!canvas) return;
+        canvas.classList.add("chart-card-slide-canvas--free");
+        var layout = presFreeLireLayout();
+        var homes = [];
+        ids.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) homes.push({ id: id, el: el, parent: el.parentNode, next: el.nextSibling });
+        });
+        var naturelles = {};
+        var yOffsetPx = 12;
+        homes.forEach(function (h) {
+          canvas.appendChild(h.el);
+          var canvasRect = canvas.getBoundingClientRect();
+          var r = h.el.getBoundingClientRect();
+          var mesure = (!r.width && !r.height)
+            ? { w: canvasRect.width * 0.6, h: canvasRect.height * 0.6 }
+            : presFreeMesurerContenu(h.el);
+          naturelles[h.id] = {
+            xPct: 12 / canvasRect.width * 100,
+            yPct: yOffsetPx / canvasRect.height * 100,
+            wPct: mesure.w / canvasRect.width * 100,
+            hPct: mesure.h / canvasRect.height * 100,
+            naturalW: mesure.w, naturalH: mesure.h
+          };
+          yOffsetPx += mesure.h + 16;
+        });
+        homes.forEach(function (h) {
+          var el = h.el, nat = naturelles[h.id];
+          var inner = document.createElement("div");
+          inner.className = "pres-block__inner";
+          var summary = el.tagName === "DETAILS" ? el.querySelector(":scope > summary") : null;
+          Array.prototype.slice.call(el.childNodes).forEach(function (n) {
+            if (n !== summary) inner.appendChild(n);
+          });
+          el.appendChild(inner);
+          el.classList.add("pres-block");
+          el.dataset.presNaturalW = nat.naturalW;
+          el.dataset.presNaturalH = nat.naturalH;
+          var handle = document.createElement("div");
+          handle.className = "pres-block__handle";
+          handle.title = "Glisser pour déplacer ce bloc";
+          handle.setAttribute("aria-hidden", "true");
+          handle.textContent = "⠿";
+          el.appendChild(handle);
+          var crop = document.createElement("button");
+          crop.type = "button";
+          crop.className = "pres-block__crop";
+          crop.title = "Rogner : ajuster la taille du bloc à son contenu";
+          crop.setAttribute("aria-label", "Ajuster la taille du bloc à son contenu");
+          crop.textContent = "⇲";
+          el.appendChild(crop);
+          var lockBadge = document.createElement("span");
+          lockBadge.className = "pres-block__lock-badge";
+          lockBadge.setAttribute("aria-hidden", "true");
+          lockBadge.innerHTML = presFreeIconeCadenasHTML(false);
+          el.appendChild(lockBadge);
+          ["nw", "ne", "sw", "se"].forEach(function (pos) {
+            var rEl = document.createElement("div");
+            rEl.className = "pres-block__resize pres-block__resize--corner pres-block__resize--" + pos;
+            rEl.dataset.presResize = pos;
+            rEl.title = "Glisser pour agrandir/réduire (échelle automatique)";
+            el.appendChild(rEl);
+          });
+          ["n", "s", "e", "w"].forEach(function (pos) {
+            var rEl = document.createElement("div");
+            rEl.className = "pres-block__resize pres-block__resize--edge pres-block__resize--" + pos;
+            rEl.dataset.presResize = pos;
+            rEl.title = "Glisser pour changer seulement la " + (pos === "n" || pos === "s" ? "hauteur" : "largeur");
+            el.appendChild(rEl);
+          });
+          canvas.appendChild(el);
+          presFreeAppliquerEtat(el, layout[h.id] || { xPct: nat.xPct, yPct: nat.yPct, wPct: nat.wPct, hPct: nat.hPct, scale: 1 });
+          presFreeBrancherBloc(el, canvas, h.id);
+        });
+        presFreeHomes = homes;
+        presFreeCardActif = card;
+      }
+      function presFreeDesactiver(card) {
+        if (presFreeCardActif !== card || !presFreeHomes) { presFreeCardActif = null; presFreeHomes = null; return; }
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        presFreeHomes.forEach(function (h) {
+          var el = h.el;
+          el.classList.remove("pres-block", "is-dragging", "is-resizing", "is-locked");
+          el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
+          delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
+          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize, :scope > .pres-block__lock-badge")).forEach(function (h2) { h2.remove(); });
+          var inner = el.querySelector(":scope > .pres-block__inner");
+          if (inner) {
+            while (inner.firstChild) el.insertBefore(inner.firstChild, inner);
+            inner.remove();
+          }
+          if (h.next && h.next.parentNode === h.parent) h.parent.insertBefore(el, h.next);
+          else h.parent.appendChild(el);
+        });
+        if (canvas) canvas.classList.remove("chart-card-slide-canvas--free");
+        presFreeHomes = null;
+        presFreeCardActif = null;
+      }
+      function presFreeReinitialiser() {
+        presFreeEcrireLayout({});
+        if (presFreeCardActif) { var card = presFreeCardActif; presFreeDesactiver(card); presFreeActiver(card); }
+      }
+      document.getElementById("presResetLayoutBtn").addEventListener("click", presFreeReinitialiser);
+
+      var presFreeVerrouGlobal = presLire("ced4scale-presentation-lock", "0") === "1";
+      function presFreeAppliquerVerrouGlobal() {
+        document.getElementById("presLockToggleIcon").innerHTML = presFreeIconeCadenasHTML(!presFreeVerrouGlobal);
+        document.getElementById("presLockToggleLabel").textContent = presFreeVerrouGlobal ? "Blocs verrouillés" : "Déplacer les blocs";
+        document.getElementById("presLockToggleBtn").setAttribute("aria-pressed", String(presFreeVerrouGlobal));
+        if (!presFreeCardActif) return;
+        var canvas = presFreeCardActif.querySelector(":scope > .chart-card-slide-canvas");
+        if (canvas) canvas.classList.toggle("chart-card-slide-canvas--locked", presFreeVerrouGlobal);
+      }
+      document.getElementById("presLockToggleBtn").addEventListener("click", function () {
+        presFreeVerrouGlobal = !presFreeVerrouGlobal;
+        presEcrire("ced4scale-presentation-lock", presFreeVerrouGlobal ? "1" : "0");
+        presFreeAppliquerVerrouGlobal();
+      });
+
+      function presAppliquer() {
+        if (!presCardActif) return;
+        var canvas = presCardActif.querySelector(":scope > .chart-card-slide-canvas");
+        if (!canvas) return;
+        var fmt = PRES_FORMATS[presFormatActuel];
+        presCardActif.classList.toggle("is-presentation-locked", !!fmt);
+        if (fmt) {
+          canvas.style.width = fmt.w + "px";
+          canvas.style.height = fmt.h + "px";
+          canvas.style.transform = "scale(" + Math.min(window.innerWidth / fmt.w, window.innerHeight / fmt.h) + ")";
+        } else {
+          // Un cadre `<details>` en plein écran réel ne résout pas fiablement
+          // `width:100%/height:100%` sur son canvas — calcul explicite en px.
+          canvas.style.width = presCardActif.clientWidth + "px";
+          canvas.style.height = presCardActif.clientHeight + "px";
+          canvas.style.transform = "";
+        }
+        var freePossible = !fmt && PRES_FREE_BLOCKS[presCardActif.id];
+        if (freePossible) { presFreeActiver(presCardActif); presFreeAppliquerVerrouGlobal(); }
+        else presFreeDesactiver(presCardActif);
+        if (!freePossible) canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
+        canvas.style.overflowY = "auto";
+        var toggle = document.getElementById("presSplitToggle");
+        toggle.textContent = presSplitActuel ? "2 colonnes" : "Défilement";
+        toggle.setAttribute("aria-pressed", String(presSplitActuel));
+        toggle.hidden = !!freePossible;
+        document.getElementById("presResetLayoutBtn").hidden = !freePossible;
+        document.getElementById("presLockToggleBtn").hidden = !freePossible;
+        ["presFormatAuto", "presFormat169", "presFormat43"].forEach(function (id) {
+          var b = document.getElementById(id);
+          b.classList.toggle("active", b.dataset.format === presFormatActuel);
+        });
+      }
+      function presEntrerCard(card) {
+        var toolbar = document.getElementById("presentationToolbar");
+        var canvas = document.createElement("div");
+        canvas.className = "chart-card-slide-canvas";
+        Array.prototype.slice.call(card.childNodes).forEach(function (n) {
+          if (n.nodeType === 1 && n.classList && n.classList.contains("chart-card-fullscreen-btn")) return;
+          canvas.appendChild(n);
+        });
+        card.appendChild(canvas);
+        card.appendChild(toolbar);
+        toolbar.hidden = false;
+        presCardActif = card;
+        presAppliquer();
+        presAppliquerPositionToolbar();
+      }
+      function presSortirCard(card) {
+        presFreeDesactiver(card);
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        if (canvas) {
+          Array.prototype.slice.call(canvas.childNodes).forEach(function (n) { card.insertBefore(n, canvas); });
+          canvas.remove();
+        }
+        var toolbar = document.getElementById("presentationToolbar");
+        toolbar.hidden = true;
+        document.body.appendChild(toolbar);
+        card.classList.remove("is-presentation-locked");
+        presCardActif = null;
+      }
+      document.getElementById("presFormatAuto").addEventListener("click", function () { presFormatActuel = "auto"; presEcrire("ced4scale-presentation-format", "auto"); presAppliquer(); });
+      document.getElementById("presFormat169").addEventListener("click", function () { presFormatActuel = "169"; presEcrire("ced4scale-presentation-format", "169"); presAppliquer(); });
+      document.getElementById("presFormat43").addEventListener("click", function () { presFormatActuel = "43"; presEcrire("ced4scale-presentation-format", "43"); presAppliquer(); });
+      document.getElementById("presSplitToggle").addEventListener("click", function () { presSplitActuel = !presSplitActuel; presEcrire("ced4scale-presentation-split", presSplitActuel ? "split" : "scroll"); presAppliquer(); });
+      window.addEventListener("resize", function () { if (presCardActif) presAppliquer(); presReclamperToolbar(); });
+
+      var presToolbar = document.getElementById("presentationToolbar");
+      var presToolbarHandle = document.getElementById("presToolbarHandle");
+      function presToolbarPosSauvegardee() {
+        try { return JSON.parse(localStorage.getItem("ced4scale-presentation-toolbar-pos") || "null"); }
+        catch (e) { return null; }
+      }
+      function presAppliquerPositionToolbar() {
+        var pos = presToolbarPosSauvegardee();
+        if (!pos) return;
+        presToolbar.classList.add("is-positioned");
+        var w = presToolbar.offsetWidth || 260, h = presToolbar.offsetHeight || 40;
+        var left = Math.max(4, Math.min(window.innerWidth - w - 4, (pos.leftPct / 100) * window.innerWidth));
+        var top = Math.max(4, Math.min(window.innerHeight - h - 4, (pos.topPct / 100) * window.innerHeight));
+        presToolbar.style.left = left + "px";
+        presToolbar.style.top = top + "px";
+      }
+      function presReclamperToolbar() { if (presToolbarPosSauvegardee()) presAppliquerPositionToolbar(); }
+      (function () {
+        var actif = false, decalX = 0, decalY = 0;
+        presToolbarHandle.addEventListener("pointerdown", function (e) {
+          actif = true;
+          presToolbarHandle.setPointerCapture(e.pointerId);
+          var r = presToolbar.getBoundingClientRect();
+          presToolbar.classList.add("is-positioned");
+          presToolbar.style.left = r.left + "px";
+          presToolbar.style.top = r.top + "px";
+          decalX = e.clientX - r.left; decalY = e.clientY - r.top;
+          e.preventDefault();
+        });
+        presToolbarHandle.addEventListener("pointermove", function (e) {
+          if (!actif) return;
+          var w = presToolbar.offsetWidth, h = presToolbar.offsetHeight;
+          var left = Math.max(4, Math.min(window.innerWidth - w - 4, e.clientX - decalX));
+          var top = Math.max(4, Math.min(window.innerHeight - h - 4, e.clientY - decalY));
+          presToolbar.style.left = left + "px";
+          presToolbar.style.top = top + "px";
+        });
+        presToolbarHandle.addEventListener("pointerup", function (e) {
+          if (!actif) return;
+          actif = false;
+          presToolbarHandle.releasePointerCapture(e.pointerId);
+          var r = presToolbar.getBoundingClientRect();
+          presEcrire("ced4scale-presentation-toolbar-pos", JSON.stringify({
+            leftPct: (r.left / window.innerWidth) * 100,
+            topPct: (r.top / window.innerHeight) * 100
+          }));
+        });
+      })();
+
       // Bouton plein écran RÉEL par cadre de la colonne de résultats (demande de Cédric
       // le 10/09/2026, distinct du bouton ⛶ existant qui ne remplit que la fenêtre du
-      // navigateur) — API Fullscreen standard. Pour un cadre repliable (<details>), le
+      // navigateur) — API Fullscreen standard, upgradé avec le mode présentation complet
+      // (voir skill ced4scale-simulateur-web). Pour un cadre repliable (<details>), le
       // bouton vit dans <summary> : preventDefault()/stopPropagation() empêchent le clic
       // de (re)fermer le repli, et on force son ouverture avant de passer en plein écran
       // (sinon le contenu resterait invisible une fois agrandi).
-      function wireCardFullscreen(btnId, cardId) {
+      function wireCardFullscreen(btnId, cardId, bodyId, extraIds, forceSplit, extraTargetId, forceFormat) {
         var btn = document.getElementById(btnId), card = document.getElementById(cardId);
         if (!btn || !card) return;
+        var extras = (extraIds || []).map(function (id) { return document.getElementById(id); }).filter(Boolean);
+        var extrasHomes = extras.map(function (el) { return { parent: el.parentNode, next: el.nextSibling }; });
         btn.addEventListener("click", function (e) {
           e.preventDefault(); e.stopPropagation();
           if (document.fullscreenElement === card) {
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
+            Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
+            if (bodyId) {
+              var body = document.getElementById(bodyId);
+              if (body && body.hidden) {
+                var toggle = card.querySelector(".simulator__collapse-toggle");
+                if (toggle) toggle.click();
+              }
+            }
+            var target = (extraTargetId && document.getElementById(extraTargetId)) || card;
+            extras.forEach(function (el) { target.appendChild(el); });
+            if (forceSplit) presSplitActuel = true;
+            if (forceFormat) presFormatActuel = forceFormat;
             card.requestFullscreen();
           }
         });
@@ -4455,6 +5087,18 @@ var svg = document.getElementById("cvChart");
           var actif = document.fullscreenElement === card;
           btn.classList.toggle("is-fullscreen", actif);
           btn.setAttribute("aria-pressed", String(actif));
+          if (actif) {
+            if (presCardActif !== card) presEntrerCard(card);
+          } else if (presCardActif === card) {
+            presSortirCard(card);
+            if (forceSplit) presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
+            if (forceFormat) presFormatActuel = presLire("ced4scale-presentation-format", "auto");
+            extras.forEach(function (el, i) {
+              var home = extrasHomes[i];
+              if (home.next && home.next.parentNode === home.parent) home.parent.insertBefore(el, home.next);
+              else home.parent.appendChild(el);
+            });
+          }
         });
       }
       wireCardFullscreen("cvSyntheseFullscreenBtn", "cvSyntheseCard");
