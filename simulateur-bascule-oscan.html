@@ -545,6 +545,18 @@
       margin-top: 1.2rem; position: relative; min-height: 190px;
     }
     #boFtMoyJokerCard { max-width: 340px; width: 100%; min-height: 190px; flex: 1 1 260px; }
+    /* Même plafond que #boFtMoyJokerCard ci-dessus, ajouté le 12/09/2026 (signalé par
+       Cédric : la carte joker de "Répartition de l'activité", en bloc libre plein
+       écran, s'ouvrait sur une boîte bien trop large, pas "rognée au maximum"). Cause :
+       les faces `position:absolute` de `.bascule-joker-flip` ne peuvent pas être
+       mesurées "au plus juste" (`presFreeMesurerContenu`, voir plus bas) — le filet de
+       sécurité retombe alors sur la largeur du bloc AVANT toute mesure, qui vaut ici
+       toute la largeur du canevas plein écran (ce bloc n'a plus la contrainte de sa
+       colonne de grille `.bascule-stats` une fois extrait). Sans plafond, "rogner" ne
+       change rien non plus : il refait la même mesure, retombe sur le même filet de
+       sécurité, toujours aussi large. #boFtMoyJokerCard n'a jamais eu ce problème
+       précisément parce qu'il porte déjà cette même règle. */
+    #boJokerCard { max-width: 340px; }
     /* Bloc Mémoire/Comparer déplacé le 11/09/2026 à côté du joker (demande de Cédric) :
        il n'a plus besoin de la bordure/marge du haut qui le séparait de la note de
        capacité dans son ancien emplacement (sous "Répartition de l'activité"). Piège
@@ -4808,7 +4820,12 @@
       // changé (empilement vertical explicite au lieu du flux DOM, qui produisait
       // des blocs superposés) — les anciennes positions enregistrées restaient
       // fausses (chevauchement) tant qu'on ne repart pas d'une disposition vierge.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v5";
+      // Re-bumpée "-v6" (12/09/2026, suite) : ajout du plafond `max-width:340px` sur
+      // #boJokerCard (voir CSS plus haut) — sans ce bump, un appareil ayant déjà ouvert
+      // "Répartition de l'activité" en plein écran AVANT ce correctif garderait en
+      // mémoire l'ancienne largeur bien trop grande (le filet de sécurité de la mesure
+      // "au plus juste", pas le plafond CSS lui-même, est ce qui est enregistré).
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v6";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
