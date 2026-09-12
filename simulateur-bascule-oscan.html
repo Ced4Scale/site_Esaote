@@ -232,11 +232,28 @@
     .chart-card-slide-canvas--free > .pres-block.is-dragging,
     .chart-card-slide-canvas--free > .pres-block.is-resizing { border-color: var(--red); }
     .pres-block__inner { width: 100%; height: 100%; overflow: auto; transform-origin: top left; }
+    /* Poignées TOUJOURS à l'INTÉRIEUR de la boîte du bloc (12/09/2026, correction
+       d'un bug réel signalé par Cédric, capture à l'appui) — à l'origine, la
+       poignée de déplacement et les 4 coins de redimensionnement dépassaient EN
+       DEHORS du bloc (décalage négatif, ex. `top:-6px`). Tant qu'un bloc restait
+       loin des bords du canvas, ce dépassement restait cliquable ; mais un bloc
+       "rogné" au plus juste peut coller EXACTEMENT à un bord du canvas (x=0,
+       y=0...) — la poignée qui dépassait alors AU-DELÀ de ce bord sortait de la
+       zone cliquable (parfois même hors de l'écran), rendant le bloc bloqué : plus
+       aucun moyen de le déplacer ou de le redimensionner par ce coin. Toutes les
+       poignées ci-dessous utilisent désormais des décalages POSITIFS uniquement
+       (`top:0`/`right:0`/etc., jamais de négatif) — géométriquement, elles ne
+       peuvent alors plus jamais sortir du bloc lui-même, quelle que soit sa
+       position. La poignée de déplacement (⠿) est passée du coin haut-gauche
+       (qui aurait sinon chevauché le coin de redimensionnement "nw") à un onglet
+       CENTRÉ en haut ; "rogner" (⇲) symétrique en bas — libère les 4 vrais coins
+       pour les 4 poignées de redimensionnement proportionnel. */
     .pres-block__handle {
-      position: absolute; top: -2px; left: -2px; width: 24px; height: 24px; z-index: 6;
+      position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 30px; height: 16px; z-index: 7;
       display: flex; align-items: center; justify-content: center;
-      background: var(--red); color: #fff; border-radius: 4px 0 6px 0;
-      cursor: move; font-size: 14px; opacity: 0; transition: opacity .15s; user-select: none;
+      background: var(--red); color: #fff; border-radius: 0 0 8px 8px;
+      cursor: move; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
     }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__handle,
     .pres-block.is-dragging .pres-block__handle { opacity: 1; }
@@ -244,28 +261,32 @@
        exactement à celle de son contenu (largeur/hauteur naturelles × l'échelle
        choisie aux coins) — corrige l'espace vide ou le défilement laissés par un
        redimensionnement de bord (haut/bas/gauche/droite, qui change la boîte SANS
-       toucher au contenu, voir .pres-block__resize--edge ci-dessous). Coin
-       haut-droit, symétrique de la poignée de déplacement (haut-gauche). */
+       toucher au contenu, voir .pres-block__resize--edge ci-dessous). Onglet
+       centré en BAS, symétrique de la poignée de déplacement (centrée en haut) —
+       voir le commentaire ci-dessus sur le repositionnement de toutes les
+       poignées à l'intérieur du bloc.  */
     .pres-block__crop {
-      position: absolute; top: -2px; right: -2px; width: 24px; height: 24px; z-index: 6;
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 26px; height: 16px; z-index: 7;
       display: flex; align-items: center; justify-content: center;
-      background: #fff; color: var(--red); border: 1px solid var(--red); border-radius: 0 4px 0 6px;
-      cursor: pointer; font-size: 13px; opacity: 0; transition: opacity .15s; user-select: none;
+      background: #fff; color: var(--red); border: 1px solid var(--red); border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      cursor: pointer; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
     }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__crop { opacity: 1; }
     .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__resize,
     .pres-block.is-resizing .pres-block__resize { opacity: 1; }
     .pres-block__resize--corner { width: 13px; height: 13px; background: var(--red); border-radius: 50%; }
-    .pres-block__resize--nw { top: -6px; left: -6px; cursor: nwse-resize; }
-    .pres-block__resize--ne { top: -6px; right: -6px; cursor: nesw-resize; }
-    .pres-block__resize--sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
-    .pres-block__resize--se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+    .pres-block__resize--nw { top: 0; left: 0; cursor: nwse-resize; }
+    .pres-block__resize--ne { top: 0; right: 0; cursor: nesw-resize; }
+    .pres-block__resize--sw { bottom: 0; left: 0; cursor: nesw-resize; }
+    .pres-block__resize--se { bottom: 0; right: 0; cursor: nwse-resize; }
     .pres-block__resize--edge { background: transparent; }
-    .pres-block__resize--n { top: -5px; left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
-    .pres-block__resize--s { bottom: -5px; left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
-    .pres-block__resize--w { left: -5px; top: 14px; bottom: 14px; width: 10px; cursor: ew-resize; }
-    .pres-block__resize--e { right: -5px; top: 14px; bottom: 14px; width: 10px; cursor: ew-resize; }
+    .pres-block__resize--n { top: 0; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+    .pres-block__resize--s { bottom: 0; left: 14px; right: 14px; height: 8px; cursor: ns-resize; }
+    .pres-block__resize--w { left: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
+    .pres-block__resize--e { right: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
 
     /* Espace augmenté entre les grands blocs de "Répartition de l'activité"
        (11/09/2026, demande de Cédric — les blocs se touchaient de trop près) : marge
@@ -4634,7 +4655,15 @@
       var PRES_FREE_BLOCKS = {
         boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"]
       };
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout";
+      // Version bumpée à "-v2" (12/09/2026) : la façon de mesurer la taille "au plus
+      // juste" d'un bloc a changé plusieurs fois le même jour (shrink-to-fit ajouté
+      // en dernier) — une disposition déjà enregistrée AVANT ce changement (sur
+      // l'appareil de Cédric, pendant les tests précédents) resterait sinon rejouée
+      // telle quelle indéfiniment, avec la largeur/hauteur de l'ANCIEN calcul (zone
+      // vide à droite/en bas), masquant totalement la correction. Changer la clé
+      // abandonne proprement ces anciennes valeurs sans y toucher explicitement —
+      // chaque bloc repart de la mesure au plus juste, à jour.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v2";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
