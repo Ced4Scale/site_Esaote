@@ -934,6 +934,16 @@
        de bascule, jamais le balisage" du skill ced4scale-simulateur-web. */
     .pres-lock-toggle.is-ouvert .cv-lock-shackle-fermee { display: none; }
     .pres-lock-toggle.is-ouvert .cv-lock-shackle-ouverte { display: inline; }
+    /* "Autre RH" repliée sous Salaire net MERM, panneau ⚙ — même motif triangle ▸/▾
+       que .simulator__chart-card--collapsible (styles.css), scopé localement car ce
+       n'est pas une carte de résultat. Repris à l'identique de simulateur-point-mort.html
+       (commit 7053440). */
+    .pm-autre-rh { margin: -.4rem 0 .8rem; }
+    .pm-autre-rh > summary { cursor: pointer; font-weight: 700; font-size: .9rem; list-style: none; }
+    .pm-autre-rh > summary::-webkit-details-marker { display: none; }
+    .pm-autre-rh > summary::before { content: "▸ "; }
+    .pm-autre-rh[open] > summary::before { content: "▾ "; }
+    .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1747,11 +1757,11 @@
             </select>
           </div>
           <div class="field">
-            <label>Machines amorties ou non ?</label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="cvAmorti" value="nonAmorti" checked /> Non amorties</label>
-              <label><input type="radio" name="cvAmorti" value="amorti" /> Amorties (&gt; 7 ans)</label>
-            </div>
+            <label for="cvAmorti">Machines amorties ou non ?</label>
+            <select id="cvAmorti">
+              <option value="nonAmorti">Non amorties</option>
+              <option value="amorti">Amorties (&gt; 7 ans)</option>
+            </select>
           </div>
           <div class="field">
             <label>Vous raisonnez plutôt en</label>
@@ -1761,11 +1771,11 @@
             </div>
           </div>
           <div class="field">
-            <label>Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-            <div style="display:flex;gap:.4rem">
-              <button type="button" class="btn btn--sm btn--ghost" id="cvSalaireBtnMois" aria-pressed="false">Mensuel</button>
-              <button type="button" class="btn btn--sm" id="cvSalaireBtnAn" aria-pressed="true">Annuel</button>
-            </div>
+            <label for="cvSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+            <select id="cvSalaireUnite">
+              <option value="mensuel">Mensuel</option>
+              <option value="annuel" selected>Annuel</option>
+            </select>
           </div>
           <div class="field">
             <label for="cvNetMerm">Salaire MERM net avant impôt</label>
@@ -1775,41 +1785,44 @@
             </div>
           </div>
           <p class="simulator__hint" id="cvCoutMermCalcule"></p>
-          <div class="field">
-            <label for="cvNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetSecretaire" value="19.800" />
-              <span id="cvNetSecretaireSuffix">€ / an</span>
+          <details class="pm-autre-rh">
+            <summary>Autre RH</summary>
+            <div class="field">
+              <label for="cvNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetSecretaire" value="19.800" />
+                <span id="cvNetSecretaireSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="cvNetCadreSante">Salaire cadre de santé net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetCadreSante" value="33.600" />
-              <span id="cvNetCadreSanteSuffix">€ / an</span>
+            <div class="field">
+              <label for="cvNetCadreSante">Salaire cadre de santé net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetCadreSante" value="33.600" />
+                <span id="cvNetCadreSanteSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="cvNetAideManip">Salaire aide-manip net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetAideManip" value="19.200" />
-              <span id="cvNetAideManipSuffix">€ / an</span>
+            <div class="field">
+              <label for="cvNetAideManip">Salaire aide-manip net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetAideManip" value="19.200" />
+                <span id="cvNetAideManipSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="cvNetInfirmiere">Salaire infirmière net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetInfirmiere" value="24.000" />
-              <span id="cvNetInfirmiereSuffix">€ / an</span>
+            <div class="field">
+              <label for="cvNetInfirmiere">Salaire infirmière net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetInfirmiere" value="24.000" />
+                <span id="cvNetInfirmiereSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="cvNetManipAlternance">Salaire manip en alternance net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetManipAlternance" value="9.600" />
-              <span id="cvNetManipAlternanceSuffix">€ / an</span>
+            <div class="field">
+              <label for="cvNetManipAlternance">Salaire manip en alternance net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetManipAlternance" value="9.600" />
+                <span id="cvNetManipAlternanceSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
+          </details>
           <span class="cv-info-wrap">
             <button type="button" class="cv-info-btn" id="cvInfoTauxBtn" aria-expanded="false" aria-controls="cvInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
             <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
@@ -2104,10 +2117,7 @@
           document.getElementById("cvNet" + role + "Suffix").textContent = annuel ? "€ / an" : "€ / mois";
         });
         cvSalaireModeAnnuel = annuel;
-        document.getElementById("cvSalaireBtnAn").classList.toggle("btn--ghost", !annuel);
-        document.getElementById("cvSalaireBtnAn").setAttribute("aria-pressed", String(annuel));
-        document.getElementById("cvSalaireBtnMois").classList.toggle("btn--ghost", annuel);
-        document.getElementById("cvSalaireBtnMois").setAttribute("aria-pressed", String(!annuel));
+        document.getElementById("cvSalaireUnite").value = annuel ? "annuel" : "mensuel";
         recalculer();
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -2192,7 +2202,7 @@
       function afficherSeuilsBareme() {
         var dateIso = dateSelect.value;
         var zone = document.getElementById("cvZone").value;
-        var amortiKey = document.querySelector('input[name="cvAmorti"]:checked').value;
+        var amortiKey = document.getElementById("cvAmorti").value;
         var trIrm = tranchesAvecMontant(FT_CLASSES.le05, dateIso, zone, amortiKey);
         var trCt = tranchesAvecMontant(FT_CLASSES.ct, dateIso, zone, amortiKey);
         var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
@@ -2573,7 +2583,7 @@
       function majFtMoyen() {
         var dateIso = dateSelect.value;
         var zone = document.getElementById("cvZone").value;
-        var amortiKey = document.querySelector('input[name="cvAmorti"]:checked').value;
+        var amortiKey = document.getElementById("cvAmorti").value;
         var n = Math.max(0, parseFloat(document.getElementById("cvFtMoySlider").value) || 0);
         var trIrm = tranchesAvecMontant(FT_CLASSES.le05, dateIso, zone, amortiKey);
         var trCt = tranchesAvecMontant(FT_CLASSES.ct, dateIso, zone, amortiKey);
@@ -3273,7 +3283,7 @@
         var params = {
           dateIso: dateSelect.value,
           zone: document.getElementById("cvZone").value,
-          amortiKey: document.querySelector('input[name="cvAmorti"]:checked').value,
+          amortiKey: document.getElementById("cvAmorti").value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("cvKwh").value) || 0),
           heuresParJour: joursEtHeures.heuresParJour,
           joursParMois: joursEtHeures.joursParMois
@@ -4370,9 +4380,8 @@ var svg = document.getElementById("cvChart");
         input.addEventListener("blur", function () { formaterMilliers(input); });
       });
       dateSelect.addEventListener("change", recalculer);
-      document.querySelectorAll('input[name="cvAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
-      document.getElementById("cvSalaireBtnMois").addEventListener("click", function () { cvSalaireSetUnite(false); });
-      document.getElementById("cvSalaireBtnAn").addEventListener("click", function () { cvSalaireSetUnite(true); });
+      document.getElementById("cvAmorti").addEventListener("change", recalculer);
+      document.getElementById("cvSalaireUnite").addEventListener("change", function () { cvSalaireSetUnite(this.value === "annuel"); });
 
       // Câblage générique des 3 panneaux "Réglages avancés" (le principal + les 2 roues
       // par machine ajoutées le 05/09/2026) — ouverture/fermeture identiques.
@@ -5224,14 +5233,10 @@ var svg = document.getElementById("cvChart");
         { id: "cvNetInfirmiere", evt: "input", label: "Salaire infirmière net avant impôt", type: "montant" },
         { id: "cvNetManipAlternance", evt: "input", label: "Salaire manip en alternance net avant impôt", type: "montant" },
         { id: "cvCoutRis", evt: "input", label: "Coût RIS + graveur + imprimante", type: "montant" },
-        // Amortissement du forfait technique (radio "Non amorties"/"Amorties (> 7 ans)")
-        // — oublié lors de la 1ʳᵉ version du mécanisme mémoire (07/09/2026, repéré par
-        // Cédric : 2 mémoires enregistrées avec ce réglage différent donnaient EXACTEMENT
-        // le même résultat dans "Comparer", puisque le calcul relit toujours l'état ACTUEL
-        // de ce radio au lieu de celui enregistré). Pas de vrai `id` sur ces `<input>`
-        // (seulement `name="cvAmorti"`) — `type: "radio"` fait lire/écrire via ce `name`
-        // dans capturerParametres()/definirChamp() plutôt que `getElementById(f.id)`.
-        { id: "cvAmorti", evt: "change", label: "Amortissement du forfait technique", type: "radio" },
+        // Amortissement du forfait technique ("Non amorties"/"Amorties (> 7 ans)") — un
+        // <select> depuis le 12/09/2026 (harmonisation avec simulateur-point-mort.html),
+        // `type: "select"` comme cvZone/cvDate juste au-dessus.
+        { id: "cvAmorti", evt: "change", label: "Amortissement du forfait technique", type: "select" },
         // IRM Esaote — cvMachineA en premier (reinitialise loyer/MERM/débit à son
         // changement, voir restaurerParametres() plus bas qui le rejoue avant le reste).
         { id: "cvMachineA", evt: "change", label: "Modèle IRM Esaote", type: "select" },
@@ -5277,7 +5282,7 @@ var svg = document.getElementById("cvChart");
       function capturerParametres() {
         var etat = {};
         CV_MEMOIRE_FIELDS.forEach(function (f) {
-          // Groupe de radios (ex. cvAmorti) : pas de `getElementById(f.id)` possible,
+          // Groupe de radios éventuel : pas de `getElementById(f.id)` possible,
           // ces <input> n'ont qu'un `name` partagé, jamais d'id — lu via querySelector.
           var el = f.type === "radio"
             ? document.querySelector('input[name="' + f.id + '"]:checked')
@@ -5396,17 +5401,13 @@ var svg = document.getElementById("cvChart");
 
         // Toggle mensuel/annuel PARTAGÉ des 6 salaires (voir capturerParametres()) — les 6
         // champs #cvNet<Role> ont déjà été restaurés tels quels (valeur brute + texte, via
-        // CV_MEMOIRE_FIELDS/definirChamp ci-dessus) ; seule la variable de mode et
-        // l'apparence des 2 boutons + des 6 suffixes restent à remettre, avant le
-        // recalculer() final.
+        // CV_MEMOIRE_FIELDS/definirChamp ci-dessus) ; seule la variable de mode, le select
+        // et les 6 suffixes restent à remettre, avant le recalculer() final.
         cvSalaireModeAnnuel = etat.__cvSalaireModeAnnuel === true;
         CV_SALAIRE_ROLES.forEach(function (role) {
           document.getElementById("cvNet" + role + "Suffix").textContent = cvSalaireModeAnnuel ? "€ / an" : "€ / mois";
         });
-        document.getElementById("cvSalaireBtnAn").classList.toggle("btn--ghost", !cvSalaireModeAnnuel);
-        document.getElementById("cvSalaireBtnAn").setAttribute("aria-pressed", String(cvSalaireModeAnnuel));
-        document.getElementById("cvSalaireBtnMois").classList.toggle("btn--ghost", cvSalaireModeAnnuel);
-        document.getElementById("cvSalaireBtnMois").setAttribute("aria-pressed", String(!cvSalaireModeAnnuel));
+        document.getElementById("cvSalaireUnite").value = cvSalaireModeAnnuel ? "annuel" : "mensuel";
 
         recalculer();
       }
