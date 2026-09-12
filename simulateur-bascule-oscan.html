@@ -305,11 +305,15 @@
     .chart-card-slide-canvas--locked > .pres-block .pres-block__resize {
       opacity: 0 !important; pointer-events: none !important;
     }
-    .pres-block.is-locked::after {
-      content: "🔒"; position: absolute; top: 4px; left: 4px; font-size: 13px;
-      opacity: 0; transition: opacity .15s; pointer-events: none; z-index: 5;
+    /* Badge de rappel sur un bloc verrouillé — même cadenas SVG que les boutons
+       Mémoire (voir .pres-lock-toggle plus haut), pas un ::after (un pseudo-
+       élément ne peut pas contenir de SVG) : un vrai petit élément
+       `.pres-block__lock-badge`, ajouté/retiré en JS avec les autres poignées. */
+    .pres-block__lock-badge {
+      position: absolute; top: 4px; left: 4px; z-index: 5; color: var(--red);
+      opacity: 0; transition: opacity .15s; pointer-events: none;
     }
-    .pres-block.is-locked:hover::after { opacity: .9; }
+    .pres-block.is-locked:hover .pres-block__lock-badge { opacity: .9; }
 
     /* Menu contextuel "Figer/Libérer les dimensions" (12/09/2026) — un seul
        élément partagé (#presCtxMenu), positionné en JS au clic droit. */
@@ -677,6 +681,16 @@
     .bascule-lock-shackle-ouverte { display: none; }
     .bascule-memoire-clear.is-ouvert .bascule-lock-shackle-fermee { display: none; }
     .bascule-memoire-clear.is-ouvert .bascule-lock-shackle-ouverte { display: inline; }
+    /* Même cadenas que les boutons Mémoire (12/09/2026, demande de Cédric),
+       réutilisé hors de ce contexte précis (cadenas global de la barre de
+       présentation, menu contextuel "Figer les dimensions", badge sur un bloc
+       verrouillé) — règle de bascule générique sur `.pres-lock-toggle` plutôt que
+       scopée à `.bascule-memoire-clear`, même mécanique (fermé par défaut = figé/
+       verrouillé, `.is-ouvert` = libre/déverrouillé, cohérent avec le sens déjà en
+       place : un emplacement Mémoire "ouvert" = encore libre/non protégé). */
+    .pres-lock-toggle { display: inline-flex; vertical-align: middle; color: currentColor; }
+    .pres-lock-toggle.is-ouvert .bascule-lock-shackle-fermee { display: none; }
+    .pres-lock-toggle.is-ouvert .bascule-lock-shackle-ouverte { display: inline; }
     .bascule-memoire-hint { flex-basis: 100%; margin: .35rem 0 0; font-size: .82rem; color: var(--muted); }
 
     .bascule-comparaison-grille { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: .8rem; }
@@ -890,7 +904,13 @@
          pour ne plus risquer de bouger un bloc par erreur en cliquant dessus.
          Indépendant du verrou PAR BLOC (clic droit → "Figer les dimensions") : les
          2 peuvent se cumuler, voir presFreeAppliquerVerrouGlobal(). -->
-    <button type="button" id="presLockToggleBtn" hidden aria-pressed="false" title="Verrouille tous les blocs : plus aucun déplacement/redimensionnement possible dans la page">🔓 Déplacer les blocs</button>
+    <!-- Même cadenas (SVG à 2 états) que les boutons Mémoire, demande de Cédric le
+         12/09/2026 — voir .bascule-lock-icon/.pres-lock-toggle plus haut, JS
+         presFreeIconeCadenas()/presFreeAppliquerVerrouGlobal() plus bas. -->
+    <button type="button" id="presLockToggleBtn" hidden aria-pressed="false" title="Verrouille tous les blocs : plus aucun déplacement/redimensionnement possible dans la page">
+      <span id="presLockToggleIcon" aria-hidden="true"></span>
+      <span id="presLockToggleLabel">Déplacer les blocs</span>
+    </button>
   </div>
   <!-- Menu contextuel "Figer les dimensions" (12/09/2026) — un seul élément
        partagé, positionné au clic droit sur le bloc visé (voir
@@ -4719,6 +4739,18 @@
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
+      // Même cadenas (SVG à 2 états, fermé/ouvert) que les boutons Mémoire (12/09/2026,
+      // demande de Cédric) — un seul balisage réutilisé partout où ce cadenas doit
+      // apparaître (badge sur un bloc verrouillé, menu contextuel, cadenas global de
+      // la barre) plutôt que dupliqué à chaque endroit. `ouvert` (optionnel, défaut
+      // false = fermé/verrouillé) pose la classe `is-ouvert` dès la création.
+      function presFreeIconeCadenasHTML(ouvert) {
+        return '<svg class="bascule-lock-icon pres-lock-toggle' + (ouvert ? " is-ouvert" : "") + '" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">' +
+          '<path class="bascule-lock-shackle-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>' +
+          '<path class="bascule-lock-shackle-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>' +
+          '<rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/>' +
+          '</svg>';
+      }
       function presFreeLireLayout() {
         try { return JSON.parse(localStorage.getItem(PRES_FREE_LAYOUT_KEY) || "{}"); } catch (e) { return {}; }
       }
@@ -4766,9 +4798,12 @@
         e.preventDefault(); e.stopPropagation();
         presFreeFermerMenuContextuel();
         var menu = document.getElementById("presCtxMenu");
+        var verrouille = el.classList.contains("is-locked");
         var btn = document.createElement("button");
         btn.type = "button";
-        btn.textContent = el.classList.contains("is-locked") ? "🔓 Libérer les dimensions de ce bloc" : "🔒 Figer les dimensions de ce bloc";
+        // Icône = état ACTUEL du bloc (fermé s'il est déjà verrouillé, ouvert
+        // sinon), libellé = l'ACTION que ce clic va effectuer (l'inverse).
+        btn.innerHTML = presFreeIconeCadenasHTML(!verrouille) + " " + (verrouille ? "Libérer les dimensions de ce bloc" : "Figer les dimensions de ce bloc");
         btn.addEventListener("click", function (ev) {
           ev.stopPropagation();
           presFreeBasculerVerrouBloc(el, id);
@@ -5058,6 +5093,11 @@
           crop.setAttribute("aria-label", "Ajuster la taille du bloc à son contenu");
           crop.textContent = "⇲";
           el.appendChild(crop);
+          var lockBadge = document.createElement("span");
+          lockBadge.className = "pres-block__lock-badge";
+          lockBadge.setAttribute("aria-hidden", "true");
+          lockBadge.innerHTML = presFreeIconeCadenasHTML(false);
+          el.appendChild(lockBadge);
           ["nw", "ne", "sw", "se"].forEach(function (pos) {
             var rEl = document.createElement("div");
             rEl.className = "pres-block__resize pres-block__resize--corner pres-block__resize--" + pos;
@@ -5087,7 +5127,7 @@
           el.classList.remove("pres-block", "is-dragging", "is-resizing", "is-locked");
           el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
           delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
-          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize")).forEach(function (h2) { h2.remove(); });
+          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize, :scope > .pres-block__lock-badge")).forEach(function (h2) { h2.remove(); });
           var inner = el.querySelector(":scope > .pres-block__inner");
           if (inner) {
             while (inner.firstChild) el.insertBefore(inner.firstChild, inner);
@@ -5116,9 +5156,9 @@
       // les 2 se cumulent simplement dans le CSS.
       var presFreeVerrouGlobal = presLire("ced4scale-presentation-lock", "0") === "1";
       function presFreeAppliquerVerrouGlobal() {
-        var btn = document.getElementById("presLockToggleBtn");
-        btn.textContent = presFreeVerrouGlobal ? "🔒 Blocs verrouillés" : "🔓 Déplacer les blocs";
-        btn.setAttribute("aria-pressed", String(presFreeVerrouGlobal));
+        document.getElementById("presLockToggleIcon").innerHTML = presFreeIconeCadenasHTML(!presFreeVerrouGlobal);
+        document.getElementById("presLockToggleLabel").textContent = presFreeVerrouGlobal ? "Blocs verrouillés" : "Déplacer les blocs";
+        document.getElementById("presLockToggleBtn").setAttribute("aria-pressed", String(presFreeVerrouGlobal));
         if (!presFreeCardActif) return;
         var canvas = presFreeCardActif.querySelector(":scope > .chart-card-slide-canvas");
         if (canvas) canvas.classList.toggle("chart-card-slide-canvas--locked", presFreeVerrouGlobal);
