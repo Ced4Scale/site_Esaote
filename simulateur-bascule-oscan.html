@@ -210,6 +210,50 @@
        assez "trop haute" pour perturber l'équilibrage. Défilement interne
        (overflow-y:auto) si un jour son contenu dépassait quand même. */
     .chart-card-slide-canvas--split #boCardBareme { max-height: 560px; overflow-y: auto; }
+
+    /* Disposition libre en plein écran (12/09/2026, demande de Cédric) : sur
+       #boCardBaremeFtMoy, en format Automatique UNIQUEMENT (voir PRES_FREE_BLOCKS/
+       presFreeActiver() dans le JS), chaque bloc ("Forfait technique", "Tarif moyen",
+       "carte Joker", "bloc Mémoire/Comparer", "affichages de comparaison", "Réglages
+       de répartition") devient déplaçable (poignée ⠿) et redimensionnable (8 poignées :
+       les 4 coins changent la taille ET l'échelle du contenu ensemble — le
+       "changement d'échelle automatisé" demandé ; les 4 bords ne changent QUE la
+       largeur ou la hauteur du bloc, jamais la taille de son contenu — défilement
+       interne si le contenu ne tient plus, motif déjà utilisé pour #boCardBareme
+       ci-dessus). Position/taille mémorisées par bloc dans localStorage
+       (ced4scale-presentation-layout), un bouton "Réinitialiser la disposition"
+       remet tout à la position naturelle mesurée à la 1ʳᵉ activation. */
+    .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
+    .chart-card-slide-canvas--free > .pres-block {
+      position: absolute; box-sizing: border-box;
+      border: 1px dashed transparent; border-radius: 4px;
+    }
+    .chart-card-slide-canvas--free > .pres-block:hover,
+    .chart-card-slide-canvas--free > .pres-block.is-dragging,
+    .chart-card-slide-canvas--free > .pres-block.is-resizing { border-color: var(--red); }
+    .pres-block__inner { width: 100%; height: 100%; overflow: auto; transform-origin: top left; }
+    .pres-block__handle {
+      position: absolute; top: -2px; left: -2px; width: 24px; height: 24px; z-index: 6;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--red); color: #fff; border-radius: 4px 0 6px 0;
+      cursor: move; font-size: 14px; opacity: 0; transition: opacity .15s; user-select: none;
+    }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__handle,
+    .pres-block.is-dragging .pres-block__handle { opacity: 1; }
+    .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__resize,
+    .pres-block.is-resizing .pres-block__resize { opacity: 1; }
+    .pres-block__resize--corner { width: 13px; height: 13px; background: var(--red); border-radius: 50%; }
+    .pres-block__resize--nw { top: -6px; left: -6px; cursor: nwse-resize; }
+    .pres-block__resize--ne { top: -6px; right: -6px; cursor: nesw-resize; }
+    .pres-block__resize--sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+    .pres-block__resize--se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+    .pres-block__resize--edge { background: transparent; }
+    .pres-block__resize--n { top: -5px; left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
+    .pres-block__resize--s { bottom: -5px; left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
+    .pres-block__resize--w { left: -5px; top: 14px; bottom: 14px; width: 10px; cursor: ew-resize; }
+    .pres-block__resize--e { right: -5px; top: 14px; bottom: 14px; width: 10px; cursor: ew-resize; }
+
     /* Espace augmenté entre les grands blocs de "Répartition de l'activité"
        (11/09/2026, demande de Cédric — les blocs se touchaient de trop près) : marge
        basse sur chaque groupe plutôt qu'un espace ad hoc par élément. */
@@ -765,6 +809,11 @@
     <button type="button" data-format="43" id="presFormat43" title="Format 4:3 (classique)">4:3</button>
     <span class="presentation-toolbar__sep"></span>
     <button type="button" id="presSplitToggle" aria-pressed="false" title="Si le contenu est trop long : défiler, ou diviser l'écran en 2 colonnes">Défilement</button>
+    <!-- Disposition libre (12/09/2026, demande de Cédric) : uniquement en format
+         Automatique, sur les cadres qui ont plusieurs blocs déplaçables/redimensionnables
+         (voir PRES_FREE_BLOCKS plus bas) — remplace le bouton Défilement/2 colonnes,
+         qui n'a plus de sens une fois les blocs positionnés librement. -->
+    <button type="button" id="presResetLayoutBtn" hidden title="Remet chaque bloc à sa position et sa taille d'origine">Réinitialiser la disposition</button>
   </div>
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
@@ -4546,6 +4595,248 @@
       var presSplitActuel = presLire("ced4scale-presentation-split", "scroll") === "split";
       var presCardActif = null;
 
+      // Disposition libre en plein écran (12/09/2026, demande de Cédric — "il faut
+      // pouvoir déplacer ET redimensionner chaque bloc") : uniquement en format
+      // Automatique, sur les cadres listés ici (un seul pour l'instant, prototype
+      // avant propagation éventuelle). Chaque id de la liste devient un bloc
+      // indépendant, déplaçable/redimensionnable, MÊME s'il vit normalement imbriqué
+      // plus profond ailleurs (ex. #boFtMoyJokerCard/#boBtnRow/#boGrapheComparaison,
+      // normalement enfants de #boFtMoyCard — voir "vivent à demeure DANS #boFtMoyCard"
+      // dans le skill/la mémoire) : ils sont hoistés au niveau du canvas le temps de la
+      // disposition libre, exactement comme le mécanisme extraIds de
+      // wireCardFullscreen (parent + frère suivant mémorisés, restaurés à l'identique
+      // à la désactivation) — jamais une restructuration permanente du HTML, la vue
+      // normale et les formats 16:9/4:3 gardent l'imbrication d'origine inchangée.
+      var PRES_FREE_BLOCKS = {
+        boCardBaremeFtMoy: ["boCardBareme", "boFtMoyCard", "boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages"]
+      };
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout";
+      var presFreeCardActif = null;
+      var presFreeHomes = null;
+
+      function presFreeLireLayout() {
+        try { return JSON.parse(localStorage.getItem(PRES_FREE_LAYOUT_KEY) || "{}"); } catch (e) { return {}; }
+      }
+      function presFreeEcrireLayout(layout) {
+        try { localStorage.setItem(PRES_FREE_LAYOUT_KEY, JSON.stringify(layout)); } catch (e) {}
+      }
+      function presFreeSauverEtat(id, state) {
+        var layout = presFreeLireLayout();
+        layout[id] = state;
+        presFreeEcrireLayout(layout);
+      }
+      function presFreeAppliquerEtat(el, state) {
+        el.style.left = state.xPct + "%";
+        el.style.top = state.yPct + "%";
+        el.style.width = state.wPct + "%";
+        el.style.height = state.hPct + "%";
+        var inner = el.querySelector(":scope > .pres-block__inner");
+        if (inner) inner.style.transform = "scale(" + (state.scale || 1) + ")";
+        el._presState = state;
+      }
+      // Poignée de déplacement (⠿, coin haut-gauche) + 8 poignées de redimensionnement
+      // (4 coins = redimensionnement PROPORTIONNEL avec mise à l'échelle automatique du
+      // contenu ; 4 bords = largeur OU hauteur seule, jamais la taille des éléments —
+      // défilement interne si le contenu ne tient plus, voir .pres-block__inner). Tout
+      // en pointer events génériques (souris + tactile), coordonnées en pixels pendant
+      // le geste (1:1 avec la souris), converties en % du canvas seulement pour
+      // l'affichage final et la mémorisation (portable d'un écran à l'autre).
+      function presFreeBrancherBloc(el, canvas, id) {
+        var handle = el.querySelector(":scope > .pres-block__handle");
+        handle.addEventListener("pointerdown", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          el.classList.add("is-dragging");
+          var canvasRect = canvas.getBoundingClientRect();
+          var startX = e.clientX, startY = e.clientY;
+          var startLeftPx = (parseFloat(el.style.left) || 0) / 100 * canvasRect.width;
+          var startTopPx = (parseFloat(el.style.top) || 0) / 100 * canvasRect.height;
+          function onMove(ev) {
+            var newLeftPx = Math.max(-40, Math.min(canvasRect.width - 40, startLeftPx + (ev.clientX - startX)));
+            var newTopPx = Math.max(-40, Math.min(canvasRect.height - 40, startTopPx + (ev.clientY - startY)));
+            el.style.left = (newLeftPx / canvasRect.width * 100) + "%";
+            el.style.top = (newTopPx / canvasRect.height * 100) + "%";
+          }
+          function onUp() {
+            el.classList.remove("is-dragging");
+            document.removeEventListener("pointermove", onMove);
+            document.removeEventListener("pointerup", onUp);
+            var state = el._presState || {};
+            state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
+            presFreeSauverEtat(id, state);
+          }
+          document.addEventListener("pointermove", onMove);
+          document.addEventListener("pointerup", onUp);
+        });
+        Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__resize")).forEach(function (r) {
+          r.addEventListener("pointerdown", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            el.classList.add("is-resizing");
+            var pos = r.dataset.presResize;
+            var canvasRect = canvas.getBoundingClientRect();
+            var startX = e.clientX, startY = e.clientY;
+            var startWPct = parseFloat(el.style.width) || 10;
+            var startHPct = parseFloat(el.style.height) || 10;
+            var startLeftPct = parseFloat(el.style.left) || 0;
+            var startTopPct = parseFloat(el.style.top) || 0;
+            var naturalW = parseFloat(el.dataset.presNaturalW) || (startWPct / 100 * canvasRect.width);
+            var naturalH = parseFloat(el.dataset.presNaturalH) || (startHPct / 100 * canvasRect.height);
+            var startScale = (el._presState && el._presState.scale) || 1;
+            var isCorner = pos.length === 2;
+            function onMove(ev) {
+              var dx = ev.clientX - startX, dy = ev.clientY - startY;
+              var wPct = startWPct, hPct = startHPct, scale = startScale;
+              if (isCorner) {
+                var signX = pos.indexOf("e") > -1 ? 1 : -1;
+                var signY = pos.indexOf("s") > -1 ? 1 : -1;
+                var startWpx = naturalW * startScale, startHpx = naturalH * startScale;
+                var deltaPx = (dx * signX + dy * signY) / 2;
+                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx) / naturalW));
+                var newWpx = naturalW * scale, newHpx = naturalH * scale;
+                wPct = newWpx / canvasRect.width * 100;
+                hPct = newHpx / canvasRect.height * 100;
+                var startLeftPx = startLeftPct / 100 * canvasRect.width;
+                var startTopPx = startTopPct / 100 * canvasRect.height;
+                if (signX < 0) el.style.left = ((startLeftPx + (startWpx - newWpx)) / canvasRect.width * 100) + "%";
+                if (signY < 0) el.style.top = ((startTopPx + (startHpx - newHpx)) / canvasRect.height * 100) + "%";
+              } else if (pos === "n" || pos === "s") {
+                var startHpx2 = startHPct / 100 * canvasRect.height;
+                var newHpx2 = Math.max(30, pos === "s" ? startHpx2 + dy : startHpx2 - dy);
+                hPct = newHpx2 / canvasRect.height * 100;
+                if (pos === "n") {
+                  var startTopPx2 = startTopPct / 100 * canvasRect.height;
+                  el.style.top = ((startTopPx2 + (startHpx2 - newHpx2)) / canvasRect.height * 100) + "%";
+                }
+              } else {
+                var startWpx2 = startWPct / 100 * canvasRect.width;
+                var newWpx2 = Math.max(60, pos === "e" ? startWpx2 + dx : startWpx2 - dx);
+                wPct = newWpx2 / canvasRect.width * 100;
+                if (pos === "w") {
+                  var startLeftPx2 = startLeftPct / 100 * canvasRect.width;
+                  el.style.left = ((startLeftPx2 + (startWpx2 - newWpx2)) / canvasRect.width * 100) + "%";
+                }
+              }
+              el.style.width = wPct + "%"; el.style.height = hPct + "%";
+              var inner = el.querySelector(":scope > .pres-block__inner");
+              if (inner) inner.style.transform = "scale(" + scale + ")";
+              el._presState = el._presState || {};
+              el._presState.scale = scale;
+            }
+            function onUp() {
+              el.classList.remove("is-resizing");
+              document.removeEventListener("pointermove", onMove);
+              document.removeEventListener("pointerup", onUp);
+              var state = el._presState || {};
+              state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
+              state.wPct = parseFloat(el.style.width); state.hPct = parseFloat(el.style.height);
+              presFreeSauverEtat(id, state);
+            }
+            document.addEventListener("pointermove", onMove);
+            document.addEventListener("pointerup", onUp);
+          });
+        });
+      }
+      function presFreeActiver(card) {
+        if (presFreeCardActif === card) return;
+        var ids = PRES_FREE_BLOCKS[card.id];
+        if (!ids) return;
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        if (!canvas) return;
+        canvas.classList.add("chart-card-slide-canvas--free");
+        var layout = presFreeLireLayout();
+        var canvasRect = canvas.getBoundingClientRect();
+        // Homes capturés AVANT tout déplacement (parent + frère suivant d'origine,
+        // même motif que extraIds de wireCardFullscreen) et mesure de la position
+        // NATURELLE (flux normal) avant de rien transformer en position:absolute —
+        // sert de valeur par défaut tant que Cédric n'a pas encore réglé ce bloc à la
+        // main (donc rien à lire dans localStorage pour cet id).
+        var homes = [];
+        ids.forEach(function (id) {
+          var el = document.getElementById(id);
+          if (el) homes.push({ id: id, el: el, parent: el.parentNode, next: el.nextSibling });
+        });
+        var naturelles = {};
+        homes.forEach(function (h) {
+          var r = h.el.getBoundingClientRect();
+          // Bloc masqué (`hidden`) au moment de la mesure (ex. #boGrapheComparaison,
+          // affiché seulement quand "Comparer" est cliqué) : sa bbox naturelle est
+          // 0×0 à une position sans rapport avec le canvas — position par défaut
+          // raisonnable à la place (grand rectangle centré), plutôt qu'un bloc
+          // invisible qui apparaîtrait à une position aberrante dès qu'il devient visible.
+          if (!r.width && !r.height) {
+            naturelles[h.id] = { xPct: 8, yPct: 8, wPct: 84, hPct: 84, naturalW: canvasRect.width * 0.84, naturalH: canvasRect.height * 0.84 };
+            return;
+          }
+          naturelles[h.id] = {
+            xPct: (r.left - canvasRect.left) / canvasRect.width * 100,
+            yPct: (r.top - canvasRect.top) / canvasRect.height * 100,
+            wPct: r.width / canvasRect.width * 100,
+            hPct: r.height / canvasRect.height * 100,
+            naturalW: r.width, naturalH: r.height
+          };
+        });
+        homes.forEach(function (h) {
+          var el = h.el, nat = naturelles[h.id];
+          var inner = document.createElement("div");
+          inner.className = "pres-block__inner";
+          while (el.firstChild) inner.appendChild(el.firstChild);
+          el.appendChild(inner);
+          el.classList.add("pres-block");
+          el.dataset.presNaturalW = nat.naturalW;
+          el.dataset.presNaturalH = nat.naturalH;
+          var handle = document.createElement("div");
+          handle.className = "pres-block__handle";
+          handle.title = "Glisser pour déplacer ce bloc";
+          handle.setAttribute("aria-hidden", "true");
+          handle.textContent = "⠿";
+          el.appendChild(handle);
+          ["nw", "ne", "sw", "se"].forEach(function (pos) {
+            var rEl = document.createElement("div");
+            rEl.className = "pres-block__resize pres-block__resize--corner pres-block__resize--" + pos;
+            rEl.dataset.presResize = pos;
+            rEl.title = "Glisser pour agrandir/réduire (échelle automatique)";
+            el.appendChild(rEl);
+          });
+          ["n", "s", "e", "w"].forEach(function (pos) {
+            var rEl = document.createElement("div");
+            rEl.className = "pres-block__resize pres-block__resize--edge pres-block__resize--" + pos;
+            rEl.dataset.presResize = pos;
+            rEl.title = "Glisser pour changer seulement la " + (pos === "n" || pos === "s" ? "hauteur" : "largeur");
+            el.appendChild(rEl);
+          });
+          canvas.appendChild(el);
+          presFreeAppliquerEtat(el, layout[h.id] || { xPct: nat.xPct, yPct: nat.yPct, wPct: nat.wPct, hPct: nat.hPct, scale: 1 });
+          presFreeBrancherBloc(el, canvas, h.id);
+        });
+        presFreeHomes = homes;
+        presFreeCardActif = card;
+      }
+      function presFreeDesactiver(card) {
+        if (presFreeCardActif !== card || !presFreeHomes) { presFreeCardActif = null; presFreeHomes = null; return; }
+        var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
+        presFreeHomes.forEach(function (h) {
+          var el = h.el;
+          el.classList.remove("pres-block", "is-dragging", "is-resizing");
+          el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
+          delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
+          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__resize")).forEach(function (h2) { h2.remove(); });
+          var inner = el.querySelector(":scope > .pres-block__inner");
+          if (inner) {
+            while (inner.firstChild) el.insertBefore(inner.firstChild, inner);
+            inner.remove();
+          }
+          if (h.next && h.next.parentNode === h.parent) h.parent.insertBefore(el, h.next);
+          else h.parent.appendChild(el);
+        });
+        if (canvas) canvas.classList.remove("chart-card-slide-canvas--free");
+        presFreeHomes = null;
+        presFreeCardActif = null;
+      }
+      function presFreeReinitialiser() {
+        presFreeEcrireLayout({});
+        if (presFreeCardActif) { var card = presFreeCardActif; presFreeDesactiver(card); presFreeActiver(card); }
+      }
+      document.getElementById("presResetLayoutBtn").addEventListener("click", presFreeReinitialiser);
+
       function presAppliquer() {
         if (!presCardActif) return;
         var canvas = presCardActif.querySelector(":scope > .chart-card-slide-canvas");
@@ -4559,7 +4850,14 @@
         } else {
           canvas.style.width = ""; canvas.style.height = ""; canvas.style.transform = "";
         }
-        canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
+        // Disposition libre : uniquement en Automatique (fmt falsy), et seulement sur
+        // les cadres listés dans PRES_FREE_BLOCKS — remplace alors le bouton
+        // Défilement/2 colonnes (devenu sans effet sur des blocs position:absolute) par
+        // "Réinitialiser la disposition".
+        var freePossible = !fmt && PRES_FREE_BLOCKS[presCardActif.id];
+        if (freePossible) presFreeActiver(presCardActif);
+        else presFreeDesactiver(presCardActif);
+        if (!freePossible) canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
         // "auto" dans les 2 cas (pas "hidden" en 2 colonnes, corrigé le 11/09/2026) :
         // un contenu qui déborderait malgré la répartition en 2 colonnes reste
         // consultable au défilement plutôt que d'être coupé en silence.
@@ -4567,6 +4865,8 @@
         var toggle = document.getElementById("presSplitToggle");
         toggle.textContent = presSplitActuel ? "2 colonnes" : "Défilement";
         toggle.setAttribute("aria-pressed", String(presSplitActuel));
+        toggle.hidden = !!freePossible;
+        document.getElementById("presResetLayoutBtn").hidden = !freePossible;
         ["presFormatAuto", "presFormat169", "presFormat43"].forEach(function (id) {
           var b = document.getElementById(id);
           b.classList.toggle("active", b.dataset.format === presFormatActuel);
@@ -4591,6 +4891,12 @@
         presAppliquerPositionToolbar();
       }
       function presSortirCard(card) {
+        // Désactiver la disposition libre EN PREMIER (remet chaque bloc hoisté à sa
+        // place nichée d'origine, ex. #boFtMoyJokerCard dans son wrap) — sinon
+        // presSortirCard le déposerait directement comme enfant de `card`, cassant
+        // l'imbrication normale de la page (voir wireCardFullscreen, extras restaurés
+        // APRÈS ce presSortirCard).
+        presFreeDesactiver(card);
         var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
         if (canvas) {
           Array.prototype.slice.call(canvas.childNodes).forEach(function (n) { card.insertBefore(n, canvas); });
