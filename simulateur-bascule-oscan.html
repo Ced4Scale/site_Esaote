@@ -569,11 +569,10 @@
        11/09/2026). Sous 480px, on repasse en flux normal (space-between) plutôt que de
        suivre la position exacte du curseur — perd la nuance visuelle mais élimine tout
        chevauchement, quelle que soit la répartition choisie. */
-    /* #boCardReglages (12/09/2026, suite) : ce curseur miroir a encore déménagé,
-       cette fois dans sa propre carte "Réglages de répartition" sous "Hypothèses"
-       (demande de Cédric — combler le vide sous "Forfait technique" en vue
-       normale). Déjà passé par #boCardBareme puis #boFtMoyCard avant ça, toujours
-       le même sélecteur à faire suivre. */
+    /* #boCardReglages (12/09/2026) : ce curseur miroir a déménagé plusieurs fois —
+       #boCardBareme, puis #boFtMoyCard, puis sous "Hypothèses", puis enfin sous
+       "Tarif moyen du forfait technique selon le volume" (demande de Cédric) —
+       toujours le même sélecteur à faire suivre, indépendant de la position. */
     @media (max-width: 480px) {
       #boCardReglages .bascule-slider-labels {
         position: static; height: auto; display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
@@ -1690,44 +1689,18 @@
           </div>
 
 
-        <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardHyp">
-          <summary>Hypothèses de ce simulateur
-            <button type="button" class="chart-card-fullscreen-btn" id="boHypChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
-          </summary>
-          <div style="overflow-x:auto">
-            <table class="bascule-mini-table bascule-hyp-table">
-              <tbody id="boHypSummary"></tbody>
-            </table>
-          </div>
-          <span class="bascule-info-wrap" style="margin-top:.6rem">
-            <button type="button" class="bascule-info-btn" id="boHypResumeBtn" aria-expanded="false" aria-controls="boHypResumePop" aria-label="Où modifier ces hypothèses">💡</button>
-            <div class="bascule-info-pop" id="boHypResumePop" hidden>Modifiable via l'icône ⚙ de chaque bloc (Machine A pour le salaire/base légale/amplitude/modèle, O-scan pour sa propre amplitude).</div>
-          </span>
-        </details>
-
-        <!-- Réglages de répartition (12/09/2026, demande de Cédric) : déplacés hors
-             de "Forfait technique - barème dégressif" (où ils vivaient depuis la
-             veille) vers une carte à part, ICI, sous "Hypothèses" — en vue normale,
-             la colonne de droite (Forfait technique/Tarif moyen/Hypothèses) est
-             bien plus courte que la colonne de gauche ("Paramètres", pleine de
-             champs), laissant un grand vide sous "Forfait technique" ; cette carte
-             comble cet espace au lieu de rester nichée dans le barème. Toujours les
-             MÊMES éléments qu'avant (#boCurseur2 : même habillage que le curseur
-             original de "Répartition de l'activité" — libellés au-dessus, barre à
-             dégradé, flèche sous le curseur, 0/activité totale aux extrémités ;
-             #boVolumeA2/#boPartExtremites2, synchronisés dans les 2 sens — voir
-             mirrorField() plus bas) — pas de doublon, seulement reparentés.
-             12/09/2026, suite (changement de stratégie pour le plein écran) : cette
-             carte est repartie EN PLUS au bas du tableau "Forfait technique - barème
-             dégressif" (#boBaremeReglagesSlot), mais seulement PENDANT le plein écran
-             fusionné — voir wireCardFullscreen("boBaremeFtMoyFullscreenBtn", ...)
-             plus bas, extraIds/extraTargetId. En vue normale, elle reste ici, sous
-             "Hypothèses", inchangée. -->
+        <!-- Réglages de répartition (12/09/2026) : d'abord nichés dans "Forfait
+             technique - barème dégressif", puis déplacés sous "Hypothèses" le même
+             jour (vue normale trop courte à droite) — Cédric a ensuite demandé de les
+             remettre juste sous "Tarif moyen du forfait technique selon le volume",
+             où ils vivent maintenant en vue normale (toujours les MÊMES éléments,
+             #boCurseur2/#boVolumeA2/#boPartExtremites2, synchronisés dans les 2 sens,
+             pas de doublon, seulement reparentés). Le mécanisme de plein écran fusionné
+             ("Forfait technique" + "Tarif moyen", #boCardBaremeFtMoy) n'a pas changé :
+             cette carte est toujours envoyée dans #boBaremeReglagesSlot (au bas du
+             barème, colonne de gauche en mode "2 colonnes") PENDANT le plein écran
+             uniquement — voir wireCardFullscreen("boBaremeFtMoyFullscreenBtn", ...),
+             extraIds/extraTargetId plus bas — puis revient ici à la sortie. -->
         <div class="simulator__chart-card" id="boCardReglages">
           <h3 style="margin:0 0 1rem;font-size:1.05rem">Réglages de répartition</h3>
           <div class="bascule-slider-labels">
@@ -1761,6 +1734,25 @@
             </div>
           </div>
         </div>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardHyp">
+          <summary>Hypothèses de ce simulateur
+            <button type="button" class="chart-card-fullscreen-btn" id="boHypChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <div style="overflow-x:auto">
+            <table class="bascule-mini-table bascule-hyp-table">
+              <tbody id="boHypSummary"></tbody>
+            </table>
+          </div>
+          <span class="bascule-info-wrap" style="margin-top:.6rem">
+            <button type="button" class="bascule-info-btn" id="boHypResumeBtn" aria-expanded="false" aria-controls="boHypResumePop" aria-label="Où modifier ces hypothèses">💡</button>
+            <div class="bascule-info-pop" id="boHypResumePop" hidden>Modifiable via l'icône ⚙ de chaque bloc (Machine A pour le salaire/base légale/amplitude/modèle, O-scan pour sa propre amplitude).</div>
+          </span>
+        </details>
 
         <div class="simulator__export" id="boExport">
           <button type="button" class="btn btn--lg" id="boExportToggle">Recevoir cette simulation par e-mail</button>
