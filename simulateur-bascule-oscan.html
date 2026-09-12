@@ -288,6 +288,42 @@
     .pres-block__resize--w { left: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
     .pres-block__resize--e { right: 0; top: 14px; bottom: 14px; width: 8px; cursor: ew-resize; }
 
+    /* Verrouillage (12/09/2026, demande de Cédric) — 2 niveaux, cumulables :
+       PAR BLOC (clic droit → "Figer les dimensions", classe .is-locked posée sur
+       CE bloc) et GLOBAL (cadenas de la barre d'outils, classe
+       .chart-card-slide-canvas--locked posée sur le canvas, s'applique à TOUS les
+       blocs qu'il contient). Dans les 2 cas : poignées cachées ET rendues
+       inactives (pointer-events:none — indispensable, `opacity:0` seul les
+       laisserait cliquables/invisibles) ; un petit 🔒 apparaît au survol pour
+       rappeler que ce bloc est figé (jamais permanent, seulement pour ne pas
+       encombrer visuellement une présentation projetée). */
+    .pres-block.is-locked .pres-block__handle,
+    .pres-block.is-locked .pres-block__crop,
+    .pres-block.is-locked .pres-block__resize,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__handle,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__crop,
+    .chart-card-slide-canvas--locked > .pres-block .pres-block__resize {
+      opacity: 0 !important; pointer-events: none !important;
+    }
+    .pres-block.is-locked::after {
+      content: "🔒"; position: absolute; top: 4px; left: 4px; font-size: 13px;
+      opacity: 0; transition: opacity .15s; pointer-events: none; z-index: 5;
+    }
+    .pres-block.is-locked:hover::after { opacity: .9; }
+
+    /* Menu contextuel "Figer/Libérer les dimensions" (12/09/2026) — un seul
+       élément partagé (#presCtxMenu), positionné en JS au clic droit. */
+    .pres-ctx-menu {
+      position: fixed; z-index: 999; background: #fff; border: 1px solid var(--line);
+      border-radius: 8px; box-shadow: 0 6px 20px rgba(0,0,0,.2); padding: .3rem;
+    }
+    .pres-ctx-menu button {
+      display: block; width: 100%; text-align: left; padding: .5rem .9rem;
+      border: none; background: none; cursor: pointer; font-size: .85rem;
+      border-radius: 5px; white-space: nowrap; color: var(--ink); font-family: inherit;
+    }
+    .pres-ctx-menu button:hover { background: var(--wash); }
+
     /* Espace augmenté entre les grands blocs de "Répartition de l'activité"
        (11/09/2026, demande de Cédric — les blocs se touchaient de trop près) : marge
        basse sur chaque groupe plutôt qu'un espace ad hoc par élément. */
@@ -848,7 +884,18 @@
          (voir PRES_FREE_BLOCKS plus bas) — remplace le bouton Défilement/2 colonnes,
          qui n'a plus de sens une fois les blocs positionnés librement. -->
     <button type="button" id="presResetLayoutBtn" hidden title="Remet chaque bloc à sa position et sa taille d'origine">Réinitialiser la disposition</button>
+    <!-- Cadenas global (12/09/2026, demande de Cédric) : verrouille TOUS les blocs
+         d'un coup (plus de déplacement/redimensionnement possible dessus), sans
+         toucher à leur position/taille actuelle — utile juste avant de projeter,
+         pour ne plus risquer de bouger un bloc par erreur en cliquant dessus.
+         Indépendant du verrou PAR BLOC (clic droit → "Figer les dimensions") : les
+         2 peuvent se cumuler, voir presFreeAppliquerVerrouGlobal(). -->
+    <button type="button" id="presLockToggleBtn" hidden aria-pressed="false" title="Verrouille tous les blocs : plus aucun déplacement/redimensionnement possible dans la page">🔓 Déplacer les blocs</button>
   </div>
+  <!-- Menu contextuel "Figer les dimensions" (12/09/2026) — un seul élément
+       partagé, positionné au clic droit sur le bloc visé (voir
+       presFreeBrancherBloc()/contextmenu plus bas). -->
+  <div class="pres-ctx-menu" id="presCtxMenu" hidden></div>
   <header class="document-viewer__bar">
     <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
       <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
@@ -4685,7 +4732,50 @@
         el.style.height = state.hPct + "%";
         var inner = el.querySelector(":scope > .pres-block__inner");
         if (inner) inner.style.transform = "scale(" + (state.scale || 1) + ")";
+        el.classList.toggle("is-locked", !!state.locked);
         el._presState = state;
+      }
+      // Verrou PAR BLOC (12/09/2026, demande de Cédric, clic droit sur un bloc) :
+      // fige/libère un bloc précis, indépendamment du cadenas GLOBAL de la barre
+      // d'outils (voir presFreeAppliquerVerrouGlobal plus bas). Mémorisé dans le
+      // même état que position/taille (`state.locked`), donc conservé même si le
+      // bloc est aussi déplacé/redimensionné ensuite.
+      function presFreeBasculerVerrouBloc(el, id) {
+        var verrouille = el.classList.toggle("is-locked");
+        var state = el._presState || {};
+        state.locked = verrouille;
+        presFreeSauverEtat(id, state);
+      }
+      function presFreeFermerMenuContextuel() {
+        var menu = document.getElementById("presCtxMenu");
+        menu.hidden = true;
+        menu.innerHTML = "";
+      }
+      document.addEventListener("click", presFreeFermerMenuContextuel);
+      document.addEventListener("scroll", presFreeFermerMenuContextuel, true);
+      // Menu contextuel "Figer/Libérer les dimensions" (12/09/2026, demande de
+      // Cédric, "clic droit dans l'image") — un seul item, son libellé reflète
+      // l'état ACTUEL du bloc visé (jamais 2 items séparés Figer/Libérer, qui
+      // resteraient tous les 2 affichés sans dire lequel s'applique).
+      function presFreeOuvrirMenuContextuel(e, el, id) {
+        e.preventDefault(); e.stopPropagation();
+        presFreeFermerMenuContextuel();
+        var menu = document.getElementById("presCtxMenu");
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = el.classList.contains("is-locked") ? "🔓 Libérer les dimensions de ce bloc" : "🔒 Figer les dimensions de ce bloc";
+        btn.addEventListener("click", function (ev) {
+          ev.stopPropagation();
+          presFreeBasculerVerrouBloc(el, id);
+          presFreeFermerMenuContextuel();
+        });
+        menu.appendChild(btn);
+        menu.hidden = false;
+        // Recalé si le menu déborderait de l'écran (coin bas/droit) — mesuré
+        // après affichage, une fois sa vraie taille connue.
+        var mw = menu.offsetWidth, mh = menu.offsetHeight;
+        menu.style.left = Math.min(e.clientX, window.innerWidth - mw - 8) + "px";
+        menu.style.top = Math.min(e.clientY, window.innerHeight - mh - 8) + "px";
       }
       // Poignée de déplacement (⠿, coin haut-gauche) + 8 poignées de redimensionnement
       // (4 coins = redimensionnement PROPORTIONNEL avec mise à l'échelle automatique du
@@ -4762,6 +4852,7 @@
         presFreeSauverEtat(id, state);
       }
       function presFreeBrancherBloc(el, canvas, id) {
+        el.addEventListener("contextmenu", function (e) { presFreeOuvrirMenuContextuel(e, el, id); });
         var crop = el.querySelector(":scope > .pres-block__crop");
         crop.addEventListener("click", function (e) {
           e.preventDefault(); e.stopPropagation();
@@ -4920,7 +5011,17 @@
           var el = h.el, nat = naturelles[h.id];
           var inner = document.createElement("div");
           inner.className = "pres-block__inner";
-          while (el.firstChild) inner.appendChild(el.firstChild);
+          // `<summary>` d'un `<details>` (#boCardBareme/#boFtMoyCard) JAMAIS déplacé
+          // dans l'inner — doit rester enfant DIRECT du `<details>` pour que le
+          // navigateur continue de le reconnaître comme son résumé natif. Bug réel
+          // vécu le 12/09/2026, repéré par Cédric sur une capture : le `<summary>`
+          // déplacé dans l'inner perdait sa fonction, le triangle d'ouverture/
+          // fermeture ET le titre réel disparaissaient, remplacés par le libellé de
+          // repli du navigateur ("Détails") — silencieux, aucune erreur JS.
+          var summary = el.tagName === "DETAILS" ? el.querySelector(":scope > summary") : null;
+          Array.prototype.slice.call(el.childNodes).forEach(function (n) {
+            if (n !== summary) inner.appendChild(n);
+          });
           el.appendChild(inner);
           el.classList.add("pres-block");
           el.dataset.presNaturalW = nat.naturalW;
@@ -4964,7 +5065,7 @@
         var canvas = card.querySelector(":scope > .chart-card-slide-canvas");
         presFreeHomes.forEach(function (h) {
           var el = h.el;
-          el.classList.remove("pres-block", "is-dragging", "is-resizing");
+          el.classList.remove("pres-block", "is-dragging", "is-resizing", "is-locked");
           el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
           delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
           Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize")).forEach(function (h2) { h2.remove(); });
@@ -4986,6 +5087,29 @@
       }
       document.getElementById("presResetLayoutBtn").addEventListener("click", presFreeReinitialiser);
 
+      // Cadenas GLOBAL (12/09/2026, demande de Cédric) : verrouille TOUS les blocs
+      // d'un coup, en plus du verrou par bloc (clic droit, voir plus haut) — utile
+      // juste avant de projeter, pour ne plus risquer de bouger un bloc par
+      // inadvertance. Appliqué en ajoutant une classe sur le CANVAS (voir CSS
+      // `.chart-card-slide-canvas--locked`) plutôt qu'en posant `.is-locked` sur
+      // chaque bloc un par un — n'écrase jamais l'état de verrouillage individuel
+      // de chaque bloc (mémorisé séparément, voir presFreeBasculerVerrouBloc),
+      // les 2 se cumulent simplement dans le CSS.
+      var presFreeVerrouGlobal = presLire("ced4scale-presentation-lock", "0") === "1";
+      function presFreeAppliquerVerrouGlobal() {
+        var btn = document.getElementById("presLockToggleBtn");
+        btn.textContent = presFreeVerrouGlobal ? "🔒 Blocs verrouillés" : "🔓 Déplacer les blocs";
+        btn.setAttribute("aria-pressed", String(presFreeVerrouGlobal));
+        if (!presFreeCardActif) return;
+        var canvas = presFreeCardActif.querySelector(":scope > .chart-card-slide-canvas");
+        if (canvas) canvas.classList.toggle("chart-card-slide-canvas--locked", presFreeVerrouGlobal);
+      }
+      document.getElementById("presLockToggleBtn").addEventListener("click", function () {
+        presFreeVerrouGlobal = !presFreeVerrouGlobal;
+        presEcrire("ced4scale-presentation-lock", presFreeVerrouGlobal ? "1" : "0");
+        presFreeAppliquerVerrouGlobal();
+      });
+
       function presAppliquer() {
         if (!presCardActif) return;
         var canvas = presCardActif.querySelector(":scope > .chart-card-slide-canvas");
@@ -5004,7 +5128,7 @@
         // Défilement/2 colonnes (devenu sans effet sur des blocs position:absolute) par
         // "Réinitialiser la disposition".
         var freePossible = !fmt && PRES_FREE_BLOCKS[presCardActif.id];
-        if (freePossible) presFreeActiver(presCardActif);
+        if (freePossible) { presFreeActiver(presCardActif); presFreeAppliquerVerrouGlobal(); }
         else presFreeDesactiver(presCardActif);
         if (!freePossible) canvas.classList.toggle("chart-card-slide-canvas--split", presSplitActuel);
         // "auto" dans les 2 cas (pas "hidden" en 2 colonnes, corrigé le 11/09/2026) :
@@ -5016,6 +5140,7 @@
         toggle.setAttribute("aria-pressed", String(presSplitActuel));
         toggle.hidden = !!freePossible;
         document.getElementById("presResetLayoutBtn").hidden = !freePossible;
+        document.getElementById("presLockToggleBtn").hidden = !freePossible;
         ["presFormatAuto", "presFormat169", "presFormat43"].forEach(function (id) {
           var b = document.getElementById(id);
           b.classList.toggle("active", b.dataset.format === presFormatActuel);
