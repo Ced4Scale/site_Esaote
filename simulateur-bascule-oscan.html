@@ -1114,24 +1114,24 @@
             <label for="boManipA">Manip en poste</label>
             <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boManipA" value="2" /><span>manip</span></div>
           </div>
-          <p class="simulator__hint" style="margin:-.2rem 0 .35rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="boAutresPostesHintA" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="boSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boCadreSanteA">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix"><input type="number" id="boCadreSanteA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boAideManipA">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boAideManipA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boInfirmiereA">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boInfirmiereA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boManipAlternanceA">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boManipAlternanceA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
@@ -1217,24 +1217,24 @@
             <button type="button" class="bascule-info-btn" id="boVerrouActiviteBtn" aria-expanded="false" aria-controls="boVerrouActivitePop" aria-label="Répartition d'activité de l'O-scan">💡</button>
             <div class="bascule-info-pop" id="boVerrouActivitePop" hidden>100&nbsp;% de son activité en examens membres/extrémités (verrouillé).</div>
           </span>
-          <p class="simulator__hint" style="margin:-.2rem 0 .35rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="boAutresPostesHintO" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="boSecretaireO">Secrétaire médicale (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boCadreSanteO">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix"><input type="number" id="boCadreSanteO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boAideManipO">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boAideManipO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boInfirmiereO">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boInfirmiereO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="boManipAlternanceO">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boManipAlternanceO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
@@ -2296,6 +2296,34 @@
           case "ManipAlternance": return NET_MANIP_ALTERNANCE;
         }
         return 0;
+      }
+      // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
+      // alternance) : leur ligne ETP dans Machine A/O-scan ne s'affiche que si le
+      // salaire correspondant a été changé par rapport à la valeur par défaut du
+      // panneau "Autre RH" — demande de Cédric le 12/09/2026, même règle que
+      // simulateur-point-mort.html (commit 8913abe), pour ne pas encombrer la fiche
+      // machine avec des postes qu'il n'utilise pas. Comparaison toujours en ANNUEL,
+      // à partir de la variable canonique boSalaireVar(role) (toujours mensuelle,
+      // déjà à jour au moment de l'appel — voir appliquerHypotheses()), donc
+      // indépendante du mode d'affichage mensuel/annuel en cours du champ.
+      var BO_POSTES_ANNEXES_DEFAUT_ANNUEL = {
+        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
+      };
+      function boPosteAnnexeVisible(role) {
+        var annuel = boSalaireVar(role) * 12;
+        return Math.abs(annuel - BO_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      }
+      function majVisibilitePostesAnnexes() {
+        var auMoinsUnA = false, auMoinsUnO = false;
+        Object.keys(BO_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
+          var visible = boPosteAnnexeVisible(role);
+          var champA = document.getElementById("bo" + role + "A");
+          var champO = document.getElementById("bo" + role + "O");
+          if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
+          if (champO) { champO.closest(".field").hidden = !visible; if (visible) auMoinsUnO = true; }
+        });
+        document.getElementById("boAutresPostesHintA").hidden = !auMoinsUnA;
+        document.getElementById("boAutresPostesHintO").hidden = !auMoinsUnO;
       }
       function boSalaireVarSet(role, valeurMensuelle) {
         switch (role) {
@@ -3844,6 +3872,7 @@
         el.style.left = centrePxRecale + "px";
       }
       function recalculer() {
+        majVisibilitePostesAnnexes();
         var classeA = document.getElementById("boClasseA").value;
         var nomClasseA = NOM_CLASSE[classeA];
         document.getElementById("boNomClasseA1").textContent = nomClasseA;
