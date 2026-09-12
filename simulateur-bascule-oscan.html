@@ -1349,6 +1349,44 @@
           </div>
           </div>
 
+          <!-- Mode Comparer INDÉPENDANT de celui de "Forfait technique" (12/09/2026,
+               demande explicite de Cédric : "on doit avoir un mode compare par simu,
+               ils ne sont pas liés entre eux") — jusque-là, le bouton "Comparer" ici
+               activait le MÊME mode partagé que celui de "Forfait technique" et
+               n'affichait rien à cet endroit (le résultat vivait uniquement là-bas),
+               ce qui donnait l'impression que "rien ne s'affiche". Compare la courbe
+               "Résultat net total" (celle de CE cadre), pas le "Tarif moyen" —
+               fonctions dédiées `calculerSnapshotResultatPourMemoire()`/
+               `dessinerCoteComparaisonResultat()`, JAMAIS partagées avec l'autre mode
+               Comparer (voir plus bas dans le JS). -->
+          <div id="boBlocComparaisonR" hidden>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:.4rem">
+              <button type="button" class="btn btn--sm btn--ghost" id="boBtnFermerComparaisonR">✕ Fermer la comparaison</button>
+            </div>
+            <div class="bascule-comparaison-grille">
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectGaucheR" aria-label="Mémoire affichée à gauche">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartGaucheR" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total de la mémoire affichée à gauche"></svg>
+                <div id="boCompareStatsGaucheR"></div>
+              </div>
+              <div class="bascule-comparaison-cote">
+                <select id="boCompareSelectDroiteR" aria-label="Mémoire affichée à droite">
+                  <option value="">— Choisir une mémoire —</option>
+                  <option value="0">Mémoire 1</option>
+                  <option value="1">Mémoire 2</option>
+                  <option value="2">Mémoire 3</option>
+                </select>
+                <svg id="boCompareChartDroiteR" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total de la mémoire affichée à droite"></svg>
+                <div id="boCompareStatsDroiteR"></div>
+              </div>
+            </div>
+          </div>
+
           <div class="bascule-stats" id="boStatsRow">
             <div class="bascule-stat result" id="boStatResultBox">
               <div class="bascule-stat-label">Résultat net total</div>
@@ -4303,6 +4341,7 @@
           clear.setAttribute("aria-label", clear.title);
         });
         majOptionsCompareSelects();
+        majOptionsCompareSelectsR();
       }
       [0, 1, 2].forEach(function (i) {
         BO_MEMOIRE_SUFFIXES.forEach(function (s) {
@@ -4406,6 +4445,12 @@
         dessinerCoteComparaison("boCompareChartGauche", "boCompareStatsGauche", calculerSnapshotPourMemoire(compareGaucheIdx));
         dessinerCoteComparaison("boCompareChartDroite", "boCompareStatsDroite", calculerSnapshotPourMemoire(compareDroiteIdx));
       }
+      // Mode Comparer de "Forfait technique - barème dégressif" (Tarif moyen) — NE
+      // touche plus qu'à SON PROPRE bouton (`boBtnComparer`, sans suffixe) depuis le
+      // 12/09/2026 : ne plus boucler sur `BO_MEMOIRE_SUFFIXES` ici, qui inclurait
+      // aussi `boBtnComparerR` — CE bouton a maintenant son propre mode indépendant
+      // (`compareModeR`, voir plus bas), demande explicite de Cédric ("on doit avoir
+      // un mode compare par simu, ils ne sont pas liés entre eux").
       function activerComparaison() {
         compareMode = true;
         document.getElementById("boGrapheSimple").hidden = true;
@@ -4416,26 +4461,117 @@
         document.getElementById("boCompareSelectGauche").value = compareGaucheIdx === null ? "" : String(compareGaucheIdx);
         document.getElementById("boCompareSelectDroite").value = compareDroiteIdx === null ? "" : String(compareDroiteIdx);
         redessinerComparaison();
-        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
-          document.getElementById("boBtnComparer" + s).classList.remove("btn--ghost");
-          document.getElementById("boBtnComparer" + s).setAttribute("aria-pressed", "true");
-        });
+        document.getElementById("boBtnComparer").classList.remove("btn--ghost");
+        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "true");
       }
       function desactiverComparaison() {
         compareMode = false;
         document.getElementById("boGrapheSimple").hidden = false;
         document.getElementById("boGrapheComparaison").hidden = true;
-        BO_MEMOIRE_SUFFIXES.forEach(function (s) {
-          document.getElementById("boBtnComparer" + s).classList.add("btn--ghost");
-          document.getElementById("boBtnComparer" + s).setAttribute("aria-pressed", "false");
-        });
+        document.getElementById("boBtnComparer").classList.add("btn--ghost");
+        document.getElementById("boBtnComparer").setAttribute("aria-pressed", "false");
       }
-      BO_MEMOIRE_SUFFIXES.forEach(function (s) {
-        document.getElementById("boBtnComparer" + s).addEventListener("click", function () {
-          if (compareMode) desactiverComparaison(); else activerComparaison();
-        });
+      document.getElementById("boBtnComparer").addEventListener("click", function () {
+        if (compareMode) desactiverComparaison(); else activerComparaison();
       });
       document.getElementById("boBtnFermerComparaison").addEventListener("click", desactiverComparaison);
+
+      // Mode Comparer INDÉPENDANT de "Répartition de l'activité" (12/09/2026) — compare
+      // la courbe "Résultat net total" de CE cadre (pas le "Tarif moyen" de l'autre),
+      // sur ses 3 mémoires PARTAGÉES (mêmes `memoires[]`, juste un mode d'affichage à
+      // part). Structure calquée sur `activerComparaison()` ci-dessus, sans rien
+      // partager avec elle (états, sélecteurs, dessin — tout est dupliqué avec le
+      // suffixe "R", jamais réutilisé en commun, pour rester vraiment indépendant).
+      function calculerSnapshotResultatPourMemoire(idx) {
+        if (idx === null || !memoires[idx]) return null;
+        var avant = capturerParametres();
+        restaurerParametres(memoires[idx]);
+        var e = dernierEtat;
+        var N = e.volumeTotal;
+        var xs = [];
+        for (var i = 0; i <= 60; i++) { xs.push(Math.round(N * i / 60)); }
+        xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
+        var snap = JSON.parse(JSON.stringify(e));
+        snap.pts = xs.map(function (x) {
+          return { x: x, y: totalPour(x, N, e.classeA, e.loyerA, e.manipA, e.debitA, e.loyerO, e.debitO, e.kwh, e.extraA, e.extraO) };
+        });
+        restaurerParametres(avant);
+        return snap;
+      }
+      function dessinerCoteComparaisonResultat(svgId, statsId, snap) {
+        var svg = document.getElementById(svgId);
+        var statsEl = document.getElementById(statsId);
+        if (!snap) {
+          svg.innerHTML = "";
+          statsEl.innerHTML = "<p class=\"simulator__hint\" style=\"margin:.4rem 0 0\">Choisissez une mémoire ci-dessus.</p>";
+          return;
+        }
+        var W = 640, H = 170, top = 8, bottom = 8;
+        var N = snap.volumeTotal;
+        function px(x) { return N > 0 ? (x / N) * W : 0; }
+        var ys = snap.pts.map(function (p) { return p.y; });
+        var yMin = Math.min.apply(null, ys), yMax = Math.max.apply(null, ys);
+        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+        var pad = (yMax - yMin) * 0.08;
+        yMin -= pad; yMax += pad;
+        function py(y) { return top + (1 - (y - yMin) / (yMax - yMin)) * (H - top - bottom); }
+        var d = snap.pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
+        svg.innerHTML =
+          "<line x1=\"0\" y1=\"" + py(0).toFixed(1) + "\" x2=\"" + W + "\" y2=\"" + py(0).toFixed(1) + "\" stroke=\"var(--line)\" stroke-width=\"1\"></line>" +
+          "<path d=\"" + d + "\" fill=\"none\" stroke=\"#eb6834\" stroke-width=\"2.5\"></path>";
+        function ligne(label, valeur, style) {
+          return "<div class=\"bascule-compare-ligne\"" + (style ? " style=\"" + style + "\"" : "") + "><span>" + label + "</span><span>" + valeur + "</span></div>";
+        }
+        statsEl.innerHTML =
+          ligne(snap.nomClasseA, eur(snap.rA.net), "color:#2a78d6") +
+          ligne("O-scan", eur(snap.rO.net), "color:#eb6834") +
+          ligne("Résultat net total", eur(snap.netTotal), "font-weight:800;border-top:1px dashed var(--line);padding-top:.3rem;margin-top:.2rem");
+      }
+      function majOptionsCompareSelectsR() {
+        ["boCompareSelectGaucheR", "boCompareSelectDroiteR"].forEach(function (id) {
+          var sel = document.getElementById(id);
+          [0, 1, 2].forEach(function (i) { sel.options[i + 1].disabled = !memoires[i]; });
+        });
+      }
+      var compareModeR = false, compareGaucheIdxR = null, compareDroiteIdxR = null;
+      function redessinerComparaisonR() {
+        dessinerCoteComparaisonResultat("boCompareChartGaucheR", "boCompareStatsGaucheR", calculerSnapshotResultatPourMemoire(compareGaucheIdxR));
+        dessinerCoteComparaisonResultat("boCompareChartDroiteR", "boCompareStatsDroiteR", calculerSnapshotResultatPourMemoire(compareDroiteIdxR));
+      }
+      function activerComparaisonR() {
+        compareModeR = true;
+        document.getElementById("boBlocGraphe").hidden = true;
+        document.getElementById("boBlocCurseurRepartition").hidden = true;
+        document.getElementById("boBlocComparaisonR").hidden = false;
+        majOptionsCompareSelectsR();
+        compareGaucheIdxR = memoires[0] ? 0 : null;
+        compareDroiteIdxR = memoires[1] ? 1 : null;
+        document.getElementById("boCompareSelectGaucheR").value = compareGaucheIdxR === null ? "" : String(compareGaucheIdxR);
+        document.getElementById("boCompareSelectDroiteR").value = compareDroiteIdxR === null ? "" : String(compareDroiteIdxR);
+        redessinerComparaisonR();
+        document.getElementById("boBtnComparerR").classList.remove("btn--ghost");
+        document.getElementById("boBtnComparerR").setAttribute("aria-pressed", "true");
+      }
+      function desactiverComparaisonR() {
+        compareModeR = false;
+        document.getElementById("boBlocGraphe").hidden = false;
+        document.getElementById("boBlocCurseurRepartition").hidden = false;
+        document.getElementById("boBlocComparaisonR").hidden = true;
+        document.getElementById("boBtnComparerR").classList.add("btn--ghost");
+        document.getElementById("boBtnComparerR").setAttribute("aria-pressed", "false");
+      }
+      document.getElementById("boBtnComparerR").addEventListener("click", function () {
+        if (compareModeR) desactiverComparaisonR(); else activerComparaisonR();
+      });
+      document.getElementById("boBtnFermerComparaisonR").addEventListener("click", desactiverComparaisonR);
+      document.getElementById("boCompareSelectGaucheR").addEventListener("change", function () {
+        compareGaucheIdxR = this.value === "" ? null : parseInt(this.value, 10);
+        redessinerComparaisonR();
+      });
+      document.getElementById("boCompareSelectDroiteR").addEventListener("change", function () {
+        compareDroiteIdxR = this.value === "" ? null : parseInt(this.value, 10);
+        redessinerComparaisonR();
+      });
       document.getElementById("boCompareSelectGauche").addEventListener("change", function () {
         compareGaucheIdx = this.value === "" ? null : +this.value;
         redessinerComparaison();
@@ -4917,13 +5053,17 @@
       // lieu de le resserrer, puisqu'il visait cette même hauteur naturelle fausse).
       var PRES_FREE_BLOCKS = {
         boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"],
-        // "Répartition de l'activité" (12/09/2026, suite) : 9 blocs (le bouton
-        // "Rentabilité maximale" ajouté après coup, signalé par Cédric — capture à
-        // l'appui, "je ne peux pas déplacer le bouton orange"), tous enfants directs
-        // de leur conteneur d'origine (aucun n'est parent d'un autre ici, contrairement
-        // à boCardBaremeFtMoy ci-dessus) — l'ordre n'a donc pas d'importance pour
-        // l'extraction.
-        boCardPrincipal: ["boBlocOptimum", "boBlocActivite", "boBlocGraphe", "boBlocCurseurRepartition", "boStatResultBox", "boJokerCard", "boStatCACard", "boCapaciteNote", "boBtnRowR"]
+        // "Répartition de l'activité" (12/09/2026, suite) : 10 blocs — le bouton
+        // "Rentabilité maximale" ajouté après coup ("je ne peux pas déplacer le
+        // bouton orange"), et #boBlocComparaisonR ajouté encore après (mode Comparer
+        // indépendant de "Répartition de l'activité" — "on doit avoir un mode compare
+        // par simu, ils ne sont pas liés entre eux") — tous enfants directs de leur
+        // conteneur d'origine (aucun n'est parent d'un autre ici, contrairement à
+        // boCardBaremeFtMoy ci-dessus) — l'ordre n'a donc pas d'importance pour
+        // l'extraction. #boBlocComparaisonR est `hidden` par défaut (mode Comparer
+        // fermé) — passe par le même repli "bloc masqué" que #boGrapheComparaison
+        // ci-dessus (mesure 0×0 tant qu'il n'est pas ouvert).
+        boCardPrincipal: ["boBlocOptimum", "boBlocActivite", "boBlocGraphe", "boBlocCurseurRepartition", "boStatResultBox", "boJokerCard", "boStatCACard", "boCapaciteNote", "boBtnRowR", "boBlocComparaisonR"]
       };
       // Version bumpée à "-v2" (12/09/2026) : la façon de mesurer la taille "au plus
       // juste" d'un bloc a changé plusieurs fois le même jour (shrink-to-fit ajouté
@@ -4982,7 +5122,10 @@
       // taille FIXE (voir presFreeActiver) au lieu de `100%` — une disposition
       // sauvegardée avant ce correctif garderait l'ancien déséquilibre texte/fond au
       // redimensionnement par coin tant qu'elle n'est pas invalidée.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v10";
+      // Re-bumpée "-v11" (12/09/2026, suite) : ajout du 10ᵉ bloc #boBlocComparaisonR
+      // (mode Comparer indépendant) — décale l'empilement par défaut des blocs
+      // suivants.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v11";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
