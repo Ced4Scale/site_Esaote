@@ -228,7 +228,14 @@
       position: absolute; box-sizing: border-box;
       border: 1px dashed transparent; border-radius: 4px;
     }
-    .chart-card-slide-canvas--free > .pres-block:hover,
+    /* Cadre rouge au survol : jamais si le bloc est verrouillé — ni par son
+       propre cadenas (`.is-locked`), ni par le cadenas GLOBAL de la barre
+       (`.chart-card-slide-canvas--locked`, posé sur le canvas parent) — demande de
+       Cédric le 12/09/2026 : un bloc figé n'a plus rien à signaler au survol
+       puisqu'il ne peut de toute façon plus être déplacé/redimensionné (ses
+       poignées sont déjà cachées, voir plus bas). Le petit badge 🔒 au survol
+       (.pres-block__lock-badge) reste le seul indicateur affiché dans ce cas. */
+    .chart-card-slide-canvas--free:not(.chart-card-slide-canvas--locked) > .pres-block:not(.is-locked):hover,
     .chart-card-slide-canvas--free > .pres-block.is-dragging,
     .chart-card-slide-canvas--free > .pres-block.is-resizing { border-color: var(--red); }
     .pres-block__inner { width: 100%; height: 100%; overflow: auto; transform-origin: top left; }
@@ -4762,13 +4769,26 @@
         layout[id] = state;
         presFreeEcrireLayout(layout);
       }
+      // Ne JAMAIS poser `transform:scale()` sur `.pres-block__inner` quand l'échelle
+      // vaut 1 (12/09/2026, bug réel signalé par Cédric — "le curseur ne se déplace
+      // plus" dans "Réglages de répartition") : Chrome a un défaut connu où un
+      // `transform` posé sur un ANCÊTRE d'un `<input type="range">` natif peut
+      // casser le glisser du curseur (le thumb ne suit plus la souris), même pour
+      // un `scale(1)` visuellement neutre — la simple PRÉSENCE de la propriété
+      // suffit à perturber le hit-testing natif du contrôle. Poser `transform: ""`
+      // (aucune valeur) tant que l'échelle n'a pas réellement changé élimine le
+      // risque à la racine, sans rien perdre visuellement (scale(1) ne change rien
+      // de toute façon).
+      function presFreeAppliquerTransformInner(inner, scale) {
+        if (!inner) return;
+        inner.style.transform = (scale && Math.abs(scale - 1) > 0.001) ? "scale(" + scale + ")" : "";
+      }
       function presFreeAppliquerEtat(el, state) {
         el.style.left = state.xPct + "%";
         el.style.top = state.yPct + "%";
         el.style.width = state.wPct + "%";
         el.style.height = state.hPct + "%";
-        var inner = el.querySelector(":scope > .pres-block__inner");
-        if (inner) inner.style.transform = "scale(" + (state.scale || 1) + ")";
+        presFreeAppliquerTransformInner(el.querySelector(":scope > .pres-block__inner"), state.scale);
         el.classList.toggle("is-locked", !!state.locked);
         el._presState = state;
       }
@@ -4986,8 +5006,7 @@
                 }
               }
               el.style.width = wPct + "%"; el.style.height = hPct + "%";
-              var inner = el.querySelector(":scope > .pres-block__inner");
-              if (inner) inner.style.transform = "scale(" + scale + ")";
+              presFreeAppliquerTransformInner(el.querySelector(":scope > .pres-block__inner"), scale);
               el._presState = el._presState || {};
               el._presState.scale = scale;
             }
