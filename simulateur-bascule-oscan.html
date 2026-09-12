@@ -1240,6 +1240,17 @@
                    skill ced4scale-simulateur-web) — encadré fixe sous le tableau, masqué
                    quand la case "Afficher tous les CA" est cochée (redondant). -->
               <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
+              <!-- Emplacement d'accueil de "Réglages de répartition" (12/09/2026,
+                   suite) : reste VIDE en vue normale (la carte #boCardReglages vit
+                   sous "Hypothèses", voir plus bas) — seulement en plein écran
+                   fusionné, wireCardFullscreen() y fait voyager #boCardReglages via
+                   extraIds/extraTargetId (même mécanisme que celui utilisé un temps
+                   pour le bloc Mémoire/Comparer, motif "Un bloc interactif dupliqué
+                   à plusieurs endroits" du skill) — la carte revient exactement à sa
+                   place d'origine à la sortie du plein écran. Changement de stratégie
+                   demandé par Cédric : pas une 4ᵉ copie synchronisée, la même carte se
+                   déplace physiquement le temps du plein écran. -->
+              <div id="boBaremeReglagesSlot"></div>
             </details>
 
             <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
@@ -1424,7 +1435,13 @@
              original de "Répartition de l'activité" — libellés au-dessus, barre à
              dégradé, flèche sous le curseur, 0/activité totale aux extrémités ;
              #boVolumeA2/#boPartExtremites2, synchronisés dans les 2 sens — voir
-             mirrorField() plus bas) — pas de doublon, seulement reparentés. -->
+             mirrorField() plus bas) — pas de doublon, seulement reparentés.
+             12/09/2026, suite (changement de stratégie pour le plein écran) : cette
+             carte est repartie EN PLUS au bas du tableau "Forfait technique - barème
+             dégressif" (#boBaremeReglagesSlot), mais seulement PENDANT le plein écran
+             fusionné — voir wireCardFullscreen("boBaremeFtMoyFullscreenBtn", ...)
+             plus bas, extraIds/extraTargetId. En vue normale, elle reste ici, sous
+             "Hypothèses", inchangée. -->
         <div class="simulator__chart-card" id="boCardReglages">
           <h3 style="margin:0 0 1rem;font-size:1.05rem">Réglages de répartition</h3>
           <div class="bascule-slider-labels">
@@ -4746,7 +4763,14 @@
       // par <details> (redondants, ciblaient déjà le même cadre) ont été retirés.
       // "Forfait technique"/"Tarif moyen" pas encore ouverts s'ouvrent tout seuls
       // avant le plein écran (card.querySelectorAll("details") plus haut).
-      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, null, true);
+      // 12/09/2026 (changement de stratégie, demande de Cédric) : "Réglages de
+      // répartition" (#boCardReglages, vit normalement sous "Hypothèses") voyage EN
+      // PLUS au bas du tableau "Forfait technique - barème dégressif"
+      // (#boBaremeReglagesSlot, dans #boCardBareme) pendant ce plein écran précis —
+      // extraIds fait le déplacement à l'entrée, extraTargetId dit où l'accueillir ;
+      // la carte revient exactement à sa place d'origine (sous "Hypothèses") à la
+      // sortie, aucune 2ᵉ copie créée.
+      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, ["boCardReglages"], true, "boBaremeReglagesSlot");
 
       majResumeHypotheses();
       repositionnerCurseur();
