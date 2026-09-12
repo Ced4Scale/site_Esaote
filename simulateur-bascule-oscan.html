@@ -1138,14 +1138,15 @@
             <label for="boDebitA">Examens par heure</label>
             <div class="simulator__field-suffix"><input type="number" min="0.1" step="0.1" id="boDebitA" value="3.5" /><span>FT/h</span></div>
           </div>
-          <div class="field">
+          <!-- Champ + curseur canoniques, lus par le calcul (id boVolumeA/boPartExtremites) —
+               masqués ici (jamais supprimés du DOM) car déjà visibles ailleurs sur la page
+               (copies miroir sous "Répartition de l'activité" et dans les cartes joker/
+               "Tarif moyen"), demande de Cédric le 12/09/2026 pour désencombrer la fiche
+               Machine A. Voir skill ced4scale-simulateur-web, "Retirer un champ d'activité
+               du formulaire principal quand un curseur existe déjà". -->
+          <div class="field" hidden>
             <label for="boVolumeA">Activité totale actuelle</label>
             <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA" value="12000" style="width:5rem" /><span>FT/an</span></div>
-            <!-- Curseur ajouté le 11/09/2026 (demande de Cédric), en plus du champ
-                 nombre ci-dessus (gardé tel quel) — même motif que boPartExtremites
-                 (piste custom .bo-partext-track-wrap, aucun accent-color). Plafond =
-                 capacité physique combinée des 2 machines (capaciteTotaleMax()),
-                 jamais une valeur arbitraire. -->
             <div class="bascule-range" style="margin-top:.5rem">
               <div class="bo-partext-track-wrap">
                 <div class="bo-partext-track"><div class="bo-partext-fill" id="boVolumeAFill"></div></div>
@@ -1153,7 +1154,7 @@
               </div>
             </div>
           </div>
-          <div class="bascule-champ" style="margin-bottom:0">
+          <div class="bascule-champ" style="margin-bottom:0" hidden>
             <label for="boPartExtremites">Part membres/extrémités</label>
             <div class="bascule-range">
               <div class="bo-partext-track-wrap">
@@ -1259,6 +1260,20 @@
               <div class="bo-partext-track-wrap">
                 <div class="bo-partext-track"><div class="bo-partext-fill" id="boVolumeAFillR"></div></div>
                 <input type="range" id="boVolumeASliderR" min="0" max="24000" step="100" value="12000" aria-label="Activité totale actuelle" />
+              </div>
+            </div>
+            <!-- Copie visible de "Part membres/extrémités" (12/09/2026) — même raison
+                 que boVolumeAR ci-dessus : Machine A ne l'affiche plus (repliée dans
+                 "Paramètres"), il fallait un endroit directement visible sans retourner
+                 un joker. Suffixe "R" ajouté à la liste des miroirs déjà en place. -->
+            <div class="bascule-champ" style="margin:.9rem 0 0">
+              <label for="boPartExtremitesR">Part membres/extrémités</label>
+              <div class="bascule-range">
+                <div class="bo-partext-track-wrap">
+                  <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFillR"></div></div>
+                  <input type="range" id="boPartExtremitesR" min="0" max="100" value="35" />
+                </div>
+                <span class="val" id="boPartExtremitesValR">35 %</span>
               </div>
             </div>
           </div>
@@ -3343,7 +3358,7 @@
       // Champs miroirs "Part membres/extrémités" (11/09/2026) : même principe que
       // "Activité totale" ci-dessus — recopie sur #boPartExtremites puis relance le
       // calcul, qui resynchronise les 2 miroirs (valeur, texte, remplissage visuel).
-      ["2", "3"].forEach(function (suffixe) {
+      ["2", "3", "R"].forEach(function (suffixe) {
         document.getElementById("boPartExtremites" + suffixe).addEventListener("input", function () {
           boPartExtremitesEl.value = this.value;
           document.getElementById("boPartExtremitesVal").textContent = this.value + " %";
@@ -3841,7 +3856,7 @@
         });
         majVolumeAFill();
         // "Part membres/extrémités" (verso du joker + sous "Tarif moyen") :
-        ["2", "3"].forEach(function (suffixe) {
+        ["2", "3", "R"].forEach(function (suffixe) {
           document.getElementById("boPartExtremites" + suffixe).value = boPartExtremitesEl.value;
           document.getElementById("boPartExtremitesVal" + suffixe).textContent = boPartExtremitesEl.value + " %";
           majPartExtremitesFillSuffixe(suffixe);
