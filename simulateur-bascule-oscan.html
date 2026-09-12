@@ -238,11 +238,11 @@
        remet tout à la position naturelle mesurée à la 1ʳᵉ activation. */
     .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
     .chart-card-slide-canvas--free > .pres-block {
-      position: absolute; box-sizing: border-box; z-index: 1; margin: 0;
+      position: absolute; box-sizing: border-box; z-index: 1; margin: 0 !important;
       border: 1px dashed transparent; border-radius: 4px;
     }
-    /* `margin: 0` ci-dessus (12/09/2026) : certains blocs portent une marge CSS de
-       leur classe d'origine, valable en flux normal (ex. `.bascule-courbe-zone {
+    /* `margin: 0 !important` ci-dessus (12/09/2026) : certains blocs portent une marge
+       de leur classe d'origine, valable en flux normal (ex. `.bascule-courbe-zone {
        margin: 2.2rem 0 .5rem; }`) — un élément `position:absolute` respecte quand
        même sa propre marge, qui vient alors s'AJOUTER au `top`/`left` posé par JS
        (`state.xPct`/`yPct`), décalant le bloc au-delà de sa position calculée. Repéré
@@ -250,7 +250,10 @@
        35,2px (exactement 2.2rem) entre la position attendue et la position réelle,
        qui décalait aussi tous les blocs suivants d'autant. Neutraliser la marge de
        CHAQUE bloc libre, quelle que soit sa classe d'origine, plutôt que de traquer
-       et corriger la marge au cas par cas sur chaque nouveau bloc concerné. */
+       et corriger la marge au cas par cas sur chaque nouveau bloc concerné.
+       `!important` ajouté le même jour (2ᵉ cas trouvé, #boBlocOptimum a sa marge posée
+       en style INLINE — `margin-bottom:.4rem` — qu'aucune règle de classe, même plus
+       spécifique, ne peut jamais battre sans `!important`). */
     /* Le bloc survolé passe toujours au premier plan (12/09/2026) : si 2 blocs se
        chevauchent même légèrement (mesure imparfaite, contenu plus grand que
        prévu...), celui ajouté en dernier au canvas gagnait systématiquement le
@@ -1218,7 +1221,7 @@
               </svg>
             </button>
           </summary>
-          <div style="display:flex;align-items:center;justify-content:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
+          <div id="boBlocOptimum" style="display:flex;align-items:center;justify-content:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:.4rem">
             <button type="button" class="btn btn--sm" id="boBtnOptimum">↺ Rentabilité maximale<span id="boBtnOptimumPct" style="font-size:.72rem;opacity:.85"></span></button>
           </div>
 
@@ -3684,6 +3687,21 @@
           card.style.minHeight = "0px";
           var needed = back.scrollHeight;
           card.style.minHeight = (needed + 4) + "px";
+          // En disposition libre (12/09/2026, suite du correctif padding/scale) :
+          // `.pres-block__inner` a désormais une hauteur FIXE en pixels (jamais 100%,
+          // voir presFreeActiver) — sans ce raccord, ouvrir le joker grandit bien la
+          // carte (min-height ci-dessus) mais l'inner reste bloqué à son ancienne
+          // hauteur (celle mesurée carte FERMÉE), le contenu du verso débordant en
+          // silence dans son propre défilement interne au lieu de suivre. `.bascule-
+          // stat-joker` n'a pas de padding propre, donc `padH` vaut toujours 0 ici,
+          // mais on le relit quand même par cohérence avec le reste du mécanisme.
+          if (card.classList.contains("pres-block")) {
+            var innerJoker = card.querySelector(":scope > .pres-block__inner");
+            if (innerJoker) {
+              var padHJoker = parseFloat(card.dataset.presPadH) || 0;
+              innerJoker.style.height = Math.max(1, (needed + 4) - padHJoker) + "px";
+            }
+          }
         });
       }
       var jokerResizeTimer = null;
@@ -4803,11 +4821,13 @@
       // lieu de le resserrer, puisqu'il visait cette même hauteur naturelle fausse).
       var PRES_FREE_BLOCKS = {
         boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"],
-        // "Répartition de l'activité" (12/09/2026, suite) : 8 blocs, tous enfants
-        // directs de leur conteneur d'origine (aucun n'est parent d'un autre ici,
-        // contrairement à boCardBaremeFtMoy ci-dessus) — l'ordre n'a donc pas
-        // d'importance pour l'extraction.
-        boCardPrincipal: ["boBlocActivite", "boBlocGraphe", "boBlocCurseurRepartition", "boStatResultBox", "boJokerCard", "boStatCACard", "boCapaciteNote", "boBtnRowR"]
+        // "Répartition de l'activité" (12/09/2026, suite) : 9 blocs (le bouton
+        // "Rentabilité maximale" ajouté après coup, signalé par Cédric — capture à
+        // l'appui, "je ne peux pas déplacer le bouton orange"), tous enfants directs
+        // de leur conteneur d'origine (aucun n'est parent d'un autre ici, contrairement
+        // à boCardBaremeFtMoy ci-dessus) — l'ordre n'a donc pas d'importance pour
+        // l'extraction.
+        boCardPrincipal: ["boBlocOptimum", "boBlocActivite", "boBlocGraphe", "boBlocCurseurRepartition", "boStatResultBox", "boJokerCard", "boStatCACard", "boCapaciteNote", "boBtnRowR"]
       };
       // Version bumpée à "-v2" (12/09/2026) : la façon de mesurer la taille "au plus
       // juste" d'un bloc a changé plusieurs fois le même jour (shrink-to-fit ajouté
@@ -4837,7 +4857,11 @@
       // "Répartition de l'activité" en plein écran AVANT ce correctif garderait en
       // mémoire l'ancienne largeur bien trop grande (le filet de sécurité de la mesure
       // "au plus juste", pas le plafond CSS lui-même, est ce qui est enregistré).
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v6";
+      // Re-bumpée "-v7" (12/09/2026, suite) : ajout du 9ᵉ bloc #boBlocOptimum (décale
+      // l'empilement par défaut de tous les autres) + correctif padding/scale (une
+      // disposition sauvegardée AVANT ce correctif rejouerait encore l'ancien
+      // déséquilibre texte/fond tant que le bloc n'est pas redimensionné à nouveau).
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v7";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
@@ -5019,9 +5043,24 @@
         var mesure = presFreeMesurerContenu(el, secours);
         el.dataset.presNaturalW = mesure.w;
         el.dataset.presNaturalH = mesure.h;
-        var wPct = mesure.w * scale / canvasRect.width * 100;
-        var hPct = mesure.h * scale / canvasRect.height * 100;
+        // Même correctif padding que le redimensionnement par coin (voir
+        // presFreeActiver/onMove) : `mesure.w/h` inclut le padding fixe du bloc, qui ne
+        // doit jamais être multiplié par `scale` — sinon le fond ne rejoint plus le
+        // texte agrandi une fois "rogné".
+        var padW = parseFloat(el.dataset.presPadW) || 0;
+        var padH = parseFloat(el.dataset.presPadH) || 0;
+        var wPct = ((mesure.w - padW) * scale + padW) / canvasRect.width * 100;
+        var hPct = ((mesure.h - padH) * scale + padH) / canvasRect.height * 100;
         el.style.width = wPct + "%"; el.style.height = hPct + "%";
+        // Re-fixer aussi la taille de BASE de l'inner (voir presFreeActiver) sur la
+        // mesure fraîche — sinon "rogner" recalerait la boîte extérieure sur le
+        // nouveau contenu tout en laissant l'inner à son ancienne taille fixe,
+        // redonnant le même déséquilibre texte/fond que sans ce correctif.
+        var innerRogner = el.querySelector(":scope > .pres-block__inner");
+        if (innerRogner) {
+          innerRogner.style.width = Math.max(1, mesure.w - padW) + "px";
+          innerRogner.style.height = Math.max(1, mesure.h - padH) + "px";
+        }
         var state = el._presState || {};
         state.wPct = wPct; state.hPct = hPct;
         presFreeSauverEtat(id, state);
@@ -5071,6 +5110,17 @@
             var startTopPct = parseFloat(el.style.top) || 0;
             var naturalW = parseFloat(el.dataset.presNaturalW) || (startWPct / 100 * canvasRect.width);
             var naturalH = parseFloat(el.dataset.presNaturalH) || (startHPct / 100 * canvasRect.height);
+            // Padding/bordure fixes (voir commentaire dans presFreeActiver) : le
+            // facteur `scale` ne doit jamais s'appliquer au padding lui-même, sinon la
+            // boîte extérieure et le texte agrandi (via le transform ci-dessous) ne
+            // grandissent plus au même rythme — le texte finit par déborder du fond.
+            // `contentNaturalW/H` = la taille "au plus juste" SANS le padding, seule
+            // partie réellement mise à l'échelle ; le padding est rajouté tel quel de
+            // part et d'autre pour obtenir la taille finale de la boîte.
+            var padW = parseFloat(el.dataset.presPadW) || 0;
+            var padH = parseFloat(el.dataset.presPadH) || 0;
+            var contentNaturalW = Math.max(1, naturalW - padW);
+            var contentNaturalH = Math.max(1, naturalH - padH);
             var startScale = (el._presState && el._presState.scale) || 1;
             var isCorner = pos.length === 2;
             function onMove(ev) {
@@ -5079,10 +5129,10 @@
               if (isCorner) {
                 var signX = pos.indexOf("e") > -1 ? 1 : -1;
                 var signY = pos.indexOf("s") > -1 ? 1 : -1;
-                var startWpx = naturalW * startScale, startHpx = naturalH * startScale;
+                var startWpx = contentNaturalW * startScale + padW, startHpx = contentNaturalH * startScale + padH;
                 var deltaPx = (dx * signX + dy * signY) / 2;
-                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx) / naturalW));
-                var newWpx = naturalW * scale, newHpx = naturalH * scale;
+                scale = Math.max(0.3, Math.min(3, (startWpx + deltaPx - padW) / contentNaturalW));
+                var newWpx = contentNaturalW * scale + padW, newHpx = contentNaturalH * scale + padH;
                 wPct = newWpx / canvasRect.width * 100;
                 hPct = newHpx / canvasRect.height * 100;
                 var startLeftPx = startLeftPct / 100 * canvasRect.width;
@@ -5182,12 +5232,25 @@
               // r.width/r.height qui reflètent la largeur imposée par le flux (un bloc
               // bloc-level s'étire par défaut sur toute la largeur du canvas, même si
               // son contenu réel est plus étroit — voir presFreeMesurerContenu).
+          // Padding/bordure FIXES du bloc (12/09/2026, signalé par Cédric : "le fond
+          // gris ne suit pas l'agrandissement du texte") — mesurées une fois ici, pas
+          // recalculées à chaque geste. Un bloc à padding non nul (`.bascule-stat`,
+          // `.bascule-capnote`...) a un `.pres-block__inner` (100% de la boîte de
+          // CONTENU, donc déjà amputé du padding) plus petit que sa boîte extérieure
+          // — appliquer le même facteur `scale` aux 2 (voir onMove plus bas) fait
+          // grandir le texte plus vite que la boîte, qui déborde alors visuellement
+          // de son propre fond. Neutralisé en gardant ce padding FIXE (jamais mis à
+          // l'échelle) dans le calcul de la taille finale de la boîte.
+          var csEl = getComputedStyle(h.el);
+          var padW = parseFloat(csEl.paddingLeft) + parseFloat(csEl.paddingRight) + parseFloat(csEl.borderLeftWidth) + parseFloat(csEl.borderRightWidth);
+          var padH = parseFloat(csEl.paddingTop) + parseFloat(csEl.paddingBottom) + parseFloat(csEl.borderTopWidth) + parseFloat(csEl.borderBottomWidth);
           naturelles[h.id] = {
             xPct: 12 / canvasRect.width * 100,
             yPct: yOffsetPx / canvasRect.height * 100,
             wPct: mesure.w / canvasRect.width * 100,
             hPct: mesure.h / canvasRect.height * 100,
-            naturalW: mesure.w, naturalH: mesure.h
+            naturalW: mesure.w, naturalH: mesure.h,
+            padW: padW, padH: padH
           };
           yOffsetPx += mesure.h + 16;
         });
@@ -5213,6 +5276,19 @@
           el.classList.add("pres-block");
           el.dataset.presNaturalW = nat.naturalW;
           el.dataset.presNaturalH = nat.naturalH;
+          el.dataset.presPadW = nat.padW;
+          el.dataset.presPadH = nat.padH;
+          // Taille FIXE de l'inner (12/09/2026, suite du correctif padding ci-dessus) :
+          // pas `width/height:100%` (comme le pose la classe CSS par défaut) — un
+          // pourcentage ferait dépendre la taille de l'inner de celle de `el`, qui
+          // dépend ELLE-MÊME de `scale` (voir onMove plus bas) : appliquer ENSUITE le
+          // transform:scale() sur cet inner déjà "scale-dépendant" mettait `scale` au
+          // carré au lieu de l'appliquer une seule fois (texte bien plus gros que
+          // prévu par rapport au fond, signalé par Cédric malgré le 1er correctif).
+          // Fixée une fois en pixels (contenu SANS le padding), le transform devient la
+          // SEULE source de grandissement, cohérent avec la formule de `el.style.width`.
+          inner.style.width = Math.max(1, nat.naturalW - nat.padW) + "px";
+          inner.style.height = Math.max(1, nat.naturalH - nat.padH) + "px";
           var handle = document.createElement("div");
           handle.className = "pres-block__handle";
           handle.title = "Glisser pour déplacer ce bloc";
@@ -5260,6 +5336,7 @@
           el.classList.remove("pres-block", "is-dragging", "is-resizing", "is-locked");
           el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
           delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
+          delete el.dataset.presPadW; delete el.dataset.presPadH;
           Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize, :scope > .pres-block__lock-badge")).forEach(function (h2) { h2.remove(); });
           var inner = el.querySelector(":scope > .pres-block__inner");
           if (inner) {
