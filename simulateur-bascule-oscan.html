@@ -4710,7 +4710,12 @@
       // vide à droite/en bas), masquant totalement la correction. Changer la clé
       // abandonne proprement ces anciennes valeurs sans y toucher explicitement —
       // chaque bloc repart de la mesure au plus juste, à jour.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v2";
+      // Re-bumpée "-v3" (12/09/2026, suite) : la mesure "au plus juste" neutralise
+      // maintenant aussi la largeur des `<table>` (voir presFreeMesurerContenu) —
+      // même raison que le passage "-v1" → "-v2", une disposition déjà enregistrée
+      // avec l'ancien calcul (tableau du barème trop large) resterait sinon rejouée
+      // telle quelle indéfiniment.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v3";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
@@ -4823,9 +4828,23 @@
           prevInner = { width: inner.style.width, height: inner.style.height, transform: inner.style.transform };
           inner.style.width = "auto"; inner.style.height = "auto"; inner.style.transform = "none";
         }
+        // `width:auto` sur `el`/`inner` ne suffit PAS à révéler la taille réelle
+        // d'un `<table style="width:100%">` (ex. le barème) : un pourcentage sur un
+        // DESCENDANT continue de se résoudre contre la largeur DISPONIBLE (le
+        // canvas plein écran, potentiellement très large), pas contre le contenu —
+        // Chrome ne le traite pas comme indéterminé/`auto` dans ce cas, contrairement
+        // à ce que suggère la spec CSS pour un ancêtre en "shrink-to-fit". Résultat
+        // vécu le 12/09/2026 (capture de Cédric) : le cadre du barème restait bien
+        // plus large que son tableau. Neutralisé en mettant aussi `width:auto`
+        // directement sur CHAQUE `<table>` descendant (leur propre largeur réelle,
+        // celle qui compte), le temps de la mesure.
+        var tables = el.querySelectorAll("table");
+        var prevTables = Array.prototype.map.call(tables, function (t) { return t.style.width; });
+        Array.prototype.forEach.call(tables, function (t) { t.style.width = "auto"; });
         var r = el.getBoundingClientRect();
         el.style.display = prev.display; el.style.width = prev.width; el.style.height = prev.height;
         if (inner) { inner.style.width = prevInner.width; inner.style.height = prevInner.height; inner.style.transform = prevInner.transform; }
+        Array.prototype.forEach.call(tables, function (t, i) { t.style.width = prevTables[i]; });
         return {
           w: r.width < 20 ? secours.w : r.width,
           h: r.height < 20 ? secours.h : r.height
