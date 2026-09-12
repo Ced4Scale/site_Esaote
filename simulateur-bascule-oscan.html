@@ -4665,21 +4665,68 @@
       // en pointer events génériques (souris + tactile), coordonnées en pixels pendant
       // le geste (1:1 avec la souris), converties en % du canvas seulement pour
       // l'affichage final et la mémorisation (portable d'un écran à l'autre).
+      // Mesure "au plus juste" (shrink-to-fit) d'un bloc — jamais la largeur/hauteur
+      // que le FLUX NORMAL lui impose (un `<details>`/`<div>` bloc s'étire par
+      // défaut sur toute la largeur de son conteneur, même si son contenu réel — un
+      // tableau, un graphe — est bien plus étroit : c'était la vraie cause du bloc
+      // "Forfait technique" bien plus large que son tableau, signalé par Cédric le
+      // 12/09/2026 capture à l'appui, "rogner" ne changeait rien puisqu'il visait
+      // cette même largeur fausse). `display:inline-block` + `width/height:auto`
+      // force le navigateur à calculer la taille RÉELLE du contenu (motif standard
+      // "shrink-to-fit") plutôt que la taille imposée par le conteneur. Neutralise
+      // aussi le `transform:scale()` de `.pres-block__inner` le temps de la mesure
+      // (sinon on mesurerait le contenu déjà agrandi/réduit, pas sa taille de base) —
+      // le résultat est donc TOUJOURS à l'échelle 1, à multiplier par l'échelle
+      // actuelle avant de l'appliquer. Utilisée à la fois à l'activation (taille de
+      // départ de chaque bloc) et par "rogner" (remesure en direct, pas une valeur
+      // figée à l'activation — reste juste même si le contenu a changé depuis, ex.
+      // case "Afficher tous les CA" cochée entre-temps).
+      function presFreeMesurerContenu(el, secours) {
+        // Filet de sécurité (12/09/2026) : la mesure "au plus juste" ci-dessous
+        // (`display:inline-block` + `width/height:auto`) échoue sur un contenu qui a
+        // BESOIN d'une hauteur/largeur RÉSOLUE de son conteneur pour se dimensionner
+        // lui-même (ex. #boFtMoyJokerCard, carte "flip" à faces `position:absolute;
+        // inset:0` — même piège déjà documenté dans le skill pour
+        // `align-items:flex-start` : un abs-positionné n'a alors plus rien à
+        // mesurer, la carte s'effondre à 0 de large). Repli sur `secours` (fourni par
+        // l'appelant — la taille déjà connue avant cette mesure) dès que le résultat
+        // "au plus juste" est degenerate (< 20px) — mieux vaut garder la taille
+        // précédente qu'un bloc invisible.
+        var flowRect = el.getBoundingClientRect();
+        secours = secours || { w: flowRect.width, h: flowRect.height };
+        var inner = el.querySelector(":scope > .pres-block__inner");
+        var prev = { display: el.style.display, width: el.style.width, height: el.style.height };
+        el.style.display = "inline-block";
+        el.style.width = "auto";
+        el.style.height = "auto";
+        var prevInner;
+        if (inner) {
+          prevInner = { width: inner.style.width, height: inner.style.height, transform: inner.style.transform };
+          inner.style.width = "auto"; inner.style.height = "auto"; inner.style.transform = "none";
+        }
+        var r = el.getBoundingClientRect();
+        el.style.display = prev.display; el.style.width = prev.width; el.style.height = prev.height;
+        if (inner) { inner.style.width = prevInner.width; inner.style.height = prevInner.height; inner.style.transform = prevInner.transform; }
+        return {
+          w: r.width < 20 ? secours.w : r.width,
+          h: r.height < 20 ? secours.h : r.height
+        };
+      }
       // "Rogner" (12/09/2026, demande de Cédric) : la taille de la boîte (posée par
       // un redimensionnement de BORD, voir plus haut) peut ne plus correspondre à la
       // taille réelle du contenu — espace vide, ou défilement interne inutile. Un
-      // clic recalcule la boîte à `largeur/hauteur NATURELLES du contenu × l'échelle
-      // choisie aux coins` (dataset.presNaturalW/H, mesuré une fois à l'activation en
-      // flux normal, jamais recalculé ensuite — le redimensionnement de bord ne
-      // touche jamais au contenu, donc cette référence reste valable) — la position
-      // (coin haut-gauche) ne bouge pas.
+      // clic remesure le contenu au plus juste (presFreeMesurerContenu) et recalcule
+      // la boîte à `largeur/hauteur mesurées × l'échelle choisie aux coins` — la
+      // position (coin haut-gauche) ne bouge pas.
       function presFreeRognerBloc(el, canvas, id) {
         var canvasRect = canvas.getBoundingClientRect();
-        var naturalW = parseFloat(el.dataset.presNaturalW);
-        var naturalH = parseFloat(el.dataset.presNaturalH);
         var scale = (el._presState && el._presState.scale) || 1;
-        var wPct = naturalW * scale / canvasRect.width * 100;
-        var hPct = naturalH * scale / canvasRect.height * 100;
+        var secours = { w: parseFloat(el.dataset.presNaturalW), h: parseFloat(el.dataset.presNaturalH) };
+        var mesure = presFreeMesurerContenu(el, secours);
+        el.dataset.presNaturalW = mesure.w;
+        el.dataset.presNaturalH = mesure.h;
+        var wPct = mesure.w * scale / canvasRect.width * 100;
+        var hPct = mesure.h * scale / canvasRect.height * 100;
         el.style.width = wPct + "%"; el.style.height = hPct + "%";
         var state = el._presState || {};
         state.wPct = wPct; state.hPct = hPct;
@@ -4822,12 +4869,19 @@
             naturelles[h.id] = { xPct: 8, yPct: 8, wPct: 84, hPct: 84, naturalW: canvasRect.width * 0.84, naturalH: canvasRect.height * 0.84 };
             return;
           }
+          // Position (coin haut-gauche) prise sur la vraie position en flux normal
+          // (r.left/r.top) — mais LARGEUR/HAUTEUR sur la mesure "au plus juste"
+          // (presFreeMesurerContenu), jamais sur r.width/r.height qui reflètent la
+          // largeur imposée par le flux (un bloc bloc-level s'étire par défaut sur
+          // toute la largeur du canvas, même si son contenu réel est plus étroit —
+          // voir le commentaire de presFreeMesurerContenu, même bug que "rogner").
+          var mesure = presFreeMesurerContenu(h.el);
           naturelles[h.id] = {
             xPct: (r.left - canvasRect.left) / canvasRect.width * 100,
             yPct: (r.top - canvasRect.top) / canvasRect.height * 100,
-            wPct: r.width / canvasRect.width * 100,
-            hPct: r.height / canvasRect.height * 100,
-            naturalW: r.width, naturalH: r.height
+            wPct: mesure.w / canvasRect.width * 100,
+            hPct: mesure.h / canvasRect.height * 100,
+            naturalW: mesure.w, naturalH: mesure.h
           };
         });
         // 2ᵉ passe : transformer chaque bloc (déjà dans le canvas) en bloc libre —
