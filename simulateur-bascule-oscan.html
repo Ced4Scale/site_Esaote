@@ -1386,7 +1386,7 @@
             </div>
           </div>
 
-          <div class="bascule-capnote" id="boCapaciteNote"></div>
+          <div class="bascule-capnote" id="boCapaciteNote"><div id="boCapaciteNoteBody"></div></div>
 
           <!-- Copie du bloc Mémoire/Comparer, visible ICI EN PLUS de sa place sous
                "Tarif moyen" (demande de Cédric le 11/09/2026 : "aux 2 endroits") — ids
@@ -3822,45 +3822,57 @@
         var capaciteAnnuelleO = capaciteAnnuelle(debitO);
         var volumeExtremitesDispo = volumeTotal * partExtremites;
         var capaciteNote = document.getElementById("boCapaciteNote");
+        // Cible le contenu sur un enfant STABLE (`boCapaciteNoteBody`), jamais
+        // `capaciteNote.innerHTML` directement (12/09/2026, signalé par Cédric :
+        // texte agrandi au redimensionnement mais pas le fond vert, et bloc impossible
+        // à déplacer) — en disposition libre, `#boCapaciteNote` porte en enfants
+        // directs le wrapper `.pres-block__inner` + la poignée + les poignées de
+        // redimensionnement (voir presFreeActiver) ; un `innerHTML` sur `capaciteNote`
+        // les efface tous au prochain recalcul (dès qu'un autre champ change), ce qui
+        // rend le bloc à nouveau statique (classe `pres-block` disparue avec le
+        // `className` ci-dessous, poignées disparues avec l'ancien innerHTML). Pareil
+        // pour `className` : `classList` au lieu d'un remplacement complet, pour ne
+        // jamais effacer `pres-block`/`is-locked` posés par le système de blocs libres.
+        var capaciteNoteBody = document.getElementById("boCapaciteNoteBody");
 
         if (volO > volumeExtremitesDispo + 1e-6 && volO > capaciteAnnuelleO + 1e-6) {
-          capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse à la fois sa capacité physique ET le volume disponible", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("warn");
+          capaciteNoteBody.innerHTML = capnoteHTML("⚠", "Dépasse à la fois sa capacité physique ET le volume disponible", [
             ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Capacité physique max", fmt(capaciteAnnuelleO) + " FT/an"],
             ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
           ]);
         } else if (volO > volumeExtremitesDispo + 1e-6) {
-          capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse le volume d'examens membres/extrémités disponible", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("warn");
+          capaciteNoteBody.innerHTML = capnoteHTML("⚠", "Dépasse le volume d'examens membres/extrémités disponible", [
             ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an (" + fmt(partExtremites * 100, 0) + " % de l'activité totale)"]
           ], "L'O-scan ne peut pas faire d'autres régions, même s'il a la capacité physique de le faire.");
         } else if (volO > capaciteAnnuelleO + 1e-6) {
-          capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.innerHTML = capnoteHTML("⚠", "Dépasse ce que son débit permet physiquement", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("warn");
+          capaciteNoteBody.innerHTML = capnoteHTML("⚠", "Dépasse ce que son débit permet physiquement", [
             ["Volume O-scan", fmt(volOSemaine, 1) + " ex./semaine"],
             ["Débit", fmt(debitO, 1) + " ex./h"],
             ["Ouverture", fmt(heuresParSemaineO(), 1) + " h/semaine"],
             ["Capacité max", fmt(capaciteSemaine, 1) + " ex./semaine"]
           ], "Il en faudrait un 2ᵉ, ou plus d'heures d'ouverture.");
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) - 0.5) {
-          capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.innerHTML = capnoteHTML("◐", "À sa limite", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("warn");
+          capaciteNoteBody.innerHTML = capnoteHTML("◐", "À sa limite", [
             ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Débit", fmtExact(debitO) + " FT/h"],
             ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " FT/an"]
           ], "Des séquences post-opératoires, plus courtes et plus ciblées, augmenteraient ce débit — et donc cette limite.");
         } else if (volO > Math.min(volumeExtremitesDispo, capaciteAnnuelleO) * 0.85) {
-          capaciteNote.className = "bascule-capnote warn";
-          capaciteNote.innerHTML = capnoteHTML("◐", "Proche de sa limite", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("warn");
+          capaciteNoteBody.innerHTML = capnoteHTML("◐", "Proche de sa limite", [
             ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Débit", fmtExact(debitO) + " FT/h"],
             ["Capacité max", fmt(Math.min(volumeExtremitesDispo, capaciteAnnuelleO)) + " FT/an"]
           ], "Des séquences post-opératoires, plus courtes et plus ciblées, augmenteraient ce débit — et donc cette limite.");
         } else {
-          capaciteNote.className = "bascule-capnote ok";
-          capaciteNote.innerHTML = capnoteHTML("✓", "Dans sa capacité", [
+          capaciteNote.classList.remove("ok", "warn"); capaciteNote.classList.add("ok");
+          capaciteNoteBody.innerHTML = capnoteHTML("✓", "Dans sa capacité", [
             ["Volume O-scan", fmt(volO) + " FT/an"],
             ["Capacité physique max", fmt(capaciteAnnuelleO) + " FT/an"],
             ["Volume membres/extrémités disponible", fmt(volumeExtremitesDispo) + " FT/an"]
