@@ -5196,6 +5196,19 @@
             el.classList.remove("is-dragging");
             document.removeEventListener("pointermove", onMove);
             document.removeEventListener("pointerup", onUp);
+            // Passe DEVANT tous les autres blocs une fois le geste terminé (12/09/2026,
+            // signalé par Cédric : après avoir agrandi/déplacé "Résultat net total",
+            // il en recouvrait un autre — bouton "œil" injoignable, la carte du
+            // dessous interceptant le clic à cet endroit précis). Le SEUL réordonnancement
+            // DOM (`appendChild`) s'est révélé insuffisant : le curseur, en fin de
+            // geste, se retrouve justement sur le bloc chevauché EN DESSOUS (puisque
+            // c'est là qu'il vient de grandir) — son `:hover` (z-index:10, déjà en
+            // place) l'emporte alors sur n'importe quel ordre DOM. Poser aussi un
+            // z-index explicite plus élevé que ce survol (11) sur le bloc qu'on vient
+            // de manipuler, pour qu'il reste devant même quand un autre bloc est
+            // survolé juste après.
+            canvas.appendChild(el);
+            el.style.zIndex = "11";
             var state = el._presState || {};
             state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
             presFreeSauverEtat(id, state);
@@ -5270,6 +5283,12 @@
               el.classList.remove("is-resizing");
               document.removeEventListener("pointermove", onMove);
               document.removeEventListener("pointerup", onUp);
+              // Même réflexe que le glisser (voir son propre onUp plus haut, avec le
+              // même correctif z-index) : passe devant tous les autres blocs une fois
+              // le redimensionnement terminé, pour rester cliquable même s'il en
+              // recouvre un autre désormais.
+              canvas.appendChild(el);
+              el.style.zIndex = "11";
               var state = el._presState || {};
               state.xPct = parseFloat(el.style.left); state.yPct = parseFloat(el.style.top);
               state.wPct = parseFloat(el.style.width); state.hPct = parseFloat(el.style.height);
