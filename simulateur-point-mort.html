@@ -329,6 +329,15 @@
       border-radius: 5px; white-space: nowrap; color: var(--ink); font-family: inherit;
     }
     .pres-ctx-menu button:hover { background: var(--wash); }
+    /* "Autre RH" repliée sous Salaire net MERM, panneau ⚙ — même motif triangle ▸/▾
+       que .simulator__chart-card--collapsible (styles.css), scopé localement car ce
+       n'est pas une carte de résultat. */
+    .pm-autre-rh { margin: -.4rem 0 .8rem; }
+    .pm-autre-rh > summary { cursor: pointer; font-weight: 700; font-size: .9rem; list-style: none; }
+    .pm-autre-rh > summary::-webkit-details-marker { display: none; }
+    .pm-autre-rh > summary::before { content: "▸ "; }
+    .pm-autre-rh[open] > summary::before { content: "▾ "; }
+    .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -887,18 +896,18 @@
             </select>
           </div>
           <div class="field">
-            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="pmAmorti" value="nonAmorti" checked /> Non amortie</label>
-              <label><input type="radio" name="pmAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
-            </div>
+            <label for="pmAmorti"><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+            <select id="pmAmorti">
+              <option value="nonAmorti">Non amortie</option>
+              <option value="amorti">Amortie (&gt; 7 ans)</option>
+            </select>
           </div>
           <div class="field">
-            <label>Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-            <div style="display:flex;gap:.4rem">
-              <button type="button" class="btn btn--sm btn--ghost" id="pmSalaireBtnMois" aria-pressed="false">Mensuel</button>
-              <button type="button" class="btn btn--sm" id="pmSalaireBtnAn" aria-pressed="true">Annuel</button>
-            </div>
+            <label for="pmSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+            <select id="pmSalaireUnite">
+              <option value="mensuel">Mensuel</option>
+              <option value="annuel" selected>Annuel</option>
+            </select>
           </div>
           <div class="field">
             <label for="pmNetMerm">Salaire MERM net avant impôt</label>
@@ -907,41 +916,44 @@
               <span id="pmNetMermSuffix">€ / an</span>
             </div>
           </div>
-          <div class="field">
-            <label for="pmNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetSecretaire" value="19.800" />
-              <span id="pmNetSecretaireSuffix">€ / an</span>
+          <details class="pm-autre-rh">
+            <summary>Autre RH</summary>
+            <div class="field">
+              <label for="pmNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetSecretaire" value="19.800" />
+                <span id="pmNetSecretaireSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="pmNetCadreSante">Salaire cadre de santé net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetCadreSante" value="33.600" />
-              <span id="pmNetCadreSanteSuffix">€ / an</span>
+            <div class="field">
+              <label for="pmNetCadreSante">Salaire cadre de santé net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetCadreSante" value="33.600" />
+                <span id="pmNetCadreSanteSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="pmNetAideManip">Salaire aide-manip net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetAideManip" value="19.200" />
-              <span id="pmNetAideManipSuffix">€ / an</span>
+            <div class="field">
+              <label for="pmNetAideManip">Salaire aide-manip net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetAideManip" value="19.200" />
+                <span id="pmNetAideManipSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="pmNetInfirmiere">Salaire infirmière net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetInfirmiere" value="24.000" />
-              <span id="pmNetInfirmiereSuffix">€ / an</span>
+            <div class="field">
+              <label for="pmNetInfirmiere">Salaire infirmière net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetInfirmiere" value="24.000" />
+                <span id="pmNetInfirmiereSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
-          <div class="field">
-            <label for="pmNetManipAlternance">Salaire manip en alternance net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="pmNetManipAlternance" value="9.600" />
-              <span id="pmNetManipAlternanceSuffix">€ / an</span>
+            <div class="field">
+              <label for="pmNetManipAlternance">Salaire manip en alternance net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetManipAlternance" value="9.600" />
+                <span id="pmNetManipAlternanceSuffix">€ / an</span>
+              </div>
             </div>
-          </div>
+          </details>
           <span class="pm-info-wrap">
             <button type="button" class="pm-info-btn" id="pmInfoTauxBtn" aria-expanded="false" aria-controls="pmInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
             <div class="pm-info-pop" id="pmInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
@@ -1096,10 +1108,7 @@
           document.getElementById("pmNet" + role + "Suffix").textContent = annuel ? "€ / an" : "€ / mois";
         });
         pmSalaireModeAnnuel = annuel;
-        document.getElementById("pmSalaireBtnAn").classList.toggle("btn--ghost", !annuel);
-        document.getElementById("pmSalaireBtnAn").setAttribute("aria-pressed", String(annuel));
-        document.getElementById("pmSalaireBtnMois").classList.toggle("btn--ghost", annuel);
-        document.getElementById("pmSalaireBtnMois").setAttribute("aria-pressed", String(!annuel));
+        document.getElementById("pmSalaireUnite").value = annuel ? "annuel" : "mensuel";
         recalculer();
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
@@ -1586,7 +1595,7 @@
         var params = {
           dateIso: dateSelect.value,
           zone: document.getElementById("pmZone").value,
-          amortiKey: document.querySelector('input[name="pmAmorti"]:checked').value,
+          amortiKey: document.getElementById("pmAmorti").value,
           prixKwh: Math.max(0, parseFloat(document.getElementById("pmKwh").value) || 0),
           heuresParJour: Math.max(0, pmHeuresParJourMoyen()),
           joursParMois: Math.max(1, pmJoursParMois())
@@ -2156,9 +2165,8 @@
       majAmplitudeVisibilite();
 
       dateSelect.addEventListener("change", recalculer);
-      document.querySelectorAll('input[name="pmAmorti"]').forEach(function (radio) { radio.addEventListener("change", recalculer); });
-      document.getElementById("pmSalaireBtnMois").addEventListener("click", function () { pmSalaireSetUnite(false); });
-      document.getElementById("pmSalaireBtnAn").addEventListener("click", function () { pmSalaireSetUnite(true); });
+      document.getElementById("pmAmorti").addEventListener("change", recalculer);
+      document.getElementById("pmSalaireUnite").addEventListener("change", function () { pmSalaireSetUnite(this.value === "annuel"); });
 
       recalculer();
 
@@ -2210,7 +2218,7 @@
         { id: "pmActivite", evt: "input", label: "Activité" },
         { id: "pmDate", evt: "change", label: "Date de forfait technique", type: "select" },
         { id: "pmZone", evt: "change", label: "Zone géographique", type: "select" },
-        { id: "pmAmorti", evt: "change", label: "Machine amortie ?", type: "radio" },
+        { id: "pmAmorti", evt: "change", label: "Machine amortie ?", type: "select" },
         { id: "pmKwh", evt: "input", label: "Coût du kWh" },
         { id: "pmCoutRis", evt: "input", label: "Coût RIS + graveur + imprimante" },
         { id: "pmHeuresSemaine", evt: "input", label: "Amplitude, lundi-vendredi" },
@@ -2278,10 +2286,7 @@
         PM_SALAIRE_ROLES.forEach(function (role) {
           document.getElementById("pmNet" + role + "Suffix").textContent = annuel ? "€ / an" : "€ / mois";
         });
-        document.getElementById("pmSalaireBtnAn").classList.toggle("btn--ghost", !annuel);
-        document.getElementById("pmSalaireBtnAn").setAttribute("aria-pressed", String(annuel));
-        document.getElementById("pmSalaireBtnMois").classList.toggle("btn--ghost", annuel);
-        document.getElementById("pmSalaireBtnMois").setAttribute("aria-pressed", String(!annuel));
+        document.getElementById("pmSalaireUnite").value = annuel ? "annuel" : "mensuel";
       }
 
       // Ordre du tableau PM_MEMOIRE_FIELDS déjà correct pour la restauration : gamme de
