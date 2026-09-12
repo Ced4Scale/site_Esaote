@@ -1040,36 +1040,36 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" style="margin:-.4rem 0 .8rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="cvAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="cvSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvSecretaireA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvCadreSanteA">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvCadreSanteA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvAideManipA">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvAideManipA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvInfirmiereA">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvInfirmiereA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvManipAlternanceA">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvManipAlternanceA" value="0" min="0" step="0.1" />
@@ -1164,36 +1164,36 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" style="margin:-.4rem 0 .8rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="cvAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="cvSecretaireB">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvSecretaireB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvCadreSanteB">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvCadreSanteB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvAideManipB">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvAideManipB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvInfirmiereB">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvInfirmiereB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="cvManipAlternanceB">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvManipAlternanceB" value="0" min="0" step="0.1" />
@@ -2134,6 +2134,31 @@
         cvSalaireModeAnnuel = annuel;
         document.getElementById("cvSalaireUnite").value = annuel ? "annuel" : "mensuel";
         recalculer();
+      }
+      // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
+      // alternance) : leur ligne ETP dans IRM Esaote/Scanner ne s'affiche que si le
+      // salaire correspondant a été changé par rapport à la valeur par défaut du
+      // panneau "Autre RH" — demande de Cédric le 12/09/2026, même règle que
+      // simulateur-point-mort.html (commit 8913abe). Comparaison toujours en ANNUEL
+      // (indépendante du mode d'affichage mensuel/annuel en cours).
+      var CV_POSTES_ANNEXES_DEFAUT_ANNUEL = {
+        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
+      };
+      function cvPosteAnnexeVisible(role) {
+        var annuel = cvSalaireMensuel(role) * 12;
+        return Math.abs(annuel - CV_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      }
+      function majVisibilitePostesAnnexes() {
+        var auMoinsUnA = false, auMoinsUnB = false;
+        Object.keys(CV_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
+          var visible = cvPosteAnnexeVisible(role);
+          var champA = document.getElementById("cv" + role + "A");
+          var champB = document.getElementById("cv" + role + "B");
+          if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
+          if (champB) { champB.closest(".field").hidden = !visible; if (visible) auMoinsUnB = true; }
+        });
+        document.getElementById("cvAutresPostesHintA").hidden = !auMoinsUnA;
+        document.getElementById("cvAutresPostesHintB").hidden = !auMoinsUnB;
       }
       var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var eurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
@@ -3292,6 +3317,7 @@
       var derniers = null;
 
       function recalculer() {
+        majVisibilitePostesAnnexes();
         ajusterSliderActivite();
         afficherSeuilsBareme();
         var joursEtHeures = calculerJoursEtHeures();
