@@ -142,6 +142,19 @@
        hauteur figée — le graphe grandit alors sans se déformer davantage. */
     .simulator__chart-card:fullscreen .bascule-courbe-zone svg { height: auto; aspect-ratio: 7.24 / 1; }
     .simulator__chart-card:fullscreen .bascule-comparaison-cote svg { height: auto; aspect-ratio: 3.93 / 1; }
+    /* Correctif du 12/09/2026 (disposition libre) : les 2 règles `:fullscreen` ci-dessus
+       visent l'ANCIEN plein écran "le graphe remplit toute la largeur de l'écran" — dès
+       que l'un de ces graphes devient un bloc LIBRE (mesuré "au plus juste" par
+       presFreeMesurerContenu, voir plus bas), l'aspect-ratio fixé le fait s'effondrer à
+       la taille par défaut du navigateur (~300px) au lieu de sa vraie taille naturelle,
+       car sa largeur devient indéterminée pendant la mesure (`display:inline-block` +
+       `width:auto`) — repéré le 12/09/2026 sur #boBlocGraphe ("Répartition de
+       l'activité"), signalé par un graphe réduit à quelques pixels de haut.
+       `!important` nécessaire : la classe `pres-measuring` (posée UNIQUEMENT le temps de
+       la mesure, voir presFreeMesurerContenu) n'a que 2 classes de spécificité, contre 3
+       pour la règle `:fullscreen` ci-dessus (qui gagnerait sinon même postée après). */
+    html.pres-measuring .bascule-courbe-zone svg { height: 100px !important; aspect-ratio: auto !important; }
+    html.pres-measuring .bascule-comparaison-cote svg { height: 90px !important; aspect-ratio: auto !important; }
     /* Découpage en zones projetables distinctes (11/09/2026, demande de Cédric) : la
        "vue principale" (#boCardPrincipal — graphe + curseur + ligne de stats/joker
        #boStatsRow depuis le 11/09/2026, un seul bouton plein écran désormais pour les
@@ -225,9 +238,19 @@
        remet tout à la position naturelle mesurée à la 1ʳᵉ activation. */
     .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
     .chart-card-slide-canvas--free > .pres-block {
-      position: absolute; box-sizing: border-box; z-index: 1;
+      position: absolute; box-sizing: border-box; z-index: 1; margin: 0;
       border: 1px dashed transparent; border-radius: 4px;
     }
+    /* `margin: 0` ci-dessus (12/09/2026) : certains blocs portent une marge CSS de
+       leur classe d'origine, valable en flux normal (ex. `.bascule-courbe-zone {
+       margin: 2.2rem 0 .5rem; }`) — un élément `position:absolute` respecte quand
+       même sa propre marge, qui vient alors s'AJOUTER au `top`/`left` posé par JS
+       (`state.xPct`/`yPct`), décalant le bloc au-delà de sa position calculée. Repéré
+       le 12/09/2026 sur #boBlocGraphe ("Répartition de l'activité") : un écart de
+       35,2px (exactement 2.2rem) entre la position attendue et la position réelle,
+       qui décalait aussi tous les blocs suivants d'autant. Neutraliser la marge de
+       CHAQUE bloc libre, quelle que soit sa classe d'origine, plutôt que de traquer
+       et corriger la marge au cas par cas sur chaque nouveau bloc concerné. */
     /* Le bloc survolé passe toujours au premier plan (12/09/2026) : si 2 blocs se
        chevauchent même légèrement (mesure imparfaite, contenu plus grand que
        prévu...), celui ajouté en dernier au canvas gagnait systématiquement le
@@ -1204,7 +1227,7 @@
                Cédric le 11/09/2026 : il ne la trouvait pas sans retourner la carte).
                Id suffixé "R" (Répartition), généralisé en JS avec les autres miroirs
                (voir boVolumeAMiroirs/BO_VOLUMEA_SLIDER_SUFFIXES plus bas). -->
-          <div class="field" style="margin-bottom:1.4rem">
+          <div class="field" id="boBlocActivite" style="margin-bottom:1.4rem">
             <label for="boVolumeAR">Activité totale actuelle</label>
             <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeAR" value="12000" style="width:5rem" /><span>FT/an</span></div>
             <div class="bascule-range" style="margin-top:.5rem">
@@ -1214,7 +1237,7 @@
               </div>
             </div>
           </div>
-          <div class="bascule-courbe-zone">
+          <div class="bascule-courbe-zone" id="boBlocGraphe">
             <svg id="boCourbeSvg" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total selon la répartition de l'activité">
               <line id="boCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
               <path id="boCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
@@ -1231,6 +1254,7 @@
               <circle id="boCurseurPoint" cx="0" cy="0" r="4" fill="#eb6834"></circle>
             </svg>
           </div>
+          <div id="boBlocCurseurRepartition">
           <div class="bascule-slider-labels">
             <span class="lbl" id="boLblA" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
             <span class="lbl" id="boLblO" style="color:#eb6834">O-scan : 0 FT/an</span>
@@ -1243,6 +1267,7 @@
             <div class="bascule-curseur-hint" id="boCurseurHint" aria-hidden="true">↔</div>
           </div>
           <div class="bascule-ends"><span>0</span><span id="boEndMax">12.000</span></div>
+          </div>
           </div>
 
           <div class="bascule-stats" id="boStatsRow">
@@ -1339,7 +1364,7 @@
                 </div>
               </div>
             </div>
-            <div class="bascule-stat">
+            <div class="bascule-stat" id="boStatCACard">
               <div class="bascule-stat-label">C.A. total (FT)</div>
               <div class="bascule-stat-value" id="boStatCA">—</div>
               <div class="bascule-stat-detail">
@@ -4753,7 +4778,12 @@
       // graphe (signalé par Cédric, capture à l'appui — "rogner" gonflait le bloc au
       // lieu de le resserrer, puisqu'il visait cette même hauteur naturelle fausse).
       var PRES_FREE_BLOCKS = {
-        boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"]
+        boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"],
+        // "Répartition de l'activité" (12/09/2026, suite) : 8 blocs, tous enfants
+        // directs de leur conteneur d'origine (aucun n'est parent d'un autre ici,
+        // contrairement à boCardBaremeFtMoy ci-dessus) — l'ordre n'a donc pas
+        // d'importance pour l'extraction.
+        boCardPrincipal: ["boBlocActivite", "boBlocGraphe", "boBlocCurseurRepartition", "boStatResultBox", "boJokerCard", "boStatCACard", "boCapaciteNote", "boBtnRowR"]
       };
       // Version bumpée à "-v2" (12/09/2026) : la façon de mesurer la taille "au plus
       // juste" d'un bloc a changé plusieurs fois le même jour (shrink-to-fit ajouté
@@ -4910,6 +4940,11 @@
         var flowRect = el.getBoundingClientRect();
         secours = secours || { w: flowRect.width, h: flowRect.height };
         var inner = el.querySelector(":scope > .pres-block__inner");
+        // Classe temporaire (12/09/2026) : neutralise le temps de la mesure les règles
+        // `:fullscreen ... aspect-ratio` des graphes SVG à largeur indéterminée (voir
+        // commentaire CSS `html.pres-measuring`, plus haut) — sans elle, un graphe qui
+        // devient un bloc libre s'effondre à la taille par défaut du navigateur.
+        document.documentElement.classList.add("pres-measuring");
         var prev = { display: el.style.display, width: el.style.width, height: el.style.height };
         el.style.display = "inline-block";
         el.style.width = "auto";
@@ -4936,6 +4971,7 @@
         el.style.display = prev.display; el.style.width = prev.width; el.style.height = prev.height;
         if (inner) { inner.style.width = prevInner.width; inner.style.height = prevInner.height; inner.style.transform = prevInner.transform; }
         Array.prototype.forEach.call(tables, function (t, i) { t.style.width = prevTables[i]; });
+        document.documentElement.classList.remove("pres-measuring");
         return {
           w: r.width < 20 ? secours.w : r.width,
           h: r.height < 20 ? secours.h : r.height
@@ -5248,7 +5284,21 @@
           canvas.style.height = fmt.h + "px";
           canvas.style.transform = "scale(" + Math.min(window.innerWidth / fmt.w, window.innerHeight / fmt.h) + ")";
         } else {
-          canvas.style.width = ""; canvas.style.height = ""; canvas.style.transform = "";
+          // Piège Chrome (12/09/2026) : `width:100%/height:100%` (CSS, voir styles.css)
+          // ne se résout plus correctement sur le canvas d'un cadre `<details>`
+          // (#boCardPrincipal, #boCardHyp) dans les Chrome récents — un anonyme interne
+          // posé par le moteur pour le contenu d'un `<details>` rend le pourcentage
+          // indéterminé/circulaire, et le canvas s'effondre à la taille de son propre
+          // contenu (repéré le 12/09/2026 en ajoutant la disposition libre à
+          // #boCardPrincipal : un graphe réduit à quelques pixels de haut, un
+          // chevauchement massif entre tous les blocs). Un cadre `<div>`
+          // (#boCardBaremeFtMoy) n'est pas concerné. Contourné en calculant la taille
+          // RÉELLE en JS (`clientWidth/clientHeight`, qui exclut déjà le padding du
+          // cadre) et en la posant en pixels explicites — jamais un pourcentage CSS
+          // pour ce canvas, quel que soit le tag du cadre.
+          canvas.style.width = presCardActif.clientWidth + "px";
+          canvas.style.height = presCardActif.clientHeight + "px";
+          canvas.style.transform = "";
         }
         // Disposition libre : uniquement en Automatique (fmt falsy), et seulement sur
         // les cadres listés dans PRES_FREE_BLOCKS — remplace alors le bouton
