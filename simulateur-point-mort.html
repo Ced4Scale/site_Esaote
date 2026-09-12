@@ -420,36 +420,36 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" style="margin:-.4rem 0 .8rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="pmSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmSecretaireA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmCadreSanteA">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmCadreSanteA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmAideManipA">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmAideManipA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmInfirmiereA">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmInfirmiereA" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmManipAlternanceA">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmManipAlternanceA" value="0" min="0" step="0.1" />
@@ -550,36 +550,36 @@
             <label for="pmMermB">Nombre de MERM en poste</label>
             <input type="number" id="pmMermB" value="2" min="0" step="1" />
           </div>
-          <p class="simulator__hint" style="margin:-.4rem 0 .8rem">Autres postes — laisser à 0 si non concerné.</p>
-          <div class="field">
+          <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <div class="field" hidden>
             <label for="pmSecretaireB">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmSecretaireB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmCadreSanteB">Cadre de santé (charge fixe, poste souvent partagé)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmCadreSanteB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmAideManipB">Aide-manip (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmAideManipB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmInfirmiereB">Infirmière (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmInfirmiereB" value="0" min="0" step="0.1" />
               <span>ETP</span>
             </div>
           </div>
-          <div class="field">
+          <div class="field" hidden>
             <label for="pmManipAlternanceB">Manip en alternance (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmManipAlternanceB" value="0" min="0" step="0.1" />
@@ -1114,6 +1114,33 @@
         var v = valeurMilliers(document.getElementById("pmNet" + role));
         return pmSalaireModeAnnuel ? v / 12 : v;
       }
+      // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
+      // alternance) : leur ligne ETP dans Machine A/B ne s'affiche que si le salaire
+      // correspondant a été changé par rapport à la valeur par défaut du panneau
+      // "Autre RH" — demande de Cédric le 12/09/2026, pour ne pas encombrer la fiche
+      // machine avec des postes qu'il n'utilise pas. Comparaison toujours en ANNUEL
+      // (indépendante du mode d'affichage mensuel/annuel en cours) pour ne pas se
+      // tromper selon l'unité affichée au moment du test.
+      var PM_POSTES_ANNEXES_DEFAUT_ANNUEL = {
+        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
+      };
+      function pmPosteAnnexeVisible(role) {
+        var v = valeurMilliers(document.getElementById("pmNet" + role));
+        var annuel = pmSalaireModeAnnuel ? v : v * 12;
+        return Math.abs(annuel - PM_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      }
+      function majVisibilitePostesAnnexes() {
+        var auMoinsUnA = false, auMoinsUnB = false;
+        Object.keys(PM_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
+          var visible = pmPosteAnnexeVisible(role);
+          var champA = document.getElementById("pm" + role + "A");
+          var champB = document.getElementById("pm" + role + "B");
+          if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
+          if (champB) { champB.closest(".field").hidden = !visible; if (visible) auMoinsUnB = true; }
+        });
+        document.getElementById("pmAutresPostesHintA").hidden = !auMoinsUnA;
+        document.getElementById("pmAutresPostesHintB").hidden = !auMoinsUnB;
+      }
       function pmSalaireSetUnite(annuel) {
         if (annuel === pmSalaireModeAnnuel) return;
         PM_SALAIRE_ROLES.forEach(function (role) {
@@ -1608,6 +1635,7 @@
       var pmDetailOuvert = {};
 
       function recalculer() {
+        majVisibilitePostesAnnexes();
         var params = {
           dateIso: dateSelect.value,
           zone: document.getElementById("pmZone").value,
