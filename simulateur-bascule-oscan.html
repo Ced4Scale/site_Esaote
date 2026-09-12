@@ -225,9 +225,17 @@
        remet tout à la position naturelle mesurée à la 1ʳᵉ activation. */
     .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
     .chart-card-slide-canvas--free > .pres-block {
-      position: absolute; box-sizing: border-box;
+      position: absolute; box-sizing: border-box; z-index: 1;
       border: 1px dashed transparent; border-radius: 4px;
     }
+    /* Le bloc survolé passe toujours au premier plan (12/09/2026) : si 2 blocs se
+       chevauchent même légèrement (mesure imparfaite, contenu plus grand que
+       prévu...), celui ajouté en dernier au canvas gagnait systématiquement le
+       clic à la moindre zone commune — un contrôle du bloc du DESSOUS (ex. le
+       curseur de "Réglages de répartition") pouvait alors ne jamais recevoir le
+       clic, sans que rien à l'écran ne le laisse deviner. Passer le bloc survolé
+       devant élimine ce risque par construction, quel que soit l'ordre d'ajout. */
+    .chart-card-slide-canvas--free > .pres-block:hover { z-index: 10; }
     /* Cadre rouge au survol : jamais si le bloc est verrouillé — ni par son
        propre cadenas (`.is-locked`), ni par le cadenas GLOBAL de la barre
        (`.chart-card-slide-canvas--locked`, posé sur le canvas parent) — demande de
@@ -4760,7 +4768,17 @@
       // même raison que le passage "-v1" → "-v2", une disposition déjà enregistrée
       // avec l'ancien calcul (tableau du barème trop large) resterait sinon rejouée
       // telle quelle indéfiniment.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v3";
+      // Re-bumpée "-v4" (12/09/2026, suite) : au fil des essais de Cédric sur cette
+      // même page pendant plusieurs itérations de correctifs, une position/taille
+      // ratée (ex. un bloc déplacé par erreur derrière un autre, ou réduit à rien
+      // pendant un test d'un bug alors présent) a pu rester enregistrée et
+      // continuer à être rejouée indéfiniment, même une fois le bug réel corrigé
+      // dans le code — repartir sur une disposition vierge élimine ce doute.
+      // Re-bumpée "-v5" (12/09/2026, suite) : le calcul de la position par défaut a
+      // changé (empilement vertical explicite au lieu du flux DOM, qui produisait
+      // des blocs superposés) — les anciennes positions enregistrées restaient
+      // fausses (chevauchement) tant qu'on ne repart pas d'une disposition vierge.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v5";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
@@ -5066,34 +5084,47 @@
         // "naturelle" pour #boFtMoyCard qui incluait encore ce contenu déjà déplacé
         // ailleurs — bug réel vécu le 12/09/2026 (bloc "Tarif moyen" bien plus grand
         // que son graphe, "rogner" le gonflait au lieu de le resserrer).
+        // Position par défaut calculée EXPLICITEMENT (empilement vertical, un bloc
+        // sous l'autre par un compteur `yOffsetPx` tenu ici), plutôt que déduite du
+        // flux DOM naturel (`r.left`/`r.top`) — bug réel vécu le 12/09/2026, signalé
+        // par Cédric ("le curseur ne se déplace plus DU TOUT") : hoister un bloc
+        // NICHÉ (ex. #boCardReglages, extrait de #boBaremeReglagesSlot À L'INTÉRIEUR
+        // de #boCardBareme) modifie la hauteur de son ANCIEN parent au moment même où
+        // on le déplace — les positions "naturelles" mesurées ainsi, une par une,
+        // pour les blocs suivants ne correspondaient plus à un empilement cohérent,
+        // et 2 blocs (`#boCardReglages`/`#boCardBareme`) se retrouvaient FRANCHEMENT
+        // superposés (mesuré : ~300px de chevauchement vertical) — un bloc entier
+        // (dont son curseur) recouvert par un autre qui interceptait alors tous ses
+        // clics, sans que rien ne le laisse deviner à l'écran. Empiler nous-mêmes,
+        // avec la hauteur RÉELLEMENT mesurée de chaque bloc, élimine ce risque par
+        // construction : aucun chevauchement possible, quel que soit l'ordre
+        // d'extraction depuis leur emplacement d'origine.
         var naturelles = {};
+        var yOffsetPx = 12;
         homes.forEach(function (h) {
           canvas.appendChild(h.el);
           var canvasRect = canvas.getBoundingClientRect();
           var r = h.el.getBoundingClientRect();
           // Bloc masqué (`hidden`) au moment de la mesure (ex. #boGrapheComparaison,
           // affiché seulement quand "Comparer" est cliqué) : sa bbox naturelle est
-          // 0×0 à une position sans rapport avec le canvas — position par défaut
-          // raisonnable à la place (grand rectangle centré), plutôt qu'un bloc
-          // invisible qui apparaîtrait à une position aberrante dès qu'il devient visible.
-          if (!r.width && !r.height) {
-            naturelles[h.id] = { xPct: 8, yPct: 8, wPct: 84, hPct: 84, naturalW: canvasRect.width * 0.84, naturalH: canvasRect.height * 0.84 };
-            return;
-          }
-          // Position (coin haut-gauche) prise sur la vraie position en flux normal
-          // (r.left/r.top) — mais LARGEUR/HAUTEUR sur la mesure "au plus juste"
-          // (presFreeMesurerContenu), jamais sur r.width/r.height qui reflètent la
-          // largeur imposée par le flux (un bloc bloc-level s'étire par défaut sur
-          // toute la largeur du canvas, même si son contenu réel est plus étroit —
-          // voir le commentaire de presFreeMesurerContenu, même bug que "rogner").
-          var mesure = presFreeMesurerContenu(h.el);
+          // 0×0 — position par défaut raisonnable à la place (grand rectangle),
+          // plutôt qu'un bloc invisible qui apparaîtrait à une position aberrante
+          // dès qu'il devient visible. Toujours empilé comme les autres (yOffsetPx),
+          // pas de traitement à part pour la position.
+          var mesure = (!r.width && !r.height)
+            ? { w: canvasRect.width * 0.6, h: canvasRect.height * 0.6 }
+            : presFreeMesurerContenu(h.el); // largeur/hauteur "au plus juste", jamais
+              // r.width/r.height qui reflètent la largeur imposée par le flux (un bloc
+              // bloc-level s'étire par défaut sur toute la largeur du canvas, même si
+              // son contenu réel est plus étroit — voir presFreeMesurerContenu).
           naturelles[h.id] = {
-            xPct: (r.left - canvasRect.left) / canvasRect.width * 100,
-            yPct: (r.top - canvasRect.top) / canvasRect.height * 100,
+            xPct: 12 / canvasRect.width * 100,
+            yPct: yOffsetPx / canvasRect.height * 100,
             wPct: mesure.w / canvasRect.width * 100,
             hPct: mesure.h / canvasRect.height * 100,
             naturalW: mesure.w, naturalH: mesure.h
           };
+          yOffsetPx += mesure.h + 16;
         });
         // 2ᵉ passe : transformer chaque bloc (déjà dans le canvas) en bloc libre —
         // poignées + position:absolute — une fois toutes les tailles naturelles
