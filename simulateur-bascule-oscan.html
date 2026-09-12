@@ -3542,9 +3542,15 @@
         majVolumeASliderMax();
         repositionnerCurseur();
       }
-      document.getElementById("boGainEyeBtn").addEventListener("click", function () {
-        document.getElementById("boGainDetail").hidden = !document.getElementById("boGainDetail").hidden;
-      });
+      // Fermeture au clic ailleurs/à Échap : câblée plus bas dans le fichier
+      // (wireInfoBtn("boGainEyeBtn", "boGainDetail")), APRÈS la déclaration de
+      // `boInfoPopsOuverts` — jamais ici : `wireInfoBtn` (function) est hoistée en
+      // entier, mais le tableau `var boInfoPopsOuverts = []` qu'elle utilise ne
+      // l'est pas (juste déclaré, pas encore assigné à ce stade de l'exécution
+      // linéaire) — appeler la fonction ICI ferait planter tout le script au
+      // chargement (`.push` sur `undefined`), même piège que celui déjà documenté
+      // dans le skill pour NICE_STEPS/FT_MOY_PAD, revécu ici le 12/09/2026 malgré
+      // tout (repéré uniquement par un test réel, pas à la relecture).
       document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boBtnHypothesesTop").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
@@ -4728,6 +4734,12 @@
       wireInfoBtn("boHypModeleInfoBtn", "boHypModeleInfoPop");
       wireInfoBtn("boHypDureeAcqAInfoBtn", "boHypDureeAcqAInfoPop");
       wireInfoBtn("boHypZoneInfoBtn", "boHypZoneInfoPop");
+      // "Voir le détail du gain" (12/09/2026, signalé par Cédric : "je reclique et la
+      // fenêtre ne se referme pas" — il recliquait ailleurs que sur l'œil, geste qui
+      // ferme déjà tous les AUTRES popovers du site via ce même mécanisme, sauf
+      // celui-ci qui avait son propre mini-toggle isolé, sans fermeture au clic
+      // ailleurs/à Échap). Repris sur le mécanisme partagé plutôt qu'un toggle à part.
+      wireInfoBtn("boGainEyeBtn", "boGainDetail");
       wireInfoBtn("boHypLiveInfoBtn", "boHypLiveInfoPop");
       wireInfoBtn("boHypOMiroirBtn", "boHypOMiroirPop");
       wireInfoBtn("boHypDureeAcqOInfoBtn", "boHypDureeAcqOInfoPop");
