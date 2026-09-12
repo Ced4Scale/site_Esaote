@@ -239,14 +239,17 @@
     .chart-card-slide-canvas--free { position: relative; display: block !important; overflow: auto; }
     .chart-card-slide-canvas--free > .pres-block {
       position: absolute; box-sizing: border-box; z-index: 1; margin: 0 !important;
-      border: 1px dashed transparent; border-radius: 4px; overflow: hidden;
+      border: 1px dashed transparent; border-radius: 4px;
     }
-    /* `overflow:hidden` (12/09/2026) : un bloc à padding, agrandi par un COIN (le
-       texte grandit via `transform:scale()` sur `.pres-block__inner`, voir plus bas),
-       peut visuellement dépasser le bord de sa propre boîte de quelques pixels selon
-       le contenu — jamais assez pour gêner la lecture, mais visible sans ce filet.
-       Rogne proprement cet éventuel débordement au lieu de le laisser déborder sur
-       le bloc voisin. */
+    /* PAS de `overflow:hidden` ici (essayé puis retiré le 12/09/2026, même jour) :
+       posé d'abord comme filet pour un léger débordement esthétique pendant un
+       agrandissement par coin, il s'est avéré bien pire à l'usage — signalé par
+       Cédric ("je n'arrive pas à avoir l'ensemble des données") : dès qu'un bloc est
+       plus étroit que son contenu RÉEL (montants plus longs qu'au premier calcul,
+       curseur qui a besoin de plus de place...), il masquait carrément des données
+       AU LIEU de laisser `.pres-block__inner` faire défiler (son `overflow:auto`
+       déjà en place, voir plus bas) — une barre de défilement disgracieuse reste
+       largement préférable à une donnée invisible et inaccessible. */
     /* Plancher de largeur (12/09/2026, signalé par Cédric — icônes minuscules et texte
        tronqué sur "Répartition de l'activité" en disposition libre) : le curseur de
        répartition A/O n'a AUCUNE largeur naturelle propre — son seul contenu non
@@ -261,6 +264,22 @@
        ailleurs aujourd'hui pour des cas similaires), règle ce cas précis sans
        retoucher au mécanisme de mesure lui-même. */
     #boBlocCurseurRepartition.pres-block { min-width: 300px; }
+    /* Même piège, motif de curseur DIFFÉRENT (12/09/2026, suite — signalé par Cédric :
+       "Activité totale actuelle", segment impossible à voir en entier) :
+       `.bo-partext-track-wrap` (utilisé pour le curseur de volume ET celui de part
+       membres/extrémités) n'a pas de largeur propre non plus (`flex:1`, valable
+       seulement dans son contexte flex normal ; son `<input type=range>` réel est
+       `position:absolute; width:100%`, jamais compté dans la taille intrinsèque d'un
+       ancêtre). **Le plancher doit être posé sur le bloc EXTÉRIEUR (`.pres-block`
+       lui-même), pas sur cet enfant** — un `min-width` sur l'enfant seul l'élargit
+       bien, mais le bloc extérieur (dont la taille vient d'un `%` posé en JS,
+       indépendant de ses enfants une fois en position absolue) reste étroit ; le
+       curseur élargi devient alors seulement accessible en défilant DANS le bloc,
+       pas visible d'un coup — pas ce que "voir le segment en entier" veut dire.
+       `:has()` (Chrome récent) cible tout bloc libre qui CONTIENT ce curseur, sans
+       dépendre d'un id précis — couvre #boBlocActivite et tout futur bloc du même
+       genre. */
+    .pres-block:has(.bo-partext-track-wrap) { min-width: 260px; }
     /* `margin: 0 !important` ci-dessus (12/09/2026) : certains blocs portent une marge
        de leur classe d'origine, valable en flux normal (ex. `.bascule-courbe-zone {
        margin: 2.2rem 0 .5rem; }`) — un élément `position:absolute` respecte quand
