@@ -263,7 +263,7 @@
        fixe, plutôt qu'une nouvelle mesure "au plus juste" (déjà tentée sans succès
        ailleurs aujourd'hui pour des cas similaires), règle ce cas précis sans
        retoucher au mécanisme de mesure lui-même. */
-    #boBlocCurseurRepartition.pres-block { min-width: 300px; }
+    #boBlocCurseurRepartition.pres-block { min-width: 380px; }
     /* Même piège, motif de curseur DIFFÉRENT (12/09/2026, suite — signalé par Cédric :
        "Activité totale actuelle", segment impossible à voir en entier) :
        `.bo-partext-track-wrap` (utilisé pour le curseur de volume ET celui de part
@@ -3734,6 +3734,27 @@
         jokerResizeTimer = setTimeout(ajusterHauteurJoker, 150);
       });
 
+      // Étiquette "Machine A"/"O-scan" centrée sur un point du curseur (12/09/2026,
+      // signalé par Cédric — "des qu'on bouge le curseur le texte sort du cadre") :
+      // un `left:X%; transform:translateX(-50%)` pur ne garde JAMAIS l'étiquette
+      // dans son cadre dès que son point de centrage s'approche d'un bord (une
+      // étiquette large centrée à 5% déborde forcément vers la gauche, quelle que
+      // soit la largeur du cadre) — vécu de façon flagrante en disposition libre
+      // plein écran, où le cadre est bien plus étroit qu'en vue normale, mais le
+      // défaut existe à toute largeur, juste moins visible dans un cadre large.
+      // Calcule le point de centrage désiré en pixels, puis le RECALE (jamais au-delà
+      // de la moitié de sa propre largeur depuis chaque bord) pour que l'étiquette
+      // reste toujours entièrement visible dans son conteneur, quel qu'il soit.
+      function positionnerLabelClampe(el, pctCentre) {
+        var conteneur = el.parentElement;
+        var largeurConteneur = conteneur.getBoundingClientRect().width;
+        if (!largeurConteneur) { el.style.left = pctCentre + "%"; return; }
+        var largeurLabel = el.getBoundingClientRect().width;
+        var centrePx = largeurConteneur * pctCentre / 100;
+        var demiLargeur = largeurLabel / 2;
+        var centrePxRecale = Math.max(demiLargeur, Math.min(largeurConteneur - demiLargeur, centrePx));
+        el.style.left = centrePxRecale + "px";
+      }
       function recalculer() {
         var classeA = document.getElementById("boClasseA").value;
         var nomClasseA = NOM_CLASSE[classeA];
@@ -3763,10 +3784,10 @@
 
         document.getElementById("boFillOscan").style.width = (100 - pct) + "%";
         document.getElementById("boCurseurHint").style.left = pct + "%";
-        document.getElementById("boLblA").style.left = (pct / 2) + "%";
         document.getElementById("boLblA").textContent = "Machine A : " + fmt(volA) + " FT/an";
-        document.getElementById("boLblO").style.left = (pct + (100 - pct) / 2) + "%";
+        positionnerLabelClampe(document.getElementById("boLblA"), pct / 2);
         document.getElementById("boLblO").textContent = "O-scan : " + fmt(volO) + " FT/an";
+        positionnerLabelClampe(document.getElementById("boLblO"), pct + (100 - pct) / 2);
 
         // Resynchronise les 3 miroirs (11/09/2026, demande de Cédric) — quel que soit
         // ce qui a déclenché ce recalcul (champ d'origine, l'un des miroirs, un
@@ -3775,10 +3796,10 @@
         curseur2.value = X;
         document.getElementById("boFillOscan2").style.width = (100 - pct) + "%";
         document.getElementById("boCurseurHint2").style.left = pct + "%";
-        document.getElementById("boLblA2").style.left = (pct / 2) + "%";
         document.getElementById("boLblA2").textContent = "Machine A : " + fmt(volA) + " FT/an";
-        document.getElementById("boLblO2").style.left = (pct + (100 - pct) / 2) + "%";
+        positionnerLabelClampe(document.getElementById("boLblA2"), pct / 2);
         document.getElementById("boLblO2").textContent = "O-scan : " + fmt(volO) + " FT/an";
+        positionnerLabelClampe(document.getElementById("boLblO2"), pct + (100 - pct) / 2);
         // "Activité totale actuelle" (verso du joker + sous "Tarif moyen" + face avant
         // de "Répartition de l'activité") : champs ET curseurs, pour rester synchro
         // même quand volumeTotal change par un autre chemin que la saisie directe
@@ -4900,7 +4921,12 @@
       // `overflow:hidden` sur `.pres-block` — largement préférable à des blocs
       // inutilisables. Une disposition sauvegardée avec l'ancien mécanisme (tailles
       // fixes en dur) doit impérativement repartir de zéro.
-      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v8";
+      // Re-bumpée "-v9" (12/09/2026, suite) : `mesure.w` des blocs "curseur" (aucune
+      // largeur propre, voir plus haut) est maintenant plancherée à la SOURCE plutôt
+      // qu'en CSS seulement — une disposition sauvegardée avec l'ancienne mesure
+      // (~47px) rejouerait encore un facteur d'échelle démesuré au moindre
+      // redimensionnement tant qu'elle n'est pas invalidée.
+      var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-v9";
       var presFreeCardActif = null;
       var presFreeHomes = null;
 
@@ -5245,6 +5271,33 @@
               // r.width/r.height qui reflètent la largeur imposée par le flux (un bloc
               // bloc-level s'étire par défaut sur toute la largeur du canvas, même si
               // son contenu réel est plus étroit — voir presFreeMesurerContenu).
+          // Plancher appliqué à `mesure.w` LUI-MÊME, pas seulement en CSS (12/09/2026,
+          // suite — signalé par Cédric : redimensionner ce bloc n'avait plus aucun
+          // effet, et bouger le curseur faisait sortir le texte du cadre). Un curseur
+          // (`.bascule-track-wrap`/`.bo-partext-track-wrap`) n'a AUCUN contenu qui
+          // compte dans le calcul "au plus juste" (son `<input type=range>` réel est
+          // `position:absolute`, jamais compté) — `mesure.w` valait ~47px, une valeur
+          // ABSURDE mais pas assez petite (<20px) pour déclencher le repli déjà
+          // prévu ci-dessus. Un simple plancher CSS (`min-width` posé plus haut) ne
+          // suffisait pas : il flatte l'APPARENCE au repos, mais `nat.naturalW`
+          // restait faux et servait ENCORE de référence au calcul d'échelle du
+          // redimensionnement par coin (`scale = (naturalW*startScale+delta)/
+          // naturalW`) — avec un `naturalW` aussi petit, n'importe quel geste de
+          // glisser donnait un facteur d'échelle démesuré (jusqu'à ×3, plafond du
+          // code), gonflant tout le contenu bien au-delà du cadre, qui lui restait
+          // visuellement bloqué à son plancher CSS. Corriger `mesure.w` ICI, à la
+          // source, rend le plancher CSS redondant (mais on le garde, sans risque)
+          // et élimine le problème à la racine plutôt qu'en façade.
+          if (h.el.querySelector(".bascule-track-wrap")) {
+            // Ce curseur porte 2 étiquettes texte ("Machine A : ..."/"O-scan : ...")
+            // centrées sur leur point via `%` — un plancher trop juste les fait
+            // déborder du cadre dès que la valeur approche un bord de la piste
+            // (texte large centré près du bord). Plancher plus généreux que pour un
+            // curseur sans étiquette.
+            mesure.w = Math.max(mesure.w, 380);
+          } else if (h.el.querySelector(".bo-partext-track-wrap")) {
+            mesure.w = Math.max(mesure.w, 260);
+          }
           naturelles[h.id] = {
             xPct: 12 / canvasRect.width * 100,
             yPct: yOffsetPx / canvasRect.height * 100,
