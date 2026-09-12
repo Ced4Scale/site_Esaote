@@ -312,6 +312,17 @@
     .chart-card-slide-canvas--free > .pres-block.is-dragging,
     .chart-card-slide-canvas--free > .pres-block.is-resizing { border-color: var(--red); }
     .pres-block__inner { width: 100%; height: 100%; overflow: auto; transform-origin: top left; }
+    /* Popover "voir le détail" (12/09/2026, signalé par Cédric : "quand je clique sur
+       l'oeil ça bloque") : ce popover (`#boGainDetail`, `position:absolute`, flotte
+       librement au-dessus des cartes voisines en vue normale) se retrouvait piégé
+       dans `.pres-block__inner` une fois "Résultat net total" devenu une carte
+       "simple" à taille FIXE (voir presFreeActiver, "carte simple") — son
+       `overflow:auto` le clippait/le rendait accessible seulement en défilant DANS
+       la petite carte, au lieu de flotter par-dessus comme prévu. `:has()` (Chrome
+       récent) repasse l'inner en `overflow:visible` UNIQUEMENT pendant que ce
+       popover précis est ouvert (jamais en permanence, pour ne pas perdre le
+       défilement interne légitime d'un bloc rétréci par un bord). */
+    .pres-block__inner:has(.bascule-gain-detail:not([hidden])) { overflow: visible; }
     /* Poignées TOUJOURS à l'INTÉRIEUR de la boîte du bloc (12/09/2026, correction
        d'un bug réel signalé par Cédric, capture à l'appui) — à l'origine, la
        poignée de déplacement et les 4 coins de redimensionnement dépassaient EN
