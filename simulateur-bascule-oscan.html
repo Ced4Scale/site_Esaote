@@ -1016,6 +1016,15 @@
       background: linear-gradient(135deg, #ffb066 0%, #ff7a1a 60%, #c8440f 100%);
       border-color: #c8440f; box-shadow: 0 5px 14px rgba(224,80,26,.45);
     }
+    /* "Autre RH" repliée sous Salaire net MERM, panneau ⚙ — même motif triangle ▸/▾
+       que .simulator__chart-card--collapsible (styles.css), scopé localement car ce
+       n'est pas une carte de résultat. */
+    .pm-autre-rh { margin: -.4rem 0 .8rem; }
+    .pm-autre-rh > summary { cursor: pointer; font-weight: 700; font-size: .9rem; list-style: none; }
+    .pm-autre-rh > summary::-webkit-details-marker { display: none; }
+    .pm-autre-rh > summary::before { content: "▸ "; }
+    .pm-autre-rh[open] > summary::before { content: "▾ "; }
+    .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -1882,47 +1891,50 @@
             </span>
           </div>
           <div class="field">
-            <label><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="boAmorti" value="nonAmorti" checked /> Non amortie</label>
-              <label><input type="radio" name="boAmorti" value="amorti" /> Amortie (&gt; 7 ans)</label>
-            </div>
+            <label for="boAmorti"><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+            <select id="boAmorti">
+              <option value="nonAmorti">Non amortie</option>
+              <option value="amorti">Amortie (&gt; 7 ans)</option>
+            </select>
           </div>
           <div class="field">
-            <label>Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-            <div style="display:flex;gap:.4rem">
-              <button type="button" class="btn btn--sm btn--ghost" id="boHypSalaireBtnMois" aria-pressed="false">Mensuel</button>
-              <button type="button" class="btn btn--sm" id="boHypSalaireBtnAn" aria-pressed="true">Annuel</button>
-            </div>
+            <label for="boHypSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+            <select id="boHypSalaireUnite">
+              <option value="mensuel">Mensuel</option>
+              <option value="annuel" selected>Annuel</option>
+            </select>
           </div>
           <div class="field">
             <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="21.600" /><span id="boHypNetMermSuffix">€/an</span></div>
           </div>
-          <div class="field">
-            <label for="boHypNetSecretaire">Salaire net secrétaire médicale (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetSecretaire" value="19.800" /><span id="boHypNetSecretaireSuffix">€/an</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypNetCadreSante">Salaire net cadre de santé (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetCadreSante" value="33.600" /><span id="boHypNetCadreSanteSuffix">€/an</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypNetAideManip">Salaire net aide-manip (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetAideManip" value="19.200" /><span id="boHypNetAideManipSuffix">€/an</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypNetInfirmiere">Salaire net infirmière (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetInfirmiere" value="24.000" /><span id="boHypNetInfirmiereSuffix">€/an</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypNetManipAlternance">Salaire net manip en alternance (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetManipAlternance" value="9.600" /><span id="boHypNetManipAlternanceSuffix">€/an</span></div>
-            <span class="bascule-info-wrap">
-              <button type="button" class="bascule-info-btn" id="boHypTauxInfoBtn" aria-expanded="false" aria-controls="boHypTauxInfoPop" aria-label="À propos des taux employeur utilisés">💡</button>
-              <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
-            </span>
-          </div>
+          <details class="pm-autre-rh">
+            <summary>Autre RH</summary>
+            <div class="field">
+              <label for="boHypNetSecretaire">Salaire net secrétaire médicale (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetSecretaire" value="19.800" /><span id="boHypNetSecretaireSuffix">€/an</span></div>
+            </div>
+            <div class="field">
+              <label for="boHypNetCadreSante">Salaire net cadre de santé (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetCadreSante" value="33.600" /><span id="boHypNetCadreSanteSuffix">€/an</span></div>
+            </div>
+            <div class="field">
+              <label for="boHypNetAideManip">Salaire net aide-manip (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetAideManip" value="19.200" /><span id="boHypNetAideManipSuffix">€/an</span></div>
+            </div>
+            <div class="field">
+              <label for="boHypNetInfirmiere">Salaire net infirmière (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetInfirmiere" value="24.000" /><span id="boHypNetInfirmiereSuffix">€/an</span></div>
+            </div>
+            <div class="field">
+              <label for="boHypNetManipAlternance">Salaire net manip en alternance (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetManipAlternance" value="9.600" /><span id="boHypNetManipAlternanceSuffix">€/an</span></div>
+              <span class="bascule-info-wrap">
+                <button type="button" class="bascule-info-btn" id="boHypTauxInfoBtn" aria-expanded="false" aria-controls="boHypTauxInfoPop" aria-label="À propos des taux employeur utilisés">💡</button>
+                <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
+              </span>
+            </div>
+          </details>
           <div class="field">
             <label for="boHypCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypCoutRis" value="0" /><span>€/mois</span></div>
@@ -2112,10 +2124,7 @@
           var suffix = document.getElementById("boHypNet" + role + "Suffix");
           if (suffix) suffix.textContent = boNetMermModeAnnuel ? "€/an" : "€/mois";
         });
-        document.getElementById("boHypSalaireBtnAn").classList.toggle("btn--ghost", !boNetMermModeAnnuel);
-        document.getElementById("boHypSalaireBtnAn").setAttribute("aria-pressed", String(boNetMermModeAnnuel));
-        document.getElementById("boHypSalaireBtnMois").classList.toggle("btn--ghost", boNetMermModeAnnuel);
-        document.getElementById("boHypSalaireBtnMois").setAttribute("aria-pressed", String(!boNetMermModeAnnuel));
+        document.getElementById("boHypSalaireUnite").value = boNetMermModeAnnuel ? "annuel" : "mensuel";
       }
       // Bascule le mode : convertit la valeur déjà saisie dans chaque champ (jamais une
       // constante par défaut), puis réapplique tout de suite (appliquerHypotheses()
@@ -2133,10 +2142,7 @@
           if (suffix) suffix.textContent = annuel ? "€/an" : "€/mois";
         });
         boNetMermModeAnnuel = annuel;
-        document.getElementById("boHypSalaireBtnAn").classList.toggle("btn--ghost", !annuel);
-        document.getElementById("boHypSalaireBtnAn").setAttribute("aria-pressed", String(annuel));
-        document.getElementById("boHypSalaireBtnMois").classList.toggle("btn--ghost", annuel);
-        document.getElementById("boHypSalaireBtnMois").setAttribute("aria-pressed", String(!annuel));
+        document.getElementById("boHypSalaireUnite").value = annuel ? "annuel" : "mensuel";
         appliquerHypotheses();
       }
 
@@ -3532,8 +3538,7 @@
         document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
-        var radioAmorti = document.querySelector('input[name="boAmorti"][value="' + (FT_AMORTI ? "amorti" : "nonAmorti") + '"]');
-        if (radioAmorti) radioAmorti.checked = true;
+        document.getElementById("boAmorti").value = FT_AMORTI ? "amorti" : "nonAmorti";
         remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
@@ -3579,7 +3584,7 @@
         MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         FT_DATE_ISO = document.getElementById("boHypDate").value;
         ZONE_TARIFAIRE = document.getElementById("boHypZone").value;
-        FT_AMORTI = document.querySelector('input[name="boAmorti"]:checked').value === "amorti";
+        FT_AMORTI = document.getElementById("boAmorti").value === "amorti";
         reconstruireFtClassesPlein();
         majResumeHypotheses();
         majVolumeASliderMax();
@@ -3622,11 +3627,8 @@
       document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypDate").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypZone").addEventListener("change", appliquerHypotheses);
-      document.querySelectorAll('input[name="boAmorti"]').forEach(function (radio) {
-        radio.addEventListener("change", appliquerHypotheses);
-      });
-      document.getElementById("boHypSalaireBtnMois").addEventListener("click", function () { boNetMermSetUnite(false); });
-      document.getElementById("boHypSalaireBtnAn").addEventListener("click", function () { boNetMermSetUnite(true); });
+      document.getElementById("boAmorti").addEventListener("change", appliquerHypotheses);
+      document.getElementById("boHypSalaireUnite").addEventListener("change", function () { boNetMermSetUnite(this.value === "annuel"); });
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; NET_SECRETAIRE = HYP_DEFAUTS.netSecretaire; NET_CADRE_SANTE = HYP_DEFAUTS.netCadreSante;
         NET_AIDE_MANIP = HYP_DEFAUTS.netAideManip; NET_INFIRMIERE = HYP_DEFAUTS.netInfirmiere; NET_MANIP_ALTERNANCE = HYP_DEFAUTS.netManipAlternance;
@@ -3656,8 +3658,7 @@
         document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
-        var radioAmortiReset = document.querySelector('input[name="boAmorti"][value="' + (FT_AMORTI ? "amorti" : "nonAmorti") + '"]');
-        if (radioAmortiReset) radioAmortiReset.checked = true;
+        document.getElementById("boAmorti").value = FT_AMORTI ? "amorti" : "nonAmorti";
         remplirModelesA();
         majResumeHypotheses();
         repositionnerCurseur();
