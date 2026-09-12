@@ -4620,8 +4620,19 @@
       // wireCardFullscreen (parent + frère suivant mémorisés, restaurés à l'identique
       // à la désactivation) — jamais une restructuration permanente du HTML, la vue
       // normale et les formats 16:9/4:3 gardent l'imbrication d'origine inchangée.
+      // Ordre IMPORTANT (12/09/2026, correction d'un bug réel — voir presFreeActiver
+      // plus bas) : les blocs les plus NICHÉS d'abord, leurs "parents" ensuite.
+      // #boFtMoyJokerCard/#boBtnRow/#boGrapheComparaison vivent normalement DANS
+      // #boFtMoyCard, et #boCardReglages arrive normalement DANS #boCardBareme (via
+      // le mécanisme extraIds de wireCardFullscreen, déjà exécuté avant que ce code ne
+      // tourne) — s'ils ne sont pas sortis de là AVANT de mesurer/hoister
+      // #boFtMoyCard/#boCardBareme, ces derniers mesurent une hauteur "naturelle" qui
+      // inclut encore ce contenu, alors qu'il n'y est plus une fois séparé en blocs
+      // libres : le bloc "Tarif moyen" se retrouvait ainsi bien plus grand que son
+      // graphe (signalé par Cédric, capture à l'appui — "rogner" gonflait le bloc au
+      // lieu de le resserrer, puisqu'il visait cette même hauteur naturelle fausse).
       var PRES_FREE_BLOCKS = {
-        boCardBaremeFtMoy: ["boCardBareme", "boFtMoyCard", "boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages"]
+        boCardBaremeFtMoy: ["boFtMoyJokerCard", "boBtnRow", "boGrapheComparaison", "boCardReglages", "boFtMoyCard", "boCardBareme"]
       };
       var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout";
       var presFreeCardActif = null;
@@ -4781,19 +4792,26 @@
         if (!canvas) return;
         canvas.classList.add("chart-card-slide-canvas--free");
         var layout = presFreeLireLayout();
-        var canvasRect = canvas.getBoundingClientRect();
         // Homes capturés AVANT tout déplacement (parent + frère suivant d'origine,
-        // même motif que extraIds de wireCardFullscreen) et mesure de la position
-        // NATURELLE (flux normal) avant de rien transformer en position:absolute —
-        // sert de valeur par défaut tant que Cédric n'a pas encore réglé ce bloc à la
-        // main (donc rien à lire dans localStorage pour cet id).
+        // même motif que extraIds de wireCardFullscreen).
         var homes = [];
         ids.forEach(function (id) {
           var el = document.getElementById(id);
           if (el) homes.push({ id: id, el: el, parent: el.parentNode, next: el.nextSibling });
         });
+        // 1ʳᵉ passe : hoister chaque bloc dans le canvas EN FLUX NORMAL (encore
+        // position:static) et mesurer sa taille naturelle À CE MOMENT-LÀ, un bloc à
+        // la fois, DANS L'ORDRE de PRES_FREE_BLOCKS (les plus nichés d'abord — voir
+        // commentaire sur PRES_FREE_BLOCKS). Mesurer un "parent" (ex. #boFtMoyCard)
+        // seulement APRÈS avoir sorti ses enfants (joker/Mémoire/comparaison) est
+        // ESSENTIEL : les mesurer dans le mauvais ordre donnait une hauteur
+        // "naturelle" pour #boFtMoyCard qui incluait encore ce contenu déjà déplacé
+        // ailleurs — bug réel vécu le 12/09/2026 (bloc "Tarif moyen" bien plus grand
+        // que son graphe, "rogner" le gonflait au lieu de le resserrer).
         var naturelles = {};
         homes.forEach(function (h) {
+          canvas.appendChild(h.el);
+          var canvasRect = canvas.getBoundingClientRect();
           var r = h.el.getBoundingClientRect();
           // Bloc masqué (`hidden`) au moment de la mesure (ex. #boGrapheComparaison,
           // affiché seulement quand "Comparer" est cliqué) : sa bbox naturelle est
@@ -4812,6 +4830,9 @@
             naturalW: r.width, naturalH: r.height
           };
         });
+        // 2ᵉ passe : transformer chaque bloc (déjà dans le canvas) en bloc libre —
+        // poignées + position:absolute — une fois toutes les tailles naturelles
+        // mesurées correctement.
         homes.forEach(function (h) {
           var el = h.el, nat = naturelles[h.id];
           var inner = document.createElement("div");
