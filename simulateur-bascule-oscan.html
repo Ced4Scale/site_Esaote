@@ -318,11 +318,16 @@
        dans `.pres-block__inner` une fois "Résultat net total" devenu une carte
        "simple" à taille FIXE (voir presFreeActiver, "carte simple") — son
        `overflow:auto` le clippait/le rendait accessible seulement en défilant DANS
-       la petite carte, au lieu de flotter par-dessus comme prévu. `:has()` (Chrome
-       récent) repasse l'inner en `overflow:visible` UNIQUEMENT pendant que ce
-       popover précis est ouvert (jamais en permanence, pour ne pas perdre le
-       défilement interne légitime d'un bloc rétréci par un bord). */
-    .pres-block__inner:has(.bascule-gain-detail:not([hidden])) { overflow: visible; }
+       la petite carte, au lieu de flotter par-dessus comme prévu. Classe posée/
+       retirée en JS (voir la fin du fichier, `MutationObserver` sur `#boGainDetail`)
+       UNIQUEMENT pendant que ce popover précis est ouvert — jamais en permanence,
+       pour ne pas perdre le défilement interne légitime d'un bloc rétréci par un
+       bord. Un `:has()` CSS faisait le même travail mais a été retiré le même jour
+       (signalé par Cédric : "il faut 20 secondes avant que le texte disparaisse" —
+       pas reproduit tel quel en test, mais `:has()` réévalue ce sélecteur à CHAQUE
+       recalcul de style de la page entière ; remplacé par un mécanisme JS ciblé,
+       imperceptible, qui élimine ce doute plutôt que de le laisser courir). */
+    .pres-block__inner--popover-ouvert { overflow: visible; }
     /* Poignées TOUJOURS à l'INTÉRIEUR de la boîte du bloc (12/09/2026, correction
        d'un bug réel signalé par Cédric, capture à l'appui) — à l'origine, la
        poignée de déplacement et les 4 coins de redimensionnement dépassaient EN
@@ -4740,6 +4745,20 @@
       // celui-ci qui avait son propre mini-toggle isolé, sans fermeture au clic
       // ailleurs/à Échap). Repris sur le mécanisme partagé plutôt qu'un toggle à part.
       wireInfoBtn("boGainEyeBtn", "boGainDetail");
+      // Laisse le popover s'échapper du `overflow:auto` de la carte "simple" qui le
+      // contient (voir commentaire CSS `.pres-block__inner--popover-ouvert` plus
+      // haut) — un `MutationObserver` ciblé sur ce seul attribut, plutôt qu'un
+      // sélecteur `:has()` réévalué à chaque recalcul de style de toute la page
+      // (retiré le même jour, soupçonné par Cédric d'être responsable d'une lenteur
+      // à la fermeture — pas reproduite en test, mais ce mécanisme est de toute
+      // façon plus direct). Cherche l'ancêtre à CHAQUE changement (jamais mis en
+      // cache) : `.pres-block__inner` n'existe qu'une fois le bloc en disposition
+      // libre, pas en vue normale.
+      new MutationObserver(function () {
+        var pop = document.getElementById("boGainDetail");
+        var inner = pop.closest(".pres-block__inner");
+        if (inner) inner.classList.toggle("pres-block__inner--popover-ouvert", !pop.hidden);
+      }).observe(document.getElementById("boGainDetail"), { attributes: true, attributeFilter: ["hidden"] });
       wireInfoBtn("boHypLiveInfoBtn", "boHypLiveInfoPop");
       wireInfoBtn("boHypOMiroirBtn", "boHypOMiroirPop");
       wireInfoBtn("boHypDureeAcqOInfoBtn", "boHypDureeAcqOInfoPop");
