@@ -240,6 +240,19 @@
     }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__handle,
     .pres-block.is-dragging .pres-block__handle { opacity: 1; }
+    /* "Rogner" (12/09/2026, demande de Cédric) : remet en un clic la taille du bloc
+       exactement à celle de son contenu (largeur/hauteur naturelles × l'échelle
+       choisie aux coins) — corrige l'espace vide ou le défilement laissés par un
+       redimensionnement de bord (haut/bas/gauche/droite, qui change la boîte SANS
+       toucher au contenu, voir .pres-block__resize--edge ci-dessous). Coin
+       haut-droit, symétrique de la poignée de déplacement (haut-gauche). */
+    .pres-block__crop {
+      position: absolute; top: -2px; right: -2px; width: 24px; height: 24px; z-index: 6;
+      display: flex; align-items: center; justify-content: center;
+      background: #fff; color: var(--red); border: 1px solid var(--red); border-radius: 0 4px 0 6px;
+      cursor: pointer; font-size: 13px; opacity: 0; transition: opacity .15s; user-select: none;
+    }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__crop { opacity: 1; }
     .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__resize,
     .pres-block.is-resizing .pres-block__resize { opacity: 1; }
@@ -4641,7 +4654,32 @@
       // en pointer events génériques (souris + tactile), coordonnées en pixels pendant
       // le geste (1:1 avec la souris), converties en % du canvas seulement pour
       // l'affichage final et la mémorisation (portable d'un écran à l'autre).
+      // "Rogner" (12/09/2026, demande de Cédric) : la taille de la boîte (posée par
+      // un redimensionnement de BORD, voir plus haut) peut ne plus correspondre à la
+      // taille réelle du contenu — espace vide, ou défilement interne inutile. Un
+      // clic recalcule la boîte à `largeur/hauteur NATURELLES du contenu × l'échelle
+      // choisie aux coins` (dataset.presNaturalW/H, mesuré une fois à l'activation en
+      // flux normal, jamais recalculé ensuite — le redimensionnement de bord ne
+      // touche jamais au contenu, donc cette référence reste valable) — la position
+      // (coin haut-gauche) ne bouge pas.
+      function presFreeRognerBloc(el, canvas, id) {
+        var canvasRect = canvas.getBoundingClientRect();
+        var naturalW = parseFloat(el.dataset.presNaturalW);
+        var naturalH = parseFloat(el.dataset.presNaturalH);
+        var scale = (el._presState && el._presState.scale) || 1;
+        var wPct = naturalW * scale / canvasRect.width * 100;
+        var hPct = naturalH * scale / canvasRect.height * 100;
+        el.style.width = wPct + "%"; el.style.height = hPct + "%";
+        var state = el._presState || {};
+        state.wPct = wPct; state.hPct = hPct;
+        presFreeSauverEtat(id, state);
+      }
       function presFreeBrancherBloc(el, canvas, id) {
+        var crop = el.querySelector(":scope > .pres-block__crop");
+        crop.addEventListener("click", function (e) {
+          e.preventDefault(); e.stopPropagation();
+          presFreeRognerBloc(el, canvas, id);
+        });
         var handle = el.querySelector(":scope > .pres-block__handle");
         handle.addEventListener("pointerdown", function (e) {
           e.preventDefault(); e.stopPropagation();
@@ -4789,6 +4827,13 @@
           handle.setAttribute("aria-hidden", "true");
           handle.textContent = "⠿";
           el.appendChild(handle);
+          var crop = document.createElement("button");
+          crop.type = "button";
+          crop.className = "pres-block__crop";
+          crop.title = "Rogner : ajuster la taille du bloc à son contenu";
+          crop.setAttribute("aria-label", "Ajuster la taille du bloc à son contenu");
+          crop.textContent = "⇲";
+          el.appendChild(crop);
           ["nw", "ne", "sw", "se"].forEach(function (pos) {
             var rEl = document.createElement("div");
             rEl.className = "pres-block__resize pres-block__resize--corner pres-block__resize--" + pos;
@@ -4818,7 +4863,7 @@
           el.classList.remove("pres-block", "is-dragging", "is-resizing");
           el.style.left = ""; el.style.top = ""; el.style.width = ""; el.style.height = "";
           delete el.dataset.presNaturalW; delete el.dataset.presNaturalH;
-          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__resize")).forEach(function (h2) { h2.remove(); });
+          Array.prototype.slice.call(el.querySelectorAll(":scope > .pres-block__handle, :scope > .pres-block__crop, :scope > .pres-block__resize")).forEach(function (h2) { h2.remove(); });
           var inner = el.querySelector(":scope > .pres-block__inner");
           if (inner) {
             while (inner.firstChild) el.insertBefore(inner.firstChild, inner);
