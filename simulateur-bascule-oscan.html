@@ -255,15 +255,32 @@
        (qui aurait sinon chevauché le coin de redimensionnement "nw") à un onglet
        CENTRÉ en haut ; "rogner" (⇲) symétrique en bas — libère les 4 vrais coins
        pour les 4 poignées de redimensionnement proportionnel. */
+    /* Bug réel corrigé le 12/09/2026 (signalé par Cédric : "le curseur de
+       Réglages de répartition ne bouge plus du tout" en plein écran) : ces 3
+       poignées (déplacement, rogner, redimensionnement) sont invisibles par
+       défaut (`opacity:0`, révélées seulement au survol du bloc) mais restaient
+       CLIQUABLES en permanence — `opacity:0` ne retire PAS un élément du hit-
+       testing, contrairement à `display:none`/`visibility:hidden`. N'importe
+       quel contrôle du CONTENU du bloc (ici un `<input type="range">`) qui se
+       trouve géométriquement sous l'une de ces poignées invisibles ne recevait
+       alors JAMAIS le clic — intercepté avant même d'atteindre le curseur, sans
+       la moindre erreur JS, donc totalement silencieux. `pointer-events:none`
+       par défaut, remis à `auto` UNIQUEMENT quand la poignée redevient visible
+       (survol/glissement/redimensionnement en cours) — même réflexe que pour
+       tout élément togligé par opacité plutôt que par `hidden` (voir aussi le
+       piège déjà documenté dans le skill pour `display` et `[hidden]`, même
+       famille de bug : ce que l'œil ne voit pas doit aussi être invisible pour
+       le clic). */
     .pres-block__handle {
       position: absolute; top: 0; left: 50%; transform: translateX(-50%);
       width: 30px; height: 16px; z-index: 7;
       display: flex; align-items: center; justify-content: center;
       background: var(--red); color: #fff; border-radius: 0 0 8px 8px;
       cursor: move; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
+      pointer-events: none;
     }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__handle,
-    .pres-block.is-dragging .pres-block__handle { opacity: 1; }
+    .pres-block.is-dragging .pres-block__handle { opacity: 1; pointer-events: auto; }
     /* "Rogner" (12/09/2026, demande de Cédric) : remet en un clic la taille du bloc
        exactement à celle de son contenu (largeur/hauteur naturelles × l'échelle
        choisie aux coins) — corrige l'espace vide ou le défilement laissés par un
@@ -279,11 +296,12 @@
       background: #fff; color: var(--red); border: 1px solid var(--red); border-bottom: none;
       border-radius: 8px 8px 0 0;
       cursor: pointer; font-size: 12px; line-height: 1; opacity: 0; transition: opacity .15s; user-select: none;
+      pointer-events: none;
     }
-    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__crop { opacity: 1; }
-    .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; }
+    .chart-card-slide-canvas--free > .pres-block:hover .pres-block__crop { opacity: 1; pointer-events: auto; }
+    .pres-block__resize { position: absolute; z-index: 6; opacity: 0; transition: opacity .15s; pointer-events: none; }
     .chart-card-slide-canvas--free > .pres-block:hover .pres-block__resize,
-    .pres-block.is-resizing .pres-block__resize { opacity: 1; }
+    .pres-block.is-resizing .pres-block__resize { opacity: 1; pointer-events: auto; }
     .pres-block__resize--corner { width: 13px; height: 13px; background: var(--red); border-radius: 50%; }
     .pres-block__resize--nw { top: 0; left: 0; cursor: nwse-resize; }
     .pres-block__resize--ne { top: 0; right: 0; cursor: nesw-resize; }
