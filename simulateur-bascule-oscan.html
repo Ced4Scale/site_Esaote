@@ -329,14 +329,16 @@
        11/09/2026). Sous 480px, on repasse en flux normal (space-between) plutôt que de
        suivre la position exacte du curseur — perd la nuance visuelle mais élimine tout
        chevauchement, quelle que soit la répartition choisie. */
-    /* #boCardBareme (pas #boFtMoyCard) depuis le 11/09/2026 (suite) : ce curseur
-       miroir a été déplacé sous "Forfait technique - barème dégressif" (demande de
-       Cédric), le sélecteur suit. */
+    /* #boCardReglages (12/09/2026, suite) : ce curseur miroir a encore déménagé,
+       cette fois dans sa propre carte "Réglages de répartition" sous "Hypothèses"
+       (demande de Cédric — combler le vide sous "Forfait technique" en vue
+       normale). Déjà passé par #boCardBareme puis #boFtMoyCard avant ça, toujours
+       le même sélecteur à faire suivre. */
     @media (max-width: 480px) {
-      #boCardBareme .bascule-slider-labels {
+      #boCardReglages .bascule-slider-labels {
         position: static; height: auto; display: flex; justify-content: space-between; gap: .5rem; flex-wrap: wrap;
       }
-      #boCardBareme .bascule-slider-labels .lbl { position: static; transform: none; }
+      #boCardReglages .bascule-slider-labels .lbl { position: static; transform: none; }
     }
     .bascule-ftmoy-fields { display: flex; flex-wrap: wrap; gap: 1.2rem 1.6rem; margin-top: 1rem; }
     .bascule-ftmoy-fields .field, .bascule-ftmoy-fields .bascule-champ { flex: 1 1 220px; min-width: 200px; margin-bottom: 0; }
@@ -1238,46 +1240,6 @@
                    skill ced4scale-simulateur-web) — encadré fixe sous le tableau, masqué
                    quand la case "Afficher tous les CA" est cochée (redondant). -->
               <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
-
-              <!-- Réglages déplacés ici depuis "Tarif moyen" (11/09/2026, demande de
-                   Cédric) : ventilation Machine A/O-scan (#boCurseur2, même habillage
-                   que le curseur original de "Répartition de l'activité" — libellés
-                   au-dessus, barre à dégradé, flèche sous le curseur, 0/activité
-                   totale aux extrémités) + les 2 champs miroirs "Activité totale
-                   actuelle"/"Part membres-extrémités" (#boVolumeA2/#boPartExtremites2,
-                   synchronisés dans les 2 sens — voir mirrorField() plus bas). Ce sont
-                   les MÊMES éléments qu'avant, seulement déplacés dans le HTML — pas
-                   de doublon. -->
-              <div class="bascule-slider-labels" style="margin-top:1rem">
-                <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
-                <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
-              </div>
-              <div class="bascule-track-wrap">
-                <div class="bascule-slider-track">
-                  <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
-                </div>
-                <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
-                <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
-              </div>
-              <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
-              <div class="bascule-ftmoy-controls">
-                <div class="bascule-ftmoy-fields">
-                  <div class="field" style="margin-bottom:0">
-                    <label for="boVolumeA2">Activité totale actuelle</label>
-                    <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA2" value="12000" style="width:5rem" /><span>FT/an</span></div>
-                  </div>
-                  <div class="bascule-champ" style="margin-bottom:0">
-                    <label for="boPartExtremites2">Part membres/extrémités (IRM tunnel, hors épaule)</label>
-                    <div class="bascule-range">
-                      <div class="bo-partext-track-wrap">
-                        <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill2"></div></div>
-                        <input type="range" id="boPartExtremites2" min="0" max="100" value="35" />
-                      </div>
-                      <span class="val" id="boPartExtremitesVal2">35 %</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </details>
 
             <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
@@ -1450,6 +1412,52 @@
             <div class="bascule-info-pop" id="boHypResumePop" hidden>Modifiable via l'icône ⚙ de chaque bloc (Machine A pour le salaire/base légale/amplitude/modèle, O-scan pour sa propre amplitude).</div>
           </span>
         </details>
+
+        <!-- Réglages de répartition (12/09/2026, demande de Cédric) : déplacés hors
+             de "Forfait technique - barème dégressif" (où ils vivaient depuis la
+             veille) vers une carte à part, ICI, sous "Hypothèses" — en vue normale,
+             la colonne de droite (Forfait technique/Tarif moyen/Hypothèses) est
+             bien plus courte que la colonne de gauche ("Paramètres", pleine de
+             champs), laissant un grand vide sous "Forfait technique" ; cette carte
+             comble cet espace au lieu de rester nichée dans le barème. Toujours les
+             MÊMES éléments qu'avant (#boCurseur2 : même habillage que le curseur
+             original de "Répartition de l'activité" — libellés au-dessus, barre à
+             dégradé, flèche sous le curseur, 0/activité totale aux extrémités ;
+             #boVolumeA2/#boPartExtremites2, synchronisés dans les 2 sens — voir
+             mirrorField() plus bas) — pas de doublon, seulement reparentés. -->
+        <div class="simulator__chart-card" id="boCardReglages">
+          <h3 style="margin:0 0 1rem;font-size:1.05rem">Réglages de répartition</h3>
+          <div class="bascule-slider-labels">
+            <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+            <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
+          </div>
+          <div class="bascule-track-wrap">
+            <div class="bascule-slider-track">
+              <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
+            </div>
+            <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
+            <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
+          </div>
+          <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
+          <div class="bascule-ftmoy-controls">
+            <div class="bascule-ftmoy-fields">
+              <div class="field" style="margin-bottom:0">
+                <label for="boVolumeA2">Activité totale actuelle</label>
+                <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA2" value="12000" style="width:5rem" /><span>FT/an</span></div>
+              </div>
+              <div class="bascule-champ" style="margin-bottom:0">
+                <label for="boPartExtremites2">Part membres/extrémités (IRM tunnel, hors épaule)</label>
+                <div class="bascule-range">
+                  <div class="bo-partext-track-wrap">
+                    <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill2"></div></div>
+                    <input type="range" id="boPartExtremites2" min="0" max="100" value="35" />
+                  </div>
+                  <span class="val" id="boPartExtremitesVal2">35 %</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
         <div class="simulator__export" id="boExport">
           <button type="button" class="btn btn--lg" id="boExportToggle">Recevoir cette simulation par e-mail</button>
