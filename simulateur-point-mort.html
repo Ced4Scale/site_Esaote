@@ -432,10 +432,6 @@
           <div class="simulator__machine-box" data-slot="0">
           <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
           <div class="field">
-            <label for="pmChampA">Gamme de champ</label>
-            <select id="pmChampA"></select>
-          </div>
-          <div class="field">
             <label for="pmMachineA">Choix IRM</label>
             <select id="pmMachineA"></select>
           </div>
@@ -448,10 +444,10 @@
           </div>
           <p class="simulator__hint" id="pmLoyerHintA"></p>
           <div class="field">
-            <label for="pmMermA">Nombre de MERM en poste</label>
+            <label for="pmMermA">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmMermA" value="1" min="0" step="0.1" />
-              <span>MERM</span>
+              <span>ETP</span>
             </div>
           </div>
           <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
@@ -491,10 +487,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmInstallA">Temps de prise en charge du patient</label>
+            <label for="pmInstallA">Nombre de patients par heure</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmInstallA" value="15" min="0" step="1" />
-              <span>min</span>
+              <input type="number" id="pmInstallA" value="4" min="0" step="0.5" />
+              <span>patients/h</span>
             </div>
           </div>
           <div class="field">
@@ -555,10 +551,6 @@
         <div id="pmMachineBSection" class="simulator__machine-box" data-slot="1">
           <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
           <div class="field">
-            <label for="pmChampB">Gamme de champ</label>
-            <select id="pmChampB"></select>
-          </div>
-          <div class="field">
             <label for="pmMachineB">Choix IRM</label>
             <select id="pmMachineB"></select>
           </div>
@@ -571,7 +563,7 @@
           </div>
           <p class="simulator__hint" id="pmLoyerHintB"></p>
           <div class="field">
-            <label for="pmMermB">Nombre de MERM en poste</label>
+            <label for="pmMermB">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
             <input type="number" id="pmMermB" value="2" min="0" step="0.1" />
           </div>
           <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
@@ -611,10 +603,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmInstallB">Temps de prise en charge du patient</label>
+            <label for="pmInstallB">Nombre de patients par heure</label>
             <div class="simulator__field-suffix">
-              <input type="number" id="pmInstallB" value="15" min="0" step="1" />
-              <span>min</span>
+              <input type="number" id="pmInstallB" value="4" min="0" step="0.5" />
+              <span>patients/h</span>
             </div>
           </div>
           <div class="field">
@@ -1279,57 +1271,32 @@
       });
       dateSelect.value = "2027-01-01";
 
-      var CHAMP_CATEGORIES = [
-        { key: "", label: "Toutes les gammes", test: function () { return true; } },
-        { key: "lt05", label: "< 0,5 T", test: function (t) { return t < 0.5; } },
-        { key: "mid", label: "0,5 T à 1,5 T", test: function (t) { return t >= 0.5 && t < 1.5; } },
-        { key: "t15", label: "1,5 T", test: function (t) { return t === 1.5; } },
-        { key: "t3", label: "3 T", test: function (t) { return t === 3; } },
-        { key: "t7", label: "7 T", test: function (t) { return t >= 7; } }
-      ];
-
-      var selectA = document.getElementById("pmMachineA"), champA = document.getElementById("pmChampA");
-      var selectB = document.getElementById("pmMachineB"), champB = document.getElementById("pmChampB");
-
-      [champA, champB].forEach(function (select) {
-        CHAMP_CATEGORIES.forEach(function (c) {
-          var opt = document.createElement("option");
-          opt.value = c.key;
-          opt.textContent = c.label;
-          select.appendChild(opt);
-        });
-      });
+      var selectA = document.getElementById("pmMachineA");
+      var selectB = document.getElementById("pmMachineB");
 
       function machineParKey(key) {
         return MACHINES.filter(function (m) { return m.key === key; })[0];
       }
 
-      function repeuplerMachineSelect(machineSelect, champSelect, valeurParDefaut) {
-        var categorie = CHAMP_CATEGORIES.filter(function (c) { return c.key === champSelect.value; })[0];
-        var previous = machineSelect.value;
-        var machinesFiltrees = MACHINES.filter(function (m) { return categorie.test(m.champT); });
-        machineSelect.innerHTML = "";
-        machinesFiltrees.forEach(function (m) {
+      // Retiré le 13/09/2026 (demande de Cédric, "on peut retirer gamme de champ") :
+      // liste des IRM à plat, sans filtre préalable par gamme de champ — même
+      // logique que ct-vs-irm.html/bascule-oscan.html, qui n'ont jamais eu ce filtre.
+      function peuplerMachineSelect(machineSelect, valeurParDefaut) {
+        MACHINES.forEach(function (m) {
           var opt = document.createElement("option");
           opt.value = m.key;
           opt.textContent = m.nomCourt;
           machineSelect.appendChild(opt);
         });
-        var previousEncoreValide = machinesFiltrees.some(function (m) { return m.key === previous; });
-        if (previousEncoreValide) {
-          machineSelect.value = previous;
-        } else if (valeurParDefaut && machinesFiltrees.some(function (m) { return m.key === valeurParDefaut; })) {
+        if (valeurParDefaut && MACHINES.some(function (m) { return m.key === valeurParDefaut; })) {
           machineSelect.value = valeurParDefaut;
-        } else if (machinesFiltrees.length) {
-          machineSelect.value = machinesFiltrees[0].key;
+        } else if (MACHINES.length) {
+          machineSelect.value = MACHINES[0].key;
         }
       }
 
-      champA.value = "lt05";
-      repeuplerMachineSelect(selectA, champA, "esaote-g-scan");
-      champB.value = "t15";
-      repeuplerMachineSelect(selectB, champB, "siemens-altea");
-      if (!selectB.value) repeuplerMachineSelect(selectB, champB);
+      peuplerMachineSelect(selectA, "esaote-g-scan");
+      peuplerMachineSelect(selectB, "siemens-altea");
 
       // Nombre de MERM par défaut selon le type d'aimant : un aimant permanent (IRM ouverte
       // Esaote) se manipule seul, un aimant supraconducteur (IRM tunnel) demande en général
@@ -1344,7 +1311,22 @@
       // Temps de prise en charge du patient : pré-rempli depuis assets/machines-energie-data.js
       // (dureeTotalePriseEnChargeMinutes), mais éditable — demandé par Cédric le 11/08/2026, le
       // chiffre par machine reste une estimation à ajuster selon le retour terrain.
-      function reinitialiserInstall(select, input) { input.value = machineParKey(select.value).dureeTotalePriseEnChargeMinutes; }
+      // Champ saisi en "patients par heure" (harmonisé le 13/09/2026 avec ct-vs-irm.html/
+      // bascule-oscan.html, demande de Cédric : mêmes questions, même ordre/unité partout
+      // sur les 3 fichiers) — converti en minutes juste pour le calcul interne
+      // (capacité horaire, coût RH par patient...), qui reste inchangé par ailleurs.
+      // Contrairement à ct-vs-irm.html (valeur générique 3/5 patients/h selon IRM/scanner),
+      // le défaut ici reste dérivé de la durée réelle par machine dans
+      // assets/machines-energie-data.js — point-mort compare des IRM qui n'ont pas toutes
+      // le même temps de prise en charge, une valeur générique unique serait moins fidèle.
+      function reinitialiserInstall(select, input) {
+        var minutes = machineParKey(select.value).dureeTotalePriseEnChargeMinutes;
+        input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+      }
+      function minutesDepuisPatientsHeure(patientsHeure) {
+        var p = Math.max(0, parseFloat(patientsHeure) || 0);
+        return p > 0 ? 60 / p : Infinity; // 0 patient/h = capacité nulle, pas un temps nul
+      }
       var installA = document.getElementById("pmInstallA"), installB = document.getElementById("pmInstallB");
       reinitialiserInstall(selectA, installA);
       reinitialiserInstall(selectB, installB);
@@ -1418,8 +1400,6 @@
       reinitialiserMembre(selectA, membreA, membreHintA);
       reinitialiserMembre(selectB, membreB, membreHintB);
 
-      champA.addEventListener("change", function () { repeuplerMachineSelect(selectA, champA); reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
-      champB.addEventListener("change", function () { repeuplerMachineSelect(selectB, champB); reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
       selectA.addEventListener("change", function () { reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA); reinitialiserLoyer(selectA, document.getElementById("pmLoyerA"), loyerHintA); reinitialiserMembre(selectA, membreA, membreHintA); recalculer(); });
       selectB.addEventListener("change", function () { reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB); reinitialiserLoyer(selectB, document.getElementById("pmLoyerB"), loyerHintB); reinitialiserMembre(selectB, membreB, membreHintB); recalculer(); });
       [mermA, mermB, membreA, membreB].forEach(function (input) { input.addEventListener("input", recalculer); });
@@ -1527,7 +1507,7 @@
         var lignes = [["Ouverture", patientsFmt.format(heuresParJour) + " h/jour"]];
         depassements.forEach(function (r) {
           lignes.push([r.machine.nomCourt + " — capacité max", patientsFmt.format(r.capaciteJour) + " patients/jour"]);
-          lignes.push([r.machine.nomCourt + " — prise en charge", r.tempsInstallation + " min/patient"]);
+          lignes.push([r.machine.nomCourt + " — prise en charge", patientsFmt.format(60 / r.tempsInstallation) + " patients/h"]);
         });
         lignes.push(["Activité saisie", patientsFmt.format(activitePatientsJour) + " patients/jour"]);
         warningEl.innerHTML = capnoteHTML("⚠", "Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine"),
@@ -1763,7 +1743,7 @@
         var configs = [
           {
             slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("pmLoyerA")),
-            nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)), tempsInstallation: Math.max(0, +installA.value || 0),
+            nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installA.value),
             nombreSecretaire: pmPosteAnnexeIntegre("Secretaire") ? effectif("pmSecretaireA") : 0,
             nombreCadreSante: pmPosteAnnexeIntegre("CadreSante") ? effectif("pmCadreSanteA") : 0,
             nombreAideManip: pmPosteAnnexeIntegre("AideManip") ? effectif("pmAideManipA") : 0,
@@ -1777,7 +1757,7 @@
         if (nbMachines() === 2) {
           configs.push({
             slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("pmLoyerB")),
-            nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)), tempsInstallation: Math.max(0, +installB.value || 0),
+            nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)), tempsInstallation: minutesDepuisPatientsHeure(installB.value),
             nombreSecretaire: pmPosteAnnexeIntegre("Secretaire") ? effectif("pmSecretaireB") : 0,
             nombreCadreSante: pmPosteAnnexeIntegre("CadreSante") ? effectif("pmCadreSanteB") : 0,
             nombreAideManip: pmPosteAnnexeIntegre("AideManip") ? effectif("pmAideManipB") : 0,
@@ -1980,7 +1960,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
-          { label: "Temps de prise en charge du patient", valeurs: resultats.map(function (r) { return r.tempsInstallation + " min"; }) },
+          { label: "Nombre de patients par heure", valeurs: resultats.map(function (r) { return patientsFmt.format(60 / r.tempsInstallation) + " patients/h"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
         ];
@@ -2027,7 +2007,7 @@
 
         var paramsMachines = [
           { label: "Loyer, SAV inclus", valeurs: configs.map(function (c) { return euros.format(c.loyer) + " / mois"; }) },
-          { label: "Nombre de MERM en poste", valeurs: configs.map(function (c) { return String(c.nombreMerm); }) }
+          { label: "Manip en poste", valeurs: configs.map(function (c) { return String(c.nombreMerm); }) }
         ];
         [
           ["nombreSecretaire", "Secrétaire médicale (ETP)"],
@@ -2331,7 +2311,6 @@
         { id: "pmIntegreAideManip", evt: "change", label: "Aide-manip intégré au simu ?", type: "select" },
         { id: "pmIntegreInfirmiere", evt: "change", label: "Infirmière intégrée au simu ?", type: "select" },
         { id: "pmIntegreManipAlternance", evt: "change", label: "Manip en alternance intégré au simu ?", type: "select" },
-        { id: "pmChampA", evt: "change", label: "Gamme de champ — Machine A", type: "select" },
         { id: "pmMachineA", evt: "change", label: "Choix IRM — Machine A", type: "select" },
         { id: "pmLoyerA", evt: "input", label: "Loyer — Machine A" },
         { id: "pmSalleA", evt: "input", label: "Loyer de la salle — Machine A" },
@@ -2340,15 +2319,14 @@
         { id: "pmInjecteurA", evt: "input", label: "Injecteur — Machine A" },
         { id: "pmRisA", evt: "input", label: "Part RIS — Machine A" },
         { id: "pmContrastePctA", evt: "input", label: "Part examens injectés — Machine A" },
-        { id: "pmMermA", evt: "input", label: "MERM — Machine A" },
+        { id: "pmMermA", evt: "input", label: "Manip en poste — Machine A" },
         { id: "pmSecretaireA", evt: "input", label: "Secrétaire médicale — Machine A" },
         { id: "pmCadreSanteA", evt: "input", label: "Cadre de santé — Machine A" },
         { id: "pmAideManipA", evt: "input", label: "Aide-manip — Machine A" },
         { id: "pmInfirmiereA", evt: "input", label: "Infirmière — Machine A" },
         { id: "pmManipAlternanceA", evt: "input", label: "Manip en alternance — Machine A" },
-        { id: "pmInstallA", evt: "input", label: "Prise en charge — Machine A" },
+        { id: "pmInstallA", evt: "input", label: "Patients par heure — Machine A" },
         { id: "pmMembreA", evt: "input", label: "Part membre — Machine A" },
-        { id: "pmChampB", evt: "change", label: "Gamme de champ — Machine B", type: "select" },
         { id: "pmMachineB", evt: "change", label: "Choix IRM — Machine B", type: "select" },
         { id: "pmLoyerB", evt: "input", label: "Loyer — Machine B" },
         { id: "pmSalleB", evt: "input", label: "Loyer de la salle — Machine B" },
@@ -2357,13 +2335,13 @@
         { id: "pmInjecteurB", evt: "input", label: "Injecteur — Machine B" },
         { id: "pmRisB", evt: "input", label: "Part RIS — Machine B" },
         { id: "pmContrastePctB", evt: "input", label: "Part examens injectés — Machine B" },
-        { id: "pmMermB", evt: "input", label: "MERM — Machine B" },
+        { id: "pmMermB", evt: "input", label: "Manip en poste — Machine B" },
         { id: "pmSecretaireB", evt: "input", label: "Secrétaire médicale — Machine B" },
         { id: "pmCadreSanteB", evt: "input", label: "Cadre de santé — Machine B" },
         { id: "pmAideManipB", evt: "input", label: "Aide-manip — Machine B" },
         { id: "pmInfirmiereB", evt: "input", label: "Infirmière — Machine B" },
         { id: "pmManipAlternanceB", evt: "input", label: "Manip en alternance — Machine B" },
-        { id: "pmInstallB", evt: "input", label: "Prise en charge — Machine B" },
+        { id: "pmInstallB", evt: "input", label: "Patients par heure — Machine B" },
         { id: "pmMembreB", evt: "input", label: "Part membre — Machine B" },
         { id: "pmActiviteMode", evt: "change", label: "Unité de l'activité", type: "radio" },
         { id: "pmActivite", evt: "input", label: "Activité" },
