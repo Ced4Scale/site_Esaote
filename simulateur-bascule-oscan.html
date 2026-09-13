@@ -78,9 +78,9 @@
     /* Panneau ancré tout à gauche de l'écran, sans fond assombri : le reste de la page
        (graphique, résultats) reste visible et cliquable pendant le réglage, pour voir
        l'effet en temps réel. */
-    #boHypOverlay, #boHypOverlayO { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
-    #boHypOverlay .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
-    #boHypOverlay .modal__scroll, #boHypOverlayO .modal__scroll { height: 100%; }
+    #boHypOverlay, #boHypOverlayA, #boHypOverlayO { background: transparent; justify-content: flex-start; align-items: stretch; padding: 0; pointer-events: none; }
+    #boHypOverlay .modal, #boHypOverlayA .modal, #boHypOverlayO .modal { pointer-events: auto; height: 100%; max-height: 100%; border-radius: 0; margin: 0; box-shadow: 0 0 28px rgba(0,0,0,.28); transition: width .18s ease; }
+    #boHypOverlay .modal__scroll, #boHypOverlayA .modal__scroll, #boHypOverlayO .modal__scroll { height: 100%; }
 
     /* Bouton "agrandir/réduire" du panneau ⚙ (motif validé sur simulateur-recettes.html
        le 10/09/2026, commit 5028de8, propagé ici) — remplit la fenêtre du navigateur
@@ -1084,18 +1084,19 @@
           <h3 style="margin:0;font-size:1.05rem">Paramètres</h3>
           <div style="display:flex;align-items:center;gap:.3rem">
             <button type="button" class="bascule-gear-btn" id="boBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
-            <!-- Ouvre le même panneau que le ⚙ de "Machine A" plus bas (id boBtnHypotheses) —
-                 pas un doublon de contenu, juste un 2e point d'accès : ce panneau est déjà
-                 titré "Hypothèses de ce simulateur" / "Communes aux deux machines", donc
-                 légitime ici aussi (règle du skill ced4scale-simulateur-web : le bloc de
-                 gauche a toujours ⏴ ET ⚙ côte à côte, ajoutée le 08/09/2026). -->
-            <button type="button" class="bascule-gear-btn" id="boBtnHypothesesTop" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+            <!-- Ouvre "Paramètres" (#boHypOverlay) — réglages COMMUNS aux 2 machines
+                 uniquement depuis le 13/09/2026 (demande de Cédric) ; ce qui est
+                 strictement propre à Machine A vit désormais dans son propre panneau
+                 ⚙, ouvert par le bouton juste à côté de son titre plus bas (règle du
+                 skill ced4scale-simulateur-web : le bloc de gauche a toujours ⏴ ET ⚙
+                 côte à côte, ajoutée le 08/09/2026). -->
+            <button type="button" class="bascule-gear-btn" id="boBtnHypothesesTop" aria-label="Modifier les paramètres communs" title="Modifier les paramètres communs">⚙</button>
           </div>
         </div>
         <div class="simulator__machine-box" data-slot="0" style="border-left-color:#2a78d6">
           <h4 class="simulator__machine-box-title simulator__swatch-text bascule-machine-title" data-slot="0" style="color:#2a78d6">
             <span>Machine A — IRM tunnel</span>
-            <button type="button" class="bascule-gear-btn" id="boBtnHypotheses" aria-label="Modifier les hypothèses de ce simulateur" title="Modifier les hypothèses de ce simulateur">⚙</button>
+            <button type="button" class="bascule-gear-btn" id="boBtnHypothesesA" aria-label="Modifier les réglages de Machine A" title="Modifier les réglages de Machine A">⚙</button>
           </h4>
           <div class="bascule-champ">
             <label for="boClasseA">Champ</label>
@@ -1801,7 +1802,7 @@
       <button type="button" class="modal__close" id="boHypClose" aria-label="Fermer">&times;</button>
       <div class="modal__scroll">
         <div class="bascule-hyp-body">
-          <h3 id="boHypTitle">Hypothèses de ce simulateur</h3>
+          <h3 id="boHypTitle">Paramètres</h3>
           <span class="bascule-info-wrap">
             <button type="button" class="bascule-info-btn" id="boHypCommunesBtn" aria-expanded="false" aria-controls="boHypCommunesPop" aria-label="À propos de ces réglages">💡</button>
             <div class="bascule-info-pop" id="boHypCommunesPop" hidden>Communes aux deux machines. Ces réglages ne sont pas mémorisés : à ta prochaine visite, le simulateur repart des valeurs par défaut.</div>
@@ -1875,40 +1876,14 @@
               <div class="bascule-info-pop" id="boHypRisInfoPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre Machine A et l'O-scan se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
             </span>
           </div>
-          <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
-            <div class="field">
-              <label for="boContrasteCoutA">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix"><input type="number" id="boContrasteCoutA" value="0" min="0" step="0.5" /><span>€</span></div>
-            </div>
-            <div class="field">
-              <label for="boContrastePctA">Part des examens injectés</label>
-              <div class="simulator__field-suffix"><input type="number" id="boContrastePctA" value="0" min="0" max="100" step="5" /><span>%</span></div>
-            </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
-            <div class="field">
-              <label for="boSalleA">Loyer de la salle</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boSalleA" value="0" /><span>€/mois</span></div>
-            </div>
-            <div class="field">
-              <label for="boAssuranceA">Assurance</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boAssuranceA" value="0" /><span>€/mois</span></div>
-            </div>
-            <div class="field">
-              <label for="boEntretienA">Entretien / nettoyage</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boEntretienA" value="0" /><span>€/mois</span></div>
-            </div>
-            <div class="field">
-              <label for="boInjecteurA">Injecteur, avec maintenance</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boInjecteurA" value="0" /><span>€/mois</span></div>
-            </div>
-            <div class="field">
-              <label for="boRisA">Part du RIS + graveur + imprimante (partagé, voir ⚙)</label>
-              <div class="simulator__field-suffix"><input type="number" id="boRisA" value="0" min="0" step="0.1" /><span>fraction</span></div>
-            </div>
-          </details>
+          <div class="field">
+            <label for="boContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+            <div class="simulator__field-suffix"><input type="number" id="boContrasteCout" value="0" min="0" step="0.5" /><span>€</span></div>
+            <span class="bascule-info-wrap">
+              <button type="button" class="bascule-info-btn" id="boContrasteCoutInfoBtn" aria-expanded="false" aria-controls="boContrasteCoutInfoPop" aria-label="Pourquoi ce coût est partagé">💡</button>
+              <div class="bascule-info-pop" id="boContrasteCoutInfoPop" hidden>Même produit, même prix quelle que soit la machine — seule la part d'examens injectés diffère, réglable dans le panneau ⚙ de chaque machine ("Autre charge").</div>
+            </span>
+          </div>
           <div class="field">
             <label for="boKwh">Coût du kWh</label>
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
@@ -1956,6 +1931,68 @@
               <div class="simulator__field-suffix"><input type="number" id="boCoupureADimancheDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
             </div>
           </details>
+          <span class="bascule-info-wrap" style="margin-top:.4rem">
+            <button type="button" class="bascule-info-btn" id="boHypLiveInfoBtn" aria-expanded="false" aria-controls="boHypLiveInfoPop" aria-label="Quand ces réglages s'appliquent">💡</button>
+            <div class="bascule-info-pop" id="boHypLiveInfoPop" hidden>Chaque champ s'applique tout de suite — regarde la case "Résultat net total" changer pendant que tu ajustes.</div>
+          </span>
+          <div class="bascule-hyp-actions">
+            <button type="button" class="btn btn--ghost" id="boHypReset">Valeurs par défaut</button>
+            <button type="button" class="btn" id="boHypDone">Fermer</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panneau ⚙ "Machine A" (13/09/2026, demande de Cédric) : "Paramètres" ne garde
+       que ce qui est COMMUN aux 2 machines (date/zone/amorti/salaires/kWh/base légale/
+       amplitude d'ouverture) ; ce qui est STRICTEMENT propre à Machine A (modèle d'IRM
+       réel pour l'électricité, durée d'acquisition pure, produit de contraste, autre
+       charge) vit ici — même gabarit que le panneau "Autres réglages de l'O-scan"
+       (#boHypOverlayA à la place de #boHypOverlayO). -->
+  <div class="modal-overlay" id="boHypOverlayA" role="dialog" aria-modal="true" aria-labelledby="boHypTitleA" hidden>
+    <div class="modal" style="width:min(480px, 100%); position:relative">
+      <button type="button" class="bascule-hyp-fullscreen-btn" id="boHypFullscreenBtnA" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <g class="icon-expand">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+          <g class="icon-compress">
+            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </g>
+        </svg>
+      </button>
+      <button type="button" class="modal__close" id="boHypCloseA" aria-label="Fermer">&times;</button>
+      <div class="modal__scroll">
+        <div class="bascule-hyp-body">
+          <h3 id="boHypTitleA">Réglages de Machine A</h3>
+          <details class="pm-autre-rh">
+            <summary>Autre charge</summary>
+            <div class="field">
+              <label for="boContrastePctA">Part des examens injectés (produit de contraste)</label>
+              <div class="simulator__field-suffix"><input type="number" id="boContrastePctA" value="0" min="0" max="100" step="5" /><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="boSalleA">Loyer de la salle</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boSalleA" value="0" /><span>€/mois</span></div>
+            </div>
+            <div class="field">
+              <label for="boAssuranceA">Assurance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boAssuranceA" value="0" /><span>€/mois</span></div>
+            </div>
+            <div class="field">
+              <label for="boEntretienA">Entretien / nettoyage</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boEntretienA" value="0" /><span>€/mois</span></div>
+            </div>
+            <div class="field">
+              <label for="boInjecteurA">Injecteur, avec maintenance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boInjecteurA" value="0" /><span>€/mois</span></div>
+            </div>
+            <div class="field">
+              <label for="boRisA">Part du RIS + graveur + imprimante (partagé, voir ⚙)</label>
+              <div class="simulator__field-suffix"><input type="number" id="boRisA" value="0" min="0" step="0.1" /><span>fraction</span></div>
+            </div>
+          </details>
           <div class="field">
             <label for="boHypModeleA">Modèle d'IRM (Machine A) — pour l'électricité</label>
             <select id="boHypModeleA">
@@ -1975,12 +2012,12 @@
             </span>
           </div>
           <span class="bascule-info-wrap" style="margin-top:.4rem">
-            <button type="button" class="bascule-info-btn" id="boHypLiveInfoBtn" aria-expanded="false" aria-controls="boHypLiveInfoPop" aria-label="Quand ces réglages s'appliquent">💡</button>
-            <div class="bascule-info-pop" id="boHypLiveInfoPop" hidden>Chaque champ s'applique tout de suite — regarde la case "Résultat net total" changer pendant que tu ajustes.</div>
+            <button type="button" class="bascule-info-btn" id="boHypALiveInfoBtn" aria-expanded="false" aria-controls="boHypALiveInfoPop" aria-label="Quand ces réglages s'appliquent">💡</button>
+            <div class="bascule-info-pop" id="boHypALiveInfoPop" hidden>Chaque champ s'applique tout de suite — regarde la case "Résultat net total" changer pendant que tu ajustes.</div>
           </span>
           <div class="bascule-hyp-actions">
-            <button type="button" class="btn btn--ghost" id="boHypReset">Valeurs par défaut</button>
-            <button type="button" class="btn" id="boHypDone">Fermer</button>
+            <button type="button" class="btn btn--ghost" id="boHypResetA">Valeurs par défaut</button>
+            <button type="button" class="btn" id="boHypDoneA">Fermer</button>
           </div>
         </div>
       </div>
@@ -2008,18 +2045,11 @@
             <div class="bascule-info-pop" id="boHypOMiroirPop" hidden>Les plages d'ouverture de l'O-scan sont toujours les mêmes que celles de la Machine A (panneau Paramètres, également accessible via l'icône ⚙ en haut) — pas de réglage séparé ici.</div>
           </span>
           <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
+            <summary>Autre charge</summary>
             <div class="field">
-              <label for="boContrasteCoutO">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix"><input type="number" id="boContrasteCoutO" value="0" min="0" step="0.5" /><span>€</span></div>
-            </div>
-            <div class="field">
-              <label for="boContrastePctO">Part des examens injectés</label>
+              <label for="boContrastePctO">Part des examens injectés (produit de contraste)</label>
               <div class="simulator__field-suffix"><input type="number" id="boContrastePctO" value="0" min="0" max="100" step="5" /><span>%</span></div>
             </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
             <div class="field">
               <label for="boSalleO">Loyer de la salle</label>
               <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boSalleO" value="0" /><span>€/mois</span></div>
@@ -3176,7 +3206,7 @@
           nombreAideManip: effectif("boAideManip" + suffix), coutAideManipHoraire: c.aideManipHoraire,
           nombreInfirmiere: effectif("boInfirmiere" + suffix), coutInfirmiereHoraire: c.infirmiereHoraire,
           nombreManipAlternance: effectif("boManipAlternance" + suffix), coutManipAlternanceHoraire: c.manipAlternanceHoraire,
-          contrasteCout: effectif("boContrasteCout" + suffix), contrastePct: pourcent("boContrastePct" + suffix)
+          contrasteCout: effectif("boContrasteCout"), contrastePct: pourcent("boContrastePct" + suffix)
         };
       }
       function lireExtraA() { return lireExtra("A"); }
@@ -3217,8 +3247,8 @@
         "boSalleO", "boAssuranceO", "boEntretienO", "boInjecteurO"
       ].forEach(attacherMontant);
       [
-        "boSecretaireA", "boCadreSanteA", "boAideManipA", "boInfirmiereA", "boManipAlternanceA", "boRisA", "boContrasteCoutA", "boContrastePctA",
-        "boSecretaireO", "boCadreSanteO", "boAideManipO", "boInfirmiereO", "boManipAlternanceO", "boRisO", "boContrasteCoutO", "boContrastePctO"
+        "boSecretaireA", "boCadreSanteA", "boAideManipA", "boInfirmiereA", "boManipAlternanceA", "boRisA", "boContrastePctA",
+        "boSecretaireO", "boCadreSanteO", "boAideManipO", "boInfirmiereO", "boManipAlternanceO", "boRisO", "boContrastePctO", "boContrasteCout"
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", repositionnerCurseur);
       });
@@ -3529,11 +3559,9 @@
         document.getElementById("boCoupureADimanche").checked = COUPURE_A_DIMANCHE;
         document.getElementById("boCoupureADimancheDuree").value = COUPURE_A_DIMANCHE_DUREE;
         majCoupureAVisibilite();
-        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         document.getElementById("boAmorti").value = FT_AMORTI ? "amorti" : "nonAmorti";
-        remplirModelesA();
         hypOverlay.hidden = false;
         hypOverlay.classList.add("is-open");
       }
@@ -3562,12 +3590,10 @@
         var heuresSemaine = parseFloat(document.getElementById("boHypHeuresSemaine").value.replace(",", "."));
         var heuresSamedi = parseFloat(document.getElementById("boHypHeuresSamedi").value.replace(",", "."));
         var heuresDimanche = parseFloat(document.getElementById("boHypHeuresDimanche").value.replace(",", "."));
-        var dureeAcqA = parseFloat(document.getElementById("boHypDureeAcqA").value.replace(",", "."));
         if (heuresLegales > 0) HEURES_LEGALES_MOIS = heuresLegales;
         if (heuresSemaine >= 0) AMPLITUDE_A_SEMAINE = heuresSemaine;
         if (heuresSamedi >= 0) AMPLITUDE_A_SAMEDI = heuresSamedi;
         if (heuresDimanche >= 0) AMPLITUDE_A_DIMANCHE = heuresDimanche;
-        if (dureeAcqA >= 0) DUREE_ACQ_A = dureeAcqA;
         COUPURE_A_SEMAINE = document.getElementById("boCoupureASemaine").checked;
         COUPURE_A_SEMAINE_DUREE = Math.max(0, parseFloat(document.getElementById("boCoupureASemaineDuree").value) || 0);
         COUPURE_A_SAMEDI = document.getElementById("boCoupureASamedi").checked;
@@ -3584,11 +3610,33 @@
         COUPURE_O_SEMAINE = COUPURE_A_SEMAINE; COUPURE_O_SEMAINE_DUREE = COUPURE_A_SEMAINE_DUREE;
         COUPURE_O_SAMEDI = COUPURE_A_SAMEDI; COUPURE_O_SAMEDI_DUREE = COUPURE_A_SAMEDI_DUREE;
         COUPURE_O_DIMANCHE = COUPURE_A_DIMANCHE; COUPURE_O_DIMANCHE_DUREE = COUPURE_A_DIMANCHE_DUREE;
-        MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         FT_DATE_ISO = document.getElementById("boHypDate").value;
         ZONE_TARIFAIRE = document.getElementById("boHypZone").value;
         FT_AMORTI = document.getElementById("boAmorti").value === "amorti";
         reconstruireFtClassesPlein();
+        majResumeHypotheses();
+        majVolumeASliderMax();
+        repositionnerCurseur();
+      }
+      // Panneau ⚙ "Machine A" (13/09/2026) : réglages STRICTEMENT propres à Machine A
+      // (modèle d'IRM réel, durée d'acquisition pure, produit de contraste, autre
+      // charge) — séparés de "Paramètres" (communs aux 2 machines) sur demande de
+      // Cédric, même gabarit que le panneau O-scan.
+      var hypOverlayA = document.getElementById("boHypOverlayA");
+      function ouvrirHypothesesA() {
+        remplirModelesA();
+        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
+        hypOverlayA.hidden = false;
+        hypOverlayA.classList.add("is-open");
+      }
+      function fermerHypothesesA() {
+        hypOverlayA.classList.remove("is-open");
+        hypOverlayA.hidden = true;
+      }
+      function appliquerHypothesesA() {
+        var dureeAcqA = parseFloat(document.getElementById("boHypDureeAcqA").value.replace(",", "."));
+        if (dureeAcqA >= 0) DUREE_ACQ_A = dureeAcqA;
+        MODELE_A_KEY = document.getElementById("boHypModeleA").value;
         majResumeHypotheses();
         majVolumeASliderMax();
         repositionnerCurseur();
@@ -3602,10 +3650,14 @@
       // chargement (`.push` sur `undefined`), même piège que celui déjà documenté
       // dans le skill pour NICE_STEPS/FT_MOY_PAD, revécu ici le 12/09/2026 malgré
       // tout (repéré uniquement par un test réel, pas à la relecture).
-      document.getElementById("boBtnHypotheses").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boBtnHypothesesTop").addEventListener("click", ouvrirHypotheses);
       document.getElementById("boHypClose").addEventListener("click", fermerHypotheses);
       document.getElementById("boHypDone").addEventListener("click", fermerHypotheses);
+      document.getElementById("boBtnHypothesesA").addEventListener("click", ouvrirHypothesesA);
+      document.getElementById("boHypCloseA").addEventListener("click", fermerHypothesesA);
+      document.getElementById("boHypDoneA").addEventListener("click", fermerHypothesesA);
+      document.getElementById("boHypModeleA").addEventListener("change", appliquerHypothesesA);
+      document.getElementById("boHypDureeAcqA").addEventListener("input", appliquerHypothesesA);
       BO_SALAIRE_ROLES.forEach(function (role) {
         var input = document.getElementById("boHypNet" + role);
         if (!input) return;
@@ -3619,7 +3671,7 @@
         appliquerHypotheses();
       });
       [
-        "boHypHeuresLegales", "boHypHeuresSemaine", "boHypHeuresSamedi", "boHypHeuresDimanche", "boHypDureeAcqA",
+        "boHypHeuresLegales", "boHypHeuresSemaine", "boHypHeuresSamedi", "boHypHeuresDimanche",
         "boCoupureASemaineDuree", "boCoupureASamediDuree", "boCoupureADimancheDuree"
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", appliquerHypotheses);
@@ -3627,7 +3679,6 @@
       ["boCoupureASemaine", "boCoupureASamedi", "boCoupureADimanche"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", appliquerHypotheses);
       });
-      document.getElementById("boHypModeleA").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypDate").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypZone").addEventListener("change", appliquerHypotheses);
       document.getElementById("boAmorti").addEventListener("change", appliquerHypotheses);
@@ -3638,13 +3689,12 @@
         COUT_RIS_MENSUEL = HYP_DEFAUTS.coutRisMensuel;
         HEURES_LEGALES_MOIS = HYP_DEFAUTS.heuresLegales;
         AMPLITUDE_A_SEMAINE = HYP_DEFAUTS.heuresSemaine; AMPLITUDE_A_SAMEDI = HYP_DEFAUTS.heuresSamedi;
-        AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; MODELE_A_KEY = ""; ZONE_TARIFAIRE = HYP_DEFAUTS.zone;
+        AMPLITUDE_A_DIMANCHE = HYP_DEFAUTS.heuresDimanche; ZONE_TARIFAIRE = HYP_DEFAUTS.zone;
         COUPURE_A_SEMAINE = HYP_DEFAUTS.coupureSemaine; COUPURE_A_SEMAINE_DUREE = HYP_DEFAUTS.coupureSemaineDuree;
         COUPURE_A_SAMEDI = HYP_DEFAUTS.coupureSamedi; COUPURE_A_SAMEDI_DUREE = HYP_DEFAUTS.coupureSamediDuree;
         COUPURE_A_DIMANCHE = HYP_DEFAUTS.coupureDimanche; COUPURE_A_DIMANCHE_DUREE = HYP_DEFAUTS.coupureDimancheDuree;
         FT_DATE_ISO = HYP_DEFAUTS.dateIso; FT_AMORTI = HYP_DEFAUTS.amorti;
         reconstruireFtClassesPlein();
-        DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS[document.getElementById("boClasseA").value];
         boNetMermAppliquerUI();
         document.getElementById("boHypCoutRis").value = fmt(COUT_RIS_MENSUEL);
         document.getElementById("boHypHeuresLegales").value = HEURES_LEGALES_MOIS;
@@ -3658,16 +3708,23 @@
         document.getElementById("boCoupureADimanche").checked = COUPURE_A_DIMANCHE;
         document.getElementById("boCoupureADimancheDuree").value = COUPURE_A_DIMANCHE_DUREE;
         majCoupureAVisibilite();
-        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         document.getElementById("boAmorti").value = FT_AMORTI ? "amorti" : "nonAmorti";
+        majResumeHypotheses();
+        repositionnerCurseur();
+      });
+      document.getElementById("boHypResetA").addEventListener("click", function () {
+        MODELE_A_KEY = "";
+        DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS[document.getElementById("boClasseA").value];
+        document.getElementById("boHypDureeAcqA").value = DUREE_ACQ_A;
         remplirModelesA();
         majResumeHypotheses();
         repositionnerCurseur();
       });
       document.addEventListener("keydown", function (e) {
         if (e.key === "Escape" && hypOverlay.classList.contains("is-open")) fermerHypotheses();
+        if (e.key === "Escape" && hypOverlayA.classList.contains("is-open")) fermerHypothesesA();
       });
 
       // Bouton "agrandir/réduire" du panneau ⚙ (motif validé sur simulateur-recettes.html
@@ -3690,6 +3747,7 @@
         });
       }
       brancherFullscreenPanel("boHypOverlay", "boHypFullscreenBtn");
+      brancherFullscreenPanel("boHypOverlayA", "boHypFullscreenBtnA");
       brancherFullscreenPanel("boHypOverlayO", "boHypFullscreenBtnO");
 
       // Panneau des plages d'ouverture de l'O-scan — même principe (ancré à gauche,
@@ -4150,7 +4208,6 @@
         { id: "boInfirmiereA", evt: "input" },
         { id: "boManipAlternanceA", evt: "input" },
         { id: "boDebitA", evt: "input" },
-        { id: "boContrasteCoutA", evt: "input" },
         { id: "boContrastePctA", evt: "input" },
         { id: "boVolumeA", evt: "input" },
         { id: "boPartExtremites", evt: "input" },
@@ -4166,9 +4223,9 @@
         { id: "boInfirmiereO", evt: "input" },
         { id: "boManipAlternanceO", evt: "input" },
         { id: "boDebitO", evt: "input" },
-        { id: "boContrasteCoutO", evt: "input" },
         { id: "boContrastePctO", evt: "input" },
-        { id: "boKwh", evt: "blur" }
+        { id: "boKwh", evt: "blur" },
+        { id: "boContrasteCout", evt: "input" }
       ];
 
       // Capture un instantané complet : les champs du formulaire (BO_MEMOIRE_FIELDS),
@@ -4850,6 +4907,8 @@
         if (inner) inner.classList.toggle("pres-block__inner--popover-ouvert", !pop.hidden);
       }).observe(document.getElementById("boGainDetail"), { attributes: true, attributeFilter: ["hidden"] });
       wireInfoBtn("boHypLiveInfoBtn", "boHypLiveInfoPop");
+      wireInfoBtn("boContrasteCoutInfoBtn", "boContrasteCoutInfoPop");
+      wireInfoBtn("boHypALiveInfoBtn", "boHypALiveInfoPop");
       wireInfoBtn("boHypOMiroirBtn", "boHypOMiroirPop");
       wireInfoBtn("boHypDureeAcqOInfoBtn", "boHypDureeAcqOInfoPop");
       wireInfoBtn("boHypOLiveInfoBtn", "boHypOLiveInfoPop");
