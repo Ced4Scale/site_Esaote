@@ -1040,6 +1040,10 @@
     .bascule-hyp-section > summary ~ .field:first-of-type,
     .bascule-hyp-section > summary ~ .pm-autre-rh:first-of-type,
     .bascule-hyp-section > summary ~ label:first-of-type { margin-top: .8rem; }
+    /* Sous-titre visuel à l'intérieur d'une section ⚙ (13/09/2026, demande de Cédric
+       sur "Charges partagées") — pas un repli/accordéon, juste un regroupement visuel
+       simple pour distinguer un champ mis en avant (ex. kWh) du reste. */
+    .bascule-hyp-subtitle { font-weight: 700; font-size: .82rem; color: var(--ink-soft); margin: 1rem 0 .5rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -1908,6 +1912,10 @@
               <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
               <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="21.600" /><span id="boHypNetMermSuffix">€/an</span></div>
             </div>
+            <div class="field">
+              <label for="boHypHeuresLegales">Base légale mensuelle</label>
+              <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
+            </div>
             <details class="pm-autre-rh">
               <summary>Autre RH</summary>
               <div class="field">
@@ -1940,13 +1948,10 @@
           <details class="bascule-hyp-section" name="boParamAccordion">
             <summary>Charges partagées</summary>
             <div class="field">
-              <label for="boHypCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypCoutRis" value="0" /><span>€/mois</span></div>
-              <span class="bascule-info-wrap">
-                <button type="button" class="bascule-info-btn" id="boHypRisInfoBtn" aria-expanded="false" aria-controls="boHypRisInfoPop" aria-label="Comment répartir ce coût">💡</button>
-                <div class="bascule-info-pop" id="boHypRisInfoPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre Machine A et l'O-scan se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
-              </span>
+              <label for="boKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
             </div>
+            <div class="bascule-hyp-subtitle">Autres charges partagées</div>
             <div class="field">
               <label for="boContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
               <div class="simulator__field-suffix"><input type="number" id="boContrasteCout" value="0" min="0" step="0.5" /><span>€</span></div>
@@ -1956,12 +1961,12 @@
               </span>
             </div>
             <div class="field">
-              <label for="boKwh">Coût du kWh</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
-            </div>
-            <div class="field">
-              <label for="boHypHeuresLegales">Base légale mensuelle</label>
-              <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
+              <label for="boHypCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypCoutRis" value="0" /><span>€/mois</span></div>
+              <span class="bascule-info-wrap">
+                <button type="button" class="bascule-info-btn" id="boHypRisInfoBtn" aria-expanded="false" aria-controls="boHypRisInfoPop" aria-label="Comment répartir ce coût">💡</button>
+                <div class="bascule-info-pop" id="boHypRisInfoPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre Machine A et l'O-scan se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+              </span>
             </div>
           </details>
 
