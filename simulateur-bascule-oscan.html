@@ -569,9 +569,9 @@
        11/09/2026). Sous 480px, on repasse en flux normal (space-between) plutôt que de
        suivre la position exacte du curseur — perd la nuance visuelle mais élimine tout
        chevauchement, quelle que soit la répartition choisie. */
-    /* #boCardReglages (12/09/2026) : ce curseur miroir a déménagé plusieurs fois —
-       #boCardBareme, puis #boFtMoyCard, puis sous "Hypothèses", puis enfin sous
-       "Tarif moyen du forfait technique selon le volume" (demande de Cédric) —
+    /* #boCardReglages a déménagé plusieurs fois — #boCardBareme, puis #boFtMoyCard,
+       puis sous "Hypothèses", puis sous "Tarif moyen...", puis enfin DANS #boFtMoyCard
+       lui-même (13/09/2026, au-dessus du joker et des boutons Mémoire/Comparer) —
        toujours le même sélecteur à faire suivre, indépendant de la position. */
     @media (max-width: 480px) {
       #boCardReglages .bascule-slider-labels {
@@ -1525,17 +1525,6 @@
                    skill ced4scale-simulateur-web) — encadré fixe sous le tableau, masqué
                    quand la case "Afficher tous les CA" est cochée (redondant). -->
               <div class="bo-ca-tranche-info" id="boBaremeCaInfo" hidden></div>
-              <!-- Emplacement d'accueil de "Réglages de répartition" (12/09/2026,
-                   suite) : reste VIDE en vue normale (la carte #boCardReglages vit
-                   sous "Hypothèses", voir plus bas) — seulement en plein écran
-                   fusionné, wireCardFullscreen() y fait voyager #boCardReglages via
-                   extraIds/extraTargetId (même mécanisme que celui utilisé un temps
-                   pour le bloc Mémoire/Comparer, motif "Un bloc interactif dupliqué
-                   à plusieurs endroits" du skill) — la carte revient exactement à sa
-                   place d'origine à la sortie du plein écran. Changement de stratégie
-                   demandé par Cédric : pas une 4ᵉ copie synchronisée, la même carte se
-                   déplace physiquement le temps du plein écran. -->
-              <div id="boBaremeReglagesSlot"></div>
             </details>
 
             <!-- "Tarif moyen du forfait technique selon le volume" (11/09/2026, même
@@ -1602,6 +1591,52 @@
                      carte compacte, pas de camembert ni de graphe à barres (motif "rendu
                      volontairement plus simple pour une vue secondaire", skill
                      ced4scale-simulateur-web). -->
+        <!-- "Réglages de répartition" vit maintenant À L'INTÉRIEUR de "Tarif moyen du
+             forfait technique selon le volume" (#boFtMoyCard), au-dessus du joker et
+             des boutons Mémoire/Comparer (demande de Cédric le 13/09/2026) — plus une
+             carte à part sous "Hypothèses"/sous le graphe comme lors des 2 précédents
+             déplacements. Toujours les MÊMES éléments (#boCurseur2/#boVolumeA2/
+             #boPartExtremites2, synchronisés dans les 2 sens), pas de doublon,
+             seulement reparenté. Comme #boFtMoyCard est déjà un vrai descendant de
+             #boCardBaremeFtMoy (jamais déplacé par extraIds), ce bloc suit maintenant
+             AUTOMATIQUEMENT le plein écran fusionné "Forfait technique"/"Tarif moyen"
+             — plus besoin du mécanisme extraIds/extraTargetId (#boBaremeReglagesSlot)
+             qui l'y amenait avant, retiré du wireCardFullscreen() plus bas. Pas de
+             classe `simulator__chart-card` ici (éviterait un double cadre imbriqué
+             dans #boFtMoyCard, déjà encadré) — juste un `<h3>` de section. -->
+        <div id="boCardReglages" style="margin:0 0 1.2rem">
+          <h3 style="margin:0 0 1rem;font-size:1.05rem">Réglages de répartition</h3>
+          <div class="bascule-slider-labels">
+            <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+            <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
+          </div>
+          <div class="bascule-track-wrap">
+            <div class="bascule-slider-track">
+              <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
+            </div>
+            <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
+            <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
+          </div>
+          <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
+          <div class="bascule-ftmoy-controls">
+            <div class="bascule-ftmoy-fields">
+              <div class="field" style="margin-bottom:0">
+                <label for="boVolumeA2">Activité totale actuelle</label>
+                <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA2" value="12000" style="width:5rem" /><span>FT/an</span></div>
+              </div>
+              <div class="bascule-champ" style="margin-bottom:0">
+                <label for="boPartExtremites2">Part membres/extrémités (IRM tunnel, hors épaule)</label>
+                <div class="bascule-range">
+                  <div class="bo-partext-track-wrap">
+                    <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill2"></div></div>
+                    <input type="range" id="boPartExtremites2" min="0" max="100" value="35" />
+                  </div>
+                  <span class="val" id="boPartExtremitesVal2">35 %</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
                 <div class="bascule-ftmoy-joker-wrap">
                   <div class="bascule-stat-joker" id="boFtMoyJokerCard">
                     <div class="bascule-joker-flip" id="boFtMoyJokerFlip">
@@ -1687,53 +1722,6 @@
               </details>
             </div>
           </div>
-
-
-        <!-- Réglages de répartition (12/09/2026) : d'abord nichés dans "Forfait
-             technique - barème dégressif", puis déplacés sous "Hypothèses" le même
-             jour (vue normale trop courte à droite) — Cédric a ensuite demandé de les
-             remettre juste sous "Tarif moyen du forfait technique selon le volume",
-             où ils vivent maintenant en vue normale (toujours les MÊMES éléments,
-             #boCurseur2/#boVolumeA2/#boPartExtremites2, synchronisés dans les 2 sens,
-             pas de doublon, seulement reparentés). Le mécanisme de plein écran fusionné
-             ("Forfait technique" + "Tarif moyen", #boCardBaremeFtMoy) n'a pas changé :
-             cette carte est toujours envoyée dans #boBaremeReglagesSlot (au bas du
-             barème, colonne de gauche en mode "2 colonnes") PENDANT le plein écran
-             uniquement — voir wireCardFullscreen("boBaremeFtMoyFullscreenBtn", ...),
-             extraIds/extraTargetId plus bas — puis revient ici à la sortie. -->
-        <div class="simulator__chart-card" id="boCardReglages">
-          <h3 style="margin:0 0 1rem;font-size:1.05rem">Réglages de répartition</h3>
-          <div class="bascule-slider-labels">
-            <span class="lbl" id="boLblA2" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
-            <span class="lbl" id="boLblO2" style="color:#eb6834">O-scan : 0 FT/an</span>
-          </div>
-          <div class="bascule-track-wrap">
-            <div class="bascule-slider-track">
-              <div class="fill-oscan" id="boFillOscan2" style="width:0%"></div>
-            </div>
-            <input type="range" class="bascule-curseur" id="boCurseur2" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et O-scan" />
-            <div class="bascule-curseur-hint" id="boCurseurHint2" aria-hidden="true">↔</div>
-          </div>
-          <div class="bascule-ends"><span>0</span><span id="boEndMax2">12.000</span></div>
-          <div class="bascule-ftmoy-controls">
-            <div class="bascule-ftmoy-fields">
-              <div class="field" style="margin-bottom:0">
-                <label for="boVolumeA2">Activité totale actuelle</label>
-                <div class="simulator__field-suffix"><input type="number" min="1" step="500" id="boVolumeA2" value="12000" style="width:5rem" /><span>FT/an</span></div>
-              </div>
-              <div class="bascule-champ" style="margin-bottom:0">
-                <label for="boPartExtremites2">Part membres/extrémités (IRM tunnel, hors épaule)</label>
-                <div class="bascule-range">
-                  <div class="bo-partext-track-wrap">
-                    <div class="bo-partext-track"><div class="bo-partext-fill" id="boPartExtremitesFill2"></div></div>
-                    <input type="range" id="boPartExtremites2" min="0" max="100" value="35" />
-                  </div>
-                  <span class="val" id="boPartExtremitesVal2">35 %</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="boCardHyp">
           <summary>Hypothèses de ce simulateur
             <button type="button" class="chart-card-fullscreen-btn" id="boHypChartFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
@@ -5913,14 +5901,11 @@
       // par <details> (redondants, ciblaient déjà le même cadre) ont été retirés.
       // "Forfait technique"/"Tarif moyen" pas encore ouverts s'ouvrent tout seuls
       // avant le plein écran (card.querySelectorAll("details") plus haut).
-      // 12/09/2026 (changement de stratégie, demande de Cédric) : "Réglages de
-      // répartition" (#boCardReglages, vit normalement sous "Hypothèses") voyage EN
-      // PLUS au bas du tableau "Forfait technique - barème dégressif"
-      // (#boBaremeReglagesSlot, dans #boCardBareme) pendant ce plein écran précis —
-      // extraIds fait le déplacement à l'entrée, extraTargetId dit où l'accueillir ;
-      // la carte revient exactement à sa place d'origine (sous "Hypothèses") à la
-      // sortie, aucune 2ᵉ copie créée.
-      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, ["boCardReglages"], true, "boBaremeReglagesSlot");
+      // 13/09/2026 : "Réglages de répartition" (#boCardReglages) vit maintenant à
+      // demeure DANS #boFtMoyCard (donc déjà descendant de #boCardBaremeFtMoy) — plus
+      // besoin d'extraIds/extraTargetId pour l'y faire voyager pendant le plein écran,
+      // contrairement à la stratégie précédente (retirée).
+      wireCardFullscreen("boBaremeFtMoyFullscreenBtn", "boCardBaremeFtMoy", null, null, true);
 
       majResumeHypotheses();
       repositionnerCurseur();
