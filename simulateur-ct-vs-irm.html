@@ -1069,7 +1069,7 @@
           </div>
           <p class="simulator__hint" id="cvAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="cvSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
+            <label for="cvSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvSecretaireA" value="0" min="0" step="0.1" />
               <span>ETP</span>
@@ -1183,7 +1183,7 @@
           </div>
           <p class="simulator__hint" id="cvAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="cvSecretaireB">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
+            <label for="cvSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="cvSecretaireB" value="0" min="0" step="0.1" />
               <span>ETP</span>
@@ -2878,12 +2878,10 @@
         var recette = recetteFT(m.machine, params.dateIso, params.zone, params.amortiKey);
         var acte = acteIntellectuelPatient(m.machine, m.pctActeAutre);
         var elec = electriciteMensuelle(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh, m.socleHeuresJours);
-        // Postes "charge fixe" (MERM + secrétaire médicale + cadre de santé, propagés le
-        // 10/09/2026) — un effectif à 0 (ou un salaire à 0) ne contribue naturellement rien
-        // au total, sans garde-fou explicite nécessaire (0 × coût = 0).
-        var rh = m.nombreMerm * params.coutMermMensuel
-          + m.nombreSecretaire * params.coutSecretaireMensuel
-          + m.nombreCadreSante * params.coutCadreSanteMensuel;
+        // Seul le cadre de santé reste une charge FIXE mensuelle (13/09/2026, demande de
+        // Cédric) — MERM et secrétaire médicale sont désormais un coût MARGINAL par
+        // examen, voir rhVariable plus bas.
+        var rh = m.nombreCadreSante * params.coutCadreSanteMensuel;
         // Charges fixes propres à chaque machine (salle/assurance/entretien/injecteur) +
         // part de la charge fixe partagée (RIS + graveur + imprimante, coût total pour le
         // centre × la fraction attribuée à CETTE machine) — même principe que
@@ -2894,7 +2892,9 @@
         // rythme des examens comme l'électricité variable : coût horaire ÷ débit horaire de
         // la machine (= tempsInstallation en minutes converti en heures) × effectif, retiré
         // de la marge par patient plutôt qu'ajouté aux charges fixes.
-        var rhVariable = (m.nombreAideManip * params.coutAideManipHoraire
+        var rhVariable = (m.nombreMerm * params.coutMermHoraire
+          + m.nombreSecretaire * params.coutSecretaireHoraire
+          + m.nombreAideManip * params.coutAideManipHoraire
           + m.nombreInfirmiere * params.coutInfirmiereHoraire
           + m.nombreManipAlternance * params.coutManipAlternanceHoraire) * (m.tempsInstallation / 60);
         // Produit de contraste — coût marginal pondéré par la part d'examens injectés.
@@ -3379,10 +3379,12 @@
         document.getElementById("cvCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
-        // Postes propagés le 10/09/2026 — secrétaire/cadre de santé = charges FIXES
-        // mensuelles (même traitement que le MERM ci-dessus) ; aide-manip/infirmière/manip
-        // en alternance = coût MARGINAL par examen (voir calculerMachine()).
+        // MERM et secrétaire passés en coût MARGINAL par examen le 13/09/2026 (demande de
+        // Cédric : seul le cadre de santé reste une charge fixe mensuelle — voir
+        // calculerMachine()).
+        params.coutMermHoraire = params.coutMermMensuel / HEURES_LEGALES_MENSUELLES;
         params.coutSecretaireMensuel = coutMermDepuisNet(cvSalaireMensuel("Secretaire"));
+        params.coutSecretaireHoraire = params.coutSecretaireMensuel / HEURES_LEGALES_MENSUELLES;
         params.coutCadreSanteMensuel = coutCadreDepuisNet(cvSalaireMensuel("CadreSante"));
         params.coutAideManipHoraire = coutMermDepuisNet(cvSalaireMensuel("AideManip")) / HEURES_LEGALES_MENSUELLES;
         params.coutInfirmiereHoraire = coutMermDepuisNet(cvSalaireMensuel("Infirmiere")) / HEURES_LEGALES_MENSUELLES;
@@ -3572,18 +3574,17 @@
         ligne("Recette moyenne acte intellectuel", lignes[0].acte, lignes[1].acte, eurosCent.format, eurosCent.format, 1);
         ligne("Loyer, SAV inclus", lignes[0].loyerParPatient, lignes[1].loyerParPatient, eurosCharge, eurosCent.format, -1);
         ligne("Électricité", lignes[0].elecParPatient, lignes[1].elecParPatient, eurosCharge, eurosCent.format, -1);
-        // Renommé "Personnel (charge fixe)" le 10/09/2026 : cette ligne (r.rh) inclut
-        // désormais MERM + secrétaire médicale + cadre de santé, plus seulement le MERM
-        // (corrige un bug d'affichage de la 1ère propagation : le libellé montrait encore
-        // "Personnel MERM" alors que le total incluait déjà les 2 nouveaux postes).
-        ligne("Personnel (charge fixe)", lignes[0].rhParPatient, lignes[1].rhParPatient, eurosCharge, eurosCent.format, -1);
+        // 13/09/2026 : seul le cadre de santé reste dans cette ligne "charge fixe" — MERM
+        // et secrétaire médicale sont désormais dans "Personnel pendant l'examen" plus bas
+        // (coût marginal, voir calculerMachine()).
+        ligne("Personnel (charge fixe — cadre de santé)", lignes[0].rhParPatient, lignes[1].rhParPatient, eurosCharge, eurosCent.format, -1);
         // Lignes ajoutées le 10/09/2026, affichées seulement si au moins une des 2 machines
         // a un montant/effectif non nul pour ce poste — éviter des lignes "0" inutiles.
         if (configs.some(function (c) { return c.salle > 0 || c.assurance > 0 || c.entretien > 0 || c.injecteur > 0 || c.fractionRis > 0; })) {
           ligne("Autres charges fixes (salle, assurance, entretien, injecteur, RIS)", lignes[0].autresFixesParPatient, lignes[1].autresFixesParPatient, eurosCharge, eurosCent.format, -1);
         }
-        if (configs.some(function (c) { return c.nombreAideManip > 0 || c.nombreInfirmiere > 0 || c.nombreManipAlternance > 0; })) {
-          ligne("Personnel pendant l'examen (aide-manip, infirmière, alternance)", lignes[0].rhVariable, lignes[1].rhVariable, eurosCharge, eurosCent.format, -1);
+        if (configs.some(function (c) { return c.nombreMerm > 0 || c.nombreSecretaire > 0 || c.nombreAideManip > 0 || c.nombreInfirmiere > 0 || c.nombreManipAlternance > 0; })) {
+          ligne("Personnel pendant l'examen (MERM, secrétaire, aide-manip, infirmière, alternance)", lignes[0].rhVariable, lignes[1].rhVariable, eurosCharge, eurosCent.format, -1);
         }
         if (configs.some(function (c) { return c.contrasteCout > 0 && c.contrastePct > 0; })) {
           ligne("Produit de contraste (part injectée)", lignes[0].coutContraste, lignes[1].coutContraste, eurosCharge, eurosCent.format, -1);
