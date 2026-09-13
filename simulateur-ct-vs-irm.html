@@ -773,6 +773,32 @@
     #cvSeuilsTable.simulator__table--compare2 th:not(:first-child),
     #cvSeuilsTable.simulator__table--compare2 td:not(:first-child) { width: 40%; text-align: right; }
     .cv-bareme-showall input { width: 15px; height: 15px; flex: none; }
+    /* Fusion "Forfait technique"/"Tarif moyen" (13/09/2026, harmonisation avec
+       bascule-oscan) : retire la boîte propre des 2 `<details>` intérieurs
+       (bordure/ombre/fond/padding), pour qu'il ne reste qu'UNE SEULE boîte visible
+       (le cadre extérieur #cvCardBaremeFtMoy), dans le coin duquel l'icône plein
+       écran partagée peut être ancrée sans ambiguïté — sinon 2 boîtes imbriquées.
+       Sélecteur en DESCENDANT (pas `>` enfant direct) : en plein écran/mode
+       présentation, #cvSeuilsCard/#cvFtMoyCard sont reparentés dans un
+       `.chart-card-slide-canvas` généré par presEntrerCard() (JS), qui s'intercale
+       entre eux et #cvCardBaremeFtMoy — un sélecteur enfant direct ne matcherait
+       plus du tout une fois en plein écran (piège déjà vécu et documenté sur
+       bascule-oscan, skill ced4scale-simulateur-web). */
+    #cvCardBaremeFtMoy #cvSeuilsCard,
+    #cvCardBaremeFtMoy #cvFtMoyCard {
+      border: none; box-shadow: none; background: none; padding: 0;
+      margin-bottom: .5rem;
+    }
+    #cvCardBaremeFtMoy #cvSeuilsCard > summary,
+    #cvCardBaremeFtMoy #cvFtMoyCard > summary {
+      padding-right: 0;
+    }
+    /* Boîte à outils 🧰 du graphe "Tarif moyen" (13/09/2026, même motif que
+       bascule-oscan.html — classes .bascule-outils-titre/-check renommées cv- ici,
+       pas de dépendance entre fichiers sur ce site). */
+    .cv-outils-titre { font-weight: 700; margin-bottom: .4rem; white-space: nowrap; }
+    .cv-outils-check { display: flex; align-items: center; gap: .4rem; white-space: nowrap; cursor: pointer; padding: .15rem 0; }
+    .cv-outils-check input { width: 15px; height: 15px; flex: none; }
     /* Variante pour une ampoule posée en bas d'un cadre (ex. coin bas-gauche du graphe) :
        le popover s'ouvre vers le HAUT plutôt que vers le bas, pour ne jamais sortir de la
        carte qui la contient. */
@@ -1539,14 +1565,28 @@
           </div>
         </span>
 
+        <!-- Fusionné le 13/09/2026 (décision de Cédric, harmonisation avec
+             simulateur-bascule-oscan.html du 11/09/2026) : "Forfait technique -
+             barème dégressif" (#cvSeuilsCard) et "Tarif moyen du forfait technique"
+             (#cvFtMoyCard) partagent désormais UN SEUL bouton plein écran, posé en
+             enfant direct du cadre EXTÉRIEUR #cvCardBaremeFtMoy qui les regroupe,
+             ancré en BAS À DROITE (`.chart-card-fullscreen-btn--bas-droite`, seule
+             dérogation du site à la règle "toujours en haut à droite" — volontaire,
+             signifie que l'icône s'applique aux 2 sections à la fois). Les 2
+             `<details>` internes gardent chacun leur propre repli/dépli indépendant.
+             wireCardFullscreen() cible désormais #cvCardBaremeFtMoy (un seul appel,
+             voir plus bas dans le script) — sa généralisation
+             `card.querySelectorAll("details")` (déjà en place ici, pas besoin de la
+             changer) force l'ouverture des 2 `<details>` nestés avant le plein écran. -->
+        <div class="simulator__chart-card" id="cvCardBaremeFtMoy">
+          <button type="button" class="chart-card-fullscreen-btn chart-card-fullscreen-btn--bas-droite" id="cvBaremeFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+            </svg>
+          </button>
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvSeuilsCard">
           <summary>
-            <button type="button" class="chart-card-fullscreen-btn" id="cvSeuilsFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
             Forfait technique - barème dégressif
           </summary>
           <div style="overflow-x:auto" id="cvSeuilsTableWrap">
@@ -1582,13 +1622,23 @@
              tarifs PAR TRANCHE) — les 2 se complètent, placés l'un sous l'autre. -->
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvFtMoyCard">
           <summary>
-            <button type="button" class="chart-card-fullscreen-btn" id="cvFtMoyFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
             Tarif moyen du forfait technique selon le volume
+            <!-- Boîte à outils (13/09/2026, harmonisation avec bascule-oscan) : choisir
+                 quelles courbes/lignes afficher sur ce graphe précis, sans rien recalculer
+                 d'autre. Même squelette que la bulle d'aide 💡 juste au-dessus (cv-info-
+                 wrap/-btn/-pop), mais contenu interactif (cases à cocher) — voir
+                 wireOutilsBtn() plus bas dans le script, qui ajoute un stopPropagation()
+                 sur le popover pour qu'un clic sur une case ne le referme pas. -->
+            <span class="cv-info-wrap">
+              <button type="button" class="cv-info-btn" id="cvFtMoyOutilsBtn" aria-expanded="false" aria-controls="cvFtMoyOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
+              <div class="cv-info-pop" id="cvFtMoyOutilsPop" hidden>
+                <div class="cv-outils-titre">Afficher sur le graphe</div>
+                <label class="cv-outils-check"><input type="checkbox" id="cvFtMoyAfficheIrm" checked /> Courbe IRM Esaote</label>
+                <label class="cv-outils-check"><input type="checkbox" id="cvFtMoyAfficheCt" checked /> Courbe Scanner (CT)</label>
+                <label class="cv-outils-check"><input type="checkbox" id="cvFtMoyAfficheSeuils" checked /> Seuils du barème</label>
+                <label class="cv-outils-check"><input type="checkbox" id="cvFtMoyAfficheRepere" checked /> Repère et tarif au volume actuel</label>
+              </div>
+            </span>
           </summary>
           <!-- Règle systématique posée le 07/09/2026 (voir skill ced4scale-simulateur-web) :
                toute phrase explicative de la colonne de résultats passe par une ampoule,
@@ -1653,6 +1703,7 @@
             <div class="cv-ftmoy-ligne"><span class="simulator__swatch-text" data-slot="1">Scanner (CT)</span><span class="cv-ftmoy-montant" id="cvFtMoyCt"></span></div>
           </div>
         </details>
+        </div>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvRecap">
           <summary>
@@ -2480,6 +2531,17 @@
         }
         var serieIrm = serie(trIrm, acteIrm), serieCt = serie(trCt, acteCt);
 
+        // Boîte à outils 🧰 (13/09/2026, harmonisation avec bascule-oscan.html) — cases
+        // à cocher qui filtrent l'AFFICHAGE uniquement, jamais les données : lues ici en
+        // direct à chaque tracé (jamais un état dupliqué en JS). yMax/yMin ci-dessous
+        // continuent d'être calculés sur trIrm/trCt/serieIrm/serieCt en entier, quelle
+        // que soit la case cochée — l'échelle des axes ne doit jamais dépendre de ce qui
+        // est affiché (skill ced4scale-simulateur-web, section "Popover boîte à outils").
+        var afficherIrmCourbe = document.getElementById("cvFtMoyAfficheIrm").checked;
+        var afficherCtCourbe = document.getElementById("cvFtMoyAfficheCt").checked;
+        var afficherSeuils = document.getElementById("cvFtMoyAfficheSeuils").checked;
+        var afficherRepere = document.getElementById("cvFtMoyAfficheRepere").checked;
+
         // Le point le plus haut de chaque courbe est toujours le tarif plein (N→0) — la
         // moyenne pondérée ne peut jamais dépasser le tarif de la 1ʳᵉ tranche.
         var yMax = arrondiSup5(Math.max(trIrm[0].montant + acteIrm, trCt[0].montant + acteCt) * 1.05);
@@ -2540,8 +2602,11 @@
             numero++;
           });
         }
-        collecterSeuils(trIrm, SLOT_COLORS[0], "IRM");
-        collecterSeuils(trCt, SLOT_COLORS[1], "CT");
+        // Masquer les seuils d'une machine dont la courbe elle-même est masquée (règle
+        // "masquer un élément parent doit masquer ce qui n'a de sens qu'avec lui" du
+        // skill) : un seuil de barème sans sa courbe n'a plus de sens à l'écran.
+        if (afficherIrmCourbe && afficherSeuils) collecterSeuils(trIrm, SLOT_COLORS[0], "IRM");
+        if (afficherCtCourbe && afficherSeuils) collecterSeuils(trCt, SLOT_COLORS[1], "CT");
         seuilsListe.sort(function (a, b) { return a.x - b.x; });
         seuilsListe.forEach(function (s, i) {
           var label = svgEl("text", {
@@ -2552,36 +2617,44 @@
           svg.appendChild(label);
         });
 
-        [[serieIrm, SLOT_COLORS[0]], [serieCt, SLOT_COLORS[1]]].forEach(function (s) {
+        var seriesAAfficher = [];
+        if (afficherIrmCourbe) seriesAAfficher.push([serieIrm, SLOT_COLORS[0]]);
+        if (afficherCtCourbe) seriesAAfficher.push([serieCt, SLOT_COLORS[1]]);
+        seriesAAfficher.forEach(function (s) {
           var points = s[0].map(function (v, i) { return xAt((FT_MOY_X_MAX * i) / NB_PAS) + "," + yAt(v); }).join(" ");
           svg.appendChild(svgEl("polyline", { points: points, fill: "none", stroke: s[1], "stroke-width": "2.4", "stroke-linejoin": "round", "stroke-linecap": "round" }));
         });
 
-        // Repère vertical = volume actuellement choisi sur le curseur juste en dessous.
+        // Repère vertical + bulles de tarif au volume actuel (13/09/2026, harmonisation
+        // bascule-oscan) : tout ce bloc dépend désormais de la case "Repère et tarif au
+        // volume actuel" — une case à cocher est un filtre d'affichage, jamais un
+        // changement de données (n/valXxxActuel restent calculés pareil, seul le tracé
+        // SVG est sauté si décoché).
         var nActuel = Math.max(0, Math.min(FT_MOY_X_MAX, parseFloat(document.getElementById("cvFtMoySlider").value) || 0));
-        var xActuel = xAt(nActuel);
-        svg.appendChild(svgEl("line", { id: "cvFtMoyMarker", x1: xActuel, x2: xActuel, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H, stroke: "#8a8578", "stroke-width": "1.2" }));
+        if (afficherRepere && (afficherIrmCourbe || afficherCtCourbe)) {
+          var xActuel = xAt(nActuel);
+          svg.appendChild(svgEl("line", { id: "cvFtMoyMarker", x1: xActuel, x2: xActuel, y1: FT_MOY_PAD.top, y2: FT_MOY_PAD.top + FT_MOY_PLOT_H, stroke: "#8a8578", "stroke-width": "1.2" }));
 
-        // Bulles reliées par un trait, une par machine, avec le tarif moyen exact au
-        // volume du repère ci-dessus (demande de Cédric le 06/09/2026) — même chiffre
-        // que sous le curseur (#cvFtMoyIrm/#cvFtMoyCt), mais lisible directement sur le
-        // graphe. Un point marque l'endroit exact sur la courbe ; la bulle elle-même est
-        // décalée (jamais posée pile sur le point, qui la cacherait) et reliée par un
-        // trait fin de la couleur de la machine — motif "callout".
-        var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel) + acteIrm;
-        var valCtActuel = tarifMoyenPourVolume(trCt, nActuel) + acteCt;
-        // Le texte de la bulle suit l'échelle de temps choisie (boutons "1 patient"/
-        // "jour"/"1 an"/"5 ans"/"7 ans", voir ftMoyMultiplicateur()) — signalé par Cédric
-        // le 07/09/2026, restait toujours en €/patient quel que soit le bouton actif. La
-        // POSITION de la bulle sur la courbe (yAt(valXxxActuel)), elle, ne change jamais :
-        // la courbe elle-même reste toujours en €/patient (voir plus haut, "ne touche QUE
-        // le texte, jamais les courbes").
-        var multActuel = ftMoyMultiplicateur(nActuel), fmtBulle = ftMoyFormateur();
-        var ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: fmtBulle(valIrmActuel * multActuel) };
-        var ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: fmtBulle(valCtActuel * multActuel) };
-        [ptIrm, ptCt].forEach(function (p) {
-          svg.appendChild(svgEl("circle", { cx: p.x, cy: p.y, r: 3.5, fill: "#fff", stroke: p.couleur, "stroke-width": "2" }));
-        });
+          // Bulles reliées par un trait, une par machine, avec le tarif moyen exact au
+          // volume du repère ci-dessus (demande de Cédric le 06/09/2026) — même chiffre
+          // que sous le curseur (#cvFtMoyIrm/#cvFtMoyCt), mais lisible directement sur le
+          // graphe. Un point marque l'endroit exact sur la courbe ; la bulle elle-même est
+          // décalée (jamais posée pile sur le point, qui la cacherait) et reliée par un
+          // trait fin de la couleur de la machine — motif "callout". Une machine dont la
+          // courbe est décochée n'a pas de bulle (règle "masquer ce qui n'a de sens
+          // qu'avec l'élément masqué").
+          var multActuel = ftMoyMultiplicateur(nActuel), fmtBulle = ftMoyFormateur();
+          var ptIrm = null, ptCt = null;
+          if (afficherIrmCourbe) {
+            var valIrmActuel = tarifMoyenPourVolume(trIrm, nActuel) + acteIrm;
+            ptIrm = { x: xActuel, y: yAt(valIrmActuel), couleur: SLOT_COLORS[0], texte: fmtBulle(valIrmActuel * multActuel) };
+            svg.appendChild(svgEl("circle", { cx: ptIrm.x, cy: ptIrm.y, r: 3.5, fill: "#fff", stroke: ptIrm.couleur, "stroke-width": "2" }));
+          }
+          if (afficherCtCourbe) {
+            var valCtActuel = tarifMoyenPourVolume(trCt, nActuel) + acteCt;
+            ptCt = { x: xActuel, y: yAt(valCtActuel), couleur: SLOT_COLORS[1], texte: fmtBulle(valCtActuel * multActuel) };
+            svg.appendChild(svgEl("circle", { cx: ptCt.x, cy: ptCt.y, r: 3.5, fill: "#fff", stroke: ptCt.couleur, "stroke-width": "2" }));
+          }
 
         // Emplacement des 2 bulles : demande de Cédric le 06/09/2026 — quand les 2
         // courbes sont bien séparées (ex. début de plage, avant leurs seuils), les
@@ -2651,12 +2724,19 @@
           // démesurées qui finissent par faire se croiser les 2 bulles. Testé sur toute
           // la plage 0-15.000 tous les 200 patients après ce correctif.
           var demiZoneTest = Math.min(10, m.largeur / 2);
-          for (var essai = 0; essai < 6; essai++) {
+          // trAutre peut être null (13/09/2026, une seule des 2 courbes affichée via la
+          // boîte à outils 🧰) — pas d'autre courbe à éviter, position simple sans boucle
+          // d'écartement.
+          if (trAutre) {
+            for (var essai = 0; essai < 6; essai++) {
+              by = Math.max(bulleYMin, Math.min(bulleYMax, p.y + decalageY));
+              var plage = plageCourbeAutreY(trAutre, bx - demiZoneTest, bx + demiZoneTest);
+              var chevauche = (by - m.hauteur / 2) < (plage.max + margeCourbe) && (by + m.hauteur / 2) > (plage.min - margeCourbe);
+              if (!chevauche) break;
+              decalageY += sens * 5;
+            }
+          } else {
             by = Math.max(bulleYMin, Math.min(bulleYMax, p.y + decalageY));
-            var plage = plageCourbeAutreY(trAutre, bx - demiZoneTest, bx + demiZoneTest);
-            var chevauche = (by - m.hauteur / 2) < (plage.max + margeCourbe) && (by + m.hauteur / 2) > (plage.min - margeCourbe);
-            if (!chevauche) break;
-            decalageY += sens * 5;
           }
 
           svg.appendChild(svgEl("line", { x1: p.x, y1: p.y, x2: bx, y2: by, stroke: p.couleur, "stroke-width": "1" }));
@@ -2666,43 +2746,58 @@
           svg.appendChild(texte);
         }
 
-        var mIrm = mesurerBulle(ptIrm.texte), mCt = mesurerBulle(ptCt.texte);
-        var haut = ptIrm.y <= ptCt.y ? ptIrm : ptCt; // point du haut = le plus petit y (SVG : y croît vers le bas)
-        var bas = haut === ptIrm ? ptCt : ptIrm;
-        var mHaut = haut === ptIrm ? mIrm : mCt, mBas = haut === ptIrm ? mCt : mIrm;
-        // Tranches de l'AUTRE machine que "haut"/"bas" respectivement (voir
-        // plageCourbeAutreY ci-dessus) — jamais les siennes propres.
-        var trAutreHaut = haut === ptIrm ? trCt : trIrm;
-        var trAutreBas = haut === ptIrm ? trIrm : trCt;
+          if (ptIrm && ptCt) {
+            var mIrm = mesurerBulle(ptIrm.texte), mCt = mesurerBulle(ptCt.texte);
+            var haut = ptIrm.y <= ptCt.y ? ptIrm : ptCt; // point du haut = le plus petit y (SVG : y croît vers le bas)
+            var bas = haut === ptIrm ? ptCt : ptIrm;
+            var mHaut = haut === ptIrm ? mIrm : mCt, mBas = haut === ptIrm ? mCt : mIrm;
+            // Tranches de l'AUTRE machine que "haut"/"bas" respectivement (voir
+            // plageCourbeAutreY ci-dessus) — jamais les siennes propres.
+            var trAutreHaut = haut === ptIrm ? trCt : trIrm;
+            var trAutreBas = haut === ptIrm ? trIrm : trCt;
 
-        // Seuil de bascule : la HAUTEUR TOTALE des 2 bulles (pas leur demi-hauteur —
-        // piège vécu ici, un 1er calcul en demi-hauteurs laissait les 2 bulles se
-        // chevaucher presque totalement autour de 6.000 patients/an, repéré seulement
-        // en testant plusieurs volumes) + le petit espace propre à chaque bulle contre
-        // sa courbe (`padProprecourbe`, des 2 côtés) + la marge voulue entre les 2.
-        var ecartReel = bas.y - haut.y;
-        var padProprecourbe = 3, margeEntreBulles = 6;
-        var placeSuffisantePourInterieur = ecartReel >= (mHaut.hauteur + mBas.hauteur + 2 * padProprecourbe + margeEntreBulles);
+            // Seuil de bascule : la HAUTEUR TOTALE des 2 bulles (pas leur demi-hauteur —
+            // piège vécu ici, un 1er calcul en demi-hauteurs laissait les 2 bulles se
+            // chevaucher presque totalement autour de 6.000 patients/an, repéré seulement
+            // en testant plusieurs volumes) + le petit espace propre à chaque bulle contre
+            // sa courbe (`padProprecourbe`, des 2 côtés) + la marge voulue entre les 2.
+            var ecartReel = bas.y - haut.y;
+            var padProprecourbe = 3, margeEntreBulles = 6;
+            var placeSuffisantePourInterieur = ecartReel >= (mHaut.hauteur + mBas.hauteur + 2 * padProprecourbe + margeEntreBulles);
 
-        if (placeSuffisantePourInterieur) {
-          // Bulles nichées dans l'écart, chacune contre sa propre courbe côté intérieur.
-          dessinerBulle(haut, mHaut, padProprecourbe + mHaut.hauteur / 2, trAutreHaut);
-          dessinerBulle(bas, mBas, -(padProprecourbe + mBas.hauteur / 2), trAutreBas);
-        } else {
-          // Pas assez de place entre les 2 courbes : bulles écartées côté extérieur.
-          dessinerBulle(haut, mHaut, -20, trAutreHaut);
-          dessinerBulle(bas, mBas, 20, trAutreBas);
+            if (placeSuffisantePourInterieur) {
+              // Bulles nichées dans l'écart, chacune contre sa propre courbe côté intérieur.
+              dessinerBulle(haut, mHaut, padProprecourbe + mHaut.hauteur / 2, trAutreHaut);
+              dessinerBulle(bas, mBas, -(padProprecourbe + mBas.hauteur / 2), trAutreBas);
+            } else {
+              // Pas assez de place entre les 2 courbes : bulles écartées côté extérieur.
+              dessinerBulle(haut, mHaut, -20, trAutreHaut);
+              dessinerBulle(bas, mBas, 20, trAutreBas);
+            }
+          } else if (ptIrm) {
+            // Une seule courbe affichée (13/09/2026) — pas de collision à éviter, décalage
+            // simple au-dessus du point.
+            dessinerBulle(ptIrm, mesurerBulle(ptIrm.texte), -14, null);
+          } else if (ptCt) {
+            dessinerBulle(ptCt, mesurerBulle(ptCt.texte), -14, null);
+          }
         }
 
         // Nom de chaque courbe écrit dans sa couleur à son DÉBUT (demande de Cédric le
         // 06/09/2026 — déplacé depuis l'extrémité droite, où les 2 courbes convergent et
         // se chevauchaient ; au début, les tarifs pleins sont nettement plus séparés).
-        var labelIrm = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieIrm[0]) - 7, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[0] });
-        labelIrm.textContent = "IRM Esaote";
-        svg.appendChild(labelIrm);
-        var labelCt = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieCt[0]) + 15, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[1] });
-        labelCt.textContent = "Scanner (CT)";
-        svg.appendChild(labelCt);
+        // Gardé pour SA courbe uniquement (13/09/2026) — un nom sans sa courbe n'a plus
+        // de sens à l'écran.
+        if (afficherIrmCourbe) {
+          var labelIrm = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieIrm[0]) - 7, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[0] });
+          labelIrm.textContent = "IRM Esaote";
+          svg.appendChild(labelIrm);
+        }
+        if (afficherCtCourbe) {
+          var labelCt = svgEl("text", { x: FT_MOY_PAD.left + 4, y: yAt(serieCt[0]) + 15, "text-anchor": "start", "font-weight": "700", "font-size": "12", fill: SLOT_COLORS[1] });
+          labelCt.textContent = "Scanner (CT)";
+          svg.appendChild(labelCt);
+        }
       }
 
       function majFtMoyen() {
@@ -4688,6 +4783,36 @@ var svg = document.getElementById("cvChart");
       wireInfoBtn("cvInfoChampsBtn", "cvInfoChampsPop");
       wireInfoBtn("cvInfoChampsBtnA", "cvInfoChampsPopA");
       wireInfoBtn("cvInfoChampsBtnB", "cvInfoChampsPopB");
+      // Boîte à outils du graphe "Tarif moyen" (13/09/2026, harmonisation avec
+      // simulateur-bascule-oscan.html — voir skill ced4scale-simulateur-web, section
+      // "Popover boîte à outils") : même mécanisme d'ouverture/fermeture que
+      // wireInfoBtn(), MAIS le contenu est interactif (cases à cocher) — un clic dedans
+      // ne doit jamais le refermer comme le ferait un clic "à l'extérieur"
+      // (document.addEventListener("click", ...) plus bas, qui ferme tous les popovers
+      // de cvInfoPopsOuverts). D'où le stopPropagation() posé sur le popover lui-même,
+      // en plus de celui déjà posé sur le bouton par wireInfoBtn().
+      function wireOutilsBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          cvInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+        cvInfoPopsOuverts.push(fermer);
+      }
+      wireOutilsBtn("cvFtMoyOutilsBtn", "cvFtMoyOutilsPop");
+      ["cvFtMoyAfficheIrm", "cvFtMoyAfficheCt", "cvFtMoyAfficheSeuils", "cvFtMoyAfficheRepere"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", majFtMoyen);
+      });
       document.addEventListener("click", function (e) {
         cvInfoPopsOuverts.forEach(function (f) {
           f();
@@ -4725,8 +4850,13 @@ var svg = document.getElementById("cvChart");
       var PRES_FREE_BLOCKS = {
         cvSyntheseCard: ["cvSyntheseScroll", "cvSyntheseActiviteBlock", "cvSyntheseHoraireBlock"],
         cvGrapheCard: ["cvGrapheSimple", "cvGrapheComparaison"],
-        cvSeuilsCard: ["cvSeuilsTableWrap"],
-        cvFtMoyCard: ["cvFtMoyChartWrap", "cvFtMoySliderBlock", "cvFtMoyResultatsBlock"],
+        // Fusion "Forfait technique"/"Tarif moyen" (13/09/2026, même motif que
+        // boCardBaremeFtMoy sur bascule-oscan.html) : le plein écran cible désormais
+        // #cvCardBaremeFtMoy — chaque `<details>` nesté (#cvSeuilsCard/#cvFtMoyCard)
+        // devient lui-même UN bloc déplaçable/redimensionnable en disposition libre,
+        // plutôt que leurs sous-blocs internes (cvSeuilsTableWrap/cvFtMoyChartWrap/...)
+        // qui restent statiques à l'intérieur de leur `<details>`.
+        cvCardBaremeFtMoy: ["cvSeuilsCard", "cvFtMoyCard"],
         cvRecap: ["cvRecapEquipWrap", "cvRecapRecettesWrap", "cvRecapParamsCommunsWrap", "cvRecapParamsWrap"]
       };
       var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-ct-vs-irm-v1";
@@ -5251,8 +5381,7 @@ var svg = document.getElementById("cvChart");
       }
       wireCardFullscreen("cvSyntheseFullscreenBtn", "cvSyntheseCard");
       wireCardFullscreen("cvGrapheFullscreenBtn", "cvGrapheCard");
-      wireCardFullscreen("cvSeuilsFullscreenBtn", "cvSeuilsCard");
-      wireCardFullscreen("cvFtMoyFullscreenBtn", "cvFtMoyCard");
+      wireCardFullscreen("cvBaremeFtMoyFullscreenBtn", "cvCardBaremeFtMoy");
       wireCardFullscreen("cvRecapFullscreenBtn", "cvRecap");
 
       recalculer();
