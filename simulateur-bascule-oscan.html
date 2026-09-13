@@ -1136,7 +1136,7 @@
           </div>
           <p class="simulator__hint" id="boAutresPostesHintA" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="boSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé)</label>
+            <label for="boSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireA" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
           <div class="field" hidden>
@@ -1206,7 +1206,7 @@
           </span>
           <p class="simulator__hint" id="boAutresPostesHintO" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="boSecretaireO">Secrétaire médicale (charge fixe, poste souvent partagé)</label>
+            <label for="boSecretaireO">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireO" value="0" min="0" step="0.1" /><span>ETP</span></div>
           </div>
           <div class="field" hidden>
@@ -2548,7 +2548,8 @@
         var ca = ftAnnuel(classeKey, volumeAnnuel);
         var coutManipMerm = examensParHeure > 0 ? (coutHoraireMerm() / examensParHeure) * nbManip * volumeAnnuel : 0;
         var coutManipExtra = examensParHeure > 0 ? (
-            (extra.coutAideManipHoraire || 0) * (extra.nombreAideManip || 0)
+            (extra.coutSecretaireHoraire || 0) * (extra.nombreSecretaire || 0)
+          + (extra.coutAideManipHoraire || 0) * (extra.nombreAideManip || 0)
           + (extra.coutInfirmiereHoraire || 0) * (extra.nombreInfirmiere || 0)
           + (extra.coutManipAlternanceHoraire || 0) * (extra.nombreManipAlternance || 0)
         ) / examensParHeure * volumeAnnuel : 0;
@@ -2564,7 +2565,7 @@
         );
         var coutElec = coutElecAnnuel(e, profil, kwh);
         var loyerAnnuel = loyerMensuel * 12;
-        var chargesFixesSuppMensuel = (extra.secretaireM || 0) + (extra.cadreSanteM || 0)
+        var chargesFixesSuppMensuel = (extra.cadreSanteM || 0)
           + (extra.salleM || 0) + (extra.assuranceM || 0) + (extra.entretienM || 0) + (extra.injecteurM || 0)
           + (extra.risFraction || 0) * (extra.coutRisMensuel || 0);
         var chargesFixesSupp = chargesFixesSuppMensuel * 12;
@@ -3237,7 +3238,7 @@
       // pour rester à jour si NET_SECRETAIRE/etc. viennent de changer via la roue crantée.
       function coutsRolesPartages() {
         return {
-          secretaireMensuel: coutMensuelDepuisNetMensuel(NET_SECRETAIRE, "nonCadre"),
+          secretaireHoraire: coutHoraireDepuisNetMensuel(NET_SECRETAIRE, "nonCadre"),
           cadreSanteMensuel: coutMensuelDepuisNetMensuel(NET_CADRE_SANTE, "cadre"),
           aideManipHoraire: coutHoraireDepuisNetMensuel(NET_AIDE_MANIP, "nonCadre"),
           infirmiereHoraire: coutHoraireDepuisNetMensuel(NET_INFIRMIERE, "nonCadre"),
@@ -3247,10 +3248,13 @@
       // Construit l'objet "extra" (voir commentaire de resultat()) pour le côté "A" ou
       // "O" — suffix vaut "A" (Machine A) ou "O" (O-scan), les ids de champs suivant
       // exactement cette même convention (ex. boSecretaireA/boSecretaireO).
+      // Secrétaire médicale passée en poste MARGINAL le 13/09/2026 (demande de Cédric :
+      // "le coût des MERM comme les autres coûts RH — sauf pour le cadre de santé —
+      // doit être calculé à l'examen") — seul le cadre de santé reste une charge FIXE
+      // mensuelle (rôle d'encadrement, pas un poste qui accompagne l'examen).
       function lireExtra(suffix) {
         var c = coutsRolesPartages();
         return {
-          secretaireM: effectif("boSecretaire" + suffix) * c.secretaireMensuel,
           cadreSanteM: effectif("boCadreSante" + suffix) * c.cadreSanteMensuel,
           salleM: lireMontant(document.getElementById("boSalle" + suffix)),
           assuranceM: lireMontant(document.getElementById("boAssurance" + suffix)),
@@ -3258,6 +3262,7 @@
           injecteurM: lireMontant(document.getElementById("boInjecteur" + suffix)),
           risFraction: effectif("boRis" + suffix),
           coutRisMensuel: COUT_RIS_MENSUEL,
+          nombreSecretaire: effectif("boSecretaire" + suffix), coutSecretaireHoraire: c.secretaireHoraire,
           nombreAideManip: effectif("boAideManip" + suffix), coutAideManipHoraire: c.aideManipHoraire,
           nombreInfirmiere: effectif("boInfirmiere" + suffix), coutInfirmiereHoraire: c.infirmiereHoraire,
           nombreManipAlternance: effectif("boManipAlternance" + suffix), coutManipAlternanceHoraire: c.manipAlternanceHoraire,
@@ -4122,6 +4127,7 @@
         // sans ça le joker supposait toujours 1 manip/MERM en poste, même si Cédric a
         // réglé "Manip en poste" de l'O-scan à une autre valeur (ex. 0,33 ou 2).
         var coutManipJoker = debitO > 0 ? ((coutHoraireMerm() * manipOEffectif()
+          + (extraO.coutSecretaireHoraire || 0) * (extraO.nombreSecretaire || 0)
           + (extraO.coutAideManipHoraire || 0) * (extraO.nombreAideManip || 0)
           + (extraO.coutInfirmiereHoraire || 0) * (extraO.nombreInfirmiere || 0)
           + (extraO.coutManipAlternanceHoraire || 0) * (extraO.nombreManipAlternance || 0)) / debitO) * capaciteJoker : 0;
