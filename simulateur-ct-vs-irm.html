@@ -5548,7 +5548,18 @@ var svg = document.getElementById("cvChart");
         { id: "cvScannerCoupureNuit", evt: "change", label: "Coupure du scanner la nuit", type: "checkbox" },
         { id: "cvScannerDelaiAllumage", evt: "input", label: "Délai d'allumage (scanner)", suffixe: " min" },
         { id: "cvScannerDelaiExtinction", evt: "input", label: "Délai d'extinction (scanner)", suffixe: " min" },
-        { id: "cvContrasteCout", evt: "input", label: "Coût produit de contraste (partagé)" }
+        { id: "cvContrasteCout", evt: "input", label: "Coût produit de contraste (partagé)" },
+        // Boîte à outils 🧰 du graphe "Tarif moyen" (ajoutée le 13/09/2026) et case
+        // "Afficher tous les CA" du barème (ajoutée le 11/09/2026) — de vraies cases à
+        // cocher DOM, oubliées du mécanisme mémoire jusqu'ici (corrigé le 13/09/2026,
+        // voir skill ced4scale-simulateur-web) : sans elles, rappeler une mémoire pouvait
+        // remettre le formulaire dans le bon état mais laisser affichées des courbes/CA
+        // qui avaient été décochés au moment de l'enregistrement (ou l'inverse).
+        { id: "cvFtMoyAfficheIrm", evt: "change", label: "Afficher la courbe IRM Esaote (Tarif moyen)", type: "checkbox" },
+        { id: "cvFtMoyAfficheCt", evt: "change", label: "Afficher la courbe Scanner (Tarif moyen)", type: "checkbox" },
+        { id: "cvFtMoyAfficheSeuils", evt: "change", label: "Afficher les seuils du barème (Tarif moyen)", type: "checkbox" },
+        { id: "cvFtMoyAfficheRepere", evt: "change", label: "Afficher le repère au volume actuel (Tarif moyen)", type: "checkbox" },
+        { id: "cvSeuilsShowAllCa", evt: "change", label: "Afficher tous les CA du barème en même temps", type: "checkbox" }
       ];
 
       function capturerParametres() {
@@ -5596,6 +5607,13 @@ var svg = document.getElementById("cvChart");
         // variable JS pure elle aussi, pas un champ CV_MEMOIRE_FIELDS classique, même
         // raison que les modes ci-dessus.
         etat.__cvSalaireModeAnnuel = cvSalaireModeAnnuel;
+        // Avec/Sans AI + échelle de temps du graphe "Tarif moyen" (ftMoyAvecAI/
+        // ftMoyHorizon) — 2 variables JS pures INDÉPENDANTES de modeSansAI/horizonBarres
+        // ci-dessus (2 graphes distincts, voir la note à leur déclaration), oubliées lors
+        // du premier passage du 06-07/09/2026 puisqu'elles n'existaient pas encore à ce
+        // moment-là — corrigé le 13/09/2026, même motif que modeSansAI/horizonBarres.
+        etat.__ftMoyAvecAI = ftMoyAvecAI;
+        etat.__ftMoyHorizon = ftMoyHorizon;
         return etat;
       }
 
@@ -5680,6 +5698,22 @@ var svg = document.getElementById("cvChart");
           document.getElementById("cvNet" + role + "Suffix").textContent = cvSalaireModeAnnuel ? "€ / an" : "€ / mois";
         });
         document.getElementById("cvSalaireUnite").value = cvSalaireModeAnnuel ? "annuel" : "mensuel";
+
+        // Avec/Sans AI + échelle de temps du graphe "Tarif moyen" (voir capturerParametres())
+        // — même logique que choisirFtMoyAI()/choisirFtMoyHorizon(), sans leur propre
+        // recalculer() (celui tout en bas fait tout).
+        ftMoyAvecAI = etat.__ftMoyAvecAI === true;
+        document.getElementById("cvBtnFtMoyAvecAI").classList.toggle("btn--ghost", !ftMoyAvecAI);
+        document.getElementById("cvBtnFtMoyAvecAI").setAttribute("aria-pressed", String(ftMoyAvecAI));
+        document.getElementById("cvBtnFtMoySansAI").classList.toggle("btn--ghost", ftMoyAvecAI);
+        document.getElementById("cvBtnFtMoySansAI").setAttribute("aria-pressed", String(!ftMoyAvecAI));
+
+        ftMoyHorizon = FT_MOY_HORIZONS[etat.__ftMoyHorizon] ? etat.__ftMoyHorizon : "patient";
+        Object.keys(FT_MOY_HORIZONS).forEach(function (k) {
+          var btn = document.getElementById(FT_MOY_HORIZONS[k].boutonId);
+          btn.classList.toggle("btn--ghost", k !== ftMoyHorizon);
+          btn.setAttribute("aria-pressed", String(k === ftMoyHorizon));
+        });
 
         recalculer();
       }
