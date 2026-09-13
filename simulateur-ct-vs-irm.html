@@ -301,7 +301,7 @@
     /* Colonne de formulaire élargie à 350px (desktop seulement, la règle mobile
        "1 colonne" de styles.css reste intacte car cette règle ne s'applique
        qu'au-dessus de 780px) — les 300px partagés avec les autres simulateurs
-       ne laissaient pas assez de place pour que "Paramètres communs", "Nombre
+       ne laissaient pas assez de place pour que "Paramètres", "Nombre
        de MERM en poste" et "Nombre de patients par heure" tiennent sur une
        seule ligne (ils repassaient à la ligne). Demande de Cédric le
        05/09/2026 ; scoping voir skill ced4scale-simulateur-web (redéfinir une
@@ -309,7 +309,7 @@
     @media (min-width: 781px) {
       .simulator__layout { grid-template-columns: 350px minmax(0, 1fr); }
     }
-    /* Masquer/réafficher la colonne de gauche entière (Paramètres communs + IRM Esaote +
+    /* Masquer/réafficher la colonne de gauche entière (Paramètres + IRM Esaote +
        Scanner CT) au clic sur l'icône ⏴/⏵ (demande de Cédric le 07/09/2026) — la colonne
        de résultats occupe alors toute la largeur. `hidden` sur .simulator__form suffit en
        mobile (déjà 1 colonne) ; en desktop il faut aussi repasser la grille à 1 colonne,
@@ -511,7 +511,7 @@
     .cv-btn-row .cv-btn-activite[data-tip]::after { background: #cfe0f7; color: #274a75; }
     .cv-btn-row .cv-btn-ai[data-tip]::after { background: #cdecdc; color: #1f6b47; }
     /* Mémoires de simulation (demande de Cédric le 07/09/2026) — 4ᵉ famille pastel
-       (violet, couleur déjà utilisée pour le bord de "Paramètres communs" sur cette
+       (violet, couleur déjà utilisée pour le bord de "Paramètres" sur cette
        page). Un emplacement REMPLI perd .btn--ghost (fond violet plein) comme les autres
        familles. Le cadenas à côté (demande de Cédric le 06/09/2026, remplace la croix
        "×" d'origine) est TOUJOURS visible, plus seulement quand rempli, et cliquable
@@ -580,7 +580,7 @@
        les 3 cadenas sont fermés (libellé "✓ Mémoire X" plus long que "Mémoire X" vide) —
        avant ce correctif, ce cas précis faisait déborder "Mémoire 3" + son cadenas +
        l'ampoule sur une 2ᵉ ligne, avec un grand vide en dessous d'eux (repéré sur
-       capture, dans une fenêtre où le panneau "Paramètres communs" reste visible — pas
+       capture, dans une fenêtre où le panneau "Paramètres" reste visible — pas
        besoin d'être en plein écran pour le voir). Gap resserré + padding des boutons
        réduit + cadenas plus petit, scopés à CETTE ligne uniquement. */
     .cv-memoire-row { gap: .35rem; }
@@ -990,7 +990,7 @@
       <div class="form-card simulator__form">
         <div class="simulator__field-group" style="border-left-color:#6b5b95">
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
-            <h3 style="margin:0">Paramètres communs</h3>
+            <h3 style="margin:0">Paramètres</h3>
             <div style="display:flex;align-items:center;gap:.3rem">
               <!-- Masquer/réafficher les 3 blocs de la colonne de gauche (demande de Cédric
                    le 07/09/2026) : la colonne de résultats prend alors toute la largeur.
@@ -1476,7 +1476,7 @@
           </div>
           <!-- Mémoires de simulation (demande de Cédric le 07/09/2026) : jusqu'à 3
                emplacements. Cliquer sur un emplacement VIDE y enregistre les paramètres
-               actuels (Paramètres communs + IRM Esaote + Scanner CT + le mode d'affichage
+               actuels (Paramètres + IRM Esaote + Scanner CT + le mode d'affichage
                barres/camembert du graphe depuis le 06/09/2026 — pas l'activité ni
                l'échelle de temps, qui restent partagées) ; cliquer sur un emplacement
                REMPLI les rappelle dans le formulaire. Le cadenas vide l'emplacement pour
@@ -1488,7 +1488,7 @@
                  le formulaire en direct), tout en restant piloté par les 3 groupes de
                  boutons de choix déjà présents (échelle de temps / mode activité / mode
                  AI) — voir activerComparaison()/redessinerComparaison() plus bas. Active
-                 aussi le mode plein écran (masque "Paramètres communs") automatiquement,
+                 aussi le mode plein écran (masque "Paramètres") automatiquement,
                  pour laisser toute la largeur aux 2 graphes. -->
             <button type="button" class="btn btn--sm btn--ghost cv-btn-comparer" id="cvBtnComparer" aria-pressed="false" data-tip="Affiche 2 graphes côte à côte, chacun basé sur une mémoire enregistrée. Recliquez pour fermer la comparaison.">Comparer</button>
             <span class="cv-memoire-slot" data-slot="0">
@@ -1754,7 +1754,7 @@
       <div class="modal__scroll">
         <div class="cv-hyp-body">
           <h3 id="cvHypTitle">Réglages avancés</h3>
-          <!-- Déplacés depuis le bloc "Paramètres communs" du formulaire (demande de Cédric
+          <!-- Déplacés depuis le bloc "Paramètres" du formulaire (demande de Cédric
                le 06/09/2026) : celui-ci ne garde plus que son titre + l'icône. -->
           <div class="field">
             <label for="cvDate">Date de forfait technique</label>
@@ -5579,7 +5579,7 @@ var svg = document.getElementById("cvChart");
         document.getElementById("cvGrapheSimple").hidden = true;
         document.getElementById("cvGrapheComparaison").hidden = false;
         // Plein écran automatique (demande explicite de Cédric) — même fonction que
-        // l'icône ⏴ à côté de la roue crantée "Paramètres communs".
+        // l'icône ⏴ à côté de la roue crantée "Paramètres".
         appliquerVisibilitePanel(true);
         majOptionsCompareSelects();
         // Par défaut Mémoire 1 à gauche / Mémoire 2 à droite (seulement si remplies).
@@ -5794,7 +5794,7 @@ var svg = document.getElementById("cvChart");
 
           // ---- Page 3 : Paramètres saisis avant de lancer la simulation (demande de
           // Cédric le 07/09/2026) — reprend les 3 blocs de la colonne de gauche
-          // (Paramètres communs, IRM Esaote, Scanner CT), sur sa propre page plutôt que
+          // (Paramètres, IRM Esaote, Scanner CT), sur sa propre page plutôt que
           // partagée avec Équipements/Forfait technique sur la page 2.
           doc.addPage();
           py = 18;
@@ -5803,7 +5803,7 @@ var svg = document.getElementById("cvChart");
           doc.setTextColor(0);
           doc.text("Paramètres saisis avant de lancer la simulation", px0, py); py += 8;
 
-          drawSectionTitle("Paramètres communs");
+          drawSectionTitle("Paramètres");
           d.paramsCommuns.forEach(function (pair) { drawRecapRow(pair[0], [pair[1]]); });
           py += 3;
 
