@@ -1131,8 +1131,8 @@
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerA" value="25.000" style="width:6rem" /><span>€/mois</span></div>
           </div>
           <div class="field">
-            <label for="boManipA">Manip en poste</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="1" id="boManipA" value="2" /><span>manip</span></div>
+            <label for="boManipA">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.1" id="boManipA" value="2" /><span>ETP</span></div>
           </div>
           <p class="simulator__hint" id="boAutresPostesHintA" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
@@ -1197,8 +1197,8 @@
             <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boLoyerO" value="12.000" style="width:6rem" /><span>€/mois</span></div>
           </div>
           <div class="field">
-            <label>Manip en poste</label>
-            <div class="simulator__field-suffix"><input type="text" value="1" disabled /><span>connu</span></div>
+            <label for="boManipO">Manip en poste (tous profils confondus, ex. 0,33 manip + 0,33 aide-manip + 0,33 alternant = 1)</label>
+            <div class="simulator__field-suffix"><input type="number" min="0" step="0.1" id="boManipO" value="1" /><span>ETP</span></div>
           </div>
           <span class="bascule-info-wrap bascule-info-wrap--orange" style="margin:-.1rem 0 .35rem;display:block;width:1.7rem">
             <button type="button" class="bascule-info-btn" id="boVerrouActiviteBtn" aria-expanded="false" aria-controls="boVerrouActivitePop" aria-label="Répartition d'activité de l'O-scan">💡</button>
@@ -2438,6 +2438,13 @@
       function coutHoraireMerm() {
         return (NET_MERM / COEF_BRUT) * COEF_CHARGES / HEURES_LEGALES_MOIS;
       }
+      // "Manip en poste" de l'O-scan (13/09/2026, demande de Cédric) : n'est plus
+      // verrouillé à 1 — un effectif ETP libre, comme celui de Machine A, pour pouvoir
+      // mélanger les profils sur le même poste (ex. 0,33 manip + 0,33 aide-manip +
+      // 0,33 alternant = 1 ETP au lieu d'"1 manip" imposé).
+      function manipOEffectif() {
+        return Math.max(0, parseFloat(document.getElementById("boManipO").value) || 0);
+      }
       function heuresParSemaine(semaine, samedi, dimanche) {
         return 5 * semaine + samedi + dimanche;
       }
@@ -2567,7 +2574,7 @@
       }
       function totalPour(X, N, classeA, loyerA, manipA, debitA, loyerO, debitO, kwh, extraA, extraO) {
         var rA = resultat(classeA, X, manipA, debitA, loyerA, kwh, extraA);
-        var rO = resultat("le05", N - X, 1, debitO, loyerO, kwh, extraO);
+        var rO = resultat("le05", N - X, manipOEffectif(), debitO, loyerO, kwh, extraO);
         return rA.net + rO.net;
       }
 
@@ -2608,7 +2615,7 @@
         candidats.forEach(function (X) {
           if (X < Xmin || X > N) return;
           var rA = resultat(classeA, X, manipA, debitA, loyerA, kwh, extraA);
-          var rO = resultat("le05", N - X, 1, debitO, loyerO, kwh, extraO);
+          var rO = resultat("le05", N - X, manipOEffectif(), debitO, loyerO, kwh, extraO);
           var total = rA.net + rO.net;
           if (total > meilleurVal) { meilleurVal = total; meilleurX = X; }
         });
@@ -2685,7 +2692,7 @@
           ligneA.style.display = "none"; labelA.style.display = "none";
         }
 
-        var pointMortO = trouverPointMort(function (v) { return resultat("le05", v, 1, debitO, loyerO, kwh, extraO).net; }, N);
+        var pointMortO = trouverPointMort(function (v) { return resultat("le05", v, manipOEffectif(), debitO, loyerO, kwh, extraO).net; }, N);
         var ligneO = document.getElementById("boLignePointMortO");
         var labelO = document.getElementById("boLabelPointMortO");
         if (pointMortO !== null && pointMortO > 0 && pointMortO < N) {
@@ -3263,7 +3270,7 @@
       function repositionnerCurseur() {
         var classeA = document.getElementById("boClasseA").value;
         var loyerA = lireMontant(document.getElementById("boLoyerA"));
-        var manipA = parseInt(document.getElementById("boManipA").value, 10) || 1;
+        var manipA = Math.max(0, parseFloat(document.getElementById("boManipA").value) || 0);
         var debitA = parseFloat(document.getElementById("boDebitA").value) || 1;
         var N = parseInt(document.getElementById("boVolumeA").value, 10) || 0;
         var loyerO = lireMontant(document.getElementById("boLoyerO"));
@@ -3302,7 +3309,7 @@
       });
       document.getElementById("boKwh").addEventListener("blur", repositionnerCurseur);
       document.getElementById("boClasseA").addEventListener("change", repositionnerCurseur);
-      ["boManipA", "boDebitA", "boVolumeA", "boDebitO"].forEach(function (id) {
+      ["boManipA", "boManipO", "boDebitA", "boVolumeA", "boDebitO"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", repositionnerCurseur);
       });
       // Pas des flèches du champ "Activité totale actuelle" : plus fin en dessous de
@@ -3892,7 +3899,7 @@
         document.getElementById("boNomClasseA1").textContent = nomClasseA;
         document.getElementById("boNomClasseA2").textContent = nomClasseA;
         var loyerA = lireMontant(document.getElementById("boLoyerA"));
-        var manipA = parseInt(document.getElementById("boManipA").value, 10) || 1;
+        var manipA = Math.max(0, parseFloat(document.getElementById("boManipA").value) || 0);
         var debitA = parseFloat(document.getElementById("boDebitA").value) || 1;
         var volumeTotal = parseInt(document.getElementById("boVolumeA").value, 10) || 0;
         var loyerO = lireMontant(document.getElementById("boLoyerO"));
@@ -3949,7 +3956,7 @@
         });
 
         var rA = resultat(classeA, volA, manipA, debitA, loyerA, kwh, extraA);
-        var rO = resultat("le05", volO, 1, debitO, loyerO, kwh, extraO);
+        var rO = resultat("le05", volO, manipOEffectif(), debitO, loyerO, kwh, extraO);
 
         var caTotal = rA.ca + rO.ca;
         var netTotal = rA.net + rO.net;
@@ -4111,7 +4118,10 @@
         // l'O-scan) inclus dans le coût du joker, même forme que coutManipJoker (coût
         // horaire ÷ débit × capacité en plus) — à 0 par défaut, ne change rien tant que
         // ces champs ne sont pas renseignés côté O-scan.
-        var coutManipJoker = debitO > 0 ? ((coutHoraireMerm()
+        // coutHoraireMerm() est multiplié par manipOEffectif() (13/09/2026, correctif) —
+        // sans ça le joker supposait toujours 1 manip/MERM en poste, même si Cédric a
+        // réglé "Manip en poste" de l'O-scan à une autre valeur (ex. 0,33 ou 2).
+        var coutManipJoker = debitO > 0 ? ((coutHoraireMerm() * manipOEffectif()
           + (extraO.coutAideManipHoraire || 0) * (extraO.nombreAideManip || 0)
           + (extraO.coutInfirmiereHoraire || 0) * (extraO.nombreInfirmiere || 0)
           + (extraO.coutManipAlternanceHoraire || 0) * (extraO.nombreManipAlternance || 0)) / debitO) * capaciteJoker : 0;
@@ -4224,7 +4234,7 @@
 
         dernierEtat = {
           classeA: classeA, nomClasseA: nomClasseA, volA: volA, volO: volO, volumeTotal: volumeTotal,
-          loyerA: loyerA, manipA: manipA, debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh,
+          loyerA: loyerA, manipA: manipA, manipO: manipOEffectif(), debitA: debitA, loyerO: loyerO, debitO: debitO, kwh: kwh,
           extraA: extraA, extraO: extraO,
           partExtremites: partExtremites, dureeAcqA: DUREE_ACQ_A, dureeAcqO: DUREE_ACQ_O,
           rA: rA, rO: rO, caTotal: caTotal, netTotal: netTotal, gainOscan: gainOscan, pctGainTxt: pctGainTxt
@@ -4250,6 +4260,7 @@
         { id: "boInjecteurA", evt: "blur", type: "montant" },
         { id: "boRisA", evt: "input" },
         { id: "boManipA", evt: "input" },
+        { id: "boManipO", evt: "input" },
         { id: "boSecretaireA", evt: "input" },
         { id: "boCadreSanteA", evt: "input" },
         { id: "boAideManipA", evt: "input" },
@@ -4841,12 +4852,13 @@
           drawSectionTitle("Paramètres saisis avant de lancer la simulation");
           drawRecapRow("Champ (Machine A)", [e.nomClasseA]);
           drawRecapRow("Loyer mensuel Machine A", [eur(e.loyerA)]);
-          drawRecapRow("Manip en poste (Machine A)", [String(e.manipA)]);
+          drawRecapRow("Manip en poste (Machine A)", [fmt(e.manipA, 2)]);
           drawRecapRow("Débit Machine A", [fmt(e.debitA, 1) + " FT/h"]);
           drawRecapRow("Durée d'acquisition pure Machine A", [fmt(e.dureeAcqA, 1) + " min/examen"]);
           drawRecapRow("Activité totale actuelle", [fmt(e.volumeTotal) + " FT/an"]);
           drawRecapRow("Part membres/extrémités", [fmt(e.partExtremites * 100, 0) + " %"]);
           drawRecapRow("Loyer mensuel O-scan", [eur(e.loyerO)]);
+          drawRecapRow("Manip en poste (O-scan)", [fmt(e.manipO, 2)]);
           drawRecapRow("Débit O-scan", [fmt(e.debitO, 1) + " FT/h"]);
           drawRecapRow("Durée d'acquisition pure O-scan", [fmt(e.dureeAcqO, 1) + " min/examen"]);
           drawRecapRow("Coût du kWh", [eur(e.kwh, 2)]);
