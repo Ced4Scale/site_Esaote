@@ -447,7 +447,7 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="pmSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -567,7 +567,7 @@
             <label for="pmMermB">Nombre de MERM en poste</label>
             <input type="number" id="pmMermB" value="2" min="0" step="0.1" />
           </div>
-          <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="pmSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -1027,11 +1027,25 @@
             <details class="pm-autre-rh">
               <summary>Autre RH</summary>
               <div class="field">
+                <label for="pmIntegreSecretaire">Secrétaire médicale</label>
+                <select id="pmIntegreSecretaire">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="pmNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="pmNetSecretaire" value="19.800" />
                   <span id="pmNetSecretaireSuffix">€ / an</span>
                 </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreCadreSante">Cadre de santé</label>
+                <select id="pmIntegreCadreSante">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="pmNetCadreSante">Salaire cadre de santé net avant impôt</label>
@@ -1041,6 +1055,13 @@
                 </div>
               </div>
               <div class="field">
+                <label for="pmIntegreAideManip">Aide-manip</label>
+                <select id="pmIntegreAideManip">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="pmNetAideManip">Salaire aide-manip net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="pmNetAideManip" value="19.200" />
@@ -1048,11 +1069,25 @@
                 </div>
               </div>
               <div class="field">
+                <label for="pmIntegreInfirmiere">Infirmière</label>
+                <select id="pmIntegreInfirmiere">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="pmNetInfirmiere">Salaire infirmière net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="pmNetInfirmiere" value="24.000" />
                   <span id="pmNetInfirmiereSuffix">€ / an</span>
                 </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreManipAlternance">Manip en alternance</label>
+                <select id="pmIntegreManipAlternance">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="pmNetManipAlternance">Salaire manip en alternance net avant impôt</label>
@@ -1164,24 +1199,22 @@
         return pmSalaireModeAnnuel ? v / 12 : v;
       }
       // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
-      // alternance) : leur ligne ETP dans Machine A/B ne s'affiche que si le salaire
-      // correspondant a été changé par rapport à la valeur par défaut du panneau
-      // "Autre RH" — demande de Cédric le 12/09/2026, pour ne pas encombrer la fiche
-      // machine avec des postes qu'il n'utilise pas. Comparaison toujours en ANNUEL
-      // (indépendante du mode d'affichage mensuel/annuel en cours) pour ne pas se
-      // tromper selon l'unité affichée au moment du test.
-      var PM_POSTES_ANNEXES_DEFAUT_ANNUEL = {
-        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
-      };
-      function pmPosteAnnexeVisible(role) {
-        var v = valeurMilliers(document.getElementById("pmNet" + role));
-        var annuel = pmSalaireModeAnnuel ? v : v * 12;
-        return Math.abs(annuel - PM_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      // alternance) : leur ligne ETP dans Machine A/B ne s'affiche que si le
+      // sélecteur "Intégré au simu" du poste (panneau "Autre RH") est réglé sur
+      // "Intégré" — demande de Cédric le 13/09/2026, remplace l'ancien mécanisme
+      // automatique basé sur l'écart de salaire par rapport au défaut (utilisé
+      // jusqu'au 12/09/2026). Un seul sélecteur par rôle pilote à la fois Machine A
+      // et Machine B. Quand un poste n'est "pas intégré", son effectif est aussi
+      // forcé à 0 dans le calcul, pas seulement masqué à l'écran.
+      var PM_POSTES_ANNEXES_ROLES = ["Secretaire", "CadreSante", "AideManip", "Infirmiere", "ManipAlternance"];
+      function pmPosteAnnexeIntegre(role) {
+        var select = document.getElementById("pmIntegre" + role);
+        return !!select && select.value === "oui";
       }
       function majVisibilitePostesAnnexes() {
         var auMoinsUnA = false, auMoinsUnB = false;
-        Object.keys(PM_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
-          var visible = pmPosteAnnexeVisible(role);
+        PM_POSTES_ANNEXES_ROLES.forEach(function (role) {
+          var visible = pmPosteAnnexeIntegre(role);
           var champA = document.getElementById("pm" + role + "A");
           var champB = document.getElementById("pm" + role + "B");
           if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
@@ -1723,8 +1756,11 @@
           {
             slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("pmLoyerA")),
             nombreMerm: Math.max(0, +mermA.value || 0), pctMembre: Math.max(0, Math.min(100, +membreA.value || 0)), tempsInstallation: Math.max(0, +installA.value || 0),
-            nombreSecretaire: effectif("pmSecretaireA"), nombreCadreSante: effectif("pmCadreSanteA"),
-            nombreAideManip: effectif("pmAideManipA"), nombreInfirmiere: effectif("pmInfirmiereA"), nombreManipAlternance: effectif("pmManipAlternanceA"),
+            nombreSecretaire: pmPosteAnnexeIntegre("Secretaire") ? effectif("pmSecretaireA") : 0,
+            nombreCadreSante: pmPosteAnnexeIntegre("CadreSante") ? effectif("pmCadreSanteA") : 0,
+            nombreAideManip: pmPosteAnnexeIntegre("AideManip") ? effectif("pmAideManipA") : 0,
+            nombreInfirmiere: pmPosteAnnexeIntegre("Infirmiere") ? effectif("pmInfirmiereA") : 0,
+            nombreManipAlternance: pmPosteAnnexeIntegre("ManipAlternance") ? effectif("pmManipAlternanceA") : 0,
             salle: valeurMilliers(document.getElementById("pmSalleA")), assurance: valeurMilliers(document.getElementById("pmAssuranceA")),
             entretien: valeurMilliers(document.getElementById("pmEntretienA")), injecteur: valeurMilliers(document.getElementById("pmInjecteurA")),
             fractionRis: effectif("pmRisA"), contrasteCout: effectif("pmContrasteCout"), contrastePct: pourcent("pmContrastePctA")
@@ -1734,8 +1770,11 @@
           configs.push({
             slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("pmLoyerB")),
             nombreMerm: Math.max(0, +mermB.value || 0), pctMembre: Math.max(0, Math.min(100, +membreB.value || 0)), tempsInstallation: Math.max(0, +installB.value || 0),
-            nombreSecretaire: effectif("pmSecretaireB"), nombreCadreSante: effectif("pmCadreSanteB"),
-            nombreAideManip: effectif("pmAideManipB"), nombreInfirmiere: effectif("pmInfirmiereB"), nombreManipAlternance: effectif("pmManipAlternanceB"),
+            nombreSecretaire: pmPosteAnnexeIntegre("Secretaire") ? effectif("pmSecretaireB") : 0,
+            nombreCadreSante: pmPosteAnnexeIntegre("CadreSante") ? effectif("pmCadreSanteB") : 0,
+            nombreAideManip: pmPosteAnnexeIntegre("AideManip") ? effectif("pmAideManipB") : 0,
+            nombreInfirmiere: pmPosteAnnexeIntegre("Infirmiere") ? effectif("pmInfirmiereB") : 0,
+            nombreManipAlternance: pmPosteAnnexeIntegre("ManipAlternance") ? effectif("pmManipAlternanceB") : 0,
             salle: valeurMilliers(document.getElementById("pmSalleB")), assurance: valeurMilliers(document.getElementById("pmAssuranceB")),
             entretien: valeurMilliers(document.getElementById("pmEntretienB")), injecteur: valeurMilliers(document.getElementById("pmInjecteurB")),
             fractionRis: effectif("pmRisB"), contrasteCout: effectif("pmContrasteCout"), contrastePct: pourcent("pmContrastePctB")
@@ -2197,6 +2236,9 @@
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+      PM_POSTES_ANNEXES_ROLES.forEach(function (role) {
+        document.getElementById("pmIntegre" + role).addEventListener("change", recalculer);
+      });
       [
         "pmNetMerm", "pmLoyerA", "pmLoyerB", "pmNetSecretaire", "pmNetCadreSante", "pmNetAideManip", "pmNetInfirmiere", "pmNetManipAlternance",
         "pmCoutRis", "pmSalleA", "pmAssuranceA", "pmEntretienA", "pmInjecteurA", "pmSalleB", "pmAssuranceB", "pmEntretienB", "pmInjecteurB"
@@ -2276,6 +2318,11 @@
       // salaire MERM + son unité mensuel/annuel).
       var PM_MEMOIRE_FIELDS = [
         { id: "pmNbMachines", evt: "change", label: "Comparer à une 2ᵉ IRM ?", type: "radio" },
+        { id: "pmIntegreSecretaire", evt: "change", label: "Secrétaire médicale intégrée au simu ?", type: "select" },
+        { id: "pmIntegreCadreSante", evt: "change", label: "Cadre de santé intégré au simu ?", type: "select" },
+        { id: "pmIntegreAideManip", evt: "change", label: "Aide-manip intégré au simu ?", type: "select" },
+        { id: "pmIntegreInfirmiere", evt: "change", label: "Infirmière intégrée au simu ?", type: "select" },
+        { id: "pmIntegreManipAlternance", evt: "change", label: "Manip en alternance intégré au simu ?", type: "select" },
         { id: "pmChampA", evt: "change", label: "Gamme de champ — Machine A", type: "select" },
         { id: "pmMachineA", evt: "change", label: "Choix IRM — Machine A", type: "select" },
         { id: "pmLoyerA", evt: "input", label: "Loyer — Machine A" },
