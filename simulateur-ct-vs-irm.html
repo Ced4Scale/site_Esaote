@@ -729,6 +729,14 @@
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .cv-info-pop[hidden] { display: none; }
+    /* Bulle d'aide 💡 en tableau plutôt qu'en paragraphe, dès qu'il y a plusieurs
+       éléments distincts à expliquer (13/09/2026, règle généralisée du skill
+       ced4scale-simulateur-web — motif porté de simulateur-bascule-oscan.html). */
+    .cv-info-pop--table { max-width: min(calc(100vw - 4.5rem), 420px); }
+    .cv-info-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .cv-info-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    .cv-info-table tr:last-child td { border-bottom: none; }
+    .cv-info-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
     /* CA de la tranche au clic (11/09/2026, motif "Forfait technique - barème
        dégressif" — voir skill ced4scale-simulateur-web) : le montant de chaque tranche
        devient un bouton cliquable, encadré fixe sous le tableau (pas un popover en
@@ -1519,7 +1527,16 @@
         <span class="simulator__hint" style="font-weight:600; margin-right:.3rem">Hypothèses :</span>
         <span class="cv-info-wrap">
           <button type="button" class="cv-info-btn" id="cvHypBtn" aria-expanded="false" aria-controls="cvHypPop" aria-label="Hypothèses de calcul">💡</button>
-          <div class="cv-info-pop" id="cvHypPop" hidden>Le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Recette de l'acte intellectuel : estimation à ajuster selon la nomenclature en vigueur.</div>
+          <div class="cv-info-pop cv-info-pop--table" id="cvHypPop" hidden>
+            <table class="cv-info-table">
+              <tbody>
+                <tr><td>Loyer</td><td>Inclut le SAV, moyenné sur 7 ans (84 mensualités identiques)</td></tr>
+                <tr><td>Électricité</td><td>Même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture</td></tr>
+                <tr><td>Charges</td><td>Hors location des m² du local</td></tr>
+                <tr><td>Acte intellectuel</td><td>Estimation à ajuster selon la nomenclature en vigueur</td></tr>
+              </tbody>
+            </table>
+          </div>
         </span>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="cvSeuilsCard">
@@ -1580,7 +1597,14 @@
                sur les traits pointillés, avant le curseur) en une seule ampoule. -->
           <span class="cv-info-wrap">
             <button type="button" class="cv-info-btn" id="cvFtMoyInfoBtn" aria-expanded="false" aria-controls="cvFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
-            <div class="cv-info-pop" id="cvFtMoyInfoPop" hidden>Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils). Traits pointillés du graphe : seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT).</div>
+            <div class="cv-info-pop cv-info-pop--table" id="cvFtMoyInfoPop" hidden>
+              <table class="cv-info-table">
+                <tbody>
+                  <tr><td>Courbe</td><td>Fait varier le nombre de patients par an et affiche le tarif moyen réellement obtenu, compte tenu du barème dégressif (tarif plein sur les premiers examens, tarifs réduits au-delà des seuils)</td></tr>
+                  <tr><td>Traits pointillés</td><td>Seuils du barème dégressif (bleu = IRM Esaote, orange = Scanner CT)</td></tr>
+                </tbody>
+              </table>
+            </div>
           </span>
           <!-- Cadre d'écart (demande de Cédric le 07/09/2026, même motif que
                #cvEcartFrame sur le graphe des 2 barres plus bas) — recalculé dans
@@ -1935,7 +1959,16 @@
             </details>
             <span class="cv-info-wrap">
               <button type="button" class="cv-info-btn" id="cvInfoTauxBtn" aria-expanded="false" aria-controls="cvInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
-              <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
+              <div class="cv-info-pop cv-info-pop--table" id="cvInfoTauxPop" hidden>
+                <table class="cv-info-table">
+                  <tbody>
+                    <tr><td>Non-cadre (MERM, secrétaire, aide-manip, infirmière)</td><td>~78 % net/brut, +42 % charges patronales</td></tr>
+                    <tr><td>Cadre de santé</td><td>~75 % net/brut, +45 % (retraite cadre plus élevée)</td></tr>
+                    <tr><td>Manip en alternance</td><td>Taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire</td></tr>
+                  </tbody>
+                </table>
+                <p style="margin:.5rem 0 0">Coût réel employeur = net avant impôt → brut → charges patronales. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</p>
+              </div>
             </span>
           </details>
 

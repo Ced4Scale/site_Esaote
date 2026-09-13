@@ -116,6 +116,14 @@
       width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
     }
     .pm-info-pop[hidden] { display: none; }
+    /* Bulle d'aide 💡 en tableau plutôt qu'en paragraphe, dès qu'il y a plusieurs
+       éléments distincts à expliquer (13/09/2026, règle généralisée du skill
+       ced4scale-simulateur-web — motif porté de simulateur-bascule-oscan.html). */
+    .pm-info-pop--table { max-width: min(calc(100vw - 4.5rem), 420px); }
+    .pm-info-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .pm-info-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    .pm-info-table tr:last-child td { border-bottom: none; }
+    .pm-info-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
 
     /* Mémoires de simulation + mode Comparer (10/09/2026) — motif porté tel quel de
        simulateur-recettes.html / simulateur-ct-vs-irm.html (skill ced4scale-simulateur-web,
@@ -780,7 +788,16 @@
 
         <span class="pm-info-wrap">
           <button type="button" class="pm-info-btn" id="pmInfoHypBtn" aria-expanded="false" aria-controls="pmInfoHypPop" aria-label="Hypothèses de calcul">💡</button>
-          <div class="pm-info-pop" id="pmInfoHypPop" hidden>Hypothèses : le loyer inclut le SAV, moyenné sur 7 ans pour donner 84 mensualités identiques. Électricité calculée sur le même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture. Charges hors location des m² du local. Acte intellectuel du radiologue : tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine.</div>
+          <div class="pm-info-pop pm-info-pop--table" id="pmInfoHypPop" hidden>
+            <table class="pm-info-table">
+              <tbody>
+                <tr><td>Loyer</td><td>Inclut le SAV, moyenné sur 7 ans (84 mensualités identiques)</td></tr>
+                <tr><td>Électricité</td><td>Même modèle que le simulateur d'impact énergétique (socle permanent + surconsommation liée à l'ouverture), machine "prête" sur toute l'amplitude d'ouverture</td></tr>
+                <tr><td>Charges</td><td>Hors location des m² du local</td></tr>
+                <tr><td>Acte intellectuel du radiologue</td><td>Tarif fixe (pas de barème dégressif comme pour le forfait technique), moyenné entre 55&nbsp;€ (membre) et 69&nbsp;€ (autres régions) selon la part d'examens « membre » renseignée pour chaque machine</td></tr>
+              </tbody>
+            </table>
+          </div>
         </span>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="pmRecap">
@@ -1047,7 +1064,16 @@
             </details>
             <span class="pm-info-wrap">
               <button type="button" class="pm-info-btn" id="pmInfoTauxBtn" aria-expanded="false" aria-controls="pmInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
-              <div class="pm-info-pop" id="pmInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
+              <div class="pm-info-pop pm-info-pop--table" id="pmInfoTauxPop" hidden>
+                <table class="pm-info-table">
+                  <tbody>
+                    <tr><td>Non-cadre (MERM, secrétaire, aide-manip, infirmière)</td><td>~78 % net/brut, +42 % charges patronales</td></tr>
+                    <tr><td>Cadre de santé</td><td>~75 % net/brut, +45 % (retraite cadre plus élevée)</td></tr>
+                    <tr><td>Manip en alternance</td><td>Taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire</td></tr>
+                  </tbody>
+                </table>
+                <p style="margin:.5rem 0 0">Coût réel employeur = net avant impôt → brut → charges patronales. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</p>
+              </div>
             </span>
           </details>
 
