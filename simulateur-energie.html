@@ -316,6 +316,19 @@
       border-radius: 5px; white-space: nowrap; color: var(--ink); font-family: inherit;
     }
     .pres-ctx-menu button:hover { background: var(--wash); }
+    /* Colonne de gauche en accordéon (13/09/2026, demande de Cédric — même logique que
+       le panneau ⚙ des 4 autres simulateurs) : ici les groupes principaux eux-mêmes
+       (Charges partagées/Horaires d'ouverture/Activité/Machines à comparer) sont des
+       <details name="eneParamAccordion"> — un seul name suffit pour l'accordéon natif
+       (ouvrir l'un referme les autres), sans JS. Combinés à .simulator__field-group
+       (déjà le cadre à bordure colorée) pour garder l'habillage existant. */
+    .simulator__field-group.bascule-hyp-section > summary {
+      cursor: pointer; font-weight: 700; font-size: 1.05rem; list-style: none; margin: 0;
+    }
+    .simulator__field-group.bascule-hyp-section > summary::-webkit-details-marker { display: none; }
+    .simulator__field-group.bascule-hyp-section > summary::before { content: "▸ "; }
+    .simulator__field-group.bascule-hyp-section[open] > summary::before { content: "▾ "; }
+    .simulator__field-group.bascule-hyp-section > summary ~ * { margin-top: .8rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -363,13 +376,17 @@
     <div class="simulator__layout">
       <div class="form-card simulator__form">
         <div class="simulator__field-group" style="border-left-color:#6b5b95">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.2rem">
+          <div style="display:flex;align-items:center;justify-content:space-between">
             <h3 style="margin:0">Paramètres</h3>
             <div style="display:flex;align-items:center;gap:.3rem">
-              <button type="button" class="ene-gear-btn" id="eneBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+              <button type="button" class="ene-gear-btn" id="eneBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">◄</button>
               <button type="button" class="ene-gear-btn" id="eneBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
             </div>
           </div>
+        </div>
+
+        <details class="simulator__field-group bascule-hyp-section" name="eneParamAccordion" style="border-left-color:#6b5b95">
+          <summary>Charges partagées</summary>
           <div class="field">
             <label for="enePrix">Coût du kWh</label>
             <div class="simulator__field-suffix">
@@ -377,10 +394,10 @@
               <span>€ TTC</span>
             </div>
           </div>
-        </div>
+        </details>
 
-        <div class="simulator__field-group" style="border-left-color:#1baf7a">
-          <h3 style="margin:0 0 1.2rem">Horaires d'ouverture aux patients</h3>
+        <details class="simulator__field-group bascule-hyp-section" name="eneParamAccordion" style="border-left-color:#1baf7a">
+          <summary>Horaires d'ouverture</summary>
           <div class="field">
             <label for="eneHeuresSemaine">Amplitude par jour, du lundi au vendredi</label>
             <div class="simulator__field-suffix">
@@ -402,8 +419,10 @@
               <span id="eneDimancheUnite">heure</span>
             </div>
           </div>
+        </details>
 
-          <h3 style="margin:1.4rem 0 1.2rem">Activité</h3>
+        <details class="simulator__field-group bascule-hyp-section" name="eneParamAccordion" style="border-left-color:#eda100">
+          <summary>Activité</summary>
           <div class="field">
             <label><mark class="simulator__highlight">Vous raisonnez plutôt en</mark></label>
             <div class="simulator__toggle">
@@ -421,60 +440,62 @@
             <div class="ene-info-pop" id="eneInfoActivitePop" hidden>Le temps où la machine n'est pas en acquisition (préparation du patient, ou salle ouverte sans personne) est compté "prêt, sans patient".</div>
           </span>
           <div class="ene-capnote" id="eneCapaciteWarning" hidden></div>
-        </div>
+        </details>
 
-        <h3 style="margin:1.4rem 0 1.2rem">Machines à comparer</h3>
-        <div class="simulator__machine-box" data-slot="0">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
-          <div class="field">
-            <label for="eneChampA">Gamme de champ</label>
-            <select id="eneChampA"></select>
-          </div>
-          <div class="field">
-            <label for="eneMachineA">Choix IRM</label>
-            <select id="eneMachineA"></select>
-          </div>
-          <div class="field">
-            <label for="eneAcqA">Durée d'acquisition</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="eneAcqA" min="1" step="1" />
-              <span>minutes</span>
+        <details class="simulator__field-group bascule-hyp-section" name="eneParamAccordion">
+          <summary>Machines à comparer</summary>
+          <div class="simulator__machine-box" data-slot="0">
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
+            <div class="field">
+              <label for="eneChampA">Gamme de champ</label>
+              <select id="eneChampA"></select>
+            </div>
+            <div class="field">
+              <label for="eneMachineA">Choix IRM</label>
+              <select id="eneMachineA"></select>
+            </div>
+            <div class="field">
+              <label for="eneAcqA">Durée d'acquisition</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="eneAcqA" min="1" step="1" />
+                <span>minutes</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="eneInstallA">Temps de prise en charge du patient</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="eneInstallA" min="0" step="1" />
+                <span>minutes</span>
+              </div>
             </div>
           </div>
-          <div class="field">
-            <label for="eneInstallA">Temps de prise en charge du patient</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="eneInstallA" min="0" step="1" />
-              <span>minutes</span>
+          <div class="simulator__machine-box" data-slot="1">
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
+            <div class="field">
+              <label for="eneChampB">Gamme de champ</label>
+              <select id="eneChampB"></select>
+            </div>
+            <div class="field">
+              <label for="eneMachineB">Choix IRM</label>
+              <select id="eneMachineB"></select>
+            </div>
+            <div class="field">
+              <label for="eneAcqB">Durée d'acquisition</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="eneAcqB" min="1" step="1" />
+                <span>minutes</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="eneInstallB">Temps de prise en charge du patient</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="eneInstallB" min="0" step="1" />
+                <span>minutes</span>
+              </div>
             </div>
           </div>
-        </div>
-        <div class="simulator__machine-box" data-slot="1">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1">Machine B</h4>
-          <div class="field">
-            <label for="eneChampB">Gamme de champ</label>
-            <select id="eneChampB"></select>
-          </div>
-          <div class="field">
-            <label for="eneMachineB">Choix IRM</label>
-            <select id="eneMachineB"></select>
-          </div>
-          <div class="field">
-            <label for="eneAcqB">Durée d'acquisition</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="eneAcqB" min="1" step="1" />
-              <span>minutes</span>
-            </div>
-          </div>
-          <div class="field">
-            <label for="eneInstallB">Temps de prise en charge du patient</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="eneInstallB" min="0" step="1" />
-              <span>minutes</span>
-            </div>
-          </div>
-        </div>
-        <p class="simulator__hint" id="eneRefroidissement"></p>
+          <p class="simulator__hint" id="eneRefroidissement"></p>
+        </details>
       </div>
 
       <div class="simulator__results">
