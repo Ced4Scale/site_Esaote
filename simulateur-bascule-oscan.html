@@ -4335,7 +4335,22 @@
         { id: "boDebitO", evt: "input" },
         { id: "boContrastePctO", evt: "input" },
         { id: "boKwh", evt: "blur" },
-        { id: "boContrasteCout", evt: "input" }
+        { id: "boContrasteCout", evt: "input" },
+        // Case "Afficher tous les CA" du barème (11/09/2026) et boîte à outils 🧰 du
+        // graphe "Tarif moyen" (6 cases, ajoutées le 13/09/2026) — de vraies cases à
+        // cocher DOM, oubliées du mécanisme mémoire jusqu'ici (corrigé le 13/09/2026,
+        // voir skill ced4scale-simulateur-web) : sans elles, rappeler une mémoire
+        // laissait affichées des courbes/CA décochés (ou l'inverse) par rapport à
+        // l'état enregistré. Type "checkbox" géré à part dans capturerParametres()/
+        // restaurerParametres() ci-dessous (ce mécanisme ne connaissait jusqu'ici que
+        // .value, jamais .checked).
+        { id: "boBaremeShowAllCa", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheIrm", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheOscan", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheReelA", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheReelO", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheMoyenne", evt: "change", type: "checkbox" },
+        { id: "boFtMoyAfficheSeuils", evt: "change", type: "checkbox" }
       ];
 
       // Capture un instantané complet : les champs du formulaire (BO_MEMOIRE_FIELDS),
@@ -4347,7 +4362,8 @@
       function capturerParametres() {
         var champs = {};
         BO_MEMOIRE_FIELDS.forEach(function (f) {
-          champs[f.id] = document.getElementById(f.id).value;
+          var el = document.getElementById(f.id);
+          champs[f.id] = f.type === "checkbox" ? el.checked : el.value;
         });
         return {
           champs: champs,
@@ -4423,7 +4439,8 @@
         BO_MEMOIRE_FIELDS.forEach(function (f) {
           if (f.id === "boClasseA") return;
           var el = document.getElementById(f.id);
-          el.value = etat.champs[f.id];
+          if (f.type === "checkbox") el.checked = etat.champs[f.id] === true;
+          else el.value = etat.champs[f.id];
           el.dispatchEvent(new Event(f.evt));
         });
         majResumeHypotheses();
