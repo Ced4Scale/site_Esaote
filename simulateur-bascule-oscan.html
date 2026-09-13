@@ -1023,6 +1023,23 @@
     .pm-autre-rh > summary::before { content: "▸ "; }
     .pm-autre-rh[open] > summary::before { content: "▾ "; }
     .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
+    /* Sections du panneau ⚙ "Paramètres" (13/09/2026, demande de Cédric) : accordéon
+       natif — un seul `name` partagé entre les 4 `<details>` de premier niveau suffit
+       à faire fermer les autres quand on en ouvre un, sans JS (pris en charge par les
+       navigateurs récents). Toutes fermées par défaut (pas d'attribut `open`). Triangle
+       un peu plus grand que celui de "pm-autre-rh" (sous-section), pour marquer que ce
+       sont les titres de premier niveau du panneau. */
+    .bascule-hyp-section { margin: 0 0 1rem; }
+    .bascule-hyp-section > summary {
+      cursor: pointer; font-weight: 700; font-size: 1rem; list-style: none;
+      padding: .5rem 0; border-bottom: 1px solid var(--line-2);
+    }
+    .bascule-hyp-section > summary::-webkit-details-marker { display: none; }
+    .bascule-hyp-section > summary::before { content: "▸ "; }
+    .bascule-hyp-section[open] > summary::before { content: "▾ "; }
+    .bascule-hyp-section > summary ~ .field:first-of-type,
+    .bascule-hyp-section > summary ~ .pm-autre-rh:first-of-type,
+    .bascule-hyp-section > summary ~ label:first-of-type { margin-top: .8rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -1807,130 +1824,147 @@
             <button type="button" class="bascule-info-btn" id="boHypCommunesBtn" aria-expanded="false" aria-controls="boHypCommunesPop" aria-label="À propos de ces réglages">💡</button>
             <div class="bascule-info-pop" id="boHypCommunesPop" hidden>Communes aux deux machines. Ces réglages ne sont pas mémorisés : à ta prochaine visite, le simulateur repart des valeurs par défaut.</div>
           </span>
-          <div class="field">
-            <label for="boHypDate">Date de forfait technique</label>
-            <select id="boHypDate"></select>
-          </div>
-          <div class="field">
-            <label for="boHypZone">Zone tarifaire (forfait technique)</label>
-            <select id="boHypZone">
-              <option value="province">Province</option>
-              <option value="idf">Île-de-France</option>
-              <option value="paris">Paris</option>
-            </select>
-            <span class="bascule-info-wrap">
-              <button type="button" class="bascule-info-btn" id="boHypZoneInfoBtn" aria-expanded="false" aria-controls="boHypZoneInfoPop" aria-label="Ce que change la zone tarifaire">💡</button>
-              <div class="bascule-info-pop" id="boHypZoneInfoPop" hidden>Seul le tarif plein change selon la zone — les paliers réduits et le plafond sont identiques partout.</div>
-            </span>
-          </div>
-          <div class="field">
-            <label for="boAmorti"><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
-            <select id="boAmorti">
-              <option value="nonAmorti">Non amortie</option>
-              <option value="amorti">Amortie (&gt; 7 ans)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="boHypSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-            <select id="boHypSalaireUnite">
-              <option value="mensuel">Mensuel</option>
-              <option value="annuel" selected>Annuel</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="21.600" /><span id="boHypNetMermSuffix">€/an</span></div>
-          </div>
-          <details class="pm-autre-rh">
-            <summary>Autre RH</summary>
+
+          <details class="bascule-hyp-section" name="boParamAccordion">
+            <summary>Forfait technique</summary>
             <div class="field">
-              <label for="boHypNetSecretaire">Salaire net secrétaire médicale (avant IR)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetSecretaire" value="19.800" /><span id="boHypNetSecretaireSuffix">€/an</span></div>
+              <label for="boHypDate">Date de forfait technique</label>
+              <select id="boHypDate"></select>
             </div>
             <div class="field">
-              <label for="boHypNetCadreSante">Salaire net cadre de santé (avant IR)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetCadreSante" value="33.600" /><span id="boHypNetCadreSanteSuffix">€/an</span></div>
-            </div>
-            <div class="field">
-              <label for="boHypNetAideManip">Salaire net aide-manip (avant IR)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetAideManip" value="19.200" /><span id="boHypNetAideManipSuffix">€/an</span></div>
-            </div>
-            <div class="field">
-              <label for="boHypNetInfirmiere">Salaire net infirmière (avant IR)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetInfirmiere" value="24.000" /><span id="boHypNetInfirmiereSuffix">€/an</span></div>
-            </div>
-            <div class="field">
-              <label for="boHypNetManipAlternance">Salaire net manip en alternance (avant IR)</label>
-              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetManipAlternance" value="9.600" /><span id="boHypNetManipAlternanceSuffix">€/an</span></div>
+              <label for="boHypZone">Zone tarifaire (forfait technique)</label>
+              <select id="boHypZone">
+                <option value="province">Province</option>
+                <option value="idf">Île-de-France</option>
+                <option value="paris">Paris</option>
+              </select>
               <span class="bascule-info-wrap">
-                <button type="button" class="bascule-info-btn" id="boHypTauxInfoBtn" aria-expanded="false" aria-controls="boHypTauxInfoPop" aria-label="À propos des taux employeur utilisés">💡</button>
-                <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
+                <button type="button" class="bascule-info-btn" id="boHypZoneInfoBtn" aria-expanded="false" aria-controls="boHypZoneInfoPop" aria-label="Ce que change la zone tarifaire">💡</button>
+                <div class="bascule-info-pop" id="boHypZoneInfoPop" hidden>Seul le tarif plein change selon la zone — les paliers réduits et le plafond sont identiques partout.</div>
               </span>
             </div>
-          </details>
-          <div class="field">
-            <label for="boHypCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypCoutRis" value="0" /><span>€/mois</span></div>
-            <span class="bascule-info-wrap">
-              <button type="button" class="bascule-info-btn" id="boHypRisInfoBtn" aria-expanded="false" aria-controls="boHypRisInfoPop" aria-label="Comment répartir ce coût">💡</button>
-              <div class="bascule-info-pop" id="boHypRisInfoPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre Machine A et l'O-scan se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
-            </span>
-          </div>
-          <div class="field">
-            <label for="boContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
-            <div class="simulator__field-suffix"><input type="number" id="boContrasteCout" value="0" min="0" step="0.5" /><span>€</span></div>
-            <span class="bascule-info-wrap">
-              <button type="button" class="bascule-info-btn" id="boContrasteCoutInfoBtn" aria-expanded="false" aria-controls="boContrasteCoutInfoPop" aria-label="Pourquoi ce coût est partagé">💡</button>
-              <div class="bascule-info-pop" id="boContrasteCoutInfoPop" hidden>Même produit, même prix quelle que soit la machine — seule la part d'examens injectés diffère, réglable dans le panneau ⚙ de chaque machine ("Autre charge").</div>
-            </span>
-          </div>
-          <div class="field">
-            <label for="boKwh">Coût du kWh</label>
-            <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypHeuresLegales">Base légale mensuelle</label>
-            <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
-          </div>
-          <div class="field">
-            <label for="boHypHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
-            <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSemaine" value="9" /><span>h/jour</span></div>
-          </div>
-          <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
-            <input type="checkbox" id="boCoupureASemaine" style="width:16px;height:16px;margin:0" />
-            <span>Coupure dans la journée (lundi-vendredi) ?</span>
-          </label>
-          <div class="field" id="boCoupureASemaineDureeWrap" hidden style="margin:-.4rem 0 .8rem">
-            <label for="boCoupureASemaineDuree">Durée de la coupure</label>
-            <div class="simulator__field-suffix"><input type="number" id="boCoupureASemaineDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
-          </div>
-          <details class="pm-autre-rh">
-            <summary>Autre jour</summary>
             <div class="field">
-              <label for="boHypHeuresSamedi">Amplitude d'ouverture, samedi</label>
-              <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSamedi" value="0" /><span>h/jour</span></div>
-            </div>
-            <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
-              <input type="checkbox" id="boCoupureASamedi" style="width:16px;height:16px;margin:0" />
-              <span>Coupure le samedi ?</span>
-            </label>
-            <div class="field" id="boCoupureASamediDureeWrap" hidden style="margin:-.4rem 0 .8rem">
-              <label for="boCoupureASamediDuree">Durée de la coupure</label>
-              <div class="simulator__field-suffix"><input type="number" id="boCoupureASamediDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
-            </div>
-            <div class="field">
-              <label for="boHypHeuresDimanche">Amplitude d'ouverture, dimanche</label>
-              <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresDimanche" value="0" /><span>h/jour</span></div>
-            </div>
-            <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
-              <input type="checkbox" id="boCoupureADimanche" style="width:16px;height:16px;margin:0" />
-              <span>Coupure le dimanche ?</span>
-            </label>
-            <div class="field" id="boCoupureADimancheDureeWrap" hidden style="margin:-.4rem 0 .8rem">
-              <label for="boCoupureADimancheDuree">Durée de la coupure</label>
-              <div class="simulator__field-suffix"><input type="number" id="boCoupureADimancheDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
+              <label for="boAmorti"><mark class="simulator__highlight">Machine amortie ou non ?</mark></label>
+              <select id="boAmorti">
+                <option value="nonAmorti">Non amortie</option>
+                <option value="amorti">Amortie (&gt; 7 ans)</option>
+              </select>
             </div>
           </details>
+
+          <details class="bascule-hyp-section" name="boParamAccordion">
+            <summary>Horaires d'ouverture</summary>
+            <div class="field">
+              <label for="boHypHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+              <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSemaine" value="9" /><span>h/jour</span></div>
+            </div>
+            <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
+              <input type="checkbox" id="boCoupureASemaine" style="width:16px;height:16px;margin:0" />
+              <span>Coupure dans la journée (lundi-vendredi) ?</span>
+            </label>
+            <div class="field" id="boCoupureASemaineDureeWrap" hidden style="margin:-.4rem 0 .8rem">
+              <label for="boCoupureASemaineDuree">Durée de la coupure</label>
+              <div class="simulator__field-suffix"><input type="number" id="boCoupureASemaineDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
+            </div>
+            <details class="pm-autre-rh">
+              <summary>Autre jour</summary>
+              <div class="field">
+                <label for="boHypHeuresSamedi">Amplitude d'ouverture, samedi</label>
+                <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresSamedi" value="0" /><span>h/jour</span></div>
+              </div>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
+                <input type="checkbox" id="boCoupureASamedi" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le samedi ?</span>
+              </label>
+              <div class="field" id="boCoupureASamediDureeWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="boCoupureASamediDuree">Durée de la coupure</label>
+                <div class="simulator__field-suffix"><input type="number" id="boCoupureASamediDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
+              </div>
+              <div class="field">
+                <label for="boHypHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+                <div class="simulator__field-suffix"><input type="number" min="0" step="0.5" id="boHypHeuresDimanche" value="0" /><span>h/jour</span></div>
+              </div>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:-.4rem 0 .6rem">
+                <input type="checkbox" id="boCoupureADimanche" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le dimanche ?</span>
+              </label>
+              <div class="field" id="boCoupureADimancheDureeWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="boCoupureADimancheDuree">Durée de la coupure</label>
+                <div class="simulator__field-suffix"><input type="number" id="boCoupureADimancheDuree" value="1" min="0" step="0.25" /><span>heures</span></div>
+              </div>
+            </details>
+          </details>
+
+          <details class="bascule-hyp-section" name="boParamAccordion">
+            <summary>Salaires</summary>
+            <div class="field">
+              <label for="boHypSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+              <select id="boHypSalaireUnite">
+                <option value="mensuel">Mensuel</option>
+                <option value="annuel" selected>Annuel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="boHypNetMerm">Salaire net MERM (avant IR)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetMerm" value="21.600" /><span id="boHypNetMermSuffix">€/an</span></div>
+            </div>
+            <details class="pm-autre-rh">
+              <summary>Autre RH</summary>
+              <div class="field">
+                <label for="boHypNetSecretaire">Salaire net secrétaire médicale (avant IR)</label>
+                <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetSecretaire" value="19.800" /><span id="boHypNetSecretaireSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boHypNetCadreSante">Salaire net cadre de santé (avant IR)</label>
+                <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetCadreSante" value="33.600" /><span id="boHypNetCadreSanteSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boHypNetAideManip">Salaire net aide-manip (avant IR)</label>
+                <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetAideManip" value="19.200" /><span id="boHypNetAideManipSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boHypNetInfirmiere">Salaire net infirmière (avant IR)</label>
+                <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetInfirmiere" value="24.000" /><span id="boHypNetInfirmiereSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boHypNetManipAlternance">Salaire net manip en alternance (avant IR)</label>
+                <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetManipAlternance" value="9.600" /><span id="boHypNetManipAlternanceSuffix">€/an</span></div>
+                <span class="bascule-info-wrap">
+                  <button type="button" class="bascule-info-btn" id="boHypTauxInfoBtn" aria-expanded="false" aria-controls="boHypTauxInfoPop" aria-label="À propos des taux employeur utilisés">💡</button>
+                  <div class="bascule-info-pop" id="boHypTauxInfoPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
+                </span>
+              </div>
+            </details>
+          </details>
+
+          <details class="bascule-hyp-section" name="boParamAccordion">
+            <summary>Charges partagées</summary>
+            <div class="field">
+              <label for="boHypCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypCoutRis" value="0" /><span>€/mois</span></div>
+              <span class="bascule-info-wrap">
+                <button type="button" class="bascule-info-btn" id="boHypRisInfoBtn" aria-expanded="false" aria-controls="boHypRisInfoPop" aria-label="Comment répartir ce coût">💡</button>
+                <div class="bascule-info-pop" id="boHypRisInfoPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre Machine A et l'O-scan se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+              </span>
+            </div>
+            <div class="field">
+              <label for="boContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+              <div class="simulator__field-suffix"><input type="number" id="boContrasteCout" value="0" min="0" step="0.5" /><span>€</span></div>
+              <span class="bascule-info-wrap">
+                <button type="button" class="bascule-info-btn" id="boContrasteCoutInfoBtn" aria-expanded="false" aria-controls="boContrasteCoutInfoPop" aria-label="Pourquoi ce coût est partagé">💡</button>
+                <div class="bascule-info-pop" id="boContrasteCoutInfoPop" hidden>Même produit, même prix quelle que soit la machine — seule la part d'examens injectés diffère, réglable dans le panneau ⚙ de chaque machine ("Autre charge").</div>
+              </span>
+            </div>
+            <div class="field">
+              <label for="boKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boKwh" value="0,20" /><span>€ TTC</span></div>
+            </div>
+            <div class="field">
+              <label for="boHypHeuresLegales">Base légale mensuelle</label>
+              <div class="simulator__field-suffix"><input type="number" min="1" step="0.01" id="boHypHeuresLegales" value="151.67" /><span>h/mois</span></div>
+            </div>
+          </details>
+
           <span class="bascule-info-wrap" style="margin-top:.4rem">
             <button type="button" class="bascule-info-btn" id="boHypLiveInfoBtn" aria-expanded="false" aria-controls="boHypLiveInfoPop" aria-label="Quand ces réglages s'appliquent">💡</button>
             <div class="bascule-info-pop" id="boHypLiveInfoPop" hidden>Chaque champ s'applique tout de suite — regarde la case "Résultat net total" changer pendant que tu ajustes.</div>
