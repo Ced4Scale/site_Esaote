@@ -944,6 +944,22 @@
     .pm-autre-rh > summary::before { content: "▸ "; }
     .pm-autre-rh[open] > summary::before { content: "▾ "; }
     .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
+    /* Sections du panneau ⚙ "Réglages avancés" (13/09/2026, demande de Cédric) :
+       accordéon natif — un seul `name` partagé entre les 4 `<details>` de premier
+       niveau suffit à faire fermer les autres quand on en ouvre un, sans JS (pris en
+       charge par les navigateurs récents). Toutes fermées par défaut. Motif porté de
+       simulateur-bascule-oscan.html. */
+    .bascule-hyp-section { margin: 0 0 1rem; }
+    .bascule-hyp-section > summary {
+      cursor: pointer; font-weight: 700; font-size: 1rem; list-style: none;
+      padding: .5rem 0; border-bottom: 1px solid var(--line-2);
+    }
+    .bascule-hyp-section > summary::-webkit-details-marker { display: none; }
+    .bascule-hyp-section > summary::before { content: "▸ "; }
+    .bascule-hyp-section[open] > summary::before { content: "▾ "; }
+    .bascule-hyp-section > summary ~ .field:first-of-type,
+    .bascule-hyp-section > summary ~ .pm-autre-rh:first-of-type,
+    .bascule-hyp-section > summary ~ label:first-of-type { margin-top: .8rem; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1754,213 +1770,214 @@
       <div class="modal__scroll">
         <div class="cv-hyp-body">
           <h3 id="cvHypTitle">Réglages avancés</h3>
-          <!-- Déplacés depuis le bloc "Paramètres" du formulaire (demande de Cédric
-               le 06/09/2026) : celui-ci ne garde plus que son titre + l'icône. -->
-          <div class="field">
-            <label for="cvDate">Date de forfait technique</label>
-            <select id="cvDate"></select>
-          </div>
-          <div class="field">
-            <label for="cvZone">Zone géographique</label>
-            <select id="cvZone">
-              <option value="province">Province</option>
-              <option value="idf">Île-de-France (hors Paris)</option>
-              <option value="paris">Paris</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="cvAmorti">Machines amorties ou non ?</label>
-            <select id="cvAmorti">
-              <option value="nonAmorti">Non amorties</option>
-              <option value="amorti">Amorties (&gt; 7 ans)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label>Vous raisonnez plutôt en</label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
-              <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
-            </div>
-          </div>
-          <div class="field">
-            <label for="cvSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-            <select id="cvSalaireUnite">
-              <option value="mensuel">Mensuel</option>
-              <option value="annuel" selected>Annuel</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="cvNetMerm">Salaire MERM net avant impôt</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvNetMerm" value="21.600" />
-              <span id="cvNetMermSuffix">€ / an</span>
-            </div>
-          </div>
-          <p class="simulator__hint" id="cvCoutMermCalcule"></p>
-          <details class="pm-autre-rh">
-            <summary>Autre RH</summary>
+          <details class="bascule-hyp-section" name="cvParamAccordion">
+            <summary>Forfait technique</summary>
             <div class="field">
-              <label for="cvNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="cvNetSecretaire" value="19.800" />
-                <span id="cvNetSecretaireSuffix">€ / an</span>
-              </div>
+              <label for="cvDate">Date de forfait technique</label>
+              <select id="cvDate"></select>
             </div>
             <div class="field">
-              <label for="cvNetCadreSante">Salaire cadre de santé net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="cvNetCadreSante" value="33.600" />
-                <span id="cvNetCadreSanteSuffix">€ / an</span>
-              </div>
+              <label for="cvZone">Zone géographique</label>
+              <select id="cvZone">
+                <option value="province">Province</option>
+                <option value="idf">Île-de-France (hors Paris)</option>
+                <option value="paris">Paris</option>
+              </select>
             </div>
             <div class="field">
-              <label for="cvNetAideManip">Salaire aide-manip net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="cvNetAideManip" value="19.200" />
-                <span id="cvNetAideManipSuffix">€ / an</span>
-              </div>
+              <label for="cvAmorti">Machines amorties ou non ?</label>
+              <select id="cvAmorti">
+                <option value="nonAmorti">Non amorties</option>
+                <option value="amorti">Amorties (&gt; 7 ans)</option>
+              </select>
             </div>
             <div class="field">
-              <label for="cvNetInfirmiere">Salaire infirmière net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="cvNetInfirmiere" value="24.000" />
-                <span id="cvNetInfirmiereSuffix">€ / an</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="cvNetManipAlternance">Salaire manip en alternance net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="cvNetManipAlternance" value="9.600" />
-                <span id="cvNetManipAlternanceSuffix">€ / an</span>
+              <label>Vous raisonnez plutôt en</label>
+              <div class="simulator__toggle">
+                <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
+                <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
               </div>
             </div>
           </details>
-          <span class="cv-info-wrap">
-            <button type="button" class="cv-info-btn" id="cvInfoTauxBtn" aria-expanded="false" aria-controls="cvInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
-            <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
-          </span>
-          <div class="field">
-            <label for="cvCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
-            <div class="simulator__field-suffix">
-              <input type="text" inputmode="numeric" id="cvCoutRis" value="0" />
-              <span>€ / mois</span>
+
+          <details class="bascule-hyp-section" name="cvParamAccordion">
+            <summary>Horaires d'ouverture</summary>
+            <div class="field">
+              <label>Horaires d'ouverture</label>
+              <div class="cv-horaire-range" id="cvHoraireMatin">
+                <div class="cv-horaire-track-wrap">
+                  <div class="cv-horaire-track">
+                    <div class="cv-horaire-fill" id="cvHoraireFill1"></div>
+                    <div class="cv-horaire-gap" id="cvCoupureGap" hidden></div>
+                  </div>
+                  <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="8" aria-label="Heure d'ouverture" />
+                  <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture" />
+                  <input type="range" id="cvCoupurePosition" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
+                </div>
+                <div class="cv-horaire-row-label">
+                  <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
+                  <p class="simulator__hint" id="cvHeuresTotalTxt"></p>
+                </div>
+              </div>
+              <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
+                <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
+                <span>Y a-t-il une coupure dans la journée ?</span>
+              </label>
+              <div class="field" id="cvCoupureDureeWrap" hidden style="margin-top:.6rem; margin-bottom:0">
+                <label for="cvCoupureDuree">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvCoupureDuree" value="1" min="0.25" max="6" step="0.25" />
+                  <span>heures</span>
+                </div>
+              </div>
             </div>
+            <details class="pm-autre-rh">
+              <summary>Autre jour</summary>
+              <div class="field">
+                <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
+                  <input type="checkbox" id="cvOuvertSamedi" style="width:16px;height:16px;margin:0" />
+                  <span>Ouvert le samedi</span>
+                </label>
+                <div class="cv-horaire-range" id="cvHoraireSamedi" hidden style="margin-top:.6rem">
+                  <div class="cv-horaire-track-wrap">
+                    <div class="cv-horaire-track">
+                      <div class="cv-horaire-fill" id="cvHoraireFillSamedi"></div>
+                      <div class="cv-horaire-gap" id="cvCoupureGapSamedi" hidden></div>
+                    </div>
+                    <input type="range" id="cvHeureDebutSamedi" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le samedi" />
+                    <input type="range" id="cvHeureFinSamedi" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le samedi" />
+                    <input type="range" id="cvCoupurePositionSamedi" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du samedi" />
+                  </div>
+                  <div class="cv-horaire-label" id="cvHoraireLabelSamedi"></div>
+                </div>
+                <label id="cvCoupureSamediLabel" class="cv-inline-check" hidden>
+                  <input type="checkbox" id="cvCoupureSamedi" style="width:16px;height:16px;margin:0" />
+                  <span>Coupure le samedi</span>
+                </label>
+                <div class="field" id="cvCoupureDureeSamediWrap" hidden style="margin-top:.6rem; margin-bottom:0">
+                  <label for="cvCoupureDureeSamedi">Durée de la coupure</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="cvCoupureDureeSamedi" value="1" min="0.25" max="4" step="0.25" />
+                    <span>heures</span>
+                  </div>
+                </div>
+              </div>
+              <div class="field">
+                <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
+                  <input type="checkbox" id="cvOuvertDimanche" style="width:16px;height:16px;margin:0" />
+                  <span>Ouvert le dimanche</span>
+                </label>
+                <div class="cv-horaire-range" id="cvHoraireDimanche" hidden style="margin-top:.6rem">
+                  <div class="cv-horaire-track-wrap">
+                    <div class="cv-horaire-track">
+                      <div class="cv-horaire-fill" id="cvHoraireFillDimanche"></div>
+                      <div class="cv-horaire-gap" id="cvCoupureGapDimanche" hidden></div>
+                    </div>
+                    <input type="range" id="cvHeureDebutDimanche" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le dimanche" />
+                    <input type="range" id="cvHeureFinDimanche" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le dimanche" />
+                    <input type="range" id="cvCoupurePositionDimanche" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du dimanche" />
+                  </div>
+                  <div class="cv-horaire-label" id="cvHoraireLabelDimanche"></div>
+                </div>
+                <label id="cvCoupureDimancheLabel" class="cv-inline-check" hidden>
+                  <input type="checkbox" id="cvCoupureDimanche" style="width:16px;height:16px;margin:0" />
+                  <span>Coupure le dimanche</span>
+                </label>
+                <div class="field" id="cvCoupureDureeDimancheWrap" hidden style="margin-top:.6rem; margin-bottom:0">
+                  <label for="cvCoupureDureeDimanche">Durée de la coupure</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="cvCoupureDureeDimanche" value="1" min="0.25" max="4" step="0.25" />
+                    <span>heures</span>
+                  </div>
+                </div>
+              </div>
+            </details>
+            <p class="simulator__hint" id="cvJoursTotalTxt" style="margin-top:.6rem"></p>
+          </details>
+
+          <details class="bascule-hyp-section" name="cvParamAccordion">
+            <summary>Salaires</summary>
+            <div class="field">
+              <label for="cvSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+              <select id="cvSalaireUnite">
+                <option value="mensuel">Mensuel</option>
+                <option value="annuel" selected>Annuel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="cvNetMerm">Salaire MERM net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="cvNetMerm" value="21.600" />
+                <span id="cvNetMermSuffix">€ / an</span>
+              </div>
+            </div>
+            <p class="simulator__hint" id="cvCoutMermCalcule"></p>
+            <details class="pm-autre-rh">
+              <summary>Autre RH</summary>
+              <div class="field">
+                <label for="cvNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="cvNetSecretaire" value="19.800" />
+                  <span id="cvNetSecretaireSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cvNetCadreSante">Salaire cadre de santé net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="cvNetCadreSante" value="33.600" />
+                  <span id="cvNetCadreSanteSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cvNetAideManip">Salaire aide-manip net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="cvNetAideManip" value="19.200" />
+                  <span id="cvNetAideManipSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cvNetInfirmiere">Salaire infirmière net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="cvNetInfirmiere" value="24.000" />
+                  <span id="cvNetInfirmiereSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="cvNetManipAlternance">Salaire manip en alternance net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="cvNetManipAlternance" value="9.600" />
+                  <span id="cvNetManipAlternanceSuffix">€ / an</span>
+                </div>
+              </div>
+            </details>
             <span class="cv-info-wrap">
-              <button type="button" class="cv-info-btn" id="cvInfoRisBtn" aria-expanded="false" aria-controls="cvInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
-              <div class="cv-info-pop" id="cvInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les 2 machines se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+              <button type="button" class="cv-info-btn" id="cvInfoTauxBtn" aria-expanded="false" aria-controls="cvInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
+              <div class="cv-info-pop" id="cvInfoTauxPop" hidden>Coût réel employeur = net avant impôt → brut → charges patronales. Non-cadre (MERM, secrétaire, aide-manip, infirmière) : ~78 % net/brut, +42 % charges patronales. Cadre de santé : ~75 % net/brut, +45 % (retraite cadre plus élevée). Manip en alternance : taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</div>
             </span>
-          </div>
-          <div class="field">
-            <label for="cvKwh">Coût du kWh</label>
-            <div class="simulator__field-suffix">
-              <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
-              <span>€ TTC</span>
-            </div>
-          </div>
-          <!-- Miroir de la copie sous "Résultat à votre activité" (demande de Cédric le
-               05/09/2026, même principe que l'activité elle-même) : les 2 jeux de curseurs
-               (ids canoniques ici, ids suffixés "B" là-bas) sont synchronisés dans les 2 sens
-               par lierMiroirPoignee() plus bas dans le script. La coupure (case + durée),
-               modèle simplifié du 06/09/2026 : une seule question "y a-t-il une coupure ?",
-               si oui sa durée, et sa position se règle en la faisant glisser directement sur
-               cette même ligne de temps (encoche déplaçable, pas une 2ᵉ plage indépendante). -->
-          <div class="field">
-            <label>Horaires d'ouverture</label>
-            <div class="cv-horaire-range" id="cvHoraireMatin">
-              <div class="cv-horaire-track-wrap">
-                <div class="cv-horaire-track">
-                  <div class="cv-horaire-fill" id="cvHoraireFill1"></div>
-                  <div class="cv-horaire-gap" id="cvCoupureGap" hidden></div>
-                </div>
-                <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="8" aria-label="Heure d'ouverture" />
-                <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture" />
-                <input type="range" id="cvCoupurePosition" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
-              </div>
-              <div class="cv-horaire-row-label">
-                <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
-                <p class="simulator__hint" id="cvHeuresTotalTxt"></p>
-              </div>
-            </div>
-            <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
-              <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
-              <span>Y a-t-il une coupure dans la journée ?</span>
-            </label>
-            <div class="field" id="cvCoupureDureeWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-              <label for="cvCoupureDuree">Durée de la coupure</label>
+          </details>
+
+          <details class="bascule-hyp-section" name="cvParamAccordion">
+            <summary>Charges partagées</summary>
+            <div class="field">
+              <label for="cvCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
               <div class="simulator__field-suffix">
-                <input type="number" id="cvCoupureDuree" value="1" min="0.25" max="6" step="0.25" />
-                <span>heures</span>
+                <input type="text" inputmode="numeric" id="cvCoutRis" value="0" />
+                <span>€ / mois</span>
               </div>
-            </div>
-          </div>
-          <!-- Remplace l'ancien champ "Jours d'ouverture par mois" (saisi à la main) —
-               demande de Cédric le 05/09/2026 : le nombre de jours/mois est maintenant
-               calculé (5 jours de semaine implicites + samedi/dimanche si cochés) plutôt
-               que saisi. Chaque jour de week-end coché ajoute sa propre ligne d'horaires,
-               avec sa propre coupure éventuelle (même modèle simplifié que la semaine —
-               demande de Cédric le 06/09/2026). -->
-          <details class="pm-autre-rh">
-            <summary>Autre jour</summary>
-            <div class="field">
-              <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
-                <input type="checkbox" id="cvOuvertSamedi" style="width:16px;height:16px;margin:0" />
-                <span>Ouvert le samedi</span>
-              </label>
-              <div class="cv-horaire-range" id="cvHoraireSamedi" hidden style="margin-top:.6rem">
-                <div class="cv-horaire-track-wrap">
-                  <div class="cv-horaire-track">
-                    <div class="cv-horaire-fill" id="cvHoraireFillSamedi"></div>
-                    <div class="cv-horaire-gap" id="cvCoupureGapSamedi" hidden></div>
-                  </div>
-                  <input type="range" id="cvHeureDebutSamedi" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le samedi" />
-                  <input type="range" id="cvHeureFinSamedi" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le samedi" />
-                  <input type="range" id="cvCoupurePositionSamedi" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du samedi" />
-                </div>
-                <div class="cv-horaire-label" id="cvHoraireLabelSamedi"></div>
-              </div>
-              <label id="cvCoupureSamediLabel" class="cv-inline-check" hidden>
-                <input type="checkbox" id="cvCoupureSamedi" style="width:16px;height:16px;margin:0" />
-                <span>Coupure le samedi</span>
-              </label>
-              <div class="field" id="cvCoupureDureeSamediWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-                <label for="cvCoupureDureeSamedi">Durée de la coupure</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="cvCoupureDureeSamedi" value="1" min="0.25" max="4" step="0.25" />
-                  <span>heures</span>
-                </div>
-              </div>
+              <span class="cv-info-wrap">
+                <button type="button" class="cv-info-btn" id="cvInfoRisBtn" aria-expanded="false" aria-controls="cvInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
+                <div class="cv-info-pop" id="cvInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les 2 machines se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+              </span>
             </div>
             <div class="field">
-              <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
-                <input type="checkbox" id="cvOuvertDimanche" style="width:16px;height:16px;margin:0" />
-                <span>Ouvert le dimanche</span>
-              </label>
-              <div class="cv-horaire-range" id="cvHoraireDimanche" hidden style="margin-top:.6rem">
-                <div class="cv-horaire-track-wrap">
-                  <div class="cv-horaire-track">
-                    <div class="cv-horaire-fill" id="cvHoraireFillDimanche"></div>
-                    <div class="cv-horaire-gap" id="cvCoupureGapDimanche" hidden></div>
-                  </div>
-                  <input type="range" id="cvHeureDebutDimanche" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le dimanche" />
-                  <input type="range" id="cvHeureFinDimanche" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le dimanche" />
-                  <input type="range" id="cvCoupurePositionDimanche" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du dimanche" />
-                </div>
-                <div class="cv-horaire-label" id="cvHoraireLabelDimanche"></div>
-              </div>
-              <label id="cvCoupureDimancheLabel" class="cv-inline-check" hidden>
-                <input type="checkbox" id="cvCoupureDimanche" style="width:16px;height:16px;margin:0" />
-                <span>Coupure le dimanche</span>
-              </label>
-              <div class="field" id="cvCoupureDureeDimancheWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-                <label for="cvCoupureDureeDimanche">Durée de la coupure</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="cvCoupureDureeDimanche" value="1" min="0.25" max="4" step="0.25" />
-                  <span>heures</span>
-                </div>
+              <label for="cvKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
+                <span>€ TTC</span>
               </div>
             </div>
           </details>
-          <p class="simulator__hint" id="cvJoursTotalTxt" style="margin-top:.6rem"></p>
+
           <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
           <div class="cv-hyp-actions">
             <button type="button" class="btn" id="cvHypDone">Fermer</button>
