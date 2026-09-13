@@ -1134,7 +1134,7 @@
             <label for="boManipA">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
             <div class="simulator__field-suffix"><input type="number" min="0" step="0.1" id="boManipA" value="2" /><span>ETP</span></div>
           </div>
-          <p class="simulator__hint" id="boAutresPostesHintA" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="boAutresPostesHintA" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="boSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireA" value="0" min="0" step="0.1" /><span>ETP</span></div>
@@ -1204,7 +1204,7 @@
             <button type="button" class="bascule-info-btn" id="boVerrouActiviteBtn" aria-expanded="false" aria-controls="boVerrouActivitePop" aria-label="Répartition d'activité de l'O-scan">💡</button>
             <div class="bascule-info-pop" id="boVerrouActivitePop" hidden>100&nbsp;% de son activité en examens membres/extrémités (verrouillé).</div>
           </span>
-          <p class="simulator__hint" id="boAutresPostesHintO" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="boAutresPostesHintO" style="margin:-.2rem 0 .35rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="boSecretaireO">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix"><input type="number" id="boSecretaireO" value="0" min="0" step="0.1" /><span>ETP</span></div>
@@ -1919,20 +1919,55 @@
             <details class="pm-autre-rh">
               <summary>Autre RH</summary>
               <div class="field">
+                <label for="boIntegreSecretaire">Secrétaire médicale</label>
+                <select id="boIntegreSecretaire">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="boHypNetSecretaire">Salaire net secrétaire médicale (avant IR)</label>
                 <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetSecretaire" value="19.800" /><span id="boHypNetSecretaireSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boIntegreCadreSante">Cadre de santé</label>
+                <select id="boIntegreCadreSante">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="boHypNetCadreSante">Salaire net cadre de santé (avant IR)</label>
                 <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetCadreSante" value="33.600" /><span id="boHypNetCadreSanteSuffix">€/an</span></div>
               </div>
               <div class="field">
+                <label for="boIntegreAideManip">Aide-manip</label>
+                <select id="boIntegreAideManip">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="boHypNetAideManip">Salaire net aide-manip (avant IR)</label>
                 <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetAideManip" value="19.200" /><span id="boHypNetAideManipSuffix">€/an</span></div>
               </div>
               <div class="field">
+                <label for="boIntegreInfirmiere">Infirmière</label>
+                <select id="boIntegreInfirmiere">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="boHypNetInfirmiere">Salaire net infirmière (avant IR)</label>
                 <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="boHypNetInfirmiere" value="24.000" /><span id="boHypNetInfirmiereSuffix">€/an</span></div>
+              </div>
+              <div class="field">
+                <label for="boIntegreManipAlternance">Manip en alternance</label>
+                <select id="boIntegreManipAlternance">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="boHypNetManipAlternance">Salaire net manip en alternance (avant IR)</label>
@@ -2330,24 +2365,23 @@
       }
       // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
       // alternance) : leur ligne ETP dans Machine A/O-scan ne s'affiche que si le
-      // salaire correspondant a été changé par rapport à la valeur par défaut du
-      // panneau "Autre RH" — demande de Cédric le 12/09/2026, même règle que
-      // simulateur-point-mort.html (commit 8913abe), pour ne pas encombrer la fiche
-      // machine avec des postes qu'il n'utilise pas. Comparaison toujours en ANNUEL,
-      // à partir de la variable canonique boSalaireVar(role) (toujours mensuelle,
-      // déjà à jour au moment de l'appel — voir appliquerHypotheses()), donc
-      // indépendante du mode d'affichage mensuel/annuel en cours du champ.
-      var BO_POSTES_ANNEXES_DEFAUT_ANNUEL = {
-        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
-      };
-      function boPosteAnnexeVisible(role) {
-        var annuel = boSalaireVar(role) * 12;
-        return Math.abs(annuel - BO_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      // sélecteur "Intégré au simu" du poste (panneau "Autre RH") est réglé sur
+      // "Intégré" — demande de Cédric le 13/09/2026, remplace l'ancien mécanisme
+      // automatique basé sur l'écart de salaire par rapport au défaut (utilisé
+      // jusqu'au 12/09/2026, commit 933f21d). Un seul sélecteur par rôle pilote à la
+      // fois Machine A et O-scan (confirmé par Cédric). Quand un poste n'est "pas
+      // intégré", son effectif est aussi forcé à 0 dans le calcul (lireExtra()), pas
+      // seulement masqué à l'écran, pour éviter qu'une valeur restée saisie continue
+      // à peser silencieusement sur le résultat.
+      var BO_POSTES_ANNEXES_ROLES = ["Secretaire", "CadreSante", "AideManip", "Infirmiere", "ManipAlternance"];
+      function boPosteAnnexeIntegre(role) {
+        var select = document.getElementById("boIntegre" + role);
+        return !!select && select.value === "oui";
       }
       function majVisibilitePostesAnnexes() {
         var auMoinsUnA = false, auMoinsUnO = false;
-        Object.keys(BO_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
-          var visible = boPosteAnnexeVisible(role);
+        BO_POSTES_ANNEXES_ROLES.forEach(function (role) {
+          var visible = boPosteAnnexeIntegre(role);
           var champA = document.getElementById("bo" + role + "A");
           var champO = document.getElementById("bo" + role + "O");
           if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
@@ -3255,17 +3289,17 @@
       function lireExtra(suffix) {
         var c = coutsRolesPartages();
         return {
-          cadreSanteM: effectif("boCadreSante" + suffix) * c.cadreSanteMensuel,
+          cadreSanteM: (boPosteAnnexeIntegre("CadreSante") ? effectif("boCadreSante" + suffix) : 0) * c.cadreSanteMensuel,
           salleM: lireMontant(document.getElementById("boSalle" + suffix)),
           assuranceM: lireMontant(document.getElementById("boAssurance" + suffix)),
           entretienM: lireMontant(document.getElementById("boEntretien" + suffix)),
           injecteurM: lireMontant(document.getElementById("boInjecteur" + suffix)),
           risFraction: effectif("boRis" + suffix),
           coutRisMensuel: COUT_RIS_MENSUEL,
-          nombreSecretaire: effectif("boSecretaire" + suffix), coutSecretaireHoraire: c.secretaireHoraire,
-          nombreAideManip: effectif("boAideManip" + suffix), coutAideManipHoraire: c.aideManipHoraire,
-          nombreInfirmiere: effectif("boInfirmiere" + suffix), coutInfirmiereHoraire: c.infirmiereHoraire,
-          nombreManipAlternance: effectif("boManipAlternance" + suffix), coutManipAlternanceHoraire: c.manipAlternanceHoraire,
+          nombreSecretaire: boPosteAnnexeIntegre("Secretaire") ? effectif("boSecretaire" + suffix) : 0, coutSecretaireHoraire: c.secretaireHoraire,
+          nombreAideManip: boPosteAnnexeIntegre("AideManip") ? effectif("boAideManip" + suffix) : 0, coutAideManipHoraire: c.aideManipHoraire,
+          nombreInfirmiere: boPosteAnnexeIntegre("Infirmiere") ? effectif("boInfirmiere" + suffix) : 0, coutInfirmiereHoraire: c.infirmiereHoraire,
+          nombreManipAlternance: boPosteAnnexeIntegre("ManipAlternance") ? effectif("boManipAlternance" + suffix) : 0, coutManipAlternanceHoraire: c.manipAlternanceHoraire,
           contrasteCout: effectif("boContrasteCout"), contrastePct: pourcent("boContrastePct" + suffix)
         };
       }
@@ -3742,6 +3776,9 @@
       document.getElementById("boHypDate").addEventListener("change", appliquerHypotheses);
       document.getElementById("boHypZone").addEventListener("change", appliquerHypotheses);
       document.getElementById("boAmorti").addEventListener("change", appliquerHypotheses);
+      BO_POSTES_ANNEXES_ROLES.forEach(function (role) {
+        document.getElementById("boIntegre" + role).addEventListener("change", repositionnerCurseur);
+      });
       document.getElementById("boHypSalaireUnite").addEventListener("change", function () { boNetMermSetUnite(this.value === "annuel"); });
       document.getElementById("boHypReset").addEventListener("click", function () {
         NET_MERM = HYP_DEFAUTS.netMerm; NET_SECRETAIRE = HYP_DEFAUTS.netSecretaire; NET_CADRE_SANTE = HYP_DEFAUTS.netCadreSante;
@@ -3771,6 +3808,9 @@
         document.getElementById("boHypDate").value = FT_DATE_ISO;
         document.getElementById("boHypZone").value = ZONE_TARIFAIRE;
         document.getElementById("boAmorti").value = FT_AMORTI ? "amorti" : "nonAmorti";
+        BO_POSTES_ANNEXES_ROLES.forEach(function (role) {
+          document.getElementById("boIntegre" + role).value = "non";
+        });
         majResumeHypotheses();
         repositionnerCurseur();
       });
@@ -4259,6 +4299,11 @@
       // imposer une seule aux 2 côtés.
       var BO_MEMOIRE_FIELDS = [
         { id: "boClasseA", evt: "change", type: "select" },
+        { id: "boIntegreSecretaire", evt: "change", type: "select" },
+        { id: "boIntegreCadreSante", evt: "change", type: "select" },
+        { id: "boIntegreAideManip", evt: "change", type: "select" },
+        { id: "boIntegreInfirmiere", evt: "change", type: "select" },
+        { id: "boIntegreManipAlternance", evt: "change", type: "select" },
         { id: "boLoyerA", evt: "blur", type: "montant" },
         { id: "boSalleA", evt: "blur", type: "montant" },
         { id: "boAssuranceA", evt: "blur", type: "montant" },
