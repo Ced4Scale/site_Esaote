@@ -1784,7 +1784,7 @@
               <select id="cvDate"></select>
             </div>
             <div class="field">
-              <label for="cvZone">Zone géographique</label>
+              <label for="cvZone">Zone tarifaire (forfait technique)</label>
               <select id="cvZone">
                 <option value="province">Province</option>
                 <option value="idf">Île-de-France (hors Paris)</option>
@@ -1792,7 +1792,7 @@
               </select>
             </div>
             <div class="field">
-              <label for="cvAmorti">Machines amorties ou non ?</label>
+              <label for="cvAmorti"><mark class="simulator__highlight">Machines amorties ou non ?</mark></label>
               <select id="cvAmorti">
                 <option value="nonAmorti">Non amorties</option>
                 <option value="amorti">Amorties (&gt; 7 ans)</option>
@@ -2037,7 +2037,10 @@
             </div>
           </details>
 
-          <p class="simulator__hint" style="margin-top:.4rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
+          <span class="cv-info-wrap" style="margin-top:.4rem">
+            <button type="button" class="cv-info-btn" id="cvInfoChampsBtn" aria-expanded="false" aria-controls="cvInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
+            <div class="cv-info-pop" id="cvInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</div>
+          </span>
           <div class="cv-hyp-actions">
             <button type="button" class="btn" id="cvHypDone">Fermer</button>
           </div>
@@ -2084,7 +2087,10 @@
             </div>
           </div>
           <p class="simulator__hint" id="cvActeRegionHintA"></p>
-          <p class="simulator__hint" style="margin-top:.6rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
+          <span class="cv-info-wrap" style="margin-top:.6rem">
+            <button type="button" class="cv-info-btn" id="cvInfoChampsBtnA" aria-expanded="false" aria-controls="cvInfoChampsPopA" aria-label="À propos de ce panneau">💡</button>
+            <div class="cv-info-pop" id="cvInfoChampsPopA" hidden>Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</div>
+          </span>
           <div class="cv-hyp-actions">
             <button type="button" class="btn" id="cvHypDoneA">Fermer</button>
           </div>
@@ -2146,7 +2152,10 @@
               <p class="simulator__hint" id="cvScannerSousTensionTxt" style="margin-top:.5rem"></p>
             </div>
           </div>
-          <p class="simulator__hint" style="margin-top:.6rem">Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</p>
+          <span class="cv-info-wrap" style="margin-top:.6rem">
+            <button type="button" class="cv-info-btn" id="cvInfoChampsBtnB" aria-expanded="false" aria-controls="cvInfoChampsPopB" aria-label="À propos de ce panneau">💡</button>
+            <div class="cv-info-pop" id="cvInfoChampsPopB" hidden>Chaque champ s'applique tout de suite — regarde les résultats changer pendant que tu ajustes.</div>
+          </span>
           <div class="cv-hyp-actions">
             <button type="button" class="btn" id="cvHypDoneB">Fermer</button>
           </div>
@@ -4676,6 +4685,9 @@ var svg = document.getElementById("cvChart");
       wireInfoBtn("cvExportInfoBtn", "cvExportInfoPop");
       wireInfoBtn("cvInfoTauxBtn", "cvInfoTauxPop");
       wireInfoBtn("cvInfoRisBtn", "cvInfoRisPop");
+      wireInfoBtn("cvInfoChampsBtn", "cvInfoChampsPop");
+      wireInfoBtn("cvInfoChampsBtnA", "cvInfoChampsPopA");
+      wireInfoBtn("cvInfoChampsBtnB", "cvInfoChampsPopB");
       document.addEventListener("click", function (e) {
         cvInfoPopsOuverts.forEach(function (f) {
           f();
