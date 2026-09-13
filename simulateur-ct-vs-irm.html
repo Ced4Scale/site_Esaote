@@ -960,6 +960,9 @@
     .bascule-hyp-section > summary ~ .field:first-of-type,
     .bascule-hyp-section > summary ~ .pm-autre-rh:first-of-type,
     .bascule-hyp-section > summary ~ label:first-of-type { margin-top: .8rem; }
+    /* Sous-titre visuel à l'intérieur d'une section ⚙ (13/09/2026) — pas un repli, juste
+       un regroupement visuel simple. Motif porté de simulateur-bascule-oscan.html. */
+    .cv-hyp-subtitle { font-weight: 700; font-size: .82rem; color: var(--ink-soft); margin: 1rem 0 .5rem; }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -1100,24 +1103,14 @@
             </div>
           </div>
           <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
+            <summary>Autre charge</summary>
             <div class="field">
-              <label for="cvContrasteCoutA">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="cvContrasteCoutA" value="0" min="0" step="0.5" />
-                <span>€</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="cvContrastePctA">Part des examens injectés</label>
+              <label for="cvContrastePctA">Part des examens injectés (produit de contraste)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="cvContrastePctA" value="0" min="0" max="100" step="5" />
                 <span>%</span>
               </div>
             </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
             <div class="field">
               <label for="cvSalleA">Loyer de la salle</label>
               <div class="simulator__field-suffix">
@@ -1224,24 +1217,14 @@
             </div>
           </div>
           <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
+            <summary>Autre charge</summary>
             <div class="field">
-              <label for="cvContrasteCoutB">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="cvContrasteCoutB" value="0" min="0" step="0.5" />
-                <span>€</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="cvContrastePctB">Part des examens injectés</label>
+              <label for="cvContrastePctB">Part des examens injectés (produit de contraste)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="cvContrastePctB" value="0" min="0" max="100" step="5" />
                 <span>%</span>
               </div>
             </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
             <div class="field">
               <label for="cvSalleB">Loyer de la salle</label>
               <div class="simulator__field-suffix">
@@ -1959,6 +1942,21 @@
           <details class="bascule-hyp-section" name="cvParamAccordion">
             <summary>Charges partagées</summary>
             <div class="field">
+              <label for="cvKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
+                <span>€ TTC</span>
+              </div>
+            </div>
+            <div class="cv-hyp-subtitle">Autres charges partagées</div>
+            <div class="field">
+              <label for="cvContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="cvContrasteCout" value="0" min="0" step="0.5" />
+                <span>€</span>
+              </div>
+            </div>
+            <div class="field">
               <label for="cvCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
               <div class="simulator__field-suffix">
                 <input type="text" inputmode="numeric" id="cvCoutRis" value="0" />
@@ -1968,13 +1966,6 @@
                 <button type="button" class="cv-info-btn" id="cvInfoRisBtn" aria-expanded="false" aria-controls="cvInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
                 <div class="cv-info-pop" id="cvInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les 2 machines se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
               </span>
-            </div>
-            <div class="field">
-              <label for="cvKwh">Coût du kWh</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="cvKwh" value="0.20" min="0" step="0.01" />
-                <span>€ TTC</span>
-              </div>
             </div>
           </details>
 
@@ -3417,7 +3408,7 @@
             nombreAideManip: effectif("cvAideManipA"), nombreInfirmiere: effectif("cvInfirmiereA"), nombreManipAlternance: effectif("cvManipAlternanceA"),
             salle: valeurMilliers(document.getElementById("cvSalleA")), assurance: valeurMilliers(document.getElementById("cvAssuranceA")),
             entretien: valeurMilliers(document.getElementById("cvEntretienA")), injecteur: valeurMilliers(document.getElementById("cvInjecteurA")),
-            fractionRis: effectif("cvRisA"), contrasteCout: effectif("cvContrasteCoutA"), contrastePct: pourcent("cvContrastePctA")
+            fractionRis: effectif("cvRisA"), contrasteCout: effectif("cvContrasteCout"), contrastePct: pourcent("cvContrastePctA")
           },
           {
             slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")),
@@ -3427,7 +3418,7 @@
             nombreAideManip: effectif("cvAideManipB"), nombreInfirmiere: effectif("cvInfirmiereB"), nombreManipAlternance: effectif("cvManipAlternanceB"),
             salle: valeurMilliers(document.getElementById("cvSalleB")), assurance: valeurMilliers(document.getElementById("cvAssuranceB")),
             entretien: valeurMilliers(document.getElementById("cvEntretienB")), injecteur: valeurMilliers(document.getElementById("cvInjecteurB")),
-            fractionRis: effectif("cvRisB"), contrasteCout: effectif("cvContrasteCoutB"), contrastePct: pourcent("cvContrastePctB")
+            fractionRis: effectif("cvRisB"), contrasteCout: effectif("cvContrasteCout"), contrastePct: pourcent("cvContrastePctB")
           }
         ];
 
@@ -4321,8 +4312,8 @@ var svg = document.getElementById("cvChart");
         "cvNetSecretaire", "cvNetCadreSante", "cvNetAideManip", "cvNetInfirmiere", "cvNetManipAlternance",
         "cvSecretaireA", "cvCadreSanteA", "cvAideManipA", "cvInfirmiereA", "cvManipAlternanceA",
         "cvSecretaireB", "cvCadreSanteB", "cvAideManipB", "cvInfirmiereB", "cvManipAlternanceB",
-        "cvCoutRis", "cvSalleA", "cvAssuranceA", "cvEntretienA", "cvInjecteurA", "cvRisA", "cvContrasteCoutA", "cvContrastePctA",
-        "cvSalleB", "cvAssuranceB", "cvEntretienB", "cvInjecteurB", "cvRisB", "cvContrasteCoutB", "cvContrastePctB"
+        "cvCoutRis", "cvContrasteCout", "cvSalleA", "cvAssuranceA", "cvEntretienA", "cvInjecteurA", "cvRisA", "cvContrastePctA",
+        "cvSalleB", "cvAssuranceB", "cvEntretienB", "cvInjecteurB", "cvRisB", "cvContrastePctB"
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
@@ -5312,7 +5303,6 @@ var svg = document.getElementById("cvChart");
         { id: "cvManipAlternanceA", evt: "input", label: "Manip en alternance (IRM)" },
         { id: "cvInstallA", evt: "input", label: "Patients par heure (IRM)" },
         { id: "cvActeRegionA", evt: "input", label: "Part des examens hors membres (IRM)", suffixe: " %" },
-        { id: "cvContrasteCoutA", evt: "input", label: "Coût produit de contraste (IRM)" },
         { id: "cvContrastePctA", evt: "input", label: "Part des examens injectés (IRM)", suffixe: " %" },
         // Scanner (CT) — cvMachineB en premier, même raison.
         { id: "cvMachineB", evt: "change", label: "Modèle Scanner", type: "select" },
@@ -5330,11 +5320,11 @@ var svg = document.getElementById("cvChart");
         { id: "cvManipAlternanceB", evt: "input", label: "Manip en alternance (scanner)" },
         { id: "cvInstallB", evt: "input", label: "Patients par heure (scanner)" },
         { id: "cvMultiRegionB", evt: "input", label: "% de patients hors zone (scanner)", suffixe: " %" },
-        { id: "cvContrasteCoutB", evt: "input", label: "Coût produit de contraste (scanner)" },
         { id: "cvContrastePctB", evt: "input", label: "Part des examens injectés (scanner)", suffixe: " %" },
         { id: "cvScannerCoupureNuit", evt: "change", label: "Coupure du scanner la nuit", type: "checkbox" },
         { id: "cvScannerDelaiAllumage", evt: "input", label: "Délai d'allumage (scanner)", suffixe: " min" },
-        { id: "cvScannerDelaiExtinction", evt: "input", label: "Délai d'extinction (scanner)", suffixe: " min" }
+        { id: "cvScannerDelaiExtinction", evt: "input", label: "Délai d'extinction (scanner)", suffixe: " min" },
+        { id: "cvContrasteCout", evt: "input", label: "Coût produit de contraste (partagé)" }
       ];
 
       function capturerParametres() {
