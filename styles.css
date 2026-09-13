@@ -1797,6 +1797,10 @@ ul { margin: 0; padding: 0; list-style: none; }
    (16:9 / 4:3 / Automatique) + un choix défilement/division en 2 colonnes pour le
    contenu trop long. Le contenu du cadre est enveloppé dans un `.chart-card-slide-
    canvas` créé/détruit en JS à l'entrée/sortie du plein écran. */
+/* [hidden] doit rester prioritaire : sans ce doublon, la règle display:flex ci-dessous
+   a la même spécificité que le [hidden] du navigateur et gagne par ordre de cascade,
+   ce qui affichait la barre même hors plein écran (13/09/2026, retour de Cédric). */
+.presentation-toolbar[hidden] { display: none; }
 .presentation-toolbar {
   position: fixed; top: 14px; left: 50%; transform: translateX(-50%); z-index: 30;
   display: flex; gap: .4rem; align-items: center; background: rgba(255,255,255,.97);
