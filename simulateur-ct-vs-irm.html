@@ -1067,7 +1067,7 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" id="cvAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="cvAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="cvSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -1181,7 +1181,7 @@
               <span>MERM</span>
             </div>
           </div>
-          <p class="simulator__hint" id="cvAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
+          <p class="simulator__hint" id="cvAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
           <div class="field" hidden>
             <label for="cvSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -1922,11 +1922,25 @@
             <details class="pm-autre-rh">
               <summary>Autre RH</summary>
               <div class="field">
+                <label for="cvIntegreSecretaire">Secrétaire médicale</label>
+                <select id="cvIntegreSecretaire">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="cvNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="cvNetSecretaire" value="19.800" />
                   <span id="cvNetSecretaireSuffix">€ / an</span>
                 </div>
+              </div>
+              <div class="field">
+                <label for="cvIntegreCadreSante">Cadre de santé</label>
+                <select id="cvIntegreCadreSante">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="cvNetCadreSante">Salaire cadre de santé net avant impôt</label>
@@ -1936,6 +1950,13 @@
                 </div>
               </div>
               <div class="field">
+                <label for="cvIntegreAideManip">Aide-manip</label>
+                <select id="cvIntegreAideManip">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="cvNetAideManip">Salaire aide-manip net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="cvNetAideManip" value="19.200" />
@@ -1943,11 +1964,25 @@
                 </div>
               </div>
               <div class="field">
+                <label for="cvIntegreInfirmiere">Infirmière</label>
+                <select id="cvIntegreInfirmiere">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
                 <label for="cvNetInfirmiere">Salaire infirmière net avant impôt</label>
                 <div class="simulator__field-suffix">
                   <input type="text" inputmode="numeric" id="cvNetInfirmiere" value="24.000" />
                   <span id="cvNetInfirmiereSuffix">€ / an</span>
                 </div>
+              </div>
+              <div class="field">
+                <label for="cvIntegreManipAlternance">Manip en alternance</label>
+                <select id="cvIntegreManipAlternance">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
               </div>
               <div class="field">
                 <label for="cvNetManipAlternance">Salaire manip en alternance net avant impôt</label>
@@ -2178,21 +2213,21 @@
       }
       // Postes annexes (secrétaire/cadre de santé/aide-manip/infirmière/manip en
       // alternance) : leur ligne ETP dans IRM Esaote/Scanner ne s'affiche que si le
-      // salaire correspondant a été changé par rapport à la valeur par défaut du
-      // panneau "Autre RH" — demande de Cédric le 12/09/2026, même règle que
-      // simulateur-point-mort.html (commit 8913abe). Comparaison toujours en ANNUEL
-      // (indépendante du mode d'affichage mensuel/annuel en cours).
-      var CV_POSTES_ANNEXES_DEFAUT_ANNUEL = {
-        Secretaire: 19800, CadreSante: 33600, AideManip: 19200, Infirmiere: 24000, ManipAlternance: 9600
-      };
-      function cvPosteAnnexeVisible(role) {
-        var annuel = cvSalaireMensuel(role) * 12;
-        return Math.abs(annuel - CV_POSTES_ANNEXES_DEFAUT_ANNUEL[role]) > 0.5;
+      // sélecteur "Intégré au simu" du poste (panneau "Autre RH") est réglé sur
+      // "Intégré" — demande de Cédric le 13/09/2026, remplace l'ancien mécanisme
+      // automatique basé sur l'écart de salaire par rapport au défaut (utilisé
+      // jusqu'au 12/09/2026). Un seul sélecteur par rôle pilote à la fois IRM Esaote
+      // et Scanner. Quand un poste n'est "pas intégré", son effectif est aussi
+      // forcé à 0 dans le calcul, pas seulement masqué à l'écran.
+      var CV_POSTES_ANNEXES_ROLES = ["Secretaire", "CadreSante", "AideManip", "Infirmiere", "ManipAlternance"];
+      function cvPosteAnnexeIntegre(role) {
+        var select = document.getElementById("cvIntegre" + role);
+        return !!select && select.value === "oui";
       }
       function majVisibilitePostesAnnexes() {
         var auMoinsUnA = false, auMoinsUnB = false;
-        Object.keys(CV_POSTES_ANNEXES_DEFAUT_ANNUEL).forEach(function (role) {
-          var visible = cvPosteAnnexeVisible(role);
+        CV_POSTES_ANNEXES_ROLES.forEach(function (role) {
+          var visible = cvPosteAnnexeIntegre(role);
           var champA = document.getElementById("cv" + role + "A");
           var champB = document.getElementById("cv" + role + "B");
           if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; }
@@ -3439,8 +3474,11 @@
             slot: 0, machine: machineParKey(selectA.value), loyer: valeurMilliers(document.getElementById("cvLoyerA")),
             nombreMerm: Math.max(0, +mermA.value || 0), pctActeAutre: Math.max(0, Math.min(100, +document.getElementById("cvActeRegionA").value || 0)),
             tempsInstallation: minutesDepuisPatientsHeure(installA.value),
-            nombreSecretaire: effectif("cvSecretaireA"), nombreCadreSante: effectif("cvCadreSanteA"),
-            nombreAideManip: effectif("cvAideManipA"), nombreInfirmiere: effectif("cvInfirmiereA"), nombreManipAlternance: effectif("cvManipAlternanceA"),
+            nombreSecretaire: cvPosteAnnexeIntegre("Secretaire") ? effectif("cvSecretaireA") : 0,
+            nombreCadreSante: cvPosteAnnexeIntegre("CadreSante") ? effectif("cvCadreSanteA") : 0,
+            nombreAideManip: cvPosteAnnexeIntegre("AideManip") ? effectif("cvAideManipA") : 0,
+            nombreInfirmiere: cvPosteAnnexeIntegre("Infirmiere") ? effectif("cvInfirmiereA") : 0,
+            nombreManipAlternance: cvPosteAnnexeIntegre("ManipAlternance") ? effectif("cvManipAlternanceA") : 0,
             salle: valeurMilliers(document.getElementById("cvSalleA")), assurance: valeurMilliers(document.getElementById("cvAssuranceA")),
             entretien: valeurMilliers(document.getElementById("cvEntretienA")), injecteur: valeurMilliers(document.getElementById("cvInjecteurA")),
             fractionRis: effectif("cvRisA"), contrasteCout: effectif("cvContrasteCout"), contrastePct: pourcent("cvContrastePctA")
@@ -3449,8 +3487,11 @@
             slot: 1, machine: machineParKey(selectB.value), loyer: valeurMilliers(document.getElementById("cvLoyerB")),
             nombreMerm: Math.max(0, +mermB.value || 0), pctActeAutre: Math.max(0, Math.min(100, +document.getElementById("cvMultiRegionB").value || 0)),
             tempsInstallation: minutesDepuisPatientsHeure(installB.value), socleHeuresJours: socleHeuresJoursScanner,
-            nombreSecretaire: effectif("cvSecretaireB"), nombreCadreSante: effectif("cvCadreSanteB"),
-            nombreAideManip: effectif("cvAideManipB"), nombreInfirmiere: effectif("cvInfirmiereB"), nombreManipAlternance: effectif("cvManipAlternanceB"),
+            nombreSecretaire: cvPosteAnnexeIntegre("Secretaire") ? effectif("cvSecretaireB") : 0,
+            nombreCadreSante: cvPosteAnnexeIntegre("CadreSante") ? effectif("cvCadreSanteB") : 0,
+            nombreAideManip: cvPosteAnnexeIntegre("AideManip") ? effectif("cvAideManipB") : 0,
+            nombreInfirmiere: cvPosteAnnexeIntegre("Infirmiere") ? effectif("cvInfirmiereB") : 0,
+            nombreManipAlternance: cvPosteAnnexeIntegre("ManipAlternance") ? effectif("cvManipAlternanceB") : 0,
             salle: valeurMilliers(document.getElementById("cvSalleB")), assurance: valeurMilliers(document.getElementById("cvAssuranceB")),
             entretien: valeurMilliers(document.getElementById("cvEntretienB")), injecteur: valeurMilliers(document.getElementById("cvInjecteurB")),
             fractionRis: effectif("cvRisB"), contrasteCout: effectif("cvContrasteCout"), contrastePct: pourcent("cvContrastePctB")
@@ -4350,6 +4391,9 @@ var svg = document.getElementById("cvChart");
         "cvSalleB", "cvAssuranceB", "cvEntretienB", "cvInjecteurB", "cvRisB", "cvContrastePctB"
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
+      });
+      CV_POSTES_ANNEXES_ROLES.forEach(function (role) {
+        document.getElementById("cvIntegre" + role).addEventListener("change", recalculer);
       });
       // RSE — coupure du scanner la nuit (demande de Cédric le 06/09/2026) : affiche/masque
       // les 2 délais de remise en route, recalcule (impacte le socle électrique du scanner).
@@ -5289,6 +5333,11 @@ var svg = document.getElementById("cvChart");
       // visuels — la position de l'encoche de coupure — qui n'ont pas de sens seuls dans
       // le tableau d'écarts du PDF).
       var CV_MEMOIRE_FIELDS = [
+        { id: "cvIntegreSecretaire", evt: "change", label: "Secrétaire médicale intégrée au simu ?", type: "select" },
+        { id: "cvIntegreCadreSante", evt: "change", label: "Cadre de santé intégré au simu ?", type: "select" },
+        { id: "cvIntegreAideManip", evt: "change", label: "Aide-manip intégré au simu ?", type: "select" },
+        { id: "cvIntegreInfirmiere", evt: "change", label: "Infirmière intégrée au simu ?", type: "select" },
+        { id: "cvIntegreManipAlternance", evt: "change", label: "Manip en alternance intégré au simu ?", type: "select" },
         { id: "cvDate", evt: "change", label: "Date de forfait technique", type: "select" },
         { id: "cvZone", evt: "change", label: "Zone géographique", type: "select" },
         { id: "cvKwh", evt: "input", label: "Coût du kWh", type: "kwh" },
