@@ -355,6 +355,9 @@
     .bascule-hyp-section > summary ~ .field:first-of-type,
     .bascule-hyp-section > summary ~ .pm-autre-rh:first-of-type,
     .bascule-hyp-section > summary ~ label:first-of-type { margin-top: .8rem; }
+    /* Sous-titre visuel à l'intérieur d'une section ⚙ (13/09/2026) — pas un repli, juste
+       un regroupement visuel simple. Motif porté de simulateur-bascule-oscan.html. */
+    .pm-hyp-subtitle { font-weight: 700; font-size: .82rem; color: var(--ink-soft); margin: 1rem 0 .5rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -488,24 +491,14 @@
           </div>
           <p class="simulator__hint" id="pmMembreHintA"></p>
           <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
+            <summary>Autre charge</summary>
             <div class="field">
-              <label for="pmContrasteCoutA">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmContrasteCoutA" value="0" min="0" step="0.5" />
-                <span>€</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="pmContrastePctA">Part des examens injectés</label>
+              <label for="pmContrastePctA">Part des examens injectés (produit de contraste)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="pmContrastePctA" value="0" min="0" max="100" step="5" />
                 <span>%</span>
               </div>
             </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
             <div class="field">
               <label for="pmSalleA">Loyer de la salle</label>
               <div class="simulator__field-suffix">
@@ -615,24 +608,14 @@
           </div>
           <p class="simulator__hint" id="pmMembreHintB"></p>
           <details class="pm-autre-rh">
-            <summary>Produit de contraste</summary>
+            <summary>Autre charge</summary>
             <div class="field">
-              <label for="pmContrasteCoutB">Coût du produit de contraste, par injection</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmContrasteCoutB" value="0" min="0" step="0.5" />
-                <span>€</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="pmContrastePctB">Part des examens injectés</label>
+              <label for="pmContrastePctB">Part des examens injectés (produit de contraste)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="pmContrastePctB" value="0" min="0" max="100" step="5" />
                 <span>%</span>
               </div>
             </div>
-          </details>
-          <details class="pm-autre-rh">
-            <summary>Autre charge</summary>
             <div class="field">
               <label for="pmSalleB">Loyer de la salle</label>
               <div class="simulator__field-suffix">
@@ -1071,6 +1054,21 @@
           <details class="bascule-hyp-section" name="pmParamAccordion">
             <summary>Charges partagées</summary>
             <div class="field">
+              <label for="pmKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+                <span>€ TTC</span>
+              </div>
+            </div>
+            <div class="pm-hyp-subtitle">Autres charges partagées</div>
+            <div class="field">
+              <label for="pmContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmContrasteCout" value="0" min="0" step="0.5" />
+                <span>€</span>
+              </div>
+            </div>
+            <div class="field">
               <label for="pmCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
               <div class="simulator__field-suffix">
                 <input type="text" inputmode="numeric" id="pmCoutRis" value="0" />
@@ -1080,13 +1078,6 @@
                 <button type="button" class="pm-info-btn" id="pmInfoRisBtn" aria-expanded="false" aria-controls="pmInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
                 <div class="pm-info-pop" id="pmInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les machines comparées se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
               </span>
-            </div>
-            <div class="field">
-              <label for="pmKwh">Coût du kWh</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
-                <span>€ TTC</span>
-              </div>
             </div>
           </details>
 
@@ -1706,7 +1697,7 @@
             nombreAideManip: effectif("pmAideManipA"), nombreInfirmiere: effectif("pmInfirmiereA"), nombreManipAlternance: effectif("pmManipAlternanceA"),
             salle: valeurMilliers(document.getElementById("pmSalleA")), assurance: valeurMilliers(document.getElementById("pmAssuranceA")),
             entretien: valeurMilliers(document.getElementById("pmEntretienA")), injecteur: valeurMilliers(document.getElementById("pmInjecteurA")),
-            fractionRis: effectif("pmRisA"), contrasteCout: effectif("pmContrasteCoutA"), contrastePct: pourcent("pmContrastePctA")
+            fractionRis: effectif("pmRisA"), contrasteCout: effectif("pmContrasteCout"), contrastePct: pourcent("pmContrastePctA")
           }
         ];
         if (nbMachines() === 2) {
@@ -1717,7 +1708,7 @@
             nombreAideManip: effectif("pmAideManipB"), nombreInfirmiere: effectif("pmInfirmiereB"), nombreManipAlternance: effectif("pmManipAlternanceB"),
             salle: valeurMilliers(document.getElementById("pmSalleB")), assurance: valeurMilliers(document.getElementById("pmAssuranceB")),
             entretien: valeurMilliers(document.getElementById("pmEntretienB")), injecteur: valeurMilliers(document.getElementById("pmInjecteurB")),
-            fractionRis: effectif("pmRisB"), contrasteCout: effectif("pmContrasteCoutB"), contrastePct: pourcent("pmContrastePctB")
+            fractionRis: effectif("pmRisB"), contrasteCout: effectif("pmContrasteCout"), contrastePct: pourcent("pmContrastePctB")
           });
         }
 
@@ -2170,8 +2161,8 @@
         "pmNetSecretaire", "pmNetCadreSante", "pmNetAideManip", "pmNetInfirmiere", "pmNetManipAlternance",
         "pmSecretaireA", "pmCadreSanteA", "pmAideManipA", "pmInfirmiereA", "pmManipAlternanceA",
         "pmSecretaireB", "pmCadreSanteB", "pmAideManipB", "pmInfirmiereB", "pmManipAlternanceB",
-        "pmCoutRis", "pmSalleA", "pmAssuranceA", "pmEntretienA", "pmInjecteurA", "pmRisA", "pmContrasteCoutA", "pmContrastePctA",
-        "pmSalleB", "pmAssuranceB", "pmEntretienB", "pmInjecteurB", "pmRisB", "pmContrasteCoutB", "pmContrastePctB"
+        "pmCoutRis", "pmContrasteCout", "pmSalleA", "pmAssuranceA", "pmEntretienA", "pmInjecteurA", "pmRisA", "pmContrastePctA",
+        "pmSalleB", "pmAssuranceB", "pmEntretienB", "pmInjecteurB", "pmRisB", "pmContrastePctB"
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
@@ -2262,7 +2253,6 @@
         { id: "pmEntretienA", evt: "input", label: "Entretien — Machine A" },
         { id: "pmInjecteurA", evt: "input", label: "Injecteur — Machine A" },
         { id: "pmRisA", evt: "input", label: "Part RIS — Machine A" },
-        { id: "pmContrasteCoutA", evt: "input", label: "Coût produit de contraste — Machine A" },
         { id: "pmContrastePctA", evt: "input", label: "Part examens injectés — Machine A" },
         { id: "pmMermA", evt: "input", label: "MERM — Machine A" },
         { id: "pmSecretaireA", evt: "input", label: "Secrétaire médicale — Machine A" },
@@ -2280,7 +2270,6 @@
         { id: "pmEntretienB", evt: "input", label: "Entretien — Machine B" },
         { id: "pmInjecteurB", evt: "input", label: "Injecteur — Machine B" },
         { id: "pmRisB", evt: "input", label: "Part RIS — Machine B" },
-        { id: "pmContrasteCoutB", evt: "input", label: "Coût produit de contraste — Machine B" },
         { id: "pmContrastePctB", evt: "input", label: "Part examens injectés — Machine B" },
         { id: "pmMermB", evt: "input", label: "MERM — Machine B" },
         { id: "pmSecretaireB", evt: "input", label: "Secrétaire médicale — Machine B" },
@@ -2297,6 +2286,7 @@
         { id: "pmAmorti", evt: "change", label: "Machine amortie ?", type: "select" },
         { id: "pmKwh", evt: "input", label: "Coût du kWh" },
         { id: "pmCoutRis", evt: "input", label: "Coût RIS + graveur + imprimante" },
+        { id: "pmContrasteCout", evt: "input", label: "Coût produit de contraste (partagé)" },
         { id: "pmHeuresSemaine", evt: "input", label: "Amplitude, lundi-vendredi" },
         { id: "pmCoupureSemaine", evt: "change", label: "Coupure (lundi-vendredi) ?", type: "checkbox" },
         { id: "pmCoupureDureeSemaine", evt: "input", label: "Durée coupure (lundi-vendredi)" },
