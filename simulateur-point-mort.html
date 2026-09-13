@@ -449,7 +449,7 @@
           </div>
           <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="pmSecretaireA">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
+            <label for="pmSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmSecretaireA" value="0" min="0" step="0.1" />
               <span>ETP</span>
@@ -569,7 +569,7 @@
           </div>
           <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que si leur salaire a été renseigné dans « Autre RH » (Réglages avancés ⚙). Laisser à 0 si non concerné.</p>
           <div class="field" hidden>
-            <label for="pmSecretaireB">Secrétaire médicale (charge fixe, poste souvent partagé — mettre une fraction, ex. 0,1)</label>
+            <label for="pmSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmSecretaireB" value="0" min="0" step="0.1" />
               <span>ETP</span>
@@ -1420,9 +1420,7 @@
         // rien au total, sans garde-fou explicite nécessaire (0 × coût = 0), conforme à
         // la demande de Cédric ("si le poste est à 0 heure et/ou 0 €, il n'entre pas
         // dans le coût des charges").
-        var rh = m.nombreMerm * params.coutMermMensuel
-          + m.nombreSecretaire * params.coutSecretaireMensuel
-          + m.nombreCadreSante * params.coutCadreSanteMensuel;
+        var rh = m.nombreCadreSante * params.coutCadreSanteMensuel;
         // Charges fixes ajoutées le 10/09/2026 : salle/assurance/entretien/injecteur
         // propres à chaque machine (comme le loyer), RIS+graveur+imprimante partagé
         // (coût total pour le centre × la fraction attribuée à CETTE machine).
@@ -1433,7 +1431,9 @@
         // horaire de la machine (= tempsInstallation en minutes converti en heures) ×
         // effectif, retiré de la marge par patient plutôt qu'ajouté aux charges fixes
         // (voir skill "Comptabilité analytique par examen — coût marginal").
-        var rhVariable = (m.nombreAideManip * params.coutAideManipHoraire
+        var rhVariable = (m.nombreMerm * params.coutMermHoraire
+          + m.nombreSecretaire * params.coutSecretaireHoraire
+          + m.nombreAideManip * params.coutAideManipHoraire
           + m.nombreInfirmiere * params.coutInfirmiereHoraire
           + m.nombreManipAlternance * params.coutManipAlternanceHoraire) * (m.tempsInstallation / 60);
         // Produit de contraste — coût marginal pondéré par la part d'examens injectés
@@ -1698,10 +1698,14 @@
         document.getElementById("pmCoutMermCalcule").innerHTML =
           "Coût réel employeur estimé : <strong>" + euros.format(params.coutMermMensuel) + " / mois</strong> par MERM " +
           "(charges salariales et patronales incluses, hypothèse non-cadre).";
-        // Postes ajoutés le 10/09/2026 — secrétaire/cadre de santé = charges FIXES
-        // mensuelles (même traitement que le MERM ci-dessus) ; aide-manip/infirmière/
-        // manip en alternance = coût MARGINAL par examen (voir calculerMachine()).
+        // MERM et secrétaire passés en coût MARGINAL par examen le 13/09/2026 (demande
+        // de Cédric : "le coût des MERM comme les autres coûts RH — sauf pour le cadre
+        // de santé — doit être calculé à l'examen", un MERM coûte moins s'il y a 5
+        // examens/heure que s'il n'y en a que 2). Seul le cadre de santé (encadrement,
+        // pas un poste qui accompagne l'examen) reste une charge FIXE mensuelle.
+        params.coutMermHoraire = params.coutMermMensuel / HEURES_LEGALES_MENSUELLES;
         params.coutSecretaireMensuel = coutMermDepuisNet(pmSalaireMensuel("Secretaire"));
+        params.coutSecretaireHoraire = params.coutSecretaireMensuel / HEURES_LEGALES_MENSUELLES;
         params.coutCadreSanteMensuel = coutCadreDepuisNet(pmSalaireMensuel("CadreSante"));
         params.coutAideManipHoraire = coutMermDepuisNet(pmSalaireMensuel("AideManip")) / HEURES_LEGALES_MENSUELLES;
         params.coutInfirmiereHoraire = coutMermDepuisNet(pmSalaireMensuel("Infirmiere")) / HEURES_LEGALES_MENSUELLES;
@@ -1818,11 +1822,10 @@
         }));
         ligne("Recette totale / patient", resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
 
-        // Détail RH fixe (MERM + secrétaire + cadre de santé) — un poste n'apparaît
-        // dans la ventilation que si au moins une machine l'utilise (effectif > 0).
+        // Détail RH fixe (cadre de santé uniquement depuis le 13/09/2026 — MERM et
+        // secrétaire sont désormais un coût marginal, voir rhVariableDetail plus bas) —
+        // un poste n'apparaît dans la ventilation que si au moins une machine l'utilise.
         var rhFixeDetail = [
-          { key: "nombreMerm", coutKey: "coutMermMensuel", label: "MERM" },
-          { key: "nombreSecretaire", coutKey: "coutSecretaireMensuel", label: "Secrétaire médicale" },
           { key: "nombreCadreSante", coutKey: "coutCadreSanteMensuel", label: "Cadre de santé" }
         ].filter(function (p) { return configs.some(function (c) { return c[p.key] > 0; }); })
           .map(function (p) {
@@ -1858,6 +1861,8 @@
         // examen, retiré de la marge par patient (voir calculerMachine()) ; n'apparaît
         // du tout que si au moins un de ces 3 postes est utilisé quelque part.
         var rhVariableDetail = [
+          { key: "nombreMerm", coutKey: "coutMermHoraire", label: "MERM" },
+          { key: "nombreSecretaire", coutKey: "coutSecretaireHoraire", label: "Secrétaire médicale" },
           { key: "nombreAideManip", coutKey: "coutAideManipHoraire", label: "Aide-manip" },
           { key: "nombreInfirmiere", coutKey: "coutInfirmiereHoraire", label: "Infirmière" },
           { key: "nombreManipAlternance", coutKey: "coutManipAlternanceHoraire", label: "Manip en alternance" }
