@@ -1439,15 +1439,19 @@
 
       // Valeurs techniques brutes utilisées dans le calcul, affichées directement sur la
       // page (pas seulement sur sources-energie.html) — demande explicite de transparence.
+      // Barres ajoutées le 14/09/2026 (demande de Cédric : "la présentation en double
+      // bâton ... n'est pas dupliquée sur l'ensemble des deux tableaux") — même paire de
+      // barres que #eneTable, appliquée aussi ici et à remplirTableauCo2() juste en
+      // dessous. "Aimant" reste du texte (catégoriel, pas une grandeur).
       function remplirTableauTech(machines) {
         var tbody = document.getElementById("eneTableTechBody");
         tbody.innerHTML = "";
         ligneTable(tbody, "Aimant", machines.map(function (m) { return m.aimant === "permanent" ? "Permanent" : "Supraconducteur"; }));
-        ligneTable(tbody, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint + " kW"; }));
-        ligneTable(tbody, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret + " kW"; }));
-        ligneTable(tbody, "Puissance en acquisition", machines.map(function (m) { return m.mesure + " kW"; }));
-        ligneTable(tbody, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT > 0 ? "+" + Math.round(m.coeffRefroidissementLT * 100) + " %" : "—"; }));
-        ligneTable(tbody, "Climatisation salle d'examen", machines.map(function (m) { return m.climSalleKw + " kW (continu)"; }));
+        ligneTableBarre(tbody, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint; }), function (v) { return v + " kW"; });
+        ligneTableBarre(tbody, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret; }), function (v) { return v + " kW"; });
+        ligneTableBarre(tbody, "Puissance en acquisition", machines.map(function (m) { return m.mesure; }), function (v) { return v + " kW"; });
+        ligneTableBarre(tbody, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT * 100; }), function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; });
+        ligneTableBarre(tbody, "Climatisation salle d'examen (en continu)", machines.map(function (m) { return m.climSalleKw; }), function (v) { return v + " kW"; });
       }
 
       // ---- Paramètres saisis par le visiteur — demandé par Cédric le 10/08/2026, en
@@ -1511,10 +1515,10 @@
       function remplirTableauCo2(resultats) {
         var tbody = document.getElementById("eneTableCo2Body");
         tbody.innerHTML = "";
-        ligneTable(tbody, "Consommation annuelle", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
-        ligneTable(tbody, "Émissions de CO₂ associées", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg CO₂/an"; }), { strong: true });
-        ligneTable(tbody, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return kwhFmt.format(Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN)) + " arbres"; }));
-        ligneTable(tbody, "Sur 7 ans", resultats.map(function (r) { return kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7) + " kg CO₂"; }));
+        ligneTableBarre(tbody, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        ligneTableBarre(tbody, "Émissions de CO₂ associées (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
+        ligneTableBarre(tbody, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
+        ligneTableBarre(tbody, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
       }
 
       function remplirEtudesListe() {
@@ -1589,8 +1593,9 @@
       // dessous") — chaque ligne a sa PROPRE échelle (0 → la plus grande des 2 valeurs),
       // les unités différant d'une ligne à l'autre (kWh, €, heures) contrairement au
       // graphe de composition où tout est en €.
-      function ligneTableBarre(tbody, label, valeurs, formateur) {
+      function ligneTableBarre(tbody, label, valeurs, formateur, opts) {
         var tr = document.createElement("tr");
+        if (opts && opts.strong) tr.style.fontWeight = "700";
         var tdLabel = document.createElement("td");
         tdLabel.textContent = label;
         tr.appendChild(tdLabel);
