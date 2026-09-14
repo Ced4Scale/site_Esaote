@@ -1217,6 +1217,12 @@
 
         var acc = { heuresEteint: 0, heuresPret: 0, heuresMesure: 0 };
         var tAcqH = params.dureeAcquisitionMinutes / 60;
+        // Temps de prise en charge total (installation + acquisition + sortie) — demande
+        // de Cédric le 14/09/2026 : "Patients/h" (son inverse) doit faire baisser le coût
+        // pour la même activité, une machine plus rapide à prendre en charge un patient
+        // ayant besoin de MOINS d'heures d'ouverture pour voir le même nombre de patients
+        // dans l'année — pas plus d'heures "prêt" à vide que nécessaire.
+        var tInstallH = params.dureeTotalePriseEnChargeMinutes / 60;
 
         typesJour.forEach(function (t) {
           if (t.heuresBrut <= 0) {
@@ -1228,10 +1234,20 @@
           var patientsParJourCeType = patientsCeTypeParSemaine / t.nb;
 
           // "Mesure" bornée par le temps NET (un patient ne peut pas être vu pendant la
-          // coupure) ; le reste de l'amplitude BRUTE — y compris la coupure — reste "prêt".
+          // coupure).
           var heuresMesureJour = Math.min(t.heuresNet, patientsParJourCeType * tAcqH);
-          var heuresPretJour = t.heuresBrut - heuresMesureJour;
-          var heuresEteintJour = 24 - t.heuresBrut;
+          // Heures d'ouverture RÉELLEMENT nécessaires pour prendre en charge ces patients
+          // au débit courant (jamais moins que le temps de mesure lui-même — la prise en
+          // charge inclut l'acquisition — jamais plus que l'amplitude BRUTE saisie, qui
+          // reste un plafond : on ne peut pas ouvrir plus longtemps que ce qui a été
+          // saisi, même si le débit l'exigerait — voir l'avertissement "activité
+          // irréaliste" dans ce cas). Le reste de l'amplitude brute (au-delà de ce
+          // nécessaire) n'est plus compté "prêt" : la coupure elle-même reste "prêt"
+          // (heuresBrut inchangé comme plafond), seul le surplus AU-DELÀ du besoin réel
+          // disparaît.
+          var heuresNecessairesJour = Math.min(t.heuresBrut, Math.max(heuresMesureJour, patientsParJourCeType * tInstallH));
+          var heuresPretJour = heuresNecessairesJour - heuresMesureJour;
+          var heuresEteintJour = 24 - heuresNecessairesJour;
 
           acc.heuresEteint += heuresEteintJour * t.nb * 52;
           acc.heuresPret += heuresPretJour * t.nb * 52;
@@ -1406,7 +1422,8 @@
             heuresSamediJourBrut: heuresSamediJourBrut,
             heuresDimancheJourBrut: heuresDimancheJourBrut,
             patientsAn: patientsAn,
-            dureeAcquisitionMinutes: dureesAcq[i]
+            dureeAcquisitionMinutes: dureesAcq[i],
+            dureeTotalePriseEnChargeMinutes: dureesInstall[i]
           });
           var decomp = decompositionAnnuelle(m, profil);
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
@@ -2629,6 +2646,11 @@
           var val = parseFloat(this.value);
           if (isNaN(val)) return; // laisse taper "4." ou effacer sans recalculer sur une valeur incomplète
           slider.value = Math.min(Math.max(val, +slider.min), +slider.max);
+          // Répercute le clamp sur la case elle-même (demande de Cédric le 14/09/2026,
+          // "Patients/h" a un plafond dynamique = 60/durée d'acquisition) — sinon la case
+          // affiche encore la valeur tapée (ex. "8") alors que la vraie valeur retenue est
+          // plus basse (ex. "4"), trompeur. Ne réécrit que si un clamp a vraiment eu lieu.
+          if (+slider.value !== val) this.value = slider.value;
           slider.dispatchEvent(new Event("input", { bubbles: true }));
         });
       });
@@ -2688,11 +2710,24 @@
         var champPrix = document.getElementById("enePrixSliderVal");
         if (document.activeElement !== champPrix) champPrix.value = Math.round(prixActuel * 100) / 100;
 
-        [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA"],
-         ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB"]].forEach(function (t) {
-          var installMin = Math.max(0, parseFloat(document.getElementById(t[2]).value) || 0);
+        // Le temps de prise en charge inclut l'acquisition — il ne peut jamais être plus
+        // court qu'elle (demande de Cédric le 14/09/2026 : "si la durée d'acquisition est
+        // de 15 min, pas possible de faire plus de 4 examens par heure"). Plafond
+        // dynamique du fader "Patients/h" = 60 / durée d'acquisition courante, recalculé
+        // à chaque rendu ; le champ "Temps de prise en charge" est relevé automatiquement
+        // s'il tombe en dessous (jamais pendant que l'utilisateur le modifie lui-même).
+        [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA", "eneAcqA"],
+         ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB", "eneAcqB"]].forEach(function (t) {
+          var acqMin = Math.max(1, parseFloat(document.getElementById(t[3]).value) || 1);
+          var installEl = document.getElementById(t[2]);
+          var installMin = Math.max(0, parseFloat(installEl.value) || 0);
+          if (installMin < acqMin && document.activeElement !== installEl) {
+            installMin = acqMin;
+            installEl.value = installMin;
+          }
           var patientsHeure = installMin > 0 ? 60 / installMin : 0;
           var slider = document.getElementById(t[0]);
+          slider.max = Math.round((60 / acqMin) * 10) / 10;
           slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
           var champ = document.getElementById(t[1]);
           if (document.activeElement !== champ) champ.value = Math.round(patientsHeure * 10) / 10;
