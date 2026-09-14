@@ -677,7 +677,7 @@
               </div>
             </div>
             <div class="field">
-              <label for="eneInstallA">Temps de prise en charge du patient</label>
+              <label for="eneInstallA">Temps changement de patient (ready to scan)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="eneInstallA" min="0" step="1" />
                 <span>minutes</span>
@@ -702,7 +702,7 @@
               </div>
             </div>
             <div class="field">
-              <label for="eneInstallB">Temps de prise en charge du patient</label>
+              <label for="eneInstallB">Temps changement de patient (ready to scan)</label>
               <div class="simulator__field-suffix">
                 <input type="number" id="eneInstallB" min="0" step="1" />
                 <span>minutes</span>
@@ -1163,10 +1163,11 @@
       function reinitialiserDureeAcq(select, input) {
         input.value = machineParKey(select.value).dureeAcquisitionMinutes;
       }
-      // Même principe pour le temps d'installation du patient (demandé par Cédric le
-      // 11/08/2026) — pré-rempli depuis assets/machines-energie-data.js, éditable ensuite.
+      // Même principe pour le temps de changement de patient (demandé par Cédric le
+      // 11/08/2026, renommé/rechiffré le 14/09/2026) — pré-rempli depuis
+      // assets/machines-energie-data.js, éditable ensuite.
       function reinitialiserInstall(select, input) {
-        input.value = machineParKey(select.value).dureeTotalePriseEnChargeMinutes;
+        input.value = machineParKey(select.value).dureeChangementMinutes;
       }
       var installA = document.getElementById("eneInstallA"), installB = document.getElementById("eneInstallB");
       reinitialiserDureeAcq(selectA, acqA);
@@ -1217,12 +1218,13 @@
 
         var acc = { heuresEteint: 0, heuresPret: 0, heuresMesure: 0 };
         var tAcqH = params.dureeAcquisitionMinutes / 60;
-        // Temps de prise en charge total (installation + acquisition + sortie) — demande
-        // de Cédric le 14/09/2026 : "Patients/h" (son inverse) doit faire baisser le coût
-        // pour la même activité, une machine plus rapide à prendre en charge un patient
-        // ayant besoin de MOINS d'heures d'ouverture pour voir le même nombre de patients
-        // dans l'année — pas plus d'heures "prêt" à vide que nécessaire.
-        var tInstallH = params.dureeTotalePriseEnChargeMinutes / 60;
+        // Temps total par patient = changement (installation+sortie, "ready to scan",
+        // renommé le 14/09/2026) + acquisition — demande de Cédric le 14/09/2026 :
+        // "Patients/h" (son inverse) doit faire baisser le coût pour la même activité, une
+        // machine plus rapide à changer de patient ayant besoin de MOINS d'heures
+        // d'ouverture pour voir le même nombre de patients dans l'année — pas plus d'heures
+        // "prêt" à vide que nécessaire.
+        var tInstallH = (params.dureeChangementMinutes + params.dureeAcquisitionMinutes) / 60;
 
         typesJour.forEach(function (t) {
           if (t.heuresBrut <= 0) {
@@ -1378,20 +1380,24 @@
           Math.max(1, parseFloat(acqA.value) || machineA.dureeAcquisitionMinutes),
           Math.max(1, parseFloat(acqB.value) || machineB.dureeAcquisitionMinutes)
         ];
+        // dureesInstall = temps de CHANGEMENT de patient seul (installation+sortie, "ready
+        // to scan"), renommé le 14/09/2026 — EXCLUT l'acquisition, contrairement à l'ancien
+        // "temps de prise en charge total". Le temps total par patient (utilisé pour la
+        // capacité et le calcul électrique "prêt") est toujours changement + acquisition,
+        // recalculé ci-dessous (dureesTotal), jamais stocké tel quel.
         var dureesInstall = [
           Math.max(0, parseFloat(installA.value) || 0),
           Math.max(0, parseFloat(installB.value) || 0)
         ];
+        var dureesTotal = [dureesInstall[0] + dureesAcq[0], dureesInstall[1] + dureesAcq[1]];
 
         // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
-        // machine = amplitude d'ouverture en semaine (en minutes) / temps de prise en charge
-        // total d'un patient (installation + acquisition + sortie, déjà tout compris — ne
-        // pas l'additionner à la durée d'acquisition saisie plus haut, il l'inclut déjà).
-        // Non bloquant — juste un avertissement.
+        // machine = amplitude d'ouverture en semaine (en minutes) / temps total d'un patient
+        // (changement + acquisition). Non bloquant — juste un avertissement.
         (function verifierCapacite() {
           var capaciteWarningEl = document.getElementById("eneCapaciteWarning");
           var depassements = [];
-          [["A", machineA, dureesInstall[0]], ["B", machineB, dureesInstall[1]]].forEach(function (t) {
+          [["A", machineA, dureesTotal[0]], ["B", machineB, dureesTotal[1]]].forEach(function (t) {
             var capaciteJour = (heuresSemaineJour * 60) / t[2];
             if (equivalentJour > capaciteJour) depassements.push({ label: t[0], machine: t[1], capaciteJour: capaciteJour, dureeInstall: t[2] });
           });
@@ -1423,7 +1429,7 @@
             heuresDimancheJourBrut: heuresDimancheJourBrut,
             patientsAn: patientsAn,
             dureeAcquisitionMinutes: dureesAcq[i],
-            dureeTotalePriseEnChargeMinutes: dureesInstall[i]
+            dureeChangementMinutes: dureesInstall[i]
           });
           var decomp = decompositionAnnuelle(m, profil);
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
@@ -1572,7 +1578,7 @@
         ];
         var paramsMachines = [
           { label: "Durée d'acquisition", valeurs: [p.dureesAcq[0] + " min", p.dureesAcq[1] + " min"] },
-          { label: "Temps de prise en charge du patient", valeurs: [p.dureesInstall[0] + " min", p.dureesInstall[1] + " min"] }
+          { label: "Temps changement de patient (ready to scan)", valeurs: [p.dureesInstall[0] + " min", p.dureesInstall[1] + " min"] }
         ];
         derniersParamsSaisis = { paramsCommuns: paramsCommuns, paramsMachines: paramsMachines };
 
@@ -2613,15 +2619,19 @@
         prixInput.value = Math.round(parseFloat(this.value) * 100) / 100;
         prixInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
-      // Patients par heure = 60 / temps de prise en charge (minutes) — même conversion que
-      // le motif "patients par heure" déjà en place sur bascule-oscan/point-mort/ct-vs-irm
-      // (skill ced4scale-simulateur-web). 0 patient/h saisi via le curseur (min="0.5" ici,
-      // jamais 0) reste toujours une capacité non nulle, pas de division par zéro possible.
-      [["enePatientsHeureASlider", "eneInstallA"], ["enePatientsHeureBSlider", "eneInstallB"]].forEach(function (pair) {
+      // Patients par heure = 60 / (temps de changement + durée d'acquisition) — renommé/
+      // rechiffré le 14/09/2026 (demande de Cédric) : "Temps changement de patient" exclut
+      // désormais l'acquisition (contrairement à l'ancien "temps de prise en charge total"),
+      // donc Patients/h doit retirer la durée d'acquisition courante pour en déduire le
+      // temps de changement seul, pas l'inverse direct comme avant. 0 patient/h saisi via
+      // le curseur (min="0.5" ici, jamais 0) reste toujours une capacité non nulle, pas de
+      // division par zéro possible.
+      [["enePatientsHeureASlider", "eneInstallA", "eneAcqA"], ["enePatientsHeureBSlider", "eneInstallB", "eneAcqB"]].forEach(function (pair) {
         document.getElementById(pair[0]).addEventListener("input", function () {
           var patientsHeure = Math.max(0.1, parseFloat(this.value) || 0.1);
+          var acqMin = Math.max(1, parseFloat(document.getElementById(pair[2]).value) || 1);
           var installInput = document.getElementById(pair[1]);
-          installInput.value = Math.round((60 / patientsHeure) * 10) / 10;
+          installInput.value = Math.round(Math.max(0, (60 / patientsHeure) - acqMin) * 10) / 10;
           installInput.dispatchEvent(new Event("input", { bubbles: true }));
         });
       });
@@ -2710,22 +2720,17 @@
         var champPrix = document.getElementById("enePrixSliderVal");
         if (document.activeElement !== champPrix) champPrix.value = Math.round(prixActuel * 100) / 100;
 
-        // Le temps de prise en charge inclut l'acquisition — il ne peut jamais être plus
-        // court qu'elle (demande de Cédric le 14/09/2026 : "si la durée d'acquisition est
-        // de 15 min, pas possible de faire plus de 4 examens par heure"). Plafond
-        // dynamique du fader "Patients/h" = 60 / durée d'acquisition courante, recalculé
-        // à chaque rendu ; le champ "Temps de prise en charge" est relevé automatiquement
-        // s'il tombe en dessous (jamais pendant que l'utilisateur le modifie lui-même).
+        // "Temps changement de patient" (eneInstallA/B) exclut désormais l'acquisition
+        // (renommé/rechiffré le 14/09/2026) — Patients/h = 60 / (changement + acquisition),
+        // plus le simple inverse du changement seul. Plafond théorique du fader (changement
+        // → 0) = 60 / durée d'acquisition courante (demande de Cédric : "si l'acquisition
+        // dure 15 min, pas possible de faire plus de 4 examens par heure").
         [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA", "eneAcqA"],
          ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB", "eneAcqB"]].forEach(function (t) {
           var acqMin = Math.max(1, parseFloat(document.getElementById(t[3]).value) || 1);
           var installEl = document.getElementById(t[2]);
           var installMin = Math.max(0, parseFloat(installEl.value) || 0);
-          if (installMin < acqMin && document.activeElement !== installEl) {
-            installMin = acqMin;
-            installEl.value = installMin;
-          }
-          var patientsHeure = installMin > 0 ? 60 / installMin : 0;
+          var patientsHeure = 60 / (installMin + acqMin);
           var slider = document.getElementById(t[0]);
           slider.max = Math.round((60 / acqMin) * 10) / 10;
           slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
@@ -2818,11 +2823,11 @@
         { id: "eneChampA", evt: "change", label: "Gamme de champ — Machine A", type: "select" },
         { id: "eneMachineA", evt: "change", label: "Choix IRM — Machine A", type: "select" },
         { id: "eneAcqA", evt: "input", label: "Durée d'acquisition — Machine A" },
-        { id: "eneInstallA", evt: "input", label: "Temps de prise en charge — Machine A" },
+        { id: "eneInstallA", evt: "input", label: "Temps changement de patient — Machine A" },
         { id: "eneChampB", evt: "change", label: "Gamme de champ — Machine B", type: "select" },
         { id: "eneMachineB", evt: "change", label: "Choix IRM — Machine B", type: "select" },
         { id: "eneAcqB", evt: "input", label: "Durée d'acquisition — Machine B" },
-        { id: "eneInstallB", evt: "input", label: "Temps de prise en charge — Machine B" }
+        { id: "eneInstallB", evt: "input", label: "Temps changement de patient — Machine B" }
       ];
 
       function capturerParametres() {

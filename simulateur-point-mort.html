@@ -1290,8 +1290,11 @@
       reinitialiserMerm(selectB, mermB);
 
       // Temps de prise en charge du patient : pré-rempli depuis assets/machines-energie-data.js
-      // (dureeTotalePriseEnChargeMinutes), mais éditable — demandé par Cédric le 11/08/2026, le
-      // chiffre par machine reste une estimation à ajuster selon le retour terrain.
+      // (dureeChangementMinutes + dureeAcquisitionMinutes — le 1er, renommé/rechiffré le
+      // 14/09/2026, exclut désormais l'acquisition, contrairement à l'ancien
+      // "dureeTotalePriseEnChargeMinutes" qui l'incluait), mais éditable — demandé par
+      // Cédric le 11/08/2026, le chiffre par machine reste une estimation à ajuster selon
+      // le retour terrain.
       // Champ saisi en "patients par heure" (harmonisé le 13/09/2026 avec ct-vs-irm.html/
       // bascule-oscan.html, demande de Cédric : mêmes questions, même ordre/unité partout
       // sur les 3 fichiers) — converti en minutes juste pour le calcul interne
@@ -1301,7 +1304,8 @@
       // assets/machines-energie-data.js — point-mort compare des IRM qui n'ont pas toutes
       // le même temps de prise en charge, une valeur générique unique serait moins fidèle.
       function reinitialiserInstall(select, input) {
-        var minutes = machineParKey(select.value).dureeTotalePriseEnChargeMinutes;
+        var m = machineParKey(select.value);
+        var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
         input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
       }
       function minutesDepuisPatientsHeure(patientsHeure) {
