@@ -787,6 +787,25 @@
           <div class="simulator__legend" id="eneLegend"></div>
           <div class="simulator__chart-wrap" id="eneChartWrap">
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
+            <!-- Ampoule repositionnée en JS (positionnerInfoTotal()) juste après le texte
+                 "Total coût énergétique annuel" du graphe SVG (demande de Cédric le
+                 14/09/2026, "sur la même ligne") — display:none tant que non positionnée,
+                 pour ne jamais flasher en (0,0) avant la 1ʳᵉ mesure. Contenu repris de
+                 l'ancienne ampoule du résumé de carte (supprimée le 14/09/2026, commit
+                 4e7fd01), jamais retapé. -->
+            <span class="ene-info-wrap ene-info-wrap--violet" id="eneInfoTotalWrap" style="position:absolute; display:none">
+              <button type="button" class="ene-info-btn" id="eneInfoTotalBtn" aria-expanded="false" aria-controls="eneInfoTotalPop" aria-label="Définition des trois couches et du talon de consommation">💡</button>
+              <div class="ene-info-pop ene-info-pop--table" id="eneInfoTotalPop" hidden>
+                <table class="ene-info-table">
+                  <tbody>
+                    <tr><td>Socle</td><td>Talon de consommation de la machine (l'équivalent du frigo ou de la box qui tournent en permanence à la maison) : ce qu'elle coûte même sans un seul patient, jour et nuit — un choix de technologie, indépendant de l'usage</td></tr>
+                    <tr><td>Entre deux patients</td><td>Coût ajouté simplement parce que le cabinet est ouvert</td></tr>
+                    <tr><td>Examens</td><td>Coût ajouté par l'acquisition elle-même, la seule part réellement liée à l'activité médicale</td></tr>
+                  </tbody>
+                </table>
+                <p style="margin:.5rem 0 0"><strong>Définition (Ced4Scale) — talon de consommation :</strong> le coût énergétique incompressible d'une IRM, calculé comme si elle restait 24h/24 et 365 jours par an dans son état de consommation le plus bas (arrêt), même sans aucun patient. C'est un plancher théorique, pas un scénario réel : au-delà, les coûts réels s'ajoutent au prorata de l'activité (nombre de patients dans la plage d'ouverture) — c'est ce que mesurent les couches "Entre deux patients" et "Examens".</p>
+              </div>
+            </span>
           </div>
           <span class="ene-info-wrap ene-info-wrap--violet" style="margin-top:.4rem">
             <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Composition du socle">💡</button>
@@ -1985,7 +2004,33 @@
           if (c.key === "total") { eneVentilationOuverte = !eneVentilationOuverte; dessinerGraphe(res); }
           else if (c.key === "socle") { eneSocleOuvert = !eneSocleOuvert; dessinerGraphe(res); }
         });
+        positionnerInfoTotal();
       }
+
+      // Positionne l'ampoule "eneInfoTotalWrap" juste après le texte "Total coût
+      // énergétique annuel" (demande de Cédric le 14/09/2026, "sur la même ligne") —
+      // "Total" est toujours la 1ʳᵉ catégorie dessinée, donc le 1er <text> du graphe.
+      // Reste display:none tant que non mesurable (SVG pas encore rendu). Appelée après
+      // chaque redessin (dessinerGraphe) ET au redimensionnement (le SVG grandit/
+      // rétrécit avec la largeur de page, le texte se déplace avec lui).
+      function positionnerInfoTotal() {
+        var wrap = document.getElementById("eneInfoTotalWrap");
+        var container = document.getElementById("eneChartWrap");
+        var titleText = document.querySelector("#eneChart text");
+        if (!wrap || !container || !titleText) return;
+        var rContainer = container.getBoundingClientRect();
+        var rText = titleText.getBoundingClientRect();
+        wrap.style.left = (rText.right - rContainer.left + 8) + "px";
+        wrap.style.top = (rText.top - rContainer.top + rText.height / 2) + "px";
+        wrap.style.transform = "translateY(-50%)";
+        wrap.style.display = "inline-block";
+      }
+      window.addEventListener("resize", positionnerInfoTotal);
+      // "Coûts" (eneCardPrincipal) est un <details> fermé par défaut (règle du site) — le
+      // SVG a une taille nulle tant qu'il n'est pas ouvert (contenu non-summary masqué
+      // par le navigateur), donc la 1ʳᵉ mesure au chargement de la page est fausse.
+      // Repositionner aussi à l'ouverture (évènement natif "toggle" du <details>).
+      document.getElementById("eneCardPrincipal").addEventListener("toggle", positionnerInfoTotal);
 
       // Historique réel du tarif réglementé de vente d'électricité (TRV) en France, option
       // Base, TTC — demande explicite de Cédric le 03/09/2026 ("uniquement l'évolution du
@@ -3026,6 +3071,7 @@
       wireInfoBtn("eneInfoMemoireBtn", "eneInfoMemoirePop");
       wireInfoBtn("eneInfoActiviteBtn", "eneInfoActivitePop");
       wireInfoBtn("eneInfoSocleClicBtn", "eneInfoSocleClicPop");
+      wireInfoBtn("eneInfoTotalBtn", "eneInfoTotalPop");
       wireInfoBtn("eneInfoCo2Btn", "eneInfoCo2Pop");
       wireInfoBtn("eneInfoTarifBtn", "eneInfoTarifPop");
       wireInfoBtn("eneInfoTarifClicBtn", "eneInfoTarifClicPop");
