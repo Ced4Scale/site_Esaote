@@ -46,131 +46,19 @@
        sur un élément aussi togglé par hidden, un style inline gagne toujours sur [hidden]. */
     .cv-inline-check { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; margin-bottom: 0; }
     .cv-inline-check[hidden] { display: none; }
-    /* 2 couleurs pastel distinctes pour les 2 curseurs "patients/jour" et "horaires"
-       (demande de Cédric le 07/09/2026, "mettre les barres rouges en ton pastel et
-       avoir deux couleurs") — jusque-là tous deux en rouge de marque plein
-       (`var(--red)`), comme la ligne "Écart de résultat" ou les CTA du site, ce qui les
-       confondait visuellement avec ces éléments "d'action" alors que ce sont de simples
-       curseurs de réglage. Tons choisis pour ne PAS reprendre une couleur déjà porteuse
-       de sens ailleurs sur cette page (rose/bleu/bleu-ciel/vert déjà pris par les
-       familles de boutons sous le graphe, bleu/orange = SLOT_COLORS des 2 machines). */
+    /* Couleur pastel du curseur "patients/jour" (demande de Cédric le 07/09/2026,
+       "mettre les barres rouges en ton pastel") — jusque-là en rouge de marque plein
+       (`var(--red)`), comme la ligne "Écart de résultat" ou les CTA du site, ce qui le
+       confondait visuellement avec ces éléments "d'action" alors que c'est un simple
+       curseur de réglage. La 2ᵉ couleur (--cv-horaire-couleur, pour le curseur horaire
+       à 2 poignées) a disparu le 14/09/2026 avec la simplification du bloc "Horaires
+       d'ouverture" (champ simple "Amplitude d'ouverture" + case "Coupure ?", même motif
+       que point-mort/bascule-oscan/energie — plus de curseur double/encoche déplaçable
+       à colorer). */
     :root {
       --cv-activite-couleur: #e8946b; /* corail pastel — patients/jour */
       --cv-activite-couleur-texte: #a3521f; /* variante foncée, lisible en texte */
-      --cv-horaire-couleur: #5fb3a8; /* bleu-vert pastel (teal) — horaires */
-      --cv-horaire-couleur-texte: #2b6f66; /* variante foncée, lisible en texte */
     }
-    /* Curseur double (2 poignées) pour une plage horaire — 2 <input type="range"> superposés
-       sur la même piste, chacun ne capte le clic/glisser que sur sa poignée (le reste du
-       curseur laisse passer le clic vers l'autre en-dessous), motif classique pour simuler
-       un slider à 2 poignées en HTML natif sans bibliothèque. */
-    .cv-horaire-range { margin-top: .6rem; }
-    /* Piste + poignées dans un conteneur dédié à part (hauteur fixe, position:relative) —
-       le libellé est un FRÈRE après ce conteneur, jamais un enfant : un enfant en flux normal
-       aurait sa margin-top qui "traverse" le conteneur vide (tous ses autres enfants sont en
-       position:absolute, donc ne comptent pas pour la hauteur) et se retrouve collée en haut,
-       superposée au curseur, au lieu d'apparaître en dessous. */
-    .cv-horaire-track-wrap { position: relative; height: 1.4rem; }
-    .cv-horaire-track-wrap input[type="range"] {
-      /* border: 0 nécessaire ici (pas sur .cv-activite-track-wrap) car ce curseur est
-         DANS un conteneur .field — la règle partagée ".field input { border: 1px solid
-         var(--line-2) }" (styles.css) s'appliquait sinon à l'input caché, dessinant un
-         cadre gris visible autour de toute la ligne. Repéré le 07/09/2026 en comparant
-         pixel à pixel avec le curseur "Nombre de patients par jour" (hors .field, jamais
-         concerné par cette règle). */
-      position: absolute; top: 0; left: 0; width: 100%; height: 1.4rem; margin: 0; border: 0;
-      -webkit-appearance: none; appearance: none; background: transparent; pointer-events: none;
-    }
-    .cv-horaire-track-wrap input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
-    .cv-horaire-track-wrap input[type="range"]::-moz-range-track { background: transparent; }
-    .cv-horaire-track-wrap input[type="range"]::-webkit-slider-thumb {
-      -webkit-appearance: none; pointer-events: auto; cursor: pointer;
-      width: 18px; height: 18px; border-radius: 50%; background: var(--cv-horaire-couleur);
-      border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); margin-top: -8px;
-      position: relative;
-    }
-    .cv-horaire-track-wrap input[type="range"]::-moz-range-thumb {
-      pointer-events: auto; cursor: pointer; width: 18px; height: 18px; border-radius: 50%;
-      background: var(--cv-horaire-couleur); border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35);
-    }
-    .cv-horaire-track {
-      /* Piste grise fixe (revenu sur la décision "transparent" du 07/09/2026, signalé
-         manquant par Cédric le même jour) — même motif que .cv-ftmoy-track : une piste
-         invisible donne l'impression que la ligne "se crée" au lieu d'être une vraie
-         ligne de curseur qui passe du gris au rouge. `right:0`/`left:0` (pas 9px) —
-         demande de Cédric le même jour, "allonger le trait gris... qu'il n'y ait plus
-         de zone blanche" puis "allonger un peu le trait gris jusqu'au plus proche de
-         08:00 et 18:00" (le côté gauche avait été oublié au 1er passage, seul `right`
-         avait été mis à 0) : la marge de 9px de chaque côté (réservée à l'origine pour
-         le rayon de la poignée) laissait un blanc visible dès que la poignée n'était
-         pas exactement au bord — le remplissage (`.cv-horaire-fill`, en %) s'étire avec
-         la piste, la poignée elle-même n'est pas affectée (position pilotée séparément
-         par l'`<input>`, toujours contrainte à l'intérieur du cadre par le navigateur). */
-      position: absolute; top: 50%; left: 0; right: 0; height: 4px;
-      background: var(--line-2); border-radius: 2px; transform: translateY(-50%);
-    }
-    .cv-horaire-fill { position: absolute; top: 0; height: 100%; background: var(--cv-horaire-couleur); border-radius: 2px; }
-    .cv-horaire-label { margin-top: .5rem; font-size: .82rem; font-weight: 600; color: var(--ink); }
-    /* Champs heure éditables dans le label (demande de Cédric le 06/09/2026) — mêmes
-       dimensions/couleur que le texte qu'ils remplacent, pas l'air d'un champ de formulaire
-       classique (pas de bordure visible tant qu'on n'interagit pas). */
-    .cv-horaire-label { display: flex; align-items: center; gap: .3rem; flex-wrap: wrap; }
-    /* Les 2 heures l'une AU-DESSUS de l'autre (demande de Cédric le 07/09/2026), pour
-       cette seule instance sous "Résultat à votre activité" — jamais dans la roue
-       crantée ni les lignes samedi/dimanche, qui gardent le motif horizontal d'origine.
-       wireHoraireRange() (partagée par toutes les lignes horaires du fichier) construit
-       toujours les mêmes 3 enfants (heure début, tiret, heure fin) : uniquement du CSS
-       ici, DOM/JS inchangés — le tiret devient inutile en empilé, caché plutôt que
-       supprimé (les index label.children[0]/[2] utilisés par le JS doivent rester
-       valables). */
-    #cvHoraireLabel1B { flex-direction: column; align-items: flex-end; gap: .15rem; }
-    #cvHoraireLabel1B span { display: none; }
-    /* "Ouverture 08:00" / "Fermeture 18:00" — 2 lignes, chacune avec son libellé et son
-       heure CÔTE À CÔTE (demande de Cédric le 07/09/2026, "aligné à 30 patients/jour"
-       juste au-dessus, puis "réduire la case heure pour qu'ils soient côte à côte" le
-       même jour) — uniquement sur ce miroir (voir le JS juste après
-       wireHoraireRange("...B")), jamais la roue crantée ni samedi/dimanche. **Piège vécu
-       et corrigé le 07/09/2026 (signalé par Cédric, "je ne vois pas les mots") : `.cv-
-       horaire-ligne` ET `.cv-horaire-mot` sont TOUS LES DEUX des `<span>`** (construits
-       en JS), donc TOUS LES DEUX matchés par la règle générique "#cvHoraireLabel1B span
-       { display:none; }" ci-dessus (qui ne visait à l'origine que le tiret "–"). La
-       règle ".cv-horaire-ligne" pose bien `display:flex` (elle gagne car plus
-       spécifique QUE SUR LA PROPRIÉTÉ display, qu'elle définit) — mais ".cv-horaire-mot"
-       ne posait PAS de `display` explicite : la cascade CSS se résout PROPRIÉTÉ PAR
-       PROPRIÉTÉ, pas règle entière contre règle entière — sans un `display` propre à
-       cette classe, le `display:none` de la règle générique reste seul à s'appliquer
-       pour cette propriété, quelle que soit la spécificité globale des 2 règles. */
-    #cvHoraireLabel1B .cv-horaire-ligne { display: flex; align-items: baseline; gap: .3rem; }
-    #cvHoraireLabel1B .cv-horaire-mot { display: inline; font-size: .68rem; font-weight: 600; color: var(--muted); }
-    /* Heures colorées comme la piste/le curseur du curseur horaire (--cv-horaire-couleur),
-       même principe que "30 patients/jour" plus haut coloré dans la teinte de SON propre
-       curseur (--cv-activite-couleur-texte) — demande de Cédric le 07/09/2026. Case
-       nettement réduite (8.5em de base → 4.6em) pour tenir à côté du libellé plutôt
-       qu'en dessous — juste assez pour "08:00" + le petit sélecteur natif du navigateur. */
-    #cvHoraireLabel1B input.cv-horaire-heure-txt {
-      color: var(--cv-horaire-couleur-texte); font-weight: 700; width: 5.4em;
-    }
-    /* Le texte "Soit X h d'ouverture par jour" juste après "17:00", sur la même ligne (pas
-       en dessous) — demande de Cédric le 07/09/2026. */
-    .cv-horaire-row-label { display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
-    .cv-horaire-row-label .cv-horaire-label { margin-top: 0; }
-    .cv-horaire-row-label .simulator__hint { margin: 0; }
-    /* Sélecteur renforcé (label > input, pas juste .cv-horaire-heure-txt) : la règle de base
-       ".field input { width:100% }" (styles.css) a une spécificité plus grande qu'une classe
-       seule et l'emporterait sinon, redonnant au champ heure toute la largeur du panneau. */
-    .cv-horaire-label input.cv-horaire-heure-txt {
-      font: inherit; font-weight: 600; color: var(--ink); border: 1px solid transparent;
-      border-radius: 4px; padding: 0 .1rem; background: transparent; width: 8.5em;
-    }
-    .cv-horaire-label input.cv-horaire-heure-txt:hover,
-    .cv-horaire-label input.cv-horaire-heure-txt:focus { border-color: var(--line-2); background: #fff; }
-    /* Encoche de coupure — modèle simplifié du 06/09/2026 : plus une 2ᵉ plage indépendante,
-       juste un "trou" blanc dans le remplissage rouge, à la position de la coupure, avec sa
-       propre poignée de déplacement (.cv-coupure-handle, un 3ᵉ <input type=range> superposé
-       aux 2 premiers dans le même track-wrap). */
-    .cv-horaire-gap { position: absolute; top: 0; height: 100%; background: #fff; }
-    .cv-horaire-track-wrap input.cv-coupure-handle::-webkit-slider-thumb { background: var(--muted, #888); width: 14px; height: 14px; margin-top: -6px; }
-    .cv-horaire-track-wrap input.cv-coupure-handle::-moz-range-thumb { background: var(--muted, #888); width: 14px; height: 14px; }
     /* Colonne "Écart" un peu élargie pour ce tableau précis (demande de Cédric le 07/09/2026,
        "+3,5 pat./j" tenait pas sur une ligne) — override local, .simulator__table--compare3
        est partagé avec d'autres simulateurs. */
@@ -1361,37 +1249,19 @@
           <p class="simulator__warning" id="cvCapaciteWarning" style="margin-top:.6rem" hidden></p>
           <!-- Copie miroir de la roue crantée "Réglages avancés" (demande de Cédric le
                05/09/2026) : reste réglable aussi ici, juste sous l'activité, puisque les
-               horaires influent sur la capacité affichée plus haut. Ids suffixés "B",
-               synchronisés dans les 2 sens avec les ids canoniques de la roue crantée
-               (lierMiroirPoignee() dans le script). Pas de case "coupure" ici (demande de
-               Cédric le 06/09/2026) : la coupure, si elle existe (cochée dans la roue
-               crantée), apparaît directement comme une encoche déplaçable sur cette même
-               ligne de temps — rien à cocher en double ici. -->
-          <!-- Restructuré le 07/09/2026 (demande de Cédric : "mal structuré, structure-la
-               comme celle juste au-dessus le nombre de patients/jour") — même gabarit que
-               .cv-activite-slider ci-dessus : piste PLEINE LARGEUR à gauche, valeur (ici les
-               2 heures éditables) alignée à droite plutôt qu'en dessous, plus de titre
-               "Horaires d'ouverture" séparé (le bloc juste au-dessus n'en a pas non plus). -->
-          <!-- flex-wrap:wrap propre à cette ligne (pas sur .cv-activite-slider elle-même,
-               qui ne doit pas changer pour le curseur de patients/jour ci-dessus) : sur un
-               écran étroit, la piste + les 2 heures éditables ne rentrent plus côte à côte
-               — testé et corrigé le 07/09/2026, la 1ʳᵉ version cassait "08:00 – 18:00" sur
-               3 lignes au lieu de laisser la piste et la valeur se placer chacune sur sa
-               propre ligne. -->
+               horaires influent sur la capacité affichée plus haut. Id suffixé "B",
+               synchronisé dans les 2 sens avec l'id canonique de la roue crantée. Simplifié
+               le 14/09/2026 (demande de Cédric : même modèle "case Coupure ? + durée" que
+               point-mort/bascule-oscan/energie, plus de curseur double/encoche déplaçable)
+               — un simple champ numérique mirroré suffit désormais, la coupure elle-même
+               (si cochée dans la roue crantée) ne se règle qu'à un seul endroit (⚙). -->
           <div class="field cv-activite-slider" id="cvSyntheseHoraireBlock" style="margin-top:.3rem; margin-bottom:0; flex-wrap:wrap">
-            <div class="cv-horaire-range" id="cvHoraireMatinB" style="flex:1 1 160px; margin-top:0">
-              <div class="cv-horaire-track-wrap">
-                <div class="cv-horaire-track">
-                  <div class="cv-horaire-fill" id="cvHoraireFill1B"></div>
-                  <div class="cv-horaire-gap" id="cvCoupureGapB" hidden></div>
-                </div>
-                <input type="range" id="cvHeureDebut1B" min="6" max="22" step="0.25" value="8" aria-label="Heure d'ouverture" />
-                <input type="range" id="cvHeureFin1B" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture" />
-                <input type="range" id="cvCoupurePositionB" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
-              </div>
-            </div>
+            <label for="cvHeuresSemaineB" style="margin:0; align-self:center">Amplitude d'ouverture, lundi-vendredi</label>
             <div class="cv-slider-valeur-fixe">
-              <div class="cv-horaire-label" id="cvHoraireLabel1B" style="margin-top:0; justify-content:flex-end; flex-wrap:nowrap"></div>
+              <div class="simulator__field-suffix" style="justify-content:flex-end">
+                <input type="number" id="cvHeuresSemaineB" min="0" max="24" step="0.5" value="10" style="width:4.6em" />
+                <span>h/jour</span>
+              </div>
               <p class="simulator__hint cv-activite-slider-equiv" id="cvHeuresTotalTxtB" style="text-align:right"></p>
             </div>
           </div>
@@ -1867,92 +1737,69 @@
           <details class="bascule-hyp-section" name="cvParamAccordion">
             <summary>Horaires d'ouverture</summary>
             <div class="field">
-              <label>Horaires d'ouverture</label>
-              <div class="cv-horaire-range" id="cvHoraireMatin">
-                <div class="cv-horaire-track-wrap">
-                  <div class="cv-horaire-track">
-                    <div class="cv-horaire-fill" id="cvHoraireFill1"></div>
-                    <div class="cv-horaire-gap" id="cvCoupureGap" hidden></div>
-                  </div>
-                  <input type="range" id="cvHeureDebut1" min="6" max="22" step="0.25" value="8" aria-label="Heure d'ouverture" />
-                  <input type="range" id="cvHeureFin1" min="6" max="22" step="0.25" value="18" aria-label="Heure de fermeture" />
-                  <input type="range" id="cvCoupurePosition" class="cv-coupure-handle" min="6" max="22" step="0.25" value="12" hidden aria-label="Position de la coupure" />
-                </div>
-                <div class="cv-horaire-row-label">
-                  <div class="cv-horaire-label" id="cvHoraireLabel1"></div>
-                  <p class="simulator__hint" id="cvHeuresTotalTxt"></p>
-                </div>
+              <label for="cvHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="cvHeuresSemaine" value="10" min="0" max="24" step="0.5" />
+                <span>h/jour</span>
               </div>
-              <label style="display:flex; align-items:center; gap:.5rem; margin-top:1rem; margin-bottom:0">
-                <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
-                <span>Y a-t-il une coupure dans la journée ?</span>
-              </label>
-              <div class="field" id="cvCoupureDureeWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-                <label for="cvCoupureDuree">Durée de la coupure</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="cvCoupureDuree" value="1" min="0.25" max="6" step="0.25" />
-                  <span>heures</span>
-                </div>
+            </div>
+            <p class="simulator__hint" id="cvHeuresTotalTxt" style="margin:-.4rem 0 .8rem"></p>
+            <label style="display:flex; align-items:center; gap:.5rem; margin:-.4rem 0 .8rem">
+              <input type="checkbox" id="cvCoupureDejeuner" style="width:16px;height:16px;margin:0" />
+              <span>Y a-t-il une coupure dans la journée ?</span>
+            </label>
+            <div class="field" id="cvCoupureDureeWrap" hidden style="margin:-.4rem 0 .8rem">
+              <label for="cvCoupureDuree">Durée de la coupure</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="cvCoupureDuree" value="1" min="0.25" max="6" step="0.25" />
+                <span>heures</span>
               </div>
             </div>
             <details class="pm-autre-rh">
               <summary>Autre jour</summary>
-              <div class="field">
-                <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
-                  <input type="checkbox" id="cvOuvertSamedi" style="width:16px;height:16px;margin:0" />
-                  <span>Ouvert le samedi</span>
-                </label>
-                <div class="cv-horaire-range" id="cvHoraireSamedi" hidden style="margin-top:.6rem">
-                  <div class="cv-horaire-track-wrap">
-                    <div class="cv-horaire-track">
-                      <div class="cv-horaire-fill" id="cvHoraireFillSamedi"></div>
-                      <div class="cv-horaire-gap" id="cvCoupureGapSamedi" hidden></div>
-                    </div>
-                    <input type="range" id="cvHeureDebutSamedi" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le samedi" />
-                    <input type="range" id="cvHeureFinSamedi" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le samedi" />
-                    <input type="range" id="cvCoupurePositionSamedi" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du samedi" />
-                  </div>
-                  <div class="cv-horaire-label" id="cvHoraireLabelSamedi"></div>
-                </div>
-                <label id="cvCoupureSamediLabel" class="cv-inline-check" hidden>
-                  <input type="checkbox" id="cvCoupureSamedi" style="width:16px;height:16px;margin:0" />
-                  <span>Coupure le samedi</span>
-                </label>
-                <div class="field" id="cvCoupureDureeSamediWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-                  <label for="cvCoupureDureeSamedi">Durée de la coupure</label>
-                  <div class="simulator__field-suffix">
-                    <input type="number" id="cvCoupureDureeSamedi" value="1" min="0.25" max="4" step="0.25" />
-                    <span>heures</span>
-                  </div>
+              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                <input type="checkbox" id="cvOuvertSamedi" style="width:16px;height:16px;margin:0" />
+                <span>Ouvert le samedi</span>
+              </label>
+              <div class="field" id="cvHeuresSamediWrap" hidden>
+                <label for="cvHeuresSamedi">Amplitude d'ouverture, samedi</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvHeuresSamedi" value="4" min="0" max="24" step="0.5" />
+                  <span>h/jour</span>
                 </div>
               </div>
-              <div class="field">
-                <label style="display:flex; align-items:center; gap:.5rem; margin-bottom:0">
-                  <input type="checkbox" id="cvOuvertDimanche" style="width:16px;height:16px;margin:0" />
-                  <span>Ouvert le dimanche</span>
-                </label>
-                <div class="cv-horaire-range" id="cvHoraireDimanche" hidden style="margin-top:.6rem">
-                  <div class="cv-horaire-track-wrap">
-                    <div class="cv-horaire-track">
-                      <div class="cv-horaire-fill" id="cvHoraireFillDimanche"></div>
-                      <div class="cv-horaire-gap" id="cvCoupureGapDimanche" hidden></div>
-                    </div>
-                    <input type="range" id="cvHeureDebutDimanche" min="6" max="22" step="0.25" value="9" aria-label="Heure d'ouverture le dimanche" />
-                    <input type="range" id="cvHeureFinDimanche" min="6" max="22" step="0.25" value="12" aria-label="Heure de fermeture le dimanche" />
-                    <input type="range" id="cvCoupurePositionDimanche" class="cv-coupure-handle" min="6" max="22" step="0.25" value="10" hidden aria-label="Position de la coupure du dimanche" />
-                  </div>
-                  <div class="cv-horaire-label" id="cvHoraireLabelDimanche"></div>
+              <label id="cvCoupureSamediLabel" class="cv-inline-check" hidden>
+                <input type="checkbox" id="cvCoupureSamedi" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le samedi ?</span>
+              </label>
+              <div class="field" id="cvCoupureDureeSamediWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="cvCoupureDureeSamedi">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvCoupureDureeSamedi" value="1" min="0.25" max="4" step="0.25" />
+                  <span>heures</span>
                 </div>
-                <label id="cvCoupureDimancheLabel" class="cv-inline-check" hidden>
-                  <input type="checkbox" id="cvCoupureDimanche" style="width:16px;height:16px;margin:0" />
-                  <span>Coupure le dimanche</span>
-                </label>
-                <div class="field" id="cvCoupureDureeDimancheWrap" hidden style="margin-top:.6rem; margin-bottom:0">
-                  <label for="cvCoupureDureeDimanche">Durée de la coupure</label>
-                  <div class="simulator__field-suffix">
-                    <input type="number" id="cvCoupureDureeDimanche" value="1" min="0.25" max="4" step="0.25" />
-                    <span>heures</span>
-                  </div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                <input type="checkbox" id="cvOuvertDimanche" style="width:16px;height:16px;margin:0" />
+                <span>Ouvert le dimanche</span>
+              </label>
+              <div class="field" id="cvHeuresDimancheWrap" hidden>
+                <label for="cvHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvHeuresDimanche" value="4" min="0" max="24" step="0.5" />
+                  <span>h/jour</span>
+                </div>
+              </div>
+              <label id="cvCoupureDimancheLabel" class="cv-inline-check" hidden>
+                <input type="checkbox" id="cvCoupureDimanche" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le dimanche ?</span>
+              </label>
+              <div class="field" id="cvCoupureDureeDimancheWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="cvCoupureDureeDimanche">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="cvCoupureDureeDimanche" value="1" min="0.25" max="4" step="0.25" />
+                  <span>heures</span>
                 </div>
               </div>
             </details>
@@ -3056,78 +2903,47 @@
         };
       }
 
-      // ---- Horaires d'ouverture (remplace l'ancien champ "Amplitude d'ouverture par jour"
-      // en heures, demande de Cédric le 05/09/2026) : 1 curseur double (2 poignées) pour la
-      // plage horaire, ou 2 curseurs (matin + après-midi) si "Coupure déjeuner" est cochée,
-      // affiché SOUS la ligne de réglage (pas au-dessus). Seule la durée totale sert au
-      // calcul (electriciteMensuelle, verifierCapacite), pas d'heure de la journée précise
-      // (pas de tarif heures creuses/pleines dans ce simulateur).
-      function heureDecimale(id) { return parseFloat(document.getElementById(id).value) || 0; }
-      function decimalVersHeureLabel(h) {
-        var hh = Math.floor(h), mm = Math.round((h - hh) * 60);
-        if (mm === 60) { mm = 0; hh += 1; }
-        return (hh < 10 ? "0" : "") + hh + ":" + (mm < 10 ? "0" : "") + mm;
-      }
-      // Sens inverse — lit un <input type="time"> ("HH:MM") pour piloter le curseur
-      // correspondant (demande de Cédric le 06/09/2026 : pouvoir aussi taper l'heure).
-      function hhmmVersDecimal(hhmm) {
-        var p = hhmm.split(":");
-        return parseInt(p[0], 10) + parseInt(p[1], 10) / 60;
-      }
-      function horaireDureeHeures(idDebut, idFin) {
-        var d = heureDecimale(idDebut), f = heureDecimale(idFin);
-        return f > d ? f - d : 0;
-      }
-      // Modèle simplifié du 06/09/2026 (demande de Cédric, "on va faire plus simple") : plus
-      // de 2ᵉ plage indépendante pour la coupure — 1 seule question "y a-t-il une coupure ?",
-      // si oui sa durée, et sa position se règle en la faisant glisser directement sur la
-      // ligne de temps existante (encoche déplaçable). Fonctions génériques réutilisées pour
-      // les 3 lignes possibles (semaine, samedi, dimanche — chacune sa propre coupure).
-      function horaireDureeAvecCoupure(idDebut, idFin, idCoupureCheck, idCoupureDuree) {
-        var total = horaireDureeHeures(idDebut, idFin);
-        if (document.getElementById(idCoupureCheck).checked) {
-          total -= Math.max(0, parseFloat(document.getElementById(idCoupureDuree).value) || 0);
-        }
-        return Math.max(0, total);
-      }
-      function libelleAvecCoupure(idDebut, idFin, idCoupureCheck, idCoupureDuree, idCoupurePosition) {
-        var debut = heureDecimale(idDebut), fin = heureDecimale(idFin);
-        if (!document.getElementById(idCoupureCheck).checked) {
-          return decimalVersHeureLabel(debut) + "–" + decimalVersHeureLabel(fin);
-        }
-        var duree = Math.max(0, parseFloat(document.getElementById(idCoupureDuree).value) || 0);
-        var pos = heureDecimale(idCoupurePosition);
-        return decimalVersHeureLabel(debut) + "–" + decimalVersHeureLabel(pos) + " puis " +
-          decimalVersHeureLabel(pos + duree) + "–" + decimalVersHeureLabel(fin);
+      // ---- Horaires d'ouverture — modèle simplifié le 14/09/2026 (demande de Cédric :
+      // "mettre comme les autres"), remplace le curseur double + encoche déplaçable du
+      // 05-06/09/2026 par le même motif qu'utilisent point-mort/bascule-oscan/energie :
+      // un simple champ "Amplitude d'ouverture" (h/jour) par ligne (semaine/samedi/
+      // dimanche), plus une case "Coupure... ?" qui révèle un champ "Durée de la
+      // coupure" au clic — voir skill ced4scale-simulateur-web, "Horaires d'ouverture
+      // avec coupure" et "Coupure (pause déjeuner) ... jamais éteinte". Seule la durée
+      // NETTE (amplitude moins coupure si cochée) sert au calcul (electriciteMensuelle,
+      // verifierCapacite) — ce simulateur n'a pas de modèle "prêt à scanner" (RSE) à
+      // distinguer de l'amplitude brute comme energie.html, donc un seul chiffre net
+      // suffit ici.
+      function cvAmpliEff(idHeures, idCoupureActive, idCoupureDuree) {
+        var amplitude = Math.max(0, parseFloat(document.getElementById(idHeures).value) || 0);
+        var active = document.getElementById(idCoupureActive).checked;
+        var duree = active ? Math.max(0, parseFloat(document.getElementById(idCoupureDuree).value) || 0) : 0;
+        return Math.max(0, amplitude - duree);
       }
       function amplitudeOuvertureHeures() {
-        return horaireDureeAvecCoupure("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree");
-      }
-      function libelleHoraires() {
-        return libelleAvecCoupure("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree", "cvCoupurePosition");
+        return cvAmpliEff("cvHeuresSemaine", "cvCoupureDejeuner", "cvCoupureDuree");
       }
       // ---- Jours d'ouverture par mois — calculé, plus saisi à la main (demande de Cédric
-      // le 05/09/2026) : 5 jours de semaine implicites (lundi-vendredi, horaires du curseur
-      // principal) + samedi/dimanche si cochés (chacun sa propre plage horaire, avec sa
-      // propre coupure éventuelle depuis le 06/09/2026). joursParMois = jours/semaine × 52/12
-      // (semaines/mois). heuresParJour redevient une MOYENNE PONDÉRÉE par jour ouvert (ex.
-      // 5j×8h + 1j×4h en ne comptant que le samedi ouvert, divisé par 6 jours) plutôt que la
-      // seule amplitude de semaine — préserve tel quel tout calcul en aval qui multiplie
-      // heuresParJour × joursParMois (le produit reste le vrai total d'heures mensuel), y
-      // compris la vérification de capacité (qui devient une capacité "jour type", moyenne
-      // pondérée entre semaine et week-end — approximation assumée, la capacité reste un
-      // simple repère non bloquant).
+      // le 05/09/2026) : 5 jours de semaine implicites (lundi-vendredi) + samedi/dimanche si
+      // cochés (chacun sa propre amplitude, avec sa propre coupure éventuelle depuis le
+      // 06/09/2026). joursParMois = jours/semaine × 52/12 (semaines/mois). heuresParJour
+      // redevient une MOYENNE PONDÉRÉE par jour ouvert (ex. 5j×8h + 1j×4h en ne comptant que
+      // le samedi ouvert, divisé par 6 jours) plutôt que la seule amplitude de semaine —
+      // préserve tel quel tout calcul en aval qui multiplie heuresParJour × joursParMois (le
+      // produit reste le vrai total d'heures mensuel), y compris la vérification de capacité
+      // (qui devient une capacité "jour type", moyenne pondérée entre semaine et week-end —
+      // approximation assumée, la capacité reste un simple repère non bloquant).
       var SEMAINES_PAR_MOIS = 52 / 12;
       function calculerJoursEtHeures() {
         var joursSemaine = 5, heuresSemaine = amplitudeOuvertureHeures();
         var totalJours = joursSemaine, totalHeures = joursSemaine * heuresSemaine;
         if (document.getElementById("cvOuvertSamedi").checked) {
           totalJours += 1;
-          totalHeures += horaireDureeAvecCoupure("cvHeureDebutSamedi", "cvHeureFinSamedi", "cvCoupureSamedi", "cvCoupureDureeSamedi");
+          totalHeures += cvAmpliEff("cvHeuresSamedi", "cvCoupureSamedi", "cvCoupureDureeSamedi");
         }
         if (document.getElementById("cvOuvertDimanche").checked) {
           totalJours += 1;
-          totalHeures += horaireDureeAvecCoupure("cvHeureDebutDimanche", "cvHeureFinDimanche", "cvCoupureDimanche", "cvCoupureDureeDimanche");
+          totalHeures += cvAmpliEff("cvHeuresDimanche", "cvCoupureDimanche", "cvCoupureDureeDimanche");
         }
         return {
           joursParSemaine: totalJours,
@@ -3135,80 +2951,19 @@
           heuresParJour: totalJours > 0 ? totalHeures / totalJours : 0
         };
       }
-      // Pilotage visuel de l'encoche de coupure (gap + poignée grise) sur une ligne de temps —
-      // recalcule les bornes possibles de la poignée (entre le début de plage et la fin de
-      // plage moins la durée), la clampe dedans si besoin, positionne le gap et la poignée.
-      // `echelleMin`/`echelleMax` = échelle fixe de la ligne (6-22h ici), pour que le
-      // pourcentage affiché reste cohérent avec la ligne même si min/max de la poignée
-      // changent dynamiquement.
-      var ECHELLE_HORAIRE_MIN = 6, ECHELLE_HORAIRE_MAX = 22;
-      function pctEchelle(v) { return ((v - ECHELLE_HORAIRE_MIN) / (ECHELLE_HORAIRE_MAX - ECHELLE_HORAIRE_MIN)) * 100; }
-      function majCoupureVisuel(idDebut, idFin, idCoupureCheck, idCoupureDuree, idGap, idHandle) {
-        var checked = document.getElementById(idCoupureCheck).checked;
-        var gap = document.getElementById(idGap), handle = document.getElementById(idHandle);
-        if (!checked) { gap.hidden = true; handle.hidden = true; return; }
-        var debut = heureDecimale(idDebut), fin = heureDecimale(idFin);
-        var duree = Math.max(0, parseFloat(document.getElementById(idCoupureDuree).value) || 0);
-        var minPos = debut, maxPos = Math.max(debut, fin - duree);
-        var pos = Math.min(Math.max(parseFloat(handle.value) || minPos, minPos), maxPos);
-        handle.value = pos; handle.min = minPos; handle.max = maxPos;
-        gap.hidden = false; handle.hidden = false;
-        gap.style.left = pctEchelle(pos) + "%";
-        gap.style.width = (pctEchelle(pos + duree) - pctEchelle(pos)) + "%";
-      }
-      // Pilotage visuel d'un curseur double (2 <input type="range"> superposés, voir CSS) :
-      // empêche les 2 poignées de se croiser (écart minimal ECART_MIN_H), met à jour le
-      // remplissage rouge entre les 2 poignées et le libellé "hh:mm–hh:mm" en dessous.
-      // `quiBouge` (l'élément DOM déplacé) est passé explicitement plutôt que déduit de
-      // document.activeElement — nécessaire pour la copie miroir plus bas, où la valeur est
-      // recopiée par script (aucun élément n'a le focus au moment du recalcul).
-      var ECART_MIN_H = 0.5;
-      function wireHoraireRange(idDebut, idFin, idFill, idLabel) {
-        var debut = document.getElementById(idDebut), fin = document.getElementById(idFin);
-        var fill = document.getElementById(idFill), label = document.getElementById(idLabel);
-        var min = parseFloat(debut.min), max = parseFloat(debut.max);
-        // 2 champs "heure" éditables au clavier, en plus du glisser-déposer (demande de
-        // Cédric le 06/09/2026) — construits une fois dans le label (en bas à gauche de la
-        // ligne de temps), synchronisés dans les 2 sens avec les poignées du curseur.
-        label.innerHTML = '<input type="time" class="cv-horaire-heure-txt" aria-label="Heure de début" />' +
-          '<span> – </span><input type="time" class="cv-horaire-heure-txt" aria-label="Heure de fin" />';
-        var txtDebut = label.children[0], txtFin = label.children[2];
-        function maj(quiBouge) {
-          var d = parseFloat(debut.value), f = parseFloat(fin.value);
-          if (d > f - ECART_MIN_H) {
-            // La poignée qui vient de bouger l'emporte, l'autre est repoussée du même écart.
-            if (quiBouge === fin) { d = f - ECART_MIN_H; debut.value = d; }
-            else { f = d + ECART_MIN_H; fin.value = f; }
-          }
-          var pctD = ((d - min) / (max - min)) * 100, pctF = ((f - min) / (max - min)) * 100;
-          fill.style.left = pctD + "%";
-          fill.style.width = (pctF - pctD) + "%";
-          txtDebut.value = decimalVersHeureLabel(d);
-          txtFin.value = decimalVersHeureLabel(f);
-        }
-        debut.addEventListener("input", function () { maj(debut); });
-        fin.addEventListener("input", function () { maj(fin); });
-        txtDebut.addEventListener("change", function () {
-          if (!this.value) return;
-          debut.value = hhmmVersDecimal(this.value);
-          debut.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-        txtFin.addEventListener("change", function () {
-          if (!this.value) return;
-          fin.value = hhmmVersDecimal(this.value);
-          fin.dispatchEvent(new Event("input", { bubbles: true }));
-        });
-        maj();
-        return maj;
-      }
-      // Miroir bidirectionnel entre la roue crantée et la copie sous "Résultat à votre
-      // activité" (demande de Cédric le 05/09/2026, même principe que le champ Activité) :
-      // déplacer une poignée d'un côté recopie sa valeur de l'autre côté, rafraîchit son
-      // rendu (maj), puis relance le calcul — dans les 2 sens.
-      function lierMiroirPoignee(idA, majA, idB, majB) {
-        var a = document.getElementById(idA), b = document.getElementById(idB);
-        a.addEventListener("input", function () { b.value = a.value; majB(b); recalculer(); });
-        b.addEventListener("input", function () { a.value = b.value; majA(a); recalculer(); });
+      // Affiche/masque les champs conditionnels (durée de coupure révélée par sa case,
+      // amplitude + coupure samedi/dimanche révélées par "Ouvert le samedi/dimanche") —
+      // même fonction que pmMajAmplitudeVisibilite() de simulateur-point-mort.html.
+      function cvMajHorairesVisibilite() {
+        document.getElementById("cvCoupureDureeWrap").hidden = !document.getElementById("cvCoupureDejeuner").checked;
+        var samedi = document.getElementById("cvOuvertSamedi").checked;
+        var dimanche = document.getElementById("cvOuvertDimanche").checked;
+        document.getElementById("cvHeuresSamediWrap").hidden = !samedi;
+        document.getElementById("cvCoupureSamediLabel").hidden = !samedi;
+        document.getElementById("cvCoupureDureeSamediWrap").hidden = !(samedi && document.getElementById("cvCoupureSamedi").checked);
+        document.getElementById("cvHeuresDimancheWrap").hidden = !dimanche;
+        document.getElementById("cvCoupureDimancheLabel").hidden = !dimanche;
+        document.getElementById("cvCoupureDureeDimancheWrap").hidden = !(dimanche && document.getElementById("cvCoupureDimanche").checked);
       }
 
       // ---- Vérifie que l'activité saisie reste physiquement possible : capacité max d'une
@@ -3538,12 +3293,10 @@
         // Décrit la ligne "semaine" elle-même (pas la moyenne pondérée tous jours confondus,
         // affichée séparément dans cvJoursTotalTxt) — sinon le nombre et le détail entre
         // parenthèses ne correspondent pas dès que le week-end a ses propres horaires.
-        // Le détail entre parenthèses (ex. "09:00–17:00") n'est repris que si une coupure
-        // existe (utile : montre la coupure) — sans coupure, il ferait doublon avec les 2
-        // champs heure juste à côté, retiré à la demande de Cédric le 07/09/2026.
-        var heuresSemaine = horaireDureeAvecCoupure("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree");
+        var heuresSemaine = amplitudeOuvertureHeures();
+        var coupureCochee = document.getElementById("cvCoupureDejeuner").checked;
         var heuresTotalTxt = patientsFmt.format(heuresSemaine) + " h d'ouverture/jour" +
-          (document.getElementById("cvCoupureDejeuner").checked ? " (" + libelleHoraires() + ")" : "") + ".";
+          (coupureCochee ? " (coupure de " + patientsFmt.format(Math.max(0, parseFloat(document.getElementById("cvCoupureDuree").value) || 0)) + " h)" : "") + ".";
         document.getElementById("cvHeuresTotalTxt").textContent = heuresTotalTxt;
         document.getElementById("cvHeuresTotalTxtB").textContent = heuresTotalTxt;
         params.activitePatientsJour = activitePatientsJour(params.joursParMois);
@@ -3618,7 +3371,7 @@
         derniers = { resultats: resultats, params: params, configs: configs };
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("cvCapaciteWarning"),
-          [document.getElementById("cvActivite"), document.getElementById("cvHeureDebut1"), document.getElementById("cvHeureFin1")]);
+          [document.getElementById("cvActivite"), document.getElementById("cvHeuresSemaine")]);
 
         var lignesSynthese = dessinerSynthese(resultats, configs, params);
 
@@ -3801,7 +3554,7 @@
 
         var paramsCommuns = [
           ["Coût du kWh", eurosCent.format(params.prixKwh)],
-          ["Amplitude d'ouverture", libelleHoraires() + " (" + patientsFmt.format(params.heuresParJour) + " h/jour)"],
+          ["Amplitude d'ouverture", patientsFmt.format(params.heuresParJour) + " h/jour (moyenne pondérée si samedi/dimanche ouverts)"],
           ["Jours d'ouverture par mois", params.joursParMois + " jours"],
           ["Salaire MERM net avant impôt", euros.format(cvSalaireMensuel("Merm")) + " / mois"],
           ["Coût RIS + graveur + imprimante", euros.format(params.coutRisMensuel) + " / mois"],
@@ -4490,9 +4243,9 @@ var svg = document.getElementById("cvChart");
       }
 
       ["cvZone", "cvKwh", "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvActivite", "cvMultiRegionB", "cvInstallA", "cvInstallB",
-        "cvHeureDebut1", "cvHeureFin1", "cvCoupureDuree",
-        "cvHeureDebutSamedi", "cvHeureFinSamedi", "cvCoupureDureeSamedi",
-        "cvHeureDebutDimanche", "cvHeureFinDimanche", "cvCoupureDureeDimanche",
+        "cvHeuresSemaine", "cvCoupureDuree",
+        "cvHeuresSamedi", "cvCoupureDureeSamedi",
+        "cvHeuresDimanche", "cvCoupureDureeDimanche",
         "cvScannerDelaiAllumage", "cvScannerDelaiExtinction",
         "cvNetSecretaire", "cvNetCadreSante", "cvNetAideManip", "cvNetInfirmiere", "cvNetManipAlternance",
         "cvSecretaireA", "cvCadreSanteA", "cvAideManipA", "cvInfirmiereA", "cvManipAlternanceA",
@@ -4500,7 +4253,7 @@ var svg = document.getElementById("cvChart");
         "cvCoutRis", "cvContrasteCout", "cvSalleA", "cvAssuranceA", "cvEntretienA", "cvInjecteurA", "cvRisA", "cvContrastePctA",
         "cvSalleB", "cvAssuranceB", "cvEntretienB", "cvInjecteurB", "cvRisB", "cvContrastePctB"
       ].forEach(function (id) {
-        document.getElementById(id).addEventListener("input", recalculer);
+        document.getElementById(id).addEventListener("input", function () { cvMajHorairesVisibilite(); recalculer(); });
       });
       CV_POSTES_ANNEXES_ROLES.forEach(function (role) {
         document.getElementById("cvIntegre" + role).addEventListener("change", recalculer);
@@ -4511,104 +4264,22 @@ var svg = document.getElementById("cvChart");
         document.getElementById("cvScannerDelaisWrap").hidden = !this.checked;
         recalculer();
       });
-      // Curseurs de la ligne "semaine" — pilotage visuel (poignées, remplissage, libellé),
-      // indépendant du recalcul du simulateur ci-dessus. Existe en double : la roue crantée
-      // (ids canoniques, lus par le calcul) et la copie miroir sous "Résultat à votre
-      // activité" (ids suffixés "B") — synchronisées dans les 2 sens.
-      var majHoraireMatin = wireHoraireRange("cvHeureDebut1", "cvHeureFin1", "cvHoraireFill1", "cvHoraireLabel1");
-      var majHoraireMatinB = wireHoraireRange("cvHeureDebut1B", "cvHeureFin1B", "cvHoraireFill1B", "cvHoraireLabel1B");
-      // "Ouverture 08:00" / "Fermeture 18:00", libellé et heure CÔTE À CÔTE sur 2 lignes
-      // (demande de Cédric le 07/09/2026, "aligné à 30 patients/jour" puis "réduire la
-      // case heure pour qu'ils soient côte à côte") — uniquement sur ce miroir, jamais la
-      // copie canonique de la roue crantée ni samedi/dimanche. wireHoraireRange() garde
-      // `label.children[0]`/`[2]` comme références DIRECTES vers les 2 <input> (capturées
-      // une fois, pas requêtées à chaque appel de maj()) : les déplacer dans un nouveau
-      // conteneur ne casse rien, seule leur position dans le DOM change — le tiret "–"
-      // (children[1]) devient un frère orphelin une fois les 2 <input> déplacés, retiré
-      // explicitement plutôt que laissé traîner (même s'il resterait invisible, `display:
-      // none` déjà posé dessus par la règle générique "#cvHoraireLabel1B span").
+      // Horaires d'ouverture — modèle simplifié le 14/09/2026 (case "Coupure/Ouvert le
+      // samedi-dimanche ?" + champs révélés) : cvMajHorairesVisibilite() gère l'affichage,
+      // tous les champs concernés rappellent recalculer() ci-dessus ou via ces écouteurs
+      // "change" dédiés (cases à cocher).
+      ["cvCoupureDejeuner", "cvOuvertSamedi", "cvCoupureSamedi", "cvOuvertDimanche", "cvCoupureDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () { cvMajHorairesVisibilite(); recalculer(); });
+      });
+      cvMajHorairesVisibilite();
+      // Copie miroir de l'amplitude semaine sous "Résultat à votre activité" (id suffixé
+      // "B") — synchronisée dans les 2 sens avec l'id canonique de la roue crantée, motif
+      // déjà utilisé ailleurs sur cette page pour l'activité.
       (function () {
-        var label = document.getElementById("cvHoraireLabel1B");
-        var txtDebut = label.children[0], separateur = label.children[1], txtFin = label.children[2];
-        function ligne(mot, champ) {
-          var wrap = document.createElement("span");
-          wrap.className = "cv-horaire-ligne";
-          var m = document.createElement("span");
-          m.className = "cv-horaire-mot";
-          m.textContent = mot;
-          wrap.appendChild(m);
-          wrap.appendChild(champ); // détache champ de son ancien parent (label) au passage
-          return wrap;
-        }
-        var ligneOuverture = ligne("Ouverture", txtDebut);
-        var ligneFermeture = ligne("Fermeture", txtFin);
-        separateur.remove();
-        label.appendChild(ligneOuverture);
-        label.appendChild(ligneFermeture);
+        var a = document.getElementById("cvHeuresSemaine"), b = document.getElementById("cvHeuresSemaineB");
+        a.addEventListener("input", function () { b.value = a.value; recalculer(); });
+        b.addEventListener("input", function () { a.value = b.value; recalculer(); });
       })();
-      lierMiroirPoignee("cvHeureDebut1", majHoraireMatin, "cvHeureDebut1B", majHoraireMatinB);
-      lierMiroirPoignee("cvHeureFin1", majHoraireMatin, "cvHeureFin1B", majHoraireMatinB);
-      wireHoraireRange("cvHeureDebutSamedi", "cvHeureFinSamedi", "cvHoraireFillSamedi", "cvHoraireLabelSamedi");
-      wireHoraireRange("cvHeureDebutDimanche", "cvHeureFinDimanche", "cvHoraireFillDimanche", "cvHoraireLabelDimanche");
-      // Coupure — modèle simplifié du 06/09/2026 : 1 seule case "y a-t-il une coupure ?" par
-      // ligne (semaine/samedi/dimanche), affiche/masque le champ durée, et rafraîchit
-      // l'encoche déplaçable de la ligne correspondante (+ la copie miroir pour la semaine).
-      function rafraichirCoupureSemaine() {
-        majCoupureVisuel("cvHeureDebut1", "cvHeureFin1", "cvCoupureDejeuner", "cvCoupureDuree", "cvCoupureGap", "cvCoupurePosition");
-        majCoupureVisuel("cvHeureDebut1B", "cvHeureFin1B", "cvCoupureDejeuner", "cvCoupureDuree", "cvCoupureGapB", "cvCoupurePositionB");
-      }
-      document.getElementById("cvCoupureDejeuner").addEventListener("change", function () {
-        document.getElementById("cvCoupureDureeWrap").hidden = !this.checked;
-        rafraichirCoupureSemaine();
-        recalculer();
-      });
-      document.getElementById("cvCoupureDuree").addEventListener("input", rafraichirCoupureSemaine);
-      document.getElementById("cvCoupurePosition").addEventListener("input", function () {
-        document.getElementById("cvCoupurePositionB").value = this.value;
-        rafraichirCoupureSemaine();
-        recalculer();
-      });
-      document.getElementById("cvCoupurePositionB").addEventListener("input", function () {
-        document.getElementById("cvCoupurePosition").value = this.value;
-        rafraichirCoupureSemaine();
-        recalculer();
-      });
-      // Les bornes de la poignée de coupure dépendent du début/fin de la ligne "semaine" —
-      // les recalculer aussi quand ces 2 curseurs bougent (lierMiroirPoignee ci-dessus
-      // appelle déjà recalculer(), donc pas de doublon d'appel ici, juste le rafraîchissement
-      // visuel de l'encoche).
-      ["cvHeureDebut1", "cvHeureFin1", "cvHeureDebut1B", "cvHeureFin1B"].forEach(function (id) {
-        document.getElementById(id).addEventListener("input", rafraichirCoupureSemaine);
-      });
-      // Samedi/dimanche ouverts ou non : affiche/masque leur ligne d'horaires + leur case
-      // "coupure ce jour" (label caché tant que le jour n'est pas ouvert), recalcule.
-      function wireOuvertureJour(idOuvert, idLigne, idCoupureLabel) {
-        document.getElementById(idOuvert).addEventListener("change", function () {
-          document.getElementById(idLigne).hidden = !this.checked;
-          document.getElementById(idCoupureLabel).hidden = !this.checked;
-          recalculer();
-        });
-      }
-      wireOuvertureJour("cvOuvertSamedi", "cvHoraireSamedi", "cvCoupureSamediLabel");
-      wireOuvertureJour("cvOuvertDimanche", "cvHoraireDimanche", "cvCoupureDimancheLabel");
-      // Même modèle de coupure que la semaine, appliqué au samedi et au dimanche (demande de
-      // Cédric le 06/09/2026) — pas de copie miroir pour ces 2 lignes (seule la semaine est
-      // dupliquée sous "Résultat à votre activité").
-      function wireCoupureJour(idCoupureCheck, idDureeWrap, idDebut, idFin, idDuree, idGap, idHandle) {
-        function rafraichir() { majCoupureVisuel(idDebut, idFin, idCoupureCheck, idDuree, idGap, idHandle); }
-        document.getElementById(idCoupureCheck).addEventListener("change", function () {
-          document.getElementById(idDureeWrap).hidden = !this.checked;
-          rafraichir();
-          recalculer();
-        });
-        document.getElementById(idDuree).addEventListener("input", function () { rafraichir(); recalculer(); });
-        document.getElementById(idHandle).addEventListener("input", recalculer);
-        [idDebut, idFin].forEach(function (id) { document.getElementById(id).addEventListener("input", rafraichir); });
-      }
-      wireCoupureJour("cvCoupureSamedi", "cvCoupureDureeSamediWrap", "cvHeureDebutSamedi", "cvHeureFinSamedi",
-        "cvCoupureDureeSamedi", "cvCoupureGapSamedi", "cvCoupurePositionSamedi");
-      wireCoupureJour("cvCoupureDimanche", "cvCoupureDureeDimancheWrap", "cvHeureDebutDimanche", "cvHeureFinDimanche",
-        "cvCoupureDureeDimanche", "cvCoupureGapDimanche", "cvCoupurePositionDimanche");
       [
         "cvNetMerm", "cvLoyerA", "cvLoyerB", "cvNetSecretaire", "cvNetCadreSante", "cvNetAideManip", "cvNetInfirmiere", "cvNetManipAlternance",
         "cvCoutRis", "cvSalleA", "cvAssuranceA", "cvEntretienA", "cvInjecteurA", "cvSalleB", "cvAssuranceB", "cvEntretienB", "cvInjecteurB"
@@ -5489,23 +5160,17 @@ var svg = document.getElementById("cvChart");
         { id: "cvDate", evt: "change", label: "Date d'application des F.T.", type: "select" },
         { id: "cvZone", evt: "change", label: "Zone géographique", type: "select" },
         { id: "cvKwh", evt: "input", label: "Coût du kWh", type: "kwh" },
-        { id: "cvHeureDebut1", evt: "input", label: "Heure d'ouverture (semaine)", type: "heure" },
-        { id: "cvHeureFin1", evt: "input", label: "Heure de fermeture (semaine)", type: "heure" },
+        { id: "cvHeuresSemaine", evt: "input", label: "Amplitude d'ouverture, lundi-vendredi", suffixe: " h/jour" },
         { id: "cvCoupureDejeuner", evt: "change", label: "Coupure déjeuner (semaine)", type: "checkbox" },
         { id: "cvCoupureDuree", evt: "input", label: "Durée de la coupure (semaine)", suffixe: " h" },
-        { id: "cvCoupurePosition", evt: "input", comparer: false },
         { id: "cvOuvertSamedi", evt: "change", label: "Ouvert le samedi", type: "checkbox" },
-        { id: "cvHeureDebutSamedi", evt: "input", label: "Heure d'ouverture (samedi)", type: "heure" },
-        { id: "cvHeureFinSamedi", evt: "input", label: "Heure de fermeture (samedi)", type: "heure" },
+        { id: "cvHeuresSamedi", evt: "input", label: "Amplitude d'ouverture, samedi", suffixe: " h/jour" },
         { id: "cvCoupureSamedi", evt: "change", label: "Coupure le samedi", type: "checkbox" },
         { id: "cvCoupureDureeSamedi", evt: "input", label: "Durée de la coupure (samedi)", suffixe: " h" },
-        { id: "cvCoupurePositionSamedi", evt: "input", comparer: false },
         { id: "cvOuvertDimanche", evt: "change", label: "Ouvert le dimanche", type: "checkbox" },
-        { id: "cvHeureDebutDimanche", evt: "input", label: "Heure d'ouverture (dimanche)", type: "heure" },
-        { id: "cvHeureFinDimanche", evt: "input", label: "Heure de fermeture (dimanche)", type: "heure" },
+        { id: "cvHeuresDimanche", evt: "input", label: "Amplitude d'ouverture, dimanche", suffixe: " h/jour" },
         { id: "cvCoupureDimanche", evt: "change", label: "Coupure le dimanche", type: "checkbox" },
         { id: "cvCoupureDureeDimanche", evt: "input", label: "Durée de la coupure (dimanche)", suffixe: " h" },
-        { id: "cvCoupurePositionDimanche", evt: "input", comparer: false },
         { id: "cvNetMerm", evt: "input", label: "Salaire MERM net avant impôt", type: "montant" },
         { id: "cvNetSecretaire", evt: "input", label: "Salaire secrétaire médicale net avant impôt", type: "montant" },
         { id: "cvNetCadreSante", evt: "input", label: "Salaire cadre de santé net avant impôt", type: "montant" },
@@ -5583,7 +5248,6 @@ var svg = document.getElementById("cvChart");
           if (f.type === "select") texte = el.options[el.selectedIndex] ? el.options[el.selectedIndex].text : String(valeur);
           else if (f.type === "checkbox") texte = valeur ? "Oui" : "Non";
           else if (f.type === "radio") texte = el.parentNode.textContent.trim();
-          else if (f.type === "heure") texte = decimalVersHeureLabel(parseFloat(valeur) || 0);
           else if (f.type === "kwh") texte = eurosCent.format(parseFloat(valeur) || 0);
           else if (f.type === "montant") {
             texte = euros.format(valeurMilliers({ value: valeur }));
