@@ -1387,7 +1387,7 @@
           heuresDimancheJour: heuresDimancheJour, dureesAcq: dureesAcq, dureesInstall: dureesInstall
         });
         remplirEtudesListe();
-        dessinerLegende();
+        dessinerLegende(resultats);
         dessinerGraphe(resultats);
         if (!document.getElementById("eneCardSocleDetail").hidden) dessinerCamembertSocle(resultats);
         majSlidersComposition(patientsAn);
@@ -1566,62 +1566,22 @@
         });
       }
 
-      // Histogramme horizontal — une PAIRE de barres par poste (COMPOSANTS_5), pas une
-      // barre empilée par machine (1ʳᵉ version du 14/09/2026, jugée illisible par
-      // Cédric : "il faut des paires de bâtons pour comparer point par point"). Pour
-      // chaque poste (IRM, Local technique, Climatisation, Entre deux patients,
-      // Examens) : une barre Machine A juste au-dessus d'une barre Machine B, même
-      // échelle pour toutes les paires — comparaison directe poste par poste. La
-      // couleur encode maintenant la MACHINE (bleu/orange, SLOT_COLORS), plus le
-      // poste — le nom du poste est le libellé de la paire, plus une couleur de
-      // légende à part.
+      // Histogramme horizontal — une PAIRE de barres par poste, sur le même moteur
+      // dessinerPairesBarres() que le graphe principal ci-dessus (harmonisé le
+      // 14/09/2026, demande de Cédric : "harmoniser les graphes du haut et du bas, on
+      // garde le modèle deux bâtons l'un au-dessus de l'autre"). 5 postes ici (socle
+      // déplié en IRM/local technique/climatisation), contre 3 pour le graphe principal
+      // — seule différence : la granularité des postes comparés.
+      // Construit à l'intérieur de la fonction (pas en `var` au niveau du script) :
+      // COMPOSANTS_5 est déclaré plus bas dans ce fichier — un accès direct ici, au
+      // moment où le script s'exécute linéairement, lèverait "Cannot read properties of
+      // undefined" (piège de hoisting déjà documenté plusieurs fois dans le skill
+      // ced4scale-simulateur-web pour ce même fichier).
       function dessinerHistogrammeComposition(resultats) {
-        var svg = document.getElementById("eneChartComposition");
-        svg.innerHTML = "";
-        var plotX0 = 10, plotX1 = 610, plotW = plotX1 - plotX0;
-        var barH = 20, barGap = 3, groupGap = 22, top = 34;
-        var groupH = barH * 2 + barGap;
-        var maxVal = Math.max.apply(null,
-          resultats.map(function (r) { return COMPOSANTS_5.map(function (c) { return valeurComposant(r, c.key); }); })
-            .reduce(function (a, b) { return a.concat(b); }, [])
-            .concat([0.0001])
-        );
-        var xMax = niceCeil(maxVal * 1.12);
-        var bottomAxisY = top + COMPOSANTS_5.length * (groupH + groupGap) - groupGap + 4;
-
-        for (var g = 0; g <= 5; g++) {
-          var val = (xMax * g) / 5;
-          var x = plotX0 + (plotW * val) / xMax;
-          svg.appendChild(svgEl("line", { x1: x, x2: x, y1: top - 22, y2: bottomAxisY, class: "simulator__gridline" }));
-          var labelX = svgEl("text", { x: x, y: top - 26, class: "simulator__axis-label", "text-anchor": "middle" });
-          labelX.style.fontSize = "10px";
-          labelX.textContent = euros.format(val);
-          svg.appendChild(labelX);
-        }
-
-        COMPOSANTS_5.forEach(function (c, gi) {
-          var groupY = top + gi * (groupH + groupGap);
-          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 6, class: "simulator__axis-label", "text-anchor": "start" });
-          titleLabel.style.fontSize = "11px";
-          titleLabel.style.fontWeight = "700";
-          titleLabel.textContent = c.label;
-          svg.appendChild(titleLabel);
-
-          resultats.forEach(function (r, i) {
-            var val = valeurComposant(r, c.key);
-            var barW = xMax > 0 ? (val / xMax) * plotW : 0;
-            var barY = groupY + i * (barH + barGap);
-            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, fill: r.color });
-            svg.appendChild(rectBar);
-            var valLabel = svgEl("text", { x: plotX0 + barW + 6, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
-            valLabel.style.fontSize = "10px";
-            valLabel.style.fontWeight = "700";
-            valLabel.textContent = euros.format(val);
-            svg.appendChild(valLabel);
-          });
+        var categories = COMPOSANTS_5.map(function (c) {
+          return { key: c.key, label: c.label, valeur: function (r) { return valeurComposant(r, c.key); } };
         });
-
-        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 20));
+        dessinerPairesBarres("eneChartComposition", resultats, categories);
       }
 
       // Ligne de tableau avec une paire de barres (comme dessinerHistogrammeComposition()
@@ -1655,18 +1615,23 @@
         ligneTableBarre(tbody, "Dont heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
       }
 
-      function dessinerLegende() {
+      // Légende A/B (couleur machine) — harmonisée le 14/09/2026 avec
+      // dessinerLegendeComposition() ci-dessous : depuis que ce graphe utilise le motif
+      // "paire de barres par poste" (couleur = machine, pas couche), la légende doit
+      // identifier les machines, pas les 3 couches (dont les noms restent lisibles
+      // directement à gauche de chaque paire, voir dessinerPairesBarres()).
+      function dessinerLegende(resultats) {
         var legendEl = document.getElementById("eneLegend");
         legendEl.innerHTML = "";
-        [["socle", "Socle (arrêt)"], ["entrePatients", "Entre deux patients"], ["examens", "Examens"]].forEach(function (pair) {
+        resultats.forEach(function (r, i) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
           var key = document.createElement("span");
           key.className = "simulator__legend-key";
-          key.style.background = TIER_COLORS[pair[0]];
+          key.style.background = r.color;
           item.appendChild(key);
           var text = document.createElement("span");
-          text.textContent = pair[1];
+          text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           item.appendChild(text);
           legendEl.appendChild(item);
         });
@@ -1694,73 +1659,78 @@
         return niceN * pow;
       }
 
-      // Une barre empilée par machine (A et B), 3 segments : socle / entre-patients / examens.
-      // La couleur encode la couche (pas la machine) — les deux barres sont identifiées par
-      // une étiquette A/B sous l'axe, dans la couleur de leur swatch (bleu/orange).
-      function dessinerGraphe(resultats) {
-        var svg = document.getElementById("eneChart");
+      // Moteur commun "paire de barres horizontales par poste" — harmonisé le 14/09/2026
+      // (demande de Cédric : "harmoniser les graphes du haut et du bas, on garde le
+      // modèle deux bâtons l'un au-dessus de l'autre") entre ce graphe (3 postes : socle/
+      // entre-patients/examens) et dessinerHistogrammeComposition() plus bas (5 postes,
+      // socle déplié en IRM/local technique/climatisation) — mêmes dimensions, mêmes
+      // polices, même logique d'échelle, un seul endroit à corriger si le motif change.
+      // `categories` = [{ label, valeur: function(r) {...} }, ...] ;
+      // `onClicCategorie(cat, resultats)` optionnel, appelé au clic sur une barre.
+      function dessinerPairesBarres(svgId, resultats, categories, onClicCategorie) {
+        var svg = document.getElementById(svgId);
         svg.innerHTML = "";
-
-        // Échelle adaptée aux données : le plafond du graphe suit le plus grand des deux
-        // totaux (+15% de marge), jamais une valeur fixe — un écart de génération/technologie
-        // se voit donc toujours à l'échelle réelle, quels que soient les montants en jeu.
-        var top = 20, chartH = 320;
-        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
-        var yMax = niceCeil(maxVal * 1.06);
+        var plotX0 = 10, plotX1 = 610, plotW = plotX1 - plotX0;
+        var barH = 20, barGap = 3, groupGap = 22, top = 34;
+        var groupH = barH * 2 + barGap;
+        var maxVal = Math.max.apply(null,
+          resultats.map(function (r) { return categories.map(function (c) { return c.valeur(r); }); })
+            .reduce(function (a, b) { return a.concat(b); }, [])
+            .concat([0.0001])
+        );
+        var xMax = niceCeil(maxVal * 1.12);
+        var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap + 4;
 
         for (var g = 0; g <= 5; g++) {
-          var val = (yMax * g) / 5;
-          var y = top + chartH - (chartH * val) / yMax;
-          svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: y, y2: y, class: "simulator__gridline" }));
-          var labelY = svgEl("text", { x: 87, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
-          labelY.style.fontSize = "11px";
-          labelY.textContent = euros.format(val);
-          svg.appendChild(labelY);
+          var val = (xMax * g) / 5;
+          var x = plotX0 + (plotW * val) / xMax;
+          svg.appendChild(svgEl("line", { x1: x, x2: x, y1: top - 22, y2: bottomAxisY, class: "simulator__gridline" }));
+          var labelX = svgEl("text", { x: x, y: top - 26, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelX.style.fontSize = "10px";
+          labelX.textContent = euros.format(val);
+          svg.appendChild(labelX);
         }
 
-        var barWidth = 190, gap = 250;
-        var centers = [225, 225 + gap];
-        var tiers = ["socle", "entrePatients", "examens"];
+        categories.forEach(function (c, gi) {
+          var groupY = top + gi * (groupH + groupGap);
+          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 6, class: "simulator__axis-label", "text-anchor": "start" });
+          titleLabel.style.fontSize = "11px";
+          titleLabel.style.fontWeight = "700";
+          titleLabel.textContent = c.label;
+          svg.appendChild(titleLabel);
 
-        resultats.forEach(function (r, i) {
-          var barX = centers[i] - barWidth / 2;
-          var yCursor = top + chartH;
-          tiers.forEach(function (tierKey) {
-            var val = r.decomp[tierKey].total * r.prix;
-            var barH = yMax > 0 ? (val / yMax) * chartH : 0;
-            var barY = yCursor - barH;
-            var rectSegment = svgEl("rect", { x: barX, y: barY, width: barWidth, height: Math.max(0, barH), fill: TIER_COLORS[tierKey] });
-            rectSegment.style.cursor = "pointer";
-            rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
-            svg.appendChild(rectSegment);
-            // Montant affiché dans le segment lui-même quand il est assez grand pour
-            // l'accueillir sans déborder ; sinon laissé au tableau détaillé plutôt que de
-            // surcharger un trait trop fin (cas fréquent pour un aimant permanent).
-            if (barH >= 18) {
-              var segLabel = svgEl("text", { x: centers[i], y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "middle" });
-              segLabel.style.fontSize = "11px";
-              segLabel.style.fontWeight = "700";
-              segLabel.style.fill = "#fff";
-              segLabel.textContent = euros.format(val);
-              svg.appendChild(segLabel);
+          resultats.forEach(function (r, i) {
+            var val = c.valeur(r);
+            var barW = xMax > 0 ? (val / xMax) * plotW : 0;
+            var barY = groupY + i * (barH + barGap);
+            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, fill: r.color });
+            if (onClicCategorie) {
+              rectBar.style.cursor = "pointer";
+              rectBar.addEventListener("click", function () { onClicCategorie(c, resultats); });
             }
-            yCursor = barY;
+            svg.appendChild(rectBar);
+            var valLabel = svgEl("text", { x: plotX0 + barW + 6, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
+            valLabel.style.fontSize = "10px";
+            valLabel.style.fontWeight = "700";
+            valLabel.textContent = euros.format(val);
+            svg.appendChild(valLabel);
           });
-          var totalLabel = svgEl("text", { x: centers[i], y: top + chartH - (yMax > 0 ? (r.coutAnnuel / yMax) * chartH : 0) - 10, class: "simulator__axis-label", "text-anchor": "middle" });
-          totalLabel.style.fontSize = "14px";
-          totalLabel.style.fontWeight = "800";
-          totalLabel.textContent = euros.format(r.coutAnnuel);
-          svg.appendChild(totalLabel);
-
-          var nameLabel = svgEl("text", { x: centers[i], y: top + chartH + 26, class: "simulator__axis-label", "text-anchor": "middle" });
-          nameLabel.style.fontSize = "13px";
-          nameLabel.style.fontWeight = "700";
-          nameLabel.style.fill = r.color;
-          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
-          svg.appendChild(nameLabel);
         });
 
-        svg.appendChild(svgEl("line", { x1: 95, x2: 600, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 20));
+      }
+
+      // 3 postes de 1er niveau (pas le détail du socle, réservé au clic -> camembert) —
+      // clic sur la paire "Socle" ouvre toujours dessinerCamembertSocle() (motif inchangé).
+      var CATEGORIES_SOCLE_3 = [
+        { key: "socle", label: "Socle (arrêt)", valeur: function (r) { return r.decomp.socle.total * r.prix; } },
+        { key: "entrePatients", label: "Entre deux patients", valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
+        { key: "examens", label: "Examens", valeur: function (r) { return r.decomp.examens.total * r.prix; } }
+      ];
+      function dessinerGraphe(resultats) {
+        dessinerPairesBarres("eneChart", resultats, CATEGORIES_SOCLE_3, function (c, res) {
+          if (c.key === "socle") toggleSocleDetail(res);
+        });
       }
 
       // Historique réel du tarif réglementé de vente d'électricité (TRV) en France, option
