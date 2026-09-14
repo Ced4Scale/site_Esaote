@@ -430,14 +430,6 @@
       background: var(--fader-color, var(--red)); border: 2px solid #fff;
       box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
     }
-    /* Patients/h en affichage seul depuis le 15/09/2026 (demande de Cédric : "Temps
-       changement de patient" ne se règle que dans la colonne de gauche) — piste et case
-       gardées visibles (même langage que les autres pistes de la table de mixage) mais
-       non interactives, légèrement estompées pour le signaler d'un coup d'œil. */
-    .ene-mixer-fader:disabled { cursor: default; opacity: .82; }
-    .ene-mixer-fader:disabled::-webkit-slider-thumb { cursor: default; }
-    .ene-mixer-fader:disabled::-moz-range-thumb { cursor: default; }
-    .ene-mixer-strip__value[readonly] { cursor: default; opacity: .82; }
     .ene-mixer-strip--rouge { --fader-color: var(--red); }
     .ene-mixer-strip--bleu { --fader-color: #2a78d6; }
     .ene-mixer-strip--orange { --fader-color: #eb6834; }
@@ -870,16 +862,16 @@
                 <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--bleu">
                   <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="0">A</div>
                   <div class="ene-mixer-fader-track">
-                    <input type="range" id="enePatientsHeureASlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" disabled aria-label="Patients par heure, Machine A (affichage seul, se règle via Temps changement de patient dans la colonne de gauche)" />
+                    <input type="range" id="enePatientsHeureASlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine A" />
                   </div>
-                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureASliderVal" readonly tabindex="-1" aria-label="Patients par heure, Machine A (affichage seul, se règle via Temps changement de patient dans la colonne de gauche)" />
+                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureASliderVal" aria-label="Patients par heure, Machine A, modifiable" />
                 </div>
                 <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--orange">
                   <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="1">B</div>
                   <div class="ene-mixer-fader-track">
-                    <input type="range" id="enePatientsHeureBSlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" disabled aria-label="Patients par heure, Machine B (affichage seul, se règle via Temps changement de patient dans la colonne de gauche)" />
+                    <input type="range" id="enePatientsHeureBSlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine B" />
                   </div>
-                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureBSliderVal" readonly tabindex="-1" aria-label="Patients par heure, Machine B (affichage seul, se règle via Temps changement de patient dans la colonne de gauche)" />
+                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureBSliderVal" aria-label="Patients par heure, Machine B, modifiable" />
                 </div>
               </div>
               <div class="ene-mixer-strip__unit">patients/h</div>
@@ -2627,13 +2619,22 @@
         prixInput.value = Math.round(parseFloat(this.value) * 100) / 100;
         prixInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
-      // Patients/h est un AFFICHAGE SEUL depuis le 15/09/2026 (demande de Cédric : "le
-      // temps de changement de patient ne peut pas être changé par le mode calcul, c'est
-      // obligatoirement une modification manuelle dans la colonne de gauche") — plus de
-      // fader ni de case éditable ici, contrairement aux autres pistes de la table de
-      // mixage. La valeur affichée (60 / (temps de changement + durée d'acquisition)) est
-      // calculée dans majSlidersComposition(), jamais l'inverse : "Temps changement de
-      // patient" ne se modifie que dans le formulaire, colonne de gauche.
+      // Patients par heure = 60 / (temps de changement + durée d'acquisition) — renommé/
+      // rechiffré le 14/09/2026 (demande de Cédric) : "Temps changement de patient" exclut
+      // désormais l'acquisition (contrairement à l'ancien "temps de prise en charge total"),
+      // donc Patients/h doit retirer la durée d'acquisition courante pour en déduire le
+      // temps de changement seul, pas l'inverse direct comme avant. 0 patient/h saisi via
+      // le curseur (min="0.5" ici, jamais 0) reste toujours une capacité non nulle, pas de
+      // division par zéro possible.
+      [["enePatientsHeureASlider", "eneInstallA", "eneAcqA"], ["enePatientsHeureBSlider", "eneInstallB", "eneAcqB"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var patientsHeure = Math.max(0.1, parseFloat(this.value) || 0.1);
+          var acqMin = Math.max(1, parseFloat(document.getElementById(pair[2]).value) || 1);
+          var installInput = document.getElementById(pair[1]);
+          installInput.value = Math.round(Math.max(0, (60 / patientsHeure) - acqMin) * 10) / 10;
+          installInput.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
       // Durée d'acquisition — curseur miroir direct de eneAcqA/B (même unité, minutes).
       [["eneAcqASlider", "eneAcqA"], ["eneAcqBSlider", "eneAcqB"]].forEach(function (pair) {
         document.getElementById(pair[0]).addEventListener("input", function () {
@@ -2645,15 +2646,20 @@
       // Case de valeur éditable au clavier (demande de Cédric le 14/09/2026), en plus du
       // glissé — écrit directement dans le fader correspondant puis déclenche son
       // évènement "input" : rejoint la cascade déjà en place ci-dessus (fader → champ
-      // source → recalculer()), jamais un 2e chemin de calcul séparé. Ne concerne plus
-      // Patients/h depuis le 15/09/2026 (affichage seul, voir plus haut).
-      [["eneAcqASliderVal", "eneAcqASlider"],
+      // source → recalculer()), jamais un 2e chemin de calcul séparé.
+      [["enePatientsHeureASliderVal", "enePatientsHeureASlider"],
+       ["enePatientsHeureBSliderVal", "enePatientsHeureBSlider"],
+       ["eneAcqASliderVal", "eneAcqASlider"],
        ["eneAcqBSliderVal", "eneAcqBSlider"]].forEach(function (pair) {
         document.getElementById(pair[0]).addEventListener("input", function () {
           var slider = document.getElementById(pair[1]);
           var val = parseFloat(this.value);
           if (isNaN(val)) return; // laisse taper "4." ou effacer sans recalculer sur une valeur incomplète
           slider.value = Math.min(Math.max(val, +slider.min), +slider.max);
+          // Répercute le clamp sur la case elle-même (demande de Cédric le 14/09/2026,
+          // "Patients/h" a un plafond dynamique = 60/durée d'acquisition) — sinon la case
+          // affiche encore la valeur tapée (ex. "8") alors que la vraie valeur retenue est
+          // plus basse (ex. "4"), trompeur. Ne réécrit que si un clamp a vraiment eu lieu.
           if (+slider.value !== val) this.value = slider.value;
           slider.dispatchEvent(new Event("input", { bubbles: true }));
         });
@@ -2714,12 +2720,11 @@
         var champPrix = document.getElementById("enePrixSliderVal");
         if (document.activeElement !== champPrix) champPrix.value = Math.round(prixActuel * 100) / 100;
 
-        // Patients/h — AFFICHAGE SEUL depuis le 15/09/2026 (demande de Cédric : "Temps
-        // changement de patient" ne se modifie que dans la colonne de gauche, jamais via
-        // ce fader) : lu depuis eneInstallA/B + eneAcqA/B, jamais l'inverse. Formule =
-        // 60 / (changement + acquisition). Plafond théorique du fader (changement → 0) =
-        // 60 / durée d'acquisition courante (demande de Cédric : "si l'acquisition dure
-        // 15 min, pas possible de faire plus de 4 examens par heure").
+        // "Temps changement de patient" (eneInstallA/B) exclut désormais l'acquisition
+        // (renommé/rechiffré le 14/09/2026) — Patients/h = 60 / (changement + acquisition),
+        // plus le simple inverse du changement seul. Plafond théorique du fader (changement
+        // → 0) = 60 / durée d'acquisition courante (demande de Cédric : "si l'acquisition
+        // dure 15 min, pas possible de faire plus de 4 examens par heure").
         [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA", "eneAcqA"],
          ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB", "eneAcqB"]].forEach(function (t) {
           var acqMin = Math.max(1, parseFloat(document.getElementById(t[3]).value) || 1);
@@ -2729,10 +2734,8 @@
           var slider = document.getElementById(t[0]);
           slider.max = Math.round((60 / acqMin) * 10) / 10;
           slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
-          // Toujours réécrite, sans garde de focus (contrairement aux champs éditables
-          // ailleurs sur cette page) — cette case est en lecture seule depuis le
-          // 15/09/2026, jamais en cours de frappe, donc rien à protéger.
-          document.getElementById(t[1]).value = Math.round(patientsHeure * 10) / 10;
+          var champ = document.getElementById(t[1]);
+          if (document.activeElement !== champ) champ.value = Math.round(patientsHeure * 10) / 10;
         });
 
         [["eneAcqASlider", "eneAcqASliderVal", "eneAcqA"],
