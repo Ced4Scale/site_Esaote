@@ -1510,12 +1510,18 @@
       // En-tête de section, sans bâton ni valeur (demande de Cédric le 14/09/2026,
       // "Ventilation horaire" avant les 3 lignes "Heures...") — juste un libellé, pour
       // introduire un groupe de lignes qui suit (à indenter séparément via opts.indent).
-      function ligneFaitTitre(container, label) {
+      function ligneFaitTitre(container, label, opts) {
         var row = document.createElement("div");
         row.className = "ene-fact-row ene-fact-row--titre";
         var lbl = document.createElement("div");
         lbl.className = "ene-fact-row-label";
-        lbl.textContent = label;
+        // Triangle ▸/▾ optionnel (demande de Cédric le 14/09/2026, "Ventilation horaire")
+        // — même convention que ligneFaitBarre()/dessinerPairesBarres().
+        lbl.textContent = (opts && opts.triangle !== undefined ? (opts.triangle ? "▾ " : "▸ ") : "") + label;
+        if (opts && opts.onClicLabel) {
+          lbl.style.cursor = "pointer";
+          lbl.addEventListener("click", opts.onClicLabel);
+        }
         row.appendChild(lbl);
         container.appendChild(row);
       }
@@ -1715,12 +1721,18 @@
           ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; }, { indent: true });
           ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; }, { indent: true });
         }
-        // "Ventilation horaire" (demande de Cédric le 14/09/2026) : en-tête de section,
-        // les 3 lignes "Heures..." qui suivent sont son détail, décalées d'1cm.
-        ligneFaitTitre(container, "Ventilation horaire");
-        ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
-        ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
-        ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
+        // "Ventilation horaire" (demande de Cédric le 14/09/2026) : en-tête de section
+        // avec triangle ▸/▾, fermée par défaut — les 3 lignes "Heures..." qui suivent
+        // sont son détail, décalées d'1cm, invisibles tant qu'on ne déplie pas.
+        ligneFaitTitre(container, "Ventilation horaire", {
+          triangle: eneVentilHoraireOuverte,
+          onClicLabel: function () { eneVentilHoraireOuverte = !eneVentilHoraireOuverte; remplirTableau(resultats); }
+        });
+        if (eneVentilHoraireOuverte) {
+          ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
+          ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
+          ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; }, { indent: true });
+        }
       }
 
       // Légende A/B (couleur machine) — depuis que ce graphe utilise le motif "paire de
@@ -1947,6 +1959,10 @@
       // carbone (Émissions de CO₂/Absorption/Sur 7 ans) juste en dessous, voir
       // remplirTableau(). Même variable capturée/restaurée par la mémoire de simulation.
       var eneConsoOuvert = false;
+      // "Ventilation horaire" (demande de Cédric le 14/09/2026) — fermée par défaut,
+      // masque les 3 lignes Heures à l'arrêt/prêt/en acquisition tant qu'on ne l'ouvre
+      // pas. Même variable capturée/restaurée par la mémoire de simulation.
+      var eneVentilHoraireOuverte = false;
       function dessinerGraphe(resultats) {
         var categorieTotal = {
           key: "total",
@@ -2767,6 +2783,7 @@
         etat.__ventilationOuverte = eneVentilationOuverte;
         etat.__socleOuvert = eneSocleOuvert;
         etat.__consoOuvert = eneConsoOuvert;
+        etat.__ventilHoraireOuverte = eneVentilHoraireOuverte;
         return etat;
       }
 
@@ -2801,6 +2818,7 @@
         if (etat.__ventilationOuverte !== undefined) eneVentilationOuverte = etat.__ventilationOuverte;
         if (etat.__socleOuvert !== undefined) eneSocleOuvert = etat.__socleOuvert;
         if (etat.__consoOuvert !== undefined) eneConsoOuvert = etat.__consoOuvert;
+        if (etat.__ventilHoraireOuverte !== undefined) eneVentilHoraireOuverte = etat.__ventilHoraireOuverte;
         recalculer();
       }
 
