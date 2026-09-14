@@ -1867,7 +1867,17 @@
         // groupGap resserré le 14/09/2026 (retour de Cédric : "espace vide dans un
         // graphe", entre deux paires de barres) — gardé juste assez grand pour loger le
         // libellé de catégorie suivant au-dessus de ses barres, sans bande vide en trop.
-        var barH = 30, barGap = 5, groupGap = 16, top = 22;
+        // groupGap réaugmenté le 14/09/2026 (2e retour de Cédric le même jour : "l'espace
+        // est insuffisant entre chaque paire", "le même espace partout comme Empreinte
+        // carbone") — 16 (choisi plus tôt dans la même session pour retirer un vide jugé
+        // excessif) laissait le libellé de la paire suivante quasi collé à la précédente,
+        // sans la même respiration que .ene-fact-list (gap: 1.1rem) des tableaux de
+        // faits. Vérifié par mesure réelle (pas seulement à l'œil) : l'espace entre le
+        // bas d'une paire et le haut de la paire suivante (bâtons compris, PAS le
+        // libellé) était de ~15,5px avant contre ~17,6px pour .ene-fact-list — proche en
+        // apparence, mais le libellé (16px de police) n'avait alors presque plus de
+        // marge propre et empiétait visuellement sur l'espace attendu.
+        var barH = 30, barGap = 5, groupGap = 36, top = 22;
         var groupH = barH * 2 + barGap;
         // Échelle PROPRE À CHAQUE POSTE depuis le 14/09/2026 (retour de Cédric : une
         // échelle commune aux 5 postes de "Composition du coût énergétique annuel"
@@ -1927,19 +1937,33 @@
         svg.setAttribute("viewBox", "0 0 640 " + bottomAxisY);
       }
 
-      // 3 postes de 1er niveau (pas le détail du socle, réservé au clic -> camembert) —
-      // clic sur la paire "Socle" ouvre toujours dessinerCamembertSocle() (motif inchangé).
+      // 3 postes de 1er niveau — le socle a lui-même son propre triangle (voir plus bas)
+      // qui déplie ses 3 composants (IRM/local technique/climatisation), sur le même
+      // principe que le triangle "Total" plus bas.
       var CATEGORIES_SOCLE_3 = [
         { key: "socle", label: "Socle (arrêt)", valeur: function (r) { return r.decomp.socle.total * r.prix; } },
         { key: "entrePatients", label: "Entre deux patients", valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
         { key: "examens", label: "Examens", valeur: function (r) { return r.decomp.examens.total * r.prix; } }
+      ];
+      // Détail du socle (demande de Cédric le 14/09/2026, "un triangle à côté de Socle
+      // pour remplacer [la ligne] par" ces 3 postes) — mêmes clés/valeurs/libellés que
+      // COMPOSANTS_5 (dessinerCamembertSocle) et valeurComposant(), jamais dupliqués sous
+      // une forme différente : une seule vérité pour "de quoi le socle est fait".
+      var CATEGORIES_SOCLE_DETAIL = [
+        { key: "irm", label: "IRM (talon de consommation)", valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
+        { key: "lt", label: "Local technique", valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
+        { key: "clim", label: "Climatisation salle", valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
       ];
       // Paire "Total" en tête du graphe, avec triangle ▸/▾ qui révèle la ventilation en
       // 3 postes en dessous (demande de Cédric le 14/09/2026) — fermée par défaut, même
       // convention que les autres triangles du site (.bascule-hyp-section). État gardé
       // dans une variable de module (comme modeCamembert ailleurs sur ce site), donc
       // aussi capturé/restauré par la mémoire de simulation (voir ENE_MEMOIRE_FIELDS).
+      // eneSocleOuvert (même principe) déplie le détail du socle une fois la ventilation
+      // ouverte — indépendant de la ventilation elle-même, mais n'a d'effet visible que
+      // si elle l'est aussi.
       var eneVentilationOuverte = false;
+      var eneSocleOuvert = false;
       function dessinerGraphe(resultats) {
         var categorieTotal = {
           key: "total",
@@ -1948,10 +1972,18 @@
             return CATEGORIES_SOCLE_3.reduce(function (s, c) { return s + c.valeur(r); }, 0);
           }
         };
-        var categories = eneVentilationOuverte ? [categorieTotal].concat(CATEGORIES_SOCLE_3) : [categorieTotal];
+        var categorieSocle = {
+          key: "socle",
+          label: (eneSocleOuvert ? "▾ " : "▸ ") + "Socle (arrêt)",
+          valeur: CATEGORIES_SOCLE_3[0].valeur
+        };
+        var categoriesDetail = [categorieSocle]
+          .concat(eneSocleOuvert ? CATEGORIES_SOCLE_DETAIL : [])
+          .concat(CATEGORIES_SOCLE_3.slice(1));
+        var categories = eneVentilationOuverte ? [categorieTotal].concat(categoriesDetail) : [categorieTotal];
         dessinerPairesBarres("eneChart", resultats, categories, function (c, res) {
           if (c.key === "total") { eneVentilationOuverte = !eneVentilationOuverte; dessinerGraphe(res); }
-          else if (c.key === "socle") toggleSocleDetail(res);
+          else if (c.key === "socle") { eneSocleOuvert = !eneSocleOuvert; dessinerGraphe(res); }
         });
       }
 
@@ -2786,10 +2818,12 @@
           if (!el) return;
           etat[f.id] = { valeur: f.type === "checkbox" ? el.checked : el.value };
         });
-        // Variable JS pure (pas un champ de formulaire) : la triangle "Total" du graphe
-        // "trois couches" — voir "Mémoire de simulation : capturer aussi les variables
-        // JS pures" dans le skill, à ne jamais oublier au moment où on l'ajoute.
+        // Variables JS pures (pas des champs de formulaire) : les triangles "Total" et
+        // "Socle" du graphe "trois couches" — voir "Mémoire de simulation : capturer
+        // aussi les variables JS pures" dans le skill, à ne jamais oublier au moment où
+        // on les ajoute.
         etat.__ventilationOuverte = eneVentilationOuverte;
+        etat.__socleOuvert = eneSocleOuvert;
         return etat;
       }
 
@@ -2822,6 +2856,7 @@
           definirChamp(f, etat[f.id].valeur);
         });
         if (etat.__ventilationOuverte !== undefined) eneVentilationOuverte = etat.__ventilationOuverte;
+        if (etat.__socleOuvert !== undefined) eneSocleOuvert = etat.__socleOuvert;
         recalculer();
       }
 
