@@ -34,6 +34,11 @@
       font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
     }
     .sim-gear-btn:hover, .sim-gear-btn:focus-visible { opacity: 1; }
+    /* Bouton ⏴/⏵ déplacé le 14/09/2026 (demande de Cédric) : n'appartient plus à la
+       ligne de titre d'un onglet en particulier — ancré en haut à droite de TOUT le
+       bloc .simulator__form (qui regroupe tous les onglets "Paramètres"/"Dates"/...),
+       par-dessus le 1ᵉʳ onglet sans en faire partie. */
+    .form-panel-toggle-btn { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
     /* Masquer/réafficher la colonne de gauche entière au clic sur l'icône ⏴/⏵ (motif
        porté de simulateur-ct-vs-irm.html le 08/09/2026, sur demande de Cédric — la
        colonne de résultats prend alors toute la largeur). */
@@ -378,16 +383,38 @@
     </div>
 
     <div class="simulator__layout">
-      <div class="form-card simulator__form">
-        <div class="simulator__field-group" style="border-left-color:#6b5b95">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="margin:0">Paramètres</h3>
-            <div style="display:flex;align-items:center;gap:.3rem">
-              <button type="button" class="sim-gear-btn" id="simBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
-              <button type="button" class="sim-gear-btn" id="simBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
+      <div class="form-card simulator__form" style="position:relative">
+        <!-- Bouton ⏴ déplacé le 14/09/2026 (demande de Cédric) : n'appartient plus à
+             l'onglet "Paramètres" (qui est devenu un onglet comme les autres, voir
+             ci-dessous) — ancré en haut à droite de TOUT le bloc qui regroupe les
+             onglets, plutôt que dans la ligne de titre d'un onglet en particulier. -->
+        <button type="button" class="sim-gear-btn form-panel-toggle-btn" id="simBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+
+        <!-- "Paramètres" — la roue crantée ⚙ (qui ouvrait une modale "Réglages avancés")
+             a disparu le 14/09/2026 (demande de Cédric) : ce contenu devient un onglet
+             comme les autres, avec le même triangle ▸/▾, dans le même accordéon
+             (simMainAccordion) — plus de modale séparée pour ce panneau. -->
+        <details class="simulator__field-group bascule-hyp-section" name="simMainAccordion" style="border-left-color:#6b5b95">
+          <summary>Paramètres</summary>
+          <div class="field">
+            <label>Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="simRejoue" value="oui" checked /> Oui — suivre la vraie chronologie</label>
+              <label><input type="radio" name="simRejoue" value="non" /> Non — geler le tarif de départ</label>
             </div>
           </div>
-        </div>
+          <div class="field" style="margin-bottom:0">
+            <label>Corriger les recettes de l'inflation (euros constants) ?</label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="simInflation" value="non" checked /> Non — euros courants</label>
+              <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (valeur de l'année 1)</label>
+            </div>
+          </div>
+          <span class="sim-info-wrap">
+            <button type="button" class="sim-info-btn" id="simInfoChampsBtn" aria-expanded="false" aria-controls="simInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
+            <div class="sim-info-pop" id="simInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le tableau et le graphique changer pendant que tu ajustes.</div>
+          </span>
+        </details>
 
         <details class="simulator__field-group bascule-hyp-section" name="simMainAccordion" style="border-left-color:#1baf7a">
           <summary>Dates de forfait technique à comparer</summary>
@@ -636,50 +663,6 @@
       <thead><tr id="simSeuilsHead"></tr></thead>
       <tbody id="simSeuilsBody"></tbody>
     </table>
-  </div>
-
-  <div class="modal-overlay" id="simHypOverlay" role="dialog" aria-modal="true" aria-labelledby="simHypTitle" hidden>
-    <div class="modal" style="width:min(420px, 100%); position:relative">
-      <button type="button" class="sim-hyp-fullscreen-btn" id="simHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <g class="icon-expand">
-            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </g>
-          <g class="icon-compress">
-            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </g>
-        </svg>
-      </button>
-      <button type="button" class="modal__close" id="simHypClose" aria-label="Fermer">&times;</button>
-      <div class="modal__scroll">
-        <div class="sim-hyp-body">
-          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.2rem">
-            <h3 id="simHypTitle" style="margin:0">Réglages avancés</h3>
-            <span class="sim-info-wrap">
-              <button type="button" class="sim-info-btn" id="simInfoChampsBtn" aria-expanded="false" aria-controls="simInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
-              <div class="sim-info-pop" id="simInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le tableau et le graphique changer pendant que tu ajustes.</div>
-            </span>
-          </div>
-          <div class="field">
-            <label>Les décrets postérieurs à la date choisie s'appliquent-ils ensuite ?</label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="simRejoue" value="oui" checked /> Oui — suivre la vraie chronologie</label>
-              <label><input type="radio" name="simRejoue" value="non" /> Non — geler le tarif de départ</label>
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:0">
-            <label>Corriger les recettes de l'inflation (euros constants) ?</label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="simInflation" value="non" checked /> Non — euros courants</label>
-              <label><input type="radio" name="simInflation" value="oui" /> Oui — euros constants (valeur de l'année 1)</label>
-            </div>
-          </div>
-          <div class="sim-hyp-actions">
-            <button type="button" class="btn" id="simHypDone">Fermer</button>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -1477,39 +1460,6 @@
         appliquerVisibilitePanel(false);
       });
 
-      var simHypOverlay = document.getElementById("simHypOverlay");
-      document.getElementById("simBtnHypotheses").addEventListener("click", function () {
-        simHypOverlay.hidden = false;
-        simHypOverlay.classList.add("is-open");
-      });
-      function fermerSimHyp() {
-        simHypOverlay.classList.remove("is-open");
-        simHypOverlay.hidden = true;
-      }
-      document.getElementById("simHypClose").addEventListener("click", fermerSimHyp);
-      document.getElementById("simHypDone").addEventListener("click", fermerSimHyp);
-
-      // Bouton "agrandir/réduire" du panneau ⚙ (nouveau motif, 10/09/2026) : remplit la
-      // fenêtre du navigateur plutôt que le vrai plein écran natif (pas de permission
-      // navigateur à gérer, plus simple et fiable) — bascule juste la largeur du
-      // panneau entre 420px et 100%, en manipulant directement le même style inline
-      // que le HTML de départ (pas de conflit de spécificité CSS à gérer).
-      var simHypModal = document.querySelector("#simHypOverlay .modal");
-      var simHypLargeurNormale = simHypModal.style.width; // "min(420px, 100%)" posé dans le HTML
-      var simHypFullscreenBtn = document.getElementById("simHypFullscreenBtn");
-      var simHypFullscreen = false;
-      simHypFullscreenBtn.addEventListener("click", function () {
-        simHypFullscreen = !simHypFullscreen;
-        simHypModal.style.width = simHypFullscreen ? "100%" : simHypLargeurNormale;
-        simHypFullscreenBtn.classList.toggle("is-compressed", simHypFullscreen);
-        simHypFullscreenBtn.setAttribute("aria-pressed", String(simHypFullscreen));
-        var libelle = simHypFullscreen ? "Réduire le panneau" : "Agrandir le panneau";
-        simHypFullscreenBtn.setAttribute("aria-label", libelle);
-        simHypFullscreenBtn.title = libelle;
-      });
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && simHypOverlay.classList.contains("is-open")) fermerSimHyp();
-      });
       machineSelect.addEventListener("change", function () {
         remplirSelectsDates();
         afficherSeuils();
