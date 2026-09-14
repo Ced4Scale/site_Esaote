@@ -1636,11 +1636,11 @@
               </select>
             </div>
             <div class="field">
-              <label>Vous raisonnez plutôt en</label>
-              <div class="simulator__toggle">
-                <label><input type="radio" name="cvActiviteMode" value="jour" checked /> Patients par jour</label>
-                <label><input type="radio" name="cvActiviteMode" value="an" /> Patients par an</label>
-              </div>
+              <label for="cvActiviteMode">Vous raisonnez plutôt en</label>
+              <select id="cvActiviteMode">
+                <option value="jour" selected>Patients par jour</option>
+                <option value="an">Patients par an</option>
+              </select>
             </div>
           </details>
 
@@ -3053,25 +3053,23 @@
       var HEURES_LEGALES_MENSUELLES = 151.67;
 
       function activitePatientsJour(joursParMois) {
-        var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var mode = document.getElementById("cvActiviteMode").value;
         var valeur = Math.max(0, parseFloat(document.getElementById("cvActivite").value) || 0);
         return mode === "jour" ? valeur : valeur / (joursParMois * 12);
       }
 
-      document.querySelectorAll('input[name="cvActiviteMode"]').forEach(function (radio) {
-        radio.addEventListener("change", function () {
-          var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
-          var joursParMois = calculerJoursEtHeures().joursParMois;
-          var activiteInput = document.getElementById("cvActivite");
-          var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
-          document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Patients par jour" : "Patients par an";
-          // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
-          // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
-          activiteInput.value = mode === "jour"
-            ? Math.round((ancienne / (joursParMois * 12)) * 10) / 10
-            : Math.round(ancienne * joursParMois * 12);
-          recalculer();
-        });
+      document.getElementById("cvActiviteMode").addEventListener("change", function () {
+        var mode = document.getElementById("cvActiviteMode").value;
+        var joursParMois = calculerJoursEtHeures().joursParMois;
+        var activiteInput = document.getElementById("cvActivite");
+        var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
+        document.getElementById("cvActiviteLabel").textContent = mode === "jour" ? "Patients par jour" : "Patients par an";
+        // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
+        // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
+        activiteInput.value = mode === "jour"
+          ? Math.round((ancienne / (joursParMois * 12)) * 10) / 10
+          : Math.round(ancienne * joursParMois * 12);
+        recalculer();
       });
 
       // Curseur sous "Résultat à votre activité" — reflète et modifie la même
@@ -3093,7 +3091,7 @@
         return heuresParJour * patientsHeureGoulot;
       }
       function ajusterSliderActivite() {
-        var mode = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var mode = document.getElementById("cvActiviteMode").value;
         var joursParMois = calculerJoursEtHeures().joursParMois;
         var plafondJour = Math.max(1, capacitePatientsJourMax());
         if (mode === "jour") {
@@ -3537,7 +3535,7 @@
       function recapDonnees(resultats, configs, params) {
         var dateLabel = dateSelect.options[dateSelect.selectedIndex].textContent;
         var amortiLabel = params.amortiKey === "amorti" ? "Amorties (> 7 ans)" : "Non amorties";
-        var modeActivite = document.querySelector('input[name="cvActiviteMode"]:checked').value;
+        var modeActivite = document.getElementById("cvActiviteMode").value;
         var activiteBrute = document.getElementById("cvActivite").value;
 
         var equip = [

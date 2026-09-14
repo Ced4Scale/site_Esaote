@@ -863,11 +863,11 @@
           <details class="bascule-hyp-section" name="eneHypAccordion">
             <summary>Activité</summary>
             <div class="field">
-              <label>Vous raisonnez plutôt en</label>
-              <div class="simulator__toggle">
-                <label><input type="radio" name="eneActiviteMode" value="jour" checked /> Patients par jour ouvré</label>
-                <label><input type="radio" name="eneActiviteMode" value="an" /> Patients par an</label>
-              </div>
+              <label for="eneActiviteMode">Vous raisonnez plutôt en</label>
+              <select id="eneActiviteMode">
+                <option value="jour" selected>Patients par jour ouvré</option>
+                <option value="an">Patients par an</option>
+              </select>
             </div>
             <div class="field">
               <label for="eneActivite" id="eneActiviteLabel">Nombre de patients par jour</label>
@@ -1175,7 +1175,7 @@
       var derniereComparaison = null;
 
       function activiteAnnuelle() {
-        var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var mode = document.getElementById("eneActiviteMode").value;
         var valeur = Math.max(0, parseFloat(document.getElementById("eneActivite").value) || 0);
         if (mode === "jour") {
           var heuresSemaineJour = ampliEff("eneHeuresSemaine", "eneCoupureSemaineActive", "eneCoupureSemaine");
@@ -1233,7 +1233,7 @@
         var heuresDimancheJourBrut = lireAmplitudeBrute("eneDimanche");
         var patientsAn = activiteAnnuelle();
 
-        var modeActiviteCourant = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var modeActiviteCourant = document.getElementById("eneActiviteMode").value;
         var equivalentJour = convertirActivite(patientsAn, false, heuresSemaineJour, heuresSamediJour, heuresDimancheJour);
         document.getElementById("eneActiviteEquivalent").textContent = modeActiviteCourant === "jour"
           ? "≈ " + entiers.format(patientsAn) + " patients/an."
@@ -1427,7 +1427,7 @@
         return { "0": "Fermé", "4": "Ouvert le matin (4h)", "8": "Ouvert toute la journée (8h)" }[String(valeur)] || (valeur + "h");
       }
       function remplirTableauParamsSaisis(machineA, machineB, p) {
-        var modeActivite = document.querySelector('input[name="eneActiviteMode"]:checked').value;
+        var modeActivite = document.getElementById("eneActiviteMode").value;
         var activiteBrute = document.getElementById("eneActivite").value;
         var paramsCommuns = [
           ["Coût du kWh", eurosCent.format(p.prix)],
@@ -2278,20 +2278,18 @@
       });
 
       // ---- Écouteurs ----
-      document.querySelectorAll('input[name="eneActiviteMode"]').forEach(function (radio) {
-        radio.addEventListener("change", function () {
-          var mode = document.querySelector('input[name="eneActiviteMode"]:checked').value;
-          var heuresSemaineJour = ampliEff("eneHeuresSemaine", "eneCoupureSemaineActive", "eneCoupureSemaine");
-          var heuresSamediJour = ampliEff("eneSamedi", "eneCoupureSamediActive", "eneCoupureSamedi");
-          var heuresDimancheJour = ampliEff("eneDimanche", "eneCoupureDimancheActive", "eneCoupureDimanche");
-          var activiteInput = document.getElementById("eneActivite");
-          var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
-          document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
-          // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
-          // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
-          activiteInput.value = Math.round(convertirActivite(ancienne, mode === "an", heuresSemaineJour, heuresSamediJour, heuresDimancheJour));
-          recalculer();
-        });
+      document.getElementById("eneActiviteMode").addEventListener("change", function () {
+        var mode = document.getElementById("eneActiviteMode").value;
+        var heuresSemaineJour = ampliEff("eneHeuresSemaine", "eneCoupureSemaineActive", "eneCoupureSemaine");
+        var heuresSamediJour = ampliEff("eneSamedi", "eneCoupureSamediActive", "eneCoupureSamedi");
+        var heuresDimancheJour = ampliEff("eneDimanche", "eneCoupureDimancheActive", "eneCoupureDimanche");
+        var activiteInput = document.getElementById("eneActivite");
+        var ancienne = Math.max(0, parseFloat(activiteInput.value) || 0);
+        document.getElementById("eneActiviteLabel").textContent = mode === "jour" ? "Nombre de patients par jour" : "Nombre de patients par an";
+        // Convertit la valeur déjà saisie plutôt que de la remplacer par un défaut fixe —
+        // sinon on perd ce que le visiteur avait renseigné juste en changeant de bascule.
+        activiteInput.value = Math.round(convertirActivite(ancienne, mode === "an", heuresSemaineJour, heuresSamediJour, heuresDimancheJour));
+        recalculer();
       });
       [
         "enePrix", "eneHeuresSemaine", "eneCoupureSemaine", "eneSamedi", "eneCoupureSamedi",
@@ -2403,7 +2401,7 @@
         { id: "eneCoupureDimanche", evt: "input", label: "Durée de la coupure, dimanche" },
         // Groupe de radios (pas de vrai `id`, seulement `name` partagé) — capturé/restauré via
         // querySelector('input[name="..."]:checked'), voir definirChamp()/capturerParametres().
-        { id: "eneActiviteMode", evt: "change", label: "Vous raisonnez plutôt en", type: "radio" },
+        { id: "eneActiviteMode", evt: "change", label: "Vous raisonnez plutôt en", type: "select" },
         { id: "eneActivite", evt: "input", label: "Votre activité" },
         { id: "eneChampA", evt: "change", label: "Gamme de champ — Machine A", type: "select" },
         { id: "eneMachineA", evt: "change", label: "Choix IRM — Machine A", type: "select" },
