@@ -807,7 +807,11 @@
               </div>
             </span>
           </div>
-          <span class="ene-info-wrap ene-info-wrap--violet" style="margin-top:.4rem">
+          <!-- En bout de ligne (demande de Cédric le 14/09/2026) : cette ampoule explique
+               le mécanisme Total -> Socle, alignée à droite de sa propre ligne plutôt qu'à
+               gauche par défaut. -->
+          <div style="text-align:right; margin-top:.4rem">
+            <span class="ene-info-wrap ene-info-wrap--violet">
             <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Composition du socle">💡</button>
             <div class="ene-info-pop ene-info-pop--table" id="eneInfoSocleClicPop" hidden>
               <p style="margin:0 0 .5rem">Cliquez sur "Total coût énergétique annuel" pour voir le détail par poste, puis sur "Socle (arrêt)" pour voir sa composition :</p>
@@ -819,7 +823,8 @@
                 </tbody>
               </table>
             </div>
-          </span>
+            </span>
+          </div>
           <!-- Contenu remonté de l'ancienne carte "Composition du coût énergétique
                annuel" (supprimée le 14/09/2026, demande de Cédric — devenue redondante
                avec les triangles Total/Socle ci-dessus) : les lignes de faits
@@ -2020,7 +2025,11 @@
         if (!wrap || !container || !titleText) return;
         var rContainer = container.getBoundingClientRect();
         var rText = titleText.getBoundingClientRect();
-        wrap.style.left = (rText.right - rContainer.left + 8) + "px";
+        // En bout de ligne (demande de Cédric le 14/09/2026, 2e retour : "pas au bon
+        // endroit ... en bout de ligne") — à droite du cadre plutôt que collée au texte,
+        // mais toujours alignée verticalement sur la ligne "Total" qu'elle définit.
+        wrap.style.left = "";
+        wrap.style.right = "0";
         wrap.style.top = (rText.top - rContainer.top + rText.height / 2) + "px";
         wrap.style.transform = "translateY(-50%)";
         wrap.style.display = "inline-block";
