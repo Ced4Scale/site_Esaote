@@ -399,13 +399,23 @@
        ligne le libellé au-dessus et une barre par machine empilée verticalement,
        échelle propre à chaque ligne (les unités diffèrent d'une ligne à l'autre). */
     .ene-fact-list { display: flex; flex-direction: column; gap: 1.1rem; }
-    .ene-fact-row-label { font-weight: 700; font-size: .92rem; margin-bottom: .35rem; }
+    /* Jamais de retour à la ligne au milieu d'un libellé (demande de Cédric le
+       14/09/2026, "enlever les sauts de ligne") — les libellés eux-mêmes ont été
+       raccourcis pour tenir sur une ligne sur mobile ; ce clamp() reste un filet de
+       sécurité si un libellé plus long est ajouté un jour. */
+    .ene-fact-row-label { font-weight: 700; font-size: clamp(.78rem, 3vw, .92rem); white-space: nowrap; margin-bottom: .35rem; }
     .ene-fact-row--strong .ene-fact-row-label { font-size: .98rem; }
-    .ene-fact-bar-line { display: flex; align-items: center; gap: .6rem; margin-bottom: .3rem; }
+    .ene-fact-bar-line { margin-bottom: .3rem; }
     .ene-fact-bar-line:last-child { margin-bottom: 0; }
-    .ene-fact-bar-track2 { flex: 1 1 auto; height: 20px; background: var(--wash, #f0f0f0); border-radius: 4px; overflow: hidden; }
-    .ene-fact-bar-fill2 { height: 100%; border-radius: 4px; }
-    .ene-fact-value { flex: 0 0 auto; min-width: 3.5rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    /* Le montant se lit toujours COLLÉ À LA FIN DE LA BARRE (jamais aligné en bout de
+       ligne) — demande explicite de Cédric le 14/09/2026 ("parfois le montant est en
+       bout de ligne parfois en fin de bâton"), même position relative que sur les 3
+       graphes en barres (dessinerPairesBarres). D'où le calcul d'une marge de 15% à
+       droite de l'échelle (voir ligneFaitBarre) : la barre la plus longue de la ligne
+       n'atteint jamais 100%, pour laisser la place au montant après elle. */
+    .ene-fact-bar-track2 { position: relative; height: 20px; }
+    .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; }
+    .ene-fact-value { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ene-fact-row--texte .ene-fact-texte-wrap { display: flex; gap: 1.4rem; flex-wrap: wrap; }
     .ene-fact-row--texte .ene-fact-texte-value { font-weight: 700; white-space: nowrap; }
   </style>
@@ -803,7 +813,7 @@
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardCo2">
-          <summary>Empreinte carbone (mix électrique français)
+          <summary>Empreinte carbone
             <button type="button" class="chart-card-fullscreen-btn" id="eneCo2FullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
               <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                 <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
@@ -1432,10 +1442,10 @@
         container.innerHTML = "";
         ligneFaitTexte(container, "Aimant", machines.map(function (m) { return m.aimant === "permanent" ? "Permanent" : "Supraconducteur"; }));
         ligneFaitBarre(container, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint; }), function (v) { return v + " kW"; });
-        ligneFaitBarre(container, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret; }), function (v) { return v + " kW"; });
+        ligneFaitBarre(container, "Puissance prête", machines.map(function (m) { return m.pret; }), function (v) { return v + " kW"; });
         ligneFaitBarre(container, "Puissance en acquisition", machines.map(function (m) { return m.mesure; }), function (v) { return v + " kW"; });
         ligneFaitBarre(container, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT * 100; }), function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; });
-        ligneFaitBarre(container, "Climatisation salle d'examen (en continu)", machines.map(function (m) { return m.climSalleKw; }), function (v) { return v + " kW"; });
+        ligneFaitBarre(container, "Climatisation salle (continu)", machines.map(function (m) { return m.climSalleKw; }), function (v) { return v + " kW"; });
       }
 
       // ---- Paramètres saisis par le visiteur — demandé par Cédric le 10/08/2026, en
@@ -1501,8 +1511,8 @@
         var container = document.getElementById("eneTableCo2Body");
         container.innerHTML = "";
         ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneFaitBarre(container, "Émissions de CO₂ associées (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
-        ligneFaitBarre(container, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
+        ligneFaitBarre(container, "Émissions de CO₂ (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
+        ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
         ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
       }
 
@@ -1585,19 +1595,23 @@
         lbl.className = "ene-fact-row-label";
         lbl.textContent = label;
         row.appendChild(lbl);
+        // Réserve une largeur FIXE en pixels (pas un pourcentage) pour le montant après
+        // la barre la plus longue — une marge en % (essayée d'abord) représente trop peu
+        // de pixels sur une carte étroite (mobile) pour un texte en gras de taille
+        // normale, et le montant débordait de la carte (14/09/2026, repéré sur mobile
+        // après le 1er correctif). RESERVE_PX vaut large pour le plus long format
+        // rencontré sur cette page ("34.975 kg CO₂").
+        var RESERVE_PX = 118;
         var maxV = Math.max.apply(null, valeurs.concat([0.0001]));
         valeurs.forEach(function (v, i) {
           var line = document.createElement("div");
           line.className = "ene-fact-bar-line";
-          var pct = maxV > 0 ? Math.max(v > 0 ? 1 : 0, (v / maxV) * 100) : 0;
+          var ratio = maxV > 0 ? Math.max(v > 0 ? 0.01 : 0, v / maxV) : 0;
+          var largeurBarre = "calc((100% - " + RESERVE_PX + "px) * " + ratio + ")";
           var track = document.createElement("div");
           track.className = "ene-fact-bar-track2";
-          track.innerHTML = '<div class="ene-fact-bar-fill2" style="width:' + pct + '%;background:' + SLOT_COLORS[i] + '"></div>';
+          track.innerHTML = '<div class="ene-fact-bar-fill2" style="width:' + largeurBarre + ';background:' + SLOT_COLORS[i] + '"></div><span class="ene-fact-value" style="left:calc(' + largeurBarre + ' + 8px)">' + formateur(v) + '</span>';
           line.appendChild(track);
-          var val = document.createElement("span");
-          val.className = "ene-fact-value";
-          val.textContent = formateur(v);
-          line.appendChild(val);
           row.appendChild(line);
         });
         container.appendChild(row);
@@ -1610,11 +1624,11 @@
         var container = document.getElementById("eneTableBody");
         container.innerHTML = "";
         ligneFaitTexte(container, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
-        ligneFaitBarre(container, "Consommation annuelle (kWh)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneFaitBarre(container, "Coût énergétique par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
-        ligneFaitBarre(container, "Dont heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
-        ligneFaitBarre(container, "Dont heures prêt (sans patient) / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
-        ligneFaitBarre(container, "Dont heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
+        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        ligneFaitBarre(container, "Coût par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
+        ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
+        ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
+        ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
       }
 
       // Légende A/B (couleur machine) — harmonisée le 14/09/2026 avec
