@@ -413,7 +413,14 @@
        graphes en barres (dessinerPairesBarres). D'où le calcul d'une marge de 15% à
        droite de l'échelle (voir ligneFaitBarre) : la barre la plus longue de la ligne
        n'atteint jamais 100%, pour laisser la place au montant après elle. */
-    .ene-fact-bar-track2 { position: relative; height: 20px; }
+    /* Même épaisseur de barre que les 3 graphes SVG (dessinerPairesBarres, barH=30 dans
+       son système de coordonnées) — demande de Cédric le 14/09/2026 ("la même épaisseur
+       de bâton partout"). Une barre SVG s'agrandit/rétrécit avec la largeur de la page
+       (mise à l'échelle avec le reste du graphe) ; une barre HTML ne le fait pas
+       nativement — ce clamp() imite la même tendance (plus fine sur mobile, plus
+       épaisse sur desktop) pour rester visuellement proche à toutes les largeurs,
+       calé sur l'épaisseur réellement observée des barres SVG à largeur de page usuelle. */
+    .ene-fact-bar-track2 { position: relative; height: clamp(16px, 2.6vw, 26px); }
     .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; }
     .ene-fact-value { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ene-fact-row--texte .ene-fact-texte-wrap { display: flex; gap: 1.4rem; flex-wrap: wrap; }
@@ -1733,7 +1740,10 @@
         var svg = document.getElementById(svgId);
         svg.innerHTML = "";
         var plotX0 = 4, plotX1 = 590, plotW = plotX1 - plotX0;
-        var barH = 30, barGap = 5, groupGap = 30, top = 26;
+        // groupGap resserré le 14/09/2026 (retour de Cédric : "espace vide dans un
+        // graphe", entre deux paires de barres) — gardé juste assez grand pour loger le
+        // libellé de catégorie suivant au-dessus de ses barres, sans bande vide en trop.
+        var barH = 30, barGap = 5, groupGap = 16, top = 22;
         var groupH = barH * 2 + barGap;
         var maxVal = Math.max.apply(null,
           resultats.map(function (r) { return categories.map(function (c) { return c.valeur(r); }); })
