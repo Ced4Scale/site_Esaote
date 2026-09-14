@@ -1720,35 +1720,45 @@
       // polices, même logique d'échelle, un seul endroit à corriger si le motif change.
       // `categories` = [{ label, valeur: function(r) {...} }, ...] ;
       // `onClicCategorie(cat, resultats)` optionnel, appelé au clic sur une barre.
+      // Taille de police et hauteur de barre alignées le 14/09/2026 sur celles des
+      // tableaux de faits HTML (ligneFaitBarre, même page) — demande de Cédric ("certains
+      // texte sont en gras et d'autres pas"). Les anciennes graduations d'axe (€ en petit
+      // texte NON gras au-dessus du graphe) ont disparu : c'était le seul texte non gras
+      // du graphe, et donc la seule vraie source du mélange gras/pas gras. Tout le texte
+      // du graphe est maintenant en gras, à une taille bien plus grande qu'avant (le
+      // texte minuscule d'origine, ~7-8px une fois mis à l'échelle, est aussi le
+      // suspect le plus probable du "bave" observé sur iPhone en zoomant — un texte
+      // vectoriel plus grand a moins besoin d'être maigri par le lissage du navigateur).
       function dessinerPairesBarres(svgId, resultats, categories, onClicCategorie) {
         var svg = document.getElementById(svgId);
         svg.innerHTML = "";
-        var plotX0 = 10, plotX1 = 610, plotW = plotX1 - plotX0;
-        var barH = 20, barGap = 3, groupGap = 22, top = 34;
+        var plotX0 = 4, plotX1 = 590, plotW = plotX1 - plotX0;
+        var barH = 30, barGap = 5, groupGap = 30, top = 26;
         var groupH = barH * 2 + barGap;
         var maxVal = Math.max.apply(null,
           resultats.map(function (r) { return categories.map(function (c) { return c.valeur(r); }); })
             .reduce(function (a, b) { return a.concat(b); }, [])
             .concat([0.0001])
         );
-        var xMax = niceCeil(maxVal * 1.12);
-        var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap + 4;
-
-        for (var g = 0; g <= 5; g++) {
-          var val = (xMax * g) / 5;
-          var x = plotX0 + (plotW * val) / xMax;
-          svg.appendChild(svgEl("line", { x1: x, x2: x, y1: top - 22, y2: bottomAxisY, class: "simulator__gridline" }));
-          var labelX = svgEl("text", { x: x, y: top - 26, class: "simulator__axis-label", "text-anchor": "middle" });
-          labelX.style.fontSize = "10px";
-          labelX.textContent = euros.format(val);
-          svg.appendChild(labelX);
-        }
+        // Marge à droite de 22 % (au lieu des graduations d'axe retirées) pour que le
+        // montant, toujours collé à la fin de la barre, ait sa place même sur la barre la
+        // plus longue — même principe que RESERVE_PX dans ligneFaitBarre, mais ici un
+        // pourcentage suffit puisque tout (barre ET texte) est dans le même système de
+        // coordonnées mis à l'échelle ensemble (contrairement au HTML, où le texte garde
+        // une taille fixe en pixels quelle que soit la largeur du conteneur).
+        var xMax = maxVal * 1.28;
+        var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap;
 
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap);
-          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 6, class: "simulator__axis-label", "text-anchor": "start" });
-          titleLabel.style.fontSize = "11px";
+          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 8, class: "simulator__axis-label", "text-anchor": "start" });
+          titleLabel.style.fontSize = "16px";
           titleLabel.style.fontWeight = "700";
+          // .simulator__axis-label vient avec fill:var(--muted) (gris clair, pensé pour de
+          // petites graduations d'axe discrètes) — ce libellé est maintenant un texte
+          // principal comme les autres (même rôle que .ene-fact-row-label), donc même
+          // couleur (--ink, quasi noir), sinon même en gras il paraît "moins gras".
+          titleLabel.style.fill = "var(--ink)";
           titleLabel.textContent = c.label;
           svg.appendChild(titleLabel);
 
@@ -1756,21 +1766,22 @@
             var val = c.valeur(r);
             var barW = xMax > 0 ? (val / xMax) * plotW : 0;
             var barY = groupY + i * (barH + barGap);
-            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, fill: r.color });
+            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, rx: 4, fill: r.color });
             if (onClicCategorie) {
               rectBar.style.cursor = "pointer";
               rectBar.addEventListener("click", function () { onClicCategorie(c, resultats); });
             }
             svg.appendChild(rectBar);
-            var valLabel = svgEl("text", { x: plotX0 + barW + 6, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
-            valLabel.style.fontSize = "10px";
+            var valLabel = svgEl("text", { x: plotX0 + barW + 8, y: barY + barH / 2 + 5, class: "simulator__axis-label", "text-anchor": "start" });
+            valLabel.style.fontSize = "16px";
             valLabel.style.fontWeight = "700";
+            valLabel.style.fill = "var(--ink)";
             valLabel.textContent = euros.format(val);
             svg.appendChild(valLabel);
           });
         });
 
-        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 20));
+        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 12));
       }
 
       // 3 postes de 1er niveau (pas le détail du socle, réservé au clic -> camembert) —
