@@ -1634,6 +1634,13 @@
       function ligneFaitBarre(container, label, valeurs, formateur, opts) {
         var row = document.createElement("div");
         row.className = "ene-fact-row" + (opts && opts.strong ? " ene-fact-row--strong" : "");
+        // Retrait d'1cm (demande de Cédric le 14/09/2026) pour une ligne qui est le
+        // détail d'une autre juste au-dessus (ex. Émissions de CO₂/Absorption/Sur 7 ans
+        // sous "Consommation annuelle") — même principe que `indent` sur
+        // dessinerPairesBarres() côté graphe SVG, ici en marge CSS puisque ce sont des
+        // lignes HTML. La largeur de la ligne (donc des bâtons, en %) se réduit d'autant,
+        // sans rien casser : `.ene-fact-row` s'étire déjà pleine largeur par défaut.
+        if (opts && opts.indent) row.style.marginLeft = "1cm";
         var lbl = document.createElement("div");
         lbl.className = "ene-fact-row-label";
         // Triangle ▸/▾ optionnel (demande de Cédric le 14/09/2026, "Consommation
@@ -1688,9 +1695,12 @@
           onClicLabel: function () { eneConsoOuvert = !eneConsoOuvert; remplirTableau(resultats); }
         });
         if (eneConsoOuvert) {
-          ligneFaitBarre(container, "Émissions de CO₂ (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
-          ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
-          ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
+          // Décalage d'1cm (demande de Cédric le 14/09/2026) — même principe que le
+          // détail du socle dans le graphe SVG : montre que ces 3 lignes sont le détail
+          // DE "Consommation annuelle" juste au-dessus.
+          ligneFaitBarre(container, "Émissions de CO₂ (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true, indent: true });
+          ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; }, { indent: true });
+          ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; }, { indent: true });
         }
         ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
         ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
