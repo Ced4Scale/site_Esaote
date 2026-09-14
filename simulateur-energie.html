@@ -202,6 +202,11 @@
     }
     .ene-comparaison-cote svg { width: 100%; height: 140px; display: block; margin-bottom: .5rem; }
     .ene-compare-ligne { display: flex; justify-content: space-between; gap: .5rem; padding: .2rem 0; font-size: .84rem; font-variant-numeric: tabular-nums; }
+    /* Tableau à 2 colonnes (une par machine) pour les faits complémentaires du mode
+       Comparer (14/09/2026) — mêmes lignes que #eneTable, format label+2 valeurs plutôt
+       que le bloc empilé par machine de .ene-compare-ligne. */
+    .ene-compare-row3 { display: grid; grid-template-columns: 1fr auto auto; gap: .4rem; padding: .2rem 0; font-size: .82rem; font-variant-numeric: tabular-nums; }
+    .ene-compare-row3 span:nth-child(2), .ene-compare-row3 span:nth-child(3) { text-align: right; white-space: nowrap; }
 
     /* Touche de couleur "cartes Apple Arcade" (dégradés vifs), palette validée sur
        simulateur-recettes.html / simulateur-point-mort.html. 3 volets : boutons d'action
@@ -2690,6 +2695,57 @@
         return snap;
       }
 
+      // Version compacte, en chaîne SVG (comme le reste de dessinerCoteComparaison), du
+      // même histogramme empilé A/B que la carte "Composition du coût énergétique
+      // annuel" — demande de Cédric le 14/09/2026 : "un histogramme par point comparé"
+      // (chaque mémoire comparée = un point), Machine A en haut, Machine B en dessous.
+      // Pas de clic vers le détail du socle ici (mode Comparer déjà volontairement plus
+      // simple, voir skill "Rendu volontairement plus simple pour une vue secondaire").
+      function histogrammeCompositionSVGString(resultats, W) {
+        var top = 10, barH = 30, gapY = 60, padL = 4, padR = 4;
+        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
+        var xMax = niceCeil(maxVal * 1.08);
+        var plotW = W - padL - padR;
+        var parts = [];
+        resultats.forEach(function (r, i) {
+          var barY = top + i * gapY;
+          var xCursor = padL;
+          parts.push('<text x="' + padL + '" y="' + (barY - 4) + '" font-size="10" font-weight="700" fill="' + r.color + '">' +
+            ((i === 0 ? "A — " : "B — ") + r.machine.nomCourt).replace(/&/g, "&amp;") + '</text>');
+          COMPOSANTS_5.forEach(function (c) {
+            var val = valeurComposant(r, c.key);
+            var segW = xMax > 0 ? (val / xMax) * plotW : 0;
+            parts.push('<rect x="' + xCursor.toFixed(1) + '" y="' + barY + '" width="' + Math.max(0, segW).toFixed(1) + '" height="' + barH + '" fill="' + c.color + '"></rect>');
+            xCursor += segW;
+          });
+          parts.push('<text x="' + Math.min(xCursor + 6, W - 60).toFixed(1) + '" y="' + (barY + barH / 2 + 4) + '" font-size="11" font-weight="800" fill="var(--ink)">' + euros.format(r.coutAnnuel) + '</text>');
+        });
+        return { html: parts.join(""), height: top + resultats.length * gapY };
+      }
+
+      // Les mêmes "faits complémentaires" que le tableau sous la carte principale
+      // (Aimant/Consommation/Coût par patient/heures par état), demandés le 14/09/2026
+      // pour apparaître aussi dans chaque mini-histogramme du mode Comparer — tableau à
+      // 2 colonnes (une par machine), comme #eneTable, jamais le style "bloc par machine
+      // empilé" utilisé jusque-là dans ce panneau (plus proche de ce que Cédric a collé).
+      function factsCompareTableHTML(resultats) {
+        function ligne(label, valA, valB) {
+          return '<div class="ene-compare-row3"><span>' + label + '</span><span>' + valA + '</span><span>' + valB + '</span></div>';
+        }
+        var rA = resultats[0], rB = resultats[1];
+        var html = '<div class="ene-compare-row3" style="font-weight:700">' +
+          '<span></span><span style="color:' + rA.color + '">' + rA.machine.nomCourt + '</span><span style="color:' + rB.color + '">' + rB.machine.nomCourt + '</span></div>';
+        html += ligne("Consommation annuelle", kwhFmt.format(rA.kwh) + " kWh", kwhFmt.format(rB.kwh) + " kWh");
+        html += ligne("Empreinte carbone", kwhFmt.format(rA.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg/an", kwhFmt.format(rB.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + " kg/an");
+        html += ligne("Coût énergétique annuel", euros.format(rA.coutAnnuel), euros.format(rB.coutAnnuel));
+        html += ligne("Aimant", rA.machine.aimant === "permanent" ? "Permanent" : "Supraconducteur", rB.machine.aimant === "permanent" ? "Permanent" : "Supraconducteur");
+        html += ligne("Coût énergétique par patient", eurosCent.format(rA.coutParPatient), eurosCent.format(rB.coutParPatient));
+        html += ligne("Dont heures à l'arrêt / an", entiers.format(rA.profil.heuresEteint) + " h", entiers.format(rB.profil.heuresEteint) + " h");
+        html += ligne("Dont heures prêt (sans patient) / an", entiers.format(rA.profil.heuresPret) + " h", entiers.format(rB.profil.heuresPret) + " h");
+        html += ligne("Dont heures en acquisition / an", entiers.format(rA.profil.heuresMesure) + " h", entiers.format(rB.profil.heuresMesure) + " h");
+        return html;
+      }
+
       function dessinerCoteComparaison(svgId, statsId, snap) {
         var svgC = document.getElementById(svgId);
         var statsEl = document.getElementById(statsId);
@@ -2699,29 +2755,13 @@
           return;
         }
         var resultats = snap.resultats;
-        var W = 300, H = 140, top = 8, chartH = 96, padL = 8, padR = 8;
-        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
-        var yMax = niceCeil(maxVal * 1.06);
-        var barWidth = 74, gap = 100;
-        var centers = [W / 2 - gap / 2, W / 2 + gap / 2];
-        var parts = ['<line x1="' + padL + '" y1="' + (top + chartH) + '" x2="' + (W - padR) + '" y2="' + (top + chartH) + '" stroke="var(--line)" stroke-width="1"></line>'];
-        resultats.forEach(function (r, i) {
-          var barH = yMax > 0 ? (r.coutAnnuel / yMax) * chartH : 0;
-          var barY = top + chartH - barH;
-          parts.push('<rect x="' + (centers[i] - barWidth / 2) + '" y="' + barY.toFixed(1) + '" width="' + barWidth + '" height="' + Math.max(0, barH).toFixed(1) + '" fill="' + r.color + '"></rect>');
-          parts.push('<text x="' + centers[i] + '" y="' + (barY - 6).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="800" fill="var(--ink)">' + euros.format(r.coutAnnuel) + '</text>');
-          parts.push('<text x="' + centers[i] + '" y="' + (top + chartH + 18) + '" text-anchor="middle" font-size="10" font-weight="700" fill="' + r.color + '">' + ((i === 0 ? "A — " : "B — ") + r.machine.nomCourt).replace(/&/g, "&amp;") + '</text>');
-        });
-        svgC.innerHTML = parts.join("");
+        var W = 300;
+        var histo = histogrammeCompositionSVGString(resultats, W);
+        svgC.setAttribute("viewBox", "0 0 " + W + " " + histo.height);
+        svgC.innerHTML = histo.html;
 
-        var statsHtml = "";
-        resultats.forEach(function (r, i) {
-          statsHtml += '<div class="ene-compare-ligne" style="font-weight:700;color:' + r.color + '"><span>' + ((i === 0 ? "A — " : "B — ") + r.machine.nomCourt) + '</span><span></span></div>' +
-            '<div class="ene-compare-ligne"><span>Consommation</span><span>' + kwhFmt.format(r.kwh) + ' kWh/an</span></div>' +
-            '<div class="ene-compare-ligne"><span>Empreinte carbone</span><span>' + kwhFmt.format(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000) + ' kg CO₂/an</span></div>' +
-            '<div class="ene-compare-ligne"><span>Coût énergétique</span><span>' + euros.format(r.coutAnnuel) + ' / an</span></div>';
-        });
-        statsHtml += '<div class="ene-compare-ligne"><span>Activité commune</span><span>' + entiers.format(snap.patientsAn) + ' patients/an</span></div>';
+        var statsHtml = factsCompareTableHTML(resultats);
+        statsHtml += '<div class="ene-compare-ligne" style="margin-top:.3rem"><span>Activité commune</span><span>' + entiers.format(snap.patientsAn) + ' patients/an</span></div>';
         statsEl.innerHTML = statsHtml;
       }
 
