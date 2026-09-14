@@ -373,18 +373,74 @@
     .pm-autre-rh > summary::before { content: "▸ "; }
     .pm-autre-rh[open] > summary::before { content: "▾ "; }
     .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
-    /* Curseurs sous "Composition du coût énergétique annuel" (14/09/2026) — simples
-       <input type="range"> avec accent-color (pas le motif "curseur double" custom du
-       reste du site, réservé aux pistes qui doivent aussi masquer la partie non remplie
-       en gris — voir skill, "accent-color ... la partie non remplie reste grise" : accepté
-       ici comme compromis, ces 5 curseurs sont secondaires, sous un graphe déjà riche). */
-    .ene-comp-sliders { margin-top: 1rem; display: grid; gap: .7rem; }
-    .ene-comp-sliders .field { margin-bottom: 0; }
-    .ene-comp-sliders input[type="range"] { width: 100%; accent-color: var(--red); }
-    .ene-comp-sliders input[type="range"]#enePatientsHeureASlider,
-    .ene-comp-sliders input[type="range"]#eneAcqASlider { accent-color: #2a78d6; }
-    .ene-comp-sliders input[type="range"]#enePatientsHeureBSlider,
-    .ene-comp-sliders input[type="range"]#eneAcqBSlider { accent-color: #eb6834; }
+    /* Table de mixage (14/09/2026, demande de Cédric) — les 5 curseurs sous "Composition
+       du coût énergétique annuel" passent en FADERS VERTICAUX façon console son, sur un
+       panneau sombre dédié. Toujours de simples curseurs MIROIR des champs déjà existants
+       (eneActivite/eneInstallA/eneInstallB/eneAcqA/eneAcqB) — aucune donnée séparée. Le
+       curseur vertical utilise writing-mode+direction (pas -webkit-appearance:
+       slider-vertical, retiré des navigateurs récents) — technique standard
+       cross-browser. Valeur éditable au clavier en plus du glissé (case sous le fader),
+       synchronisée dans les 2 sens avec le curseur (voir JS "Table de mixage" plus bas) —
+       la case ne fait qu'écrire dans le curseur puis laisser la cascade déjà en place
+       (curseur → champ source → recalculer()) faire le reste. */
+    .ene-mixer-panel {
+      margin-top: 1rem; display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 1.1rem 1.4rem; background: #1b1e27; border-radius: .8rem; padding: 1.1rem .9rem 1rem;
+    }
+    .ene-mixer-strip { display: flex; flex-direction: column; align-items: center; width: 4.6rem; }
+    .ene-mixer-strip__label {
+      color: #c7cede; font-size: .64rem; font-weight: 700; text-align: center; line-height: 1.2;
+      min-height: 2.3em; display: flex; align-items: flex-end; margin-bottom: .5rem;
+    }
+    .ene-mixer-fader-track {
+      position: relative; width: 2.6rem; height: 8.5rem;
+      background: linear-gradient(180deg, #0c0e13, #2a2f3a); border-radius: .35rem;
+      box-shadow: inset 0 0 0 1px #000, inset 0 2px 4px rgba(0,0,0,.5);
+      display: flex; justify-content: center;
+    }
+    .ene-mixer-fader-track::before {
+      content: ""; position: absolute; top: .5rem; bottom: .5rem; width: 3px;
+      background: #05060a; border-radius: 2px;
+    }
+    .ene-mixer-fader {
+      writing-mode: vertical-lr; direction: rtl; appearance: slider-vertical;
+      width: 2.6rem; height: 8.5rem; margin: 0; background: transparent; cursor: pointer;
+    }
+    .ene-mixer-fader::-webkit-slider-runnable-track { background: transparent; }
+    .ene-mixer-fader::-moz-range-track { background: transparent; border: none; }
+    .ene-mixer-fader::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .ene-mixer-fader::-moz-range-thumb {
+      width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .ene-mixer-strip--rouge { --fader-color: var(--red); }
+    .ene-mixer-strip--bleu { --fader-color: #2a78d6; }
+    .ene-mixer-strip--orange { --fader-color: #eb6834; }
+    .ene-mixer-strip--violet { --fader-color: #6b5b95; }
+    .ene-mixer-strip__value {
+      width: 100%; margin-top: .55rem; text-align: center; font: 700 .82rem/1.3 inherit;
+      color: #fff; background: #11141b; border: 1px solid #454b59; border-radius: .3rem;
+      padding: .28rem .15rem; box-sizing: border-box;
+    }
+    .ene-mixer-strip__value:focus {
+      outline: 2px solid var(--fader-color, var(--red)); outline-offset: 1px;
+      border-color: var(--fader-color, var(--red));
+    }
+    /* Pas de flèches +/- (jamais utiles ici, saisie au clavier ou via le fader à côté). */
+    .ene-mixer-strip__value[type="number"] { -moz-appearance: textfield; }
+    .ene-mixer-strip__value[type="number"]::-webkit-outer-spin-button,
+    .ene-mixer-strip__value[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .ene-mixer-strip__unit { color: #8b93a5; font-size: .6rem; text-align: center; margin-top: .2rem; }
+    @media (max-width: 480px) {
+      .ene-mixer-panel { gap: .9rem 1rem; padding: .9rem .6rem; }
+      .ene-mixer-strip { width: 4rem; }
+      .ene-mixer-fader-track, .ene-mixer-fader { height: 7rem; }
+    }
     /* Paire de barres dans une cellule de tableau (14/09/2026, "il faut aussi faire le
        tableau du dessous" — même langage visuel que l'histogramme de composition
        au-dessus, mais une échelle propre à chaque ligne). */
@@ -791,30 +847,60 @@
           </div>
           <div class="ene-fact-list" id="eneTableBody" style="margin-top:.8rem">
           </div>
-          <!-- Curseurs sous le graphe (demande de Cédric le 14/09/2026) — tous en
-               curseur MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
-               synchronisée dans les 2 sens, motif déjà utilisé partout sur le site) :
-               jamais une donnée séparée qui pourrait diverger. -->
-          <div class="ene-comp-sliders">
-            <div class="field">
-              <label for="eneActiviteSlider">Activité <span id="eneActiviteSliderVal"></span></label>
-              <input type="range" id="eneActiviteSlider" min="0" max="15000" step="1" />
+          <!-- Table de mixage (demande de Cédric le 14/09/2026) — remplace les 5 anciens
+               curseurs horizontaux par des faders verticaux façon console son, avec une
+               case de valeur éditable au clavier en plus du glissé. Toujours de simples
+               curseurs MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
+               synchronisée dans les 2 sens) : jamais une donnée séparée qui pourrait
+               diverger. -->
+          <div class="ene-mixer-panel">
+            <div class="ene-mixer-strip ene-mixer-strip--rouge">
+              <div class="ene-mixer-strip__label">Activité</div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="eneActiviteSlider" class="ene-mixer-fader" min="0" max="15000" step="1" aria-label="Activité, patients par an" />
+              </div>
+              <input type="text" inputmode="numeric" class="ene-mixer-strip__value" id="eneActiviteSliderVal" aria-label="Activité en patients par an, modifiable" />
+              <div class="ene-mixer-strip__unit">patients/an</div>
             </div>
-            <div class="field">
-              <label for="enePatientsHeureASlider">Patients par heure — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="enePatientsHeureASliderVal"></span></label>
-              <input type="range" id="enePatientsHeureASlider" min="0.5" max="8" step="0.1" />
+            <div class="ene-mixer-strip ene-mixer-strip--violet">
+              <div class="ene-mixer-strip__label">Coût kWh</div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="enePrixSlider" class="ene-mixer-fader" min="0" max="1" step="0.01" aria-label="Coût du kWh" />
+              </div>
+              <input type="number" step="0.01" min="0" max="1" class="ene-mixer-strip__value" id="enePrixSliderVal" aria-label="Coût du kWh, modifiable" />
+              <div class="ene-mixer-strip__unit">€ TTC</div>
             </div>
-            <div class="field">
-              <label for="enePatientsHeureBSlider">Patients par heure — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="enePatientsHeureBSliderVal"></span></label>
-              <input type="range" id="enePatientsHeureBSlider" min="0.5" max="8" step="0.1" />
+            <div class="ene-mixer-strip ene-mixer-strip--bleu">
+              <div class="ene-mixer-strip__label">Patients/h — <span class="simulator__swatch-text" data-slot="0">A</span></div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="enePatientsHeureASlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine A" />
+              </div>
+              <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureASliderVal" aria-label="Patients par heure, Machine A, modifiable" />
+              <div class="ene-mixer-strip__unit">patients/h</div>
             </div>
-            <div class="field">
-              <label for="eneAcqASlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="eneAcqASliderVal"></span></label>
-              <input type="range" id="eneAcqASlider" min="1" max="60" step="1" />
+            <div class="ene-mixer-strip ene-mixer-strip--orange">
+              <div class="ene-mixer-strip__label">Patients/h — <span class="simulator__swatch-text" data-slot="1">B</span></div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="enePatientsHeureBSlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine B" />
+              </div>
+              <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureBSliderVal" aria-label="Patients par heure, Machine B, modifiable" />
+              <div class="ene-mixer-strip__unit">patients/h</div>
             </div>
-            <div class="field">
-              <label for="eneAcqBSlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="eneAcqBSliderVal"></span></label>
-              <input type="range" id="eneAcqBSlider" min="1" max="60" step="1" />
+            <div class="ene-mixer-strip ene-mixer-strip--bleu">
+              <div class="ene-mixer-strip__label">Durée acq. — <span class="simulator__swatch-text" data-slot="0">A</span></div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="eneAcqASlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine A" />
+              </div>
+              <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqASliderVal" aria-label="Durée d'acquisition, Machine A, modifiable" />
+              <div class="ene-mixer-strip__unit">min</div>
+            </div>
+            <div class="ene-mixer-strip ene-mixer-strip--orange">
+              <div class="ene-mixer-strip__label">Durée acq. — <span class="simulator__swatch-text" data-slot="1">B</span></div>
+              <div class="ene-mixer-fader-track">
+                <input type="range" id="eneAcqBSlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine B" />
+              </div>
+              <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqBSliderVal" aria-label="Durée d'acquisition, Machine B, modifiable" />
+              <div class="ene-mixer-strip__unit">min</div>
             </div>
           </div>
         </details>
@@ -2405,12 +2491,12 @@
         document.getElementById(id).addEventListener("input", recalculer);
       });
 
-      // ---- Curseurs sous "Composition du coût énergétique annuel" (14/09/2026) — chacun
-      // MIROIR d'un champ déjà existant (jamais une donnée séparée) : déplacer le curseur
-      // écrit dans le champ source et redéclenche recalculer(), qui rappelle
-      // majSlidersComposition() pour remettre tous les curseurs à jour (y compris celui
-      // qu'on vient de bouger — sans danger, une resynchronisation redondante ne casse
-      // rien, motif déjà utilisé partout sur ce site).
+      // ---- Table de mixage sous "Composition du coût énergétique annuel" (14/09/2026)
+      // — chaque fader est MIROIR d'un champ déjà existant (jamais une donnée séparée) :
+      // le déplacer écrit dans le champ source et redéclenche recalculer(), qui rappelle
+      // majSlidersComposition() pour remettre tous les faders ET leurs cases de valeur à
+      // jour (y compris celui qu'on vient de bouger — sans danger, une resynchronisation
+      // redondante ne casse rien, motif déjà utilisé partout sur ce site).
       document.getElementById("eneActiviteSlider").addEventListener("input", function () {
         var patientsAnCible = Math.max(0, parseFloat(this.value) || 0);
         var mode = document.getElementById("eneActiviteMode").value;
@@ -2424,6 +2510,12 @@
           activiteInput.value = Math.round(convertirActivite(patientsAnCible, false, heuresSemaineJour, heuresSamediJour, heuresDimancheJour) * 10) / 10;
         }
         recalculer();
+      });
+      // Coût du kWh — curseur miroir direct de enePrix (même unité, € TTC).
+      document.getElementById("enePrixSlider").addEventListener("input", function () {
+        var prixInput = document.getElementById("enePrix");
+        prixInput.value = Math.round(parseFloat(this.value) * 100) / 100;
+        prixInput.dispatchEvent(new Event("input", { bubbles: true }));
       });
       // Patients par heure = 60 / temps de prise en charge (minutes) — même conversion que
       // le motif "patients par heure" déjà en place sur bascule-oscan/point-mort/ct-vs-irm
@@ -2445,15 +2537,77 @@
           acqInput.dispatchEvent(new Event("input", { bubbles: true }));
         });
       });
-      // Remet les 5 curseurs à jour depuis les champs sources — appelé à chaque
-      // recalculer() (voir plus haut), jamais seulement au chargement, pour rester
+      // Case de valeur éditable au clavier (demande de Cédric le 14/09/2026), en plus du
+      // glissé — écrit directement dans le fader correspondant puis déclenche son
+      // évènement "input" : rejoint la cascade déjà en place ci-dessus (fader → champ
+      // source → recalculer()), jamais un 2e chemin de calcul séparé.
+      [["enePatientsHeureASliderVal", "enePatientsHeureASlider"],
+       ["enePatientsHeureBSliderVal", "enePatientsHeureBSlider"],
+       ["eneAcqASliderVal", "eneAcqASlider"],
+       ["eneAcqBSliderVal", "eneAcqBSlider"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var slider = document.getElementById(pair[1]);
+          var val = parseFloat(this.value);
+          if (isNaN(val)) return; // laisse taper "4." ou effacer sans recalculer sur une valeur incomplète
+          slider.value = Math.min(Math.max(val, +slider.min), +slider.max);
+          slider.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+      // Case "Coût kWh" — même principe, mais avec extension dynamique du plafond du
+      // fader (comme "Activité" plus bas) : contrairement à un débit ou une durée qui a
+      // une vraie limite physique, un tarif pro élevé peut dépasser 1 €/kWh.
+      document.getElementById("enePrixSliderVal").addEventListener("input", function () {
+        var slider = document.getElementById("enePrixSlider");
+        var val = parseFloat(this.value);
+        if (isNaN(val)) return;
+        if (val > +slider.max) slider.max = Math.ceil(val * 10) / 10;
+        slider.value = Math.min(Math.max(val, +slider.min), +slider.max);
+        slider.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      // Case "Activité" — même principe, mais en texte libre pour garder le point comme
+      // séparateur de milliers à l'affichage (règle du site, voir skill : un
+      // <input type="number"> ne peut pas afficher de séparateur de milliers). Reformatée
+      // EN DIRECT à chaque frappe (motif attacherChampMontant du skill), curseur de saisie
+      // replacé après le même nombre de chiffres pour ne pas gêner une frappe au milieu.
+      (function () {
+        var champ = document.getElementById("eneActiviteSliderVal");
+        var slider = document.getElementById("eneActiviteSlider");
+        champ.addEventListener("input", function () {
+          var curseurAvant = this.selectionStart;
+          var chiffresAvantCurseur = this.value.slice(0, curseurAvant).replace(/[^0-9]/g, "").length;
+          var brut = this.value.replace(/[^0-9]/g, "");
+          var valeur = brut === "" ? 0 : parseInt(brut, 10);
+          this.value = brut === "" ? "" : entiers.format(valeur);
+          var pos = 0, chiffresVus = 0;
+          while (pos < this.value.length && chiffresVus < chiffresAvantCurseur) {
+            if (/[0-9]/.test(this.value[pos])) chiffresVus++;
+            pos++;
+          }
+          this.setSelectionRange(pos, pos);
+          if (valeur > +slider.max) slider.max = Math.ceil(valeur / 1000) * 1000;
+          slider.value = Math.min(Math.max(valeur, +slider.min), +slider.max);
+          slider.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      })();
+      // Remet les 5 faders ET leurs cases de valeur à jour depuis les champs sources —
+      // appelé à chaque recalculer(), jamais seulement au chargement, pour rester
       // synchronisé quel que soit l'endroit où une valeur a changé (champ direct, mémoire
-      // rappelée, changement de machine qui réinitialise durée/débit...).
+      // rappelée, changement de machine qui réinitialise durée/débit...). Ne réécrit
+      // JAMAIS la case actuellement en cours de frappe (document.activeElement) — sinon
+      // le curseur de saisie de l'utilisateur sauterait à chaque recalcul.
       function majSlidersComposition(patientsAn) {
         var sliderActivite = document.getElementById("eneActiviteSlider");
         if (patientsAn > +sliderActivite.max) sliderActivite.max = Math.ceil(patientsAn / 1000) * 1000;
         sliderActivite.value = Math.min(Math.max(patientsAn, 0), +sliderActivite.max);
-        document.getElementById("eneActiviteSliderVal").textContent = "— " + entiers.format(patientsAn) + " patients/an";
+        var champActivite = document.getElementById("eneActiviteSliderVal");
+        if (document.activeElement !== champActivite) champActivite.value = entiers.format(patientsAn);
+
+        var sliderPrix = document.getElementById("enePrixSlider");
+        var prixActuel = Math.max(0, parseFloat(document.getElementById("enePrix").value) || 0);
+        if (prixActuel > +sliderPrix.max) sliderPrix.max = Math.ceil(prixActuel * 10) / 10;
+        sliderPrix.value = Math.min(Math.max(prixActuel, +sliderPrix.min), +sliderPrix.max);
+        var champPrix = document.getElementById("enePrixSliderVal");
+        if (document.activeElement !== champPrix) champPrix.value = Math.round(prixActuel * 100) / 100;
 
         [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA"],
          ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB"]].forEach(function (t) {
@@ -2461,7 +2615,8 @@
           var patientsHeure = installMin > 0 ? 60 / installMin : 0;
           var slider = document.getElementById(t[0]);
           slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
-          document.getElementById(t[1]).textContent = "(" + (Math.round(patientsHeure * 10) / 10) + " patients/h)";
+          var champ = document.getElementById(t[1]);
+          if (document.activeElement !== champ) champ.value = Math.round(patientsHeure * 10) / 10;
         });
 
         [["eneAcqASlider", "eneAcqASliderVal", "eneAcqA"],
@@ -2469,7 +2624,8 @@
           var acqMin = Math.max(1, parseFloat(document.getElementById(t[2]).value) || 1);
           var slider = document.getElementById(t[0]);
           slider.value = Math.min(Math.max(acqMin, +slider.min), +slider.max);
-          document.getElementById(t[1]).textContent = "(" + acqMin + " min)";
+          var champ = document.getElementById(t[1]);
+          if (document.activeElement !== champ) champ.value = acqMin;
         });
       }
       // Case "Coupure ... ?" : révèle/masque le champ de durée juste en dessous et relance
