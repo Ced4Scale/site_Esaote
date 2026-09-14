@@ -407,20 +407,6 @@
     .ene-fact-bar-fill2 { height: 100%; border-radius: 4px; }
     .ene-fact-value { flex: 0 0 auto; min-width: 3.5rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ene-fact-row--texte .ene-fact-texte-wrap { display: flex; gap: 1.4rem; flex-wrap: wrap; }
-    /* Les 3 graphes en barres (SVG) doivent rendre EXACTEMENT à la même taille (même
-       échelle de police, même largeur de barre) — demande explicite de Cédric le
-       14/09/2026, "même taille - même police - même style... que Composition du coût
-       énergétique annuel". Or "Composition..." vit dans une carte nichée une fois de
-       plus que les 2 autres (#eneCardComposition à l'intérieur de #eneDetailCard,
-       chacune avec son propre padding de carte .simulator__chart-card, 1,2rem de
-       chaque côté) — elle dispose donc d'environ 38px de moins en largeur utile. Comme
-       le texte du SVG est dimensionné en unités internes au viewBox (mis à l'échelle
-       avec la largeur du conteneur), cette différence de largeur suffisait à rendre le
-       texte visiblement plus petit sur "Composition" que sur les 2 autres graphes.
-       Correction : appliquer le même retrait de largeur (1,2rem de chaque côté) aux 2
-       graphes non nichés, pour qu'ils rendent tous à la même largeur, donc à la même
-       échelle de police, quelle que soit la largeur de la page. */
-    #eneChartWrap, #eneSocleDetailChartWrap { padding: 0 1.2rem; }
     .ene-fact-row--texte .ene-fact-texte-value { font-weight: 700; white-space: nowrap; }
   </style>
 </head>
@@ -743,6 +729,79 @@
           </div>
         </details>
 
+        <!-- Sortie du niveau imbriqué "Voir le détail des calculs" le 14/09/2026 (demande
+             de Cédric : "ce n'est pas harmonieux" — cette carte, nichée un niveau plus
+             profond que les 2 autres graphes en barres, disposait de ~38px de largeur
+             utile en moins, ce qui réduisait mécaniquement la taille du texte de son SVG
+             mis à l'échelle du conteneur ; le retrait CSS ajouté en compensation sur les
+             2 autres graphes créait des marges vides déséquilibrées. Remontée à ce niveau,
+             elle a exactement la même largeur intérieure que "Coût énergétique annuel —
+             trois couches" et "Composition du socle" juste au-dessus, sans aucun correctif
+             CSS nécessaire. -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardComposition">
+          <summary>Composition du coût énergétique annuel
+            <button type="button" class="chart-card-fullscreen-btn" id="eneCompositionFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            <span class="ene-info-wrap ene-info-wrap--violet">
+              <button type="button" class="ene-info-btn" id="eneInfoSocleDetailBtn" aria-expanded="false" aria-controls="eneInfoSocleDetailPop" aria-label="Composition du socle">💡</button>
+              <div class="ene-info-pop ene-info-pop--table" id="eneInfoSocleDetailPop" hidden>
+                <p style="margin:0 0 .5rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit ainsi :</p>
+                <table class="ene-info-table">
+                  <tbody>
+                    <tr><td>IRM elle-même</td><td>Consommation de veille de la machine</td></tr>
+                    <tr><td>Local technique</td><td>Maintien en froid de l'aimant</td></tr>
+                    <tr><td>Climatisation de la salle</td><td>Obligatoire pour toute IRM, y compris les modèles Esaote sans hélium</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </span>
+          </summary>
+          <!-- Fusion du 14/09/2026 (demande de Cédric) : l'ancienne table "Détail du
+               socle" (IRM/local technique/climatisation) et la table de résultats juste
+               en dessous (socle/entre-patients/examens/coût annuel/etc.) deviennent UN
+               histogramme horizontal — 5 segments empilés par machine (COMPOSANTS_5,
+               déjà utilisés par le camembert de détail du graphe principal ci-dessus,
+               voir dessinerCamembertSocle). La ligne "Patients par an (commun)" disparaît
+               (remplacée par le curseur d'activité sous le graphe, voir plus bas — même
+               donnée que le champ du panneau ⚙, curseur miroir). -->
+          <div class="simulator__legend" id="eneLegendComposition"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="eneChartComposition" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du coût énergétique annuel par poste, pour les deux machines choisies"></svg>
+          </div>
+          <div class="ene-fact-list" id="eneTableBody" style="margin-top:.8rem">
+          </div>
+          <!-- Curseurs sous le graphe (demande de Cédric le 14/09/2026) — tous en
+               curseur MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
+               synchronisée dans les 2 sens, motif déjà utilisé partout sur le site) :
+               jamais une donnée séparée qui pourrait diverger. -->
+          <div class="ene-comp-sliders">
+            <div class="field">
+              <label for="eneActiviteSlider">Activité <span id="eneActiviteSliderVal"></span></label>
+              <input type="range" id="eneActiviteSlider" min="0" max="15000" step="1" />
+            </div>
+            <div class="field">
+              <label for="enePatientsHeureASlider">Patients par heure — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="enePatientsHeureASliderVal"></span></label>
+              <input type="range" id="enePatientsHeureASlider" min="0.5" max="8" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="enePatientsHeureBSlider">Patients par heure — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="enePatientsHeureBSliderVal"></span></label>
+              <input type="range" id="enePatientsHeureBSlider" min="0.5" max="8" step="0.1" />
+            </div>
+            <div class="field">
+              <label for="eneAcqASlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="eneAcqASliderVal"></span></label>
+              <input type="range" id="eneAcqASlider" min="1" max="60" step="1" />
+            </div>
+            <div class="field">
+              <label for="eneAcqBSlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="eneAcqBSliderVal"></span></label>
+              <input type="range" id="eneAcqBSlider" min="1" max="60" step="1" />
+            </div>
+          </div>
+        </details>
+
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardCo2">
           <summary>Empreinte carbone (mix électrique français)
             <button type="button" class="chart-card-fullscreen-btn" id="eneCo2FullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
@@ -818,69 +877,6 @@
               </span>
             </details>
 
-            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardComposition">
-              <summary>Composition du coût énergétique annuel
-                <button type="button" class="chart-card-fullscreen-btn" id="eneCompositionFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                    <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                    <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                  </svg>
-                </button>
-                <span class="ene-info-wrap ene-info-wrap--violet">
-                  <button type="button" class="ene-info-btn" id="eneInfoSocleDetailBtn" aria-expanded="false" aria-controls="eneInfoSocleDetailPop" aria-label="Composition du socle">💡</button>
-                  <div class="ene-info-pop ene-info-pop--table" id="eneInfoSocleDetailPop" hidden>
-                    <p style="margin:0 0 .5rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit ainsi :</p>
-                    <table class="ene-info-table">
-                      <tbody>
-                        <tr><td>IRM elle-même</td><td>Consommation de veille de la machine</td></tr>
-                        <tr><td>Local technique</td><td>Maintien en froid de l'aimant</td></tr>
-                        <tr><td>Climatisation de la salle</td><td>Obligatoire pour toute IRM, y compris les modèles Esaote sans hélium</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </span>
-              </summary>
-              <!-- Fusion du 14/09/2026 (demande de Cédric) : l'ancienne table "Détail du
-                   socle" (IRM/local technique/climatisation) et la table de résultats juste
-                   en dessous (socle/entre-patients/examens/coût annuel/etc.) deviennent UN
-                   histogramme horizontal — 5 segments empilés par machine (COMPOSANTS_5,
-                   déjà utilisés par le camembert de détail du graphe principal ci-dessus,
-                   voir dessinerCamembertSocle). La ligne "Patients par an (commun)" disparaît
-                   (remplacée par le curseur d'activité sous le graphe, voir plus bas — même
-                   donnée que le champ du panneau ⚙, curseur miroir). -->
-              <div class="simulator__legend" id="eneLegendComposition"></div>
-              <div class="simulator__chart-wrap">
-                <svg id="eneChartComposition" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du coût énergétique annuel par poste, pour les deux machines choisies"></svg>
-              </div>
-              <div class="ene-fact-list" id="eneTableBody" style="margin-top:.8rem">
-              </div>
-              <!-- Curseurs sous le graphe (demande de Cédric le 14/09/2026) — tous en
-                   curseur MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
-                   synchronisée dans les 2 sens, motif déjà utilisé partout sur le site) :
-                   jamais une donnée séparée qui pourrait diverger. -->
-              <div class="ene-comp-sliders">
-                <div class="field">
-                  <label for="eneActiviteSlider">Activité <span id="eneActiviteSliderVal"></span></label>
-                  <input type="range" id="eneActiviteSlider" min="0" max="15000" step="1" />
-                </div>
-                <div class="field">
-                  <label for="enePatientsHeureASlider">Patients par heure — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="enePatientsHeureASliderVal"></span></label>
-                  <input type="range" id="enePatientsHeureASlider" min="0.5" max="8" step="0.1" />
-                </div>
-                <div class="field">
-                  <label for="enePatientsHeureBSlider">Patients par heure — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="enePatientsHeureBSliderVal"></span></label>
-                  <input type="range" id="enePatientsHeureBSlider" min="0.5" max="8" step="0.1" />
-                </div>
-                <div class="field">
-                  <label for="eneAcqASlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="eneAcqASliderVal"></span></label>
-                  <input type="range" id="eneAcqASlider" min="1" max="60" step="1" />
-                </div>
-                <div class="field">
-                  <label for="eneAcqBSlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="eneAcqBSliderVal"></span></label>
-                  <input type="range" id="eneAcqBSlider" min="1" max="60" step="1" />
-                </div>
-              </div>
-            </details>
             <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneRecap">
               <summary>Paramètres saisis avant de lancer la simulation
                 <button type="button" class="chart-card-fullscreen-btn" id="eneRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
@@ -3317,11 +3313,11 @@
             document.exitFullscreen();
           } else {
             if (card.tagName === "DETAILS") card.open = true;
-            // Ouvre aussi tout <details> NESTÉ (ex. les 3 cadres intérieurs
-            // eneCardTech/eneCardComposition/eneRecap dans eneDetailCard) — sinon leur
-            // contenu resterait invisible (juste le résumé) une fois eneDetailCard
-            // passé en plein écran. Voir skill ced4scale-simulateur-web, motif repris
-            // de simulateur-bascule-oscan.html.
+            // Ouvre aussi tout <details> NESTÉ (ex. les 2 cadres intérieurs
+            // eneCardTech/eneRecap dans eneDetailCard — eneCardComposition en est sorti
+            // le 14/09/2026, voir plus haut) — sinon leur contenu resterait invisible
+            // (juste le résumé) une fois eneDetailCard passé en plein écran. Voir skill
+            // ced4scale-simulateur-web, motif repris de simulateur-bascule-oscan.html.
             Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
             if (bodyId) {
               var body = document.getElementById(bodyId);
