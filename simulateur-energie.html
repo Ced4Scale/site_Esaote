@@ -802,74 +802,23 @@
             <svg id="eneChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des deux machines choisies"></svg>
           </div>
           <span class="ene-info-wrap ene-info-wrap--violet" style="margin-top:.4rem">
-            <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Comment voir le détail du socle">💡</button>
-            <div class="ene-info-pop" id="eneInfoSocleClicPop" hidden>Cliquez sur le socle (couleur violette) d'une barre pour voir sa composition en détail.</div>
+            <button type="button" class="ene-info-btn" id="eneInfoSocleClicBtn" aria-expanded="false" aria-controls="eneInfoSocleClicPop" aria-label="Composition du socle">💡</button>
+            <div class="ene-info-pop ene-info-pop--table" id="eneInfoSocleClicPop" hidden>
+              <p style="margin:0 0 .5rem">Cliquez sur "Total" pour voir le détail par poste, puis sur "Socle (arrêt)" pour voir sa composition :</p>
+              <table class="ene-info-table">
+                <tbody>
+                  <tr><td>IRM elle-même</td><td>Consommation de veille de la machine</td></tr>
+                  <tr><td>Local technique</td><td>Maintien en froid de l'aimant</td></tr>
+                  <tr><td>Climatisation de la salle</td><td>Obligatoire pour toute IRM, y compris les modèles Esaote sans hélium</td></tr>
+                </tbody>
+              </table>
+            </div>
           </span>
-        </details>
-
-        <!-- `hidden` reste le mécanisme séparé qui montre/masque entièrement ce
-             cadre au clic sur le socle d'une barre (voir toggleSocleDetail()) —
-             indépendant de l'état ouvert/fermé du <details> lui-même, qui est mis
-             à `open=true` par ce même toggle au moment où le cadre est révélé. -->
-        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardSocleDetail" hidden>
-          <summary>Composition du socle
-            <button type="button" class="chart-card-fullscreen-btn" id="eneSocleDetailFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
-          </summary>
-          <p class="simulator__hint" style="margin:0 0 .6rem" id="eneSocleDetailHint"></p>
-          <div class="simulator__legend" id="eneLegendSocleDetail"></div>
-          <div class="simulator__chart-wrap" id="eneSocleDetailChartWrap">
-            <svg id="eneChartSocleDetail" class="simulator__chart" viewBox="0 0 640 340" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du socle en IRM, local technique et climatisation, pour la machine choisie"></svg>
-          </div>
-        </details>
-
-        <!-- Sortie du niveau imbriqué "Voir le détail des calculs" le 14/09/2026 (demande
-             de Cédric : "ce n'est pas harmonieux" — cette carte, nichée un niveau plus
-             profond que les 2 autres graphes en barres, disposait de ~38px de largeur
-             utile en moins, ce qui réduisait mécaniquement la taille du texte de son SVG
-             mis à l'échelle du conteneur ; le retrait CSS ajouté en compensation sur les
-             2 autres graphes créait des marges vides déséquilibrées. Remontée à ce niveau,
-             elle a exactement la même largeur intérieure que "Coût énergétique annuel —
-             trois couches" et "Composition du socle" juste au-dessus, sans aucun correctif
-             CSS nécessaire. -->
-        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardComposition">
-          <summary>Composition du coût énergétique annuel
-            <button type="button" class="chart-card-fullscreen-btn" id="eneCompositionFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
-            <span class="ene-info-wrap ene-info-wrap--violet">
-              <button type="button" class="ene-info-btn" id="eneInfoSocleDetailBtn" aria-expanded="false" aria-controls="eneInfoSocleDetailPop" aria-label="Composition du socle">💡</button>
-              <div class="ene-info-pop ene-info-pop--table" id="eneInfoSocleDetailPop" hidden>
-                <p style="margin:0 0 .5rem">Le socle, c'est le <strong>talon de consommation</strong> de l'IRM — l'équivalent du frigo, de la box internet ou des veilles qui tournent en permanence dans une maison, mais à l'échelle de la machine. Il se répartit ainsi :</p>
-                <table class="ene-info-table">
-                  <tbody>
-                    <tr><td>IRM elle-même</td><td>Consommation de veille de la machine</td></tr>
-                    <tr><td>Local technique</td><td>Maintien en froid de l'aimant</td></tr>
-                    <tr><td>Climatisation de la salle</td><td>Obligatoire pour toute IRM, y compris les modèles Esaote sans hélium</td></tr>
-                  </tbody>
-                </table>
-              </div>
-            </span>
-          </summary>
-          <!-- Fusion du 14/09/2026 (demande de Cédric) : l'ancienne table "Détail du
-               socle" (IRM/local technique/climatisation) et la table de résultats juste
-               en dessous (socle/entre-patients/examens/coût annuel/etc.) deviennent UN
-               histogramme horizontal — 5 segments empilés par machine (COMPOSANTS_5,
-               déjà utilisés par le camembert de détail du graphe principal ci-dessus,
-               voir dessinerCamembertSocle). La ligne "Patients par an (commun)" disparaît
-               (remplacée par le curseur d'activité sous le graphe, voir plus bas — même
-               donnée que le champ du panneau ⚙, curseur miroir). -->
-          <div class="simulator__legend" id="eneLegendComposition"></div>
-          <div class="simulator__chart-wrap">
-            <svg id="eneChartComposition" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du coût énergétique annuel par poste, pour les deux machines choisies"></svg>
-          </div>
+          <!-- Contenu remonté de l'ancienne carte "Composition du coût énergétique
+               annuel" (supprimée le 14/09/2026, demande de Cédric — devenue redondante
+               avec les triangles Total/Socle ci-dessus) : les lignes de faits
+               (Aimant/Consommation/Heures...) et la table de mixage, qui n'avaient rien
+               de redondant elles, rejoignent ce cadre. -->
           <div class="ene-fact-list" id="eneTableBody" style="margin-top:.8rem">
           </div>
           <!-- Table de mixage (demande de Cédric le 14/09/2026) — remplace les 5 anciens
@@ -1487,14 +1436,12 @@
         derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
 
         // Les noms de machine (A/B) sont désormais uniquement portés par la légende de
-        // chaque bloc (dessinerLegendeNoms/dessinerLegende/dessinerLegendeComposition),
-        // plus par des en-têtes de colonne de tableau — retiré le 14/09/2026 en même temps
-        // que la conversion des tableaux de faits en listes de barres pleine largeur. Le
-        // lien vers la source officielle (EPD) d'une machine, qui vivait dans l'en-tête du
-        // tableau "Valeurs techniques", est repris par dessinerLegendeNoms() elle-même.
+        // chaque bloc (dessinerLegendeNoms/dessinerLegende), plus par des en-têtes de
+        // colonne de tableau — retiré le 14/09/2026 en même temps que la conversion des
+        // tableaux de faits en listes de barres pleine largeur. Le lien vers la source
+        // officielle (EPD) d'une machine, qui vivait dans l'en-tête du tableau "Valeurs
+        // techniques", est repris par dessinerLegendeNoms() elle-même.
         remplirTableauTech([machineA, machineB]);
-        dessinerLegendeComposition(resultats);
-        dessinerHistogrammeComposition(resultats);
         remplirTableau(resultats);
         remplirTableauCo2(resultats);
         remplirTableauParamsSaisis(machineA, machineB, {
@@ -1504,7 +1451,6 @@
         remplirEtudesListe();
         dessinerLegende(resultats);
         dessinerGraphe(resultats);
-        if (!document.getElementById("eneCardSocleDetail").hidden) dessinerCamembertSocle(resultats);
         majSlidersComposition(patientsAn);
 
         // Bloc "À retenir" en haut de page — le résultat avant les explications techniques
@@ -1667,51 +1613,17 @@
         });
       }
 
-      // Tableau dédié au détail du socle (demande explicite : "un tableau que pour ça").
-      // Valeur d'un des 5 composants (COMPOSANTS_5, déjà utilisés par le camembert
-      // "Composition du socle") pour une machine — entrePatients/examens sont des clés de
-      // 1er niveau de r.decomp, irm/lt/clim sont les 3 sous-composants de r.decomp.socle.
+      // Valeur d'un des 5 composants (COMPOSANTS_5) pour une machine — entrePatients/
+      // examens sont des clés de 1er niveau de r.decomp, irm/lt/clim sont les 3 sous-
+      // composants de r.decomp.socle. Encore utilisée par le mode Comparer
+      // (histogrammeCompositionSVGString plus bas) — les cartes "Composition du coût
+      // énergétique annuel"/"Composition du socle" qui l'utilisaient aussi ont été
+      // supprimées le 14/09/2026 (redondantes avec les triangles Total/Socle du graphe
+      // "trois couches", voir CATEGORIES_SOCLE_DETAIL).
       function valeurComposant(r, key) {
         if (key === "entrePatients") return r.decomp.entrePatients.total * r.prix;
         if (key === "examens") return r.decomp.examens.total * r.prix;
         return r.decomp.socle[key] * r.prix;
-      }
-
-      // Légende A/B (couleur machine, plus couleur par catégorie — voir plus bas
-      // pourquoi le codage couleur a changé le 14/09/2026).
-      function dessinerLegendeComposition(resultats) {
-        var legendEl = document.getElementById("eneLegendComposition");
-        legendEl.innerHTML = "";
-        resultats.forEach(function (r, i) {
-          var item = document.createElement("span");
-          item.className = "simulator__legend-item";
-          var key = document.createElement("span");
-          key.className = "simulator__legend-key";
-          key.style.background = r.color;
-          item.appendChild(key);
-          var text = document.createElement("span");
-          text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
-          item.appendChild(text);
-          legendEl.appendChild(item);
-        });
-      }
-
-      // Histogramme horizontal — une PAIRE de barres par poste, sur le même moteur
-      // dessinerPairesBarres() que le graphe principal ci-dessus (harmonisé le
-      // 14/09/2026, demande de Cédric : "harmoniser les graphes du haut et du bas, on
-      // garde le modèle deux bâtons l'un au-dessus de l'autre"). 5 postes ici (socle
-      // déplié en IRM/local technique/climatisation), contre 3 pour le graphe principal
-      // — seule différence : la granularité des postes comparés.
-      // Construit à l'intérieur de la fonction (pas en `var` au niveau du script) :
-      // COMPOSANTS_5 est déclaré plus bas dans ce fichier — un accès direct ici, au
-      // moment où le script s'exécute linéairement, lèverait "Cannot read properties of
-      // undefined" (piège de hoisting déjà documenté plusieurs fois dans le skill
-      // ced4scale-simulateur-web pour ce même fichier).
-      function dessinerHistogrammeComposition(resultats) {
-        var categories = COMPOSANTS_5.map(function (c) {
-          return { key: c.key, label: c.label, valeur: function (r) { return valeurComposant(r, c.key); } };
-        });
-        dessinerPairesBarres("eneChartComposition", resultats, categories);
       }
 
       // Rangée pleine largeur avec une barre par machine, empilées A au-dessus de B (comme
@@ -1749,9 +1661,10 @@
       }
 
       function remplirTableau(resultats) {
-        // Légende déjà affichée juste au-dessus, par dessinerLegendeComposition() (le
-        // graphe et ce bloc de détail partagent la même carte "Composition du coût
-        // énergétique annuel") — aucune 2ᵉ légende à redessiner ici.
+        // Légende déjà affichée juste au-dessus, par dessinerLegende() (ce bloc de détail
+        // vit désormais dans la carte "Coût énergétique annuel — trois couches", depuis
+        // la suppression de "Composition du coût énergétique annuel" le 14/09/2026) —
+        // aucune 2ᵉ légende à redessiner ici.
         var container = document.getElementById("eneTableBody");
         container.innerHTML = "";
         ligneFaitTexte(container, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
@@ -1762,11 +1675,10 @@
         ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
       }
 
-      // Légende A/B (couleur machine) — harmonisée le 14/09/2026 avec
-      // dessinerLegendeComposition() ci-dessous : depuis que ce graphe utilise le motif
-      // "paire de barres par poste" (couleur = machine, pas couche), la légende doit
-      // identifier les machines, pas les 3 couches (dont les noms restent lisibles
-      // directement à gauche de chaque paire, voir dessinerPairesBarres()).
+      // Légende A/B (couleur machine) — depuis que ce graphe utilise le motif "paire de
+      // barres par poste" (couleur = machine, pas couche), la légende doit identifier les
+      // machines, pas les couches (dont les noms restent lisibles directement à gauche de
+      // chaque paire, voir dessinerPairesBarres()).
       function dessinerLegende(resultats) {
         var legendEl = document.getElementById("eneLegend");
         legendEl.innerHTML = "";
@@ -1843,12 +1755,11 @@
         return niceN * pow;
       }
 
-      // Moteur commun "paire de barres horizontales par poste" — harmonisé le 14/09/2026
-      // (demande de Cédric : "harmoniser les graphes du haut et du bas, on garde le
-      // modèle deux bâtons l'un au-dessus de l'autre") entre ce graphe (3 postes : socle/
-      // entre-patients/examens) et dessinerHistogrammeComposition() plus bas (5 postes,
-      // socle déplié en IRM/local technique/climatisation) — mêmes dimensions, mêmes
-      // polices, même logique d'échelle, un seul endroit à corriger si le motif change.
+      // Moteur commun "paire de barres horizontales par poste" — utilisé par le graphe
+      // "Coût énergétique annuel — trois couches" (Total/Socle avec triangles ▸/▾, voir
+      // dessinerGraphe()) et par histogrammeCompositionSVGString() plus bas (mode
+      // Comparer) — mêmes dimensions, mêmes polices, même logique d'échelle, un seul
+      // endroit à corriger si le motif change.
       // `categories` = [{ label, valeur: function(r) {...} }, ...] ;
       // `onClicCategorie(cat, resultats)` optionnel, appelé au clic sur une barre.
       // Taille de police et hauteur de barre alignées le 14/09/2026 sur celles des
@@ -1947,8 +1858,8 @@
       ];
       // Détail du socle (demande de Cédric le 14/09/2026, "un triangle à côté de Socle
       // pour remplacer [la ligne] par" ces 3 postes) — mêmes clés/valeurs/libellés que
-      // COMPOSANTS_5 (dessinerCamembertSocle) et valeurComposant(), jamais dupliqués sous
-      // une forme différente : une seule vérité pour "de quoi le socle est fait".
+      // COMPOSANTS_5/valeurComposant() (utilisées par le mode Comparer), jamais dupliquées
+      // sous une forme différente : une seule vérité pour "de quoi le socle est fait".
       var CATEGORIES_SOCLE_DETAIL = [
         { key: "irm", label: "IRM (talon de consommation)", valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
         { key: "lt", label: "Local technique", valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
@@ -2127,11 +2038,13 @@
         eneHistoTooltipTimer = setTimeout(function () { el.hidden = true; }, 3500);
       }
 
-      // ---- Détail à 5 parts, à la demande : clic sur un segment de barre -> un camembert
-      // par machine (entre deux patients / examens / IRM / local technique / climatisation),
-      // pour ne pas alourdir le graphe principal en continu. Les 5 parts sont mutuellement
-      // exclusives et somment exactement au coût annuel total (le socle est déplié en ses 3
-      // composantes, les deux autres couches restent entières).
+      // 5 parts mutuellement exclusives qui somment exactement au coût annuel total (le
+      // socle est déplié en ses 3 composantes, les deux autres couches restent entières)
+      // — encore utilisées par le mode Comparer (histogrammeCompositionSVGString plus
+      // bas). Les cartes qui l'utilisaient pour un camembert/histogramme dédié
+      // ("Composition du coût énergétique annuel", "Composition du socle") ont été
+      // supprimées le 14/09/2026, devenues redondantes avec les triangles Total/Socle du
+      // graphe "trois couches" (CATEGORIES_SOCLE_DETAIL, mêmes valeurs).
       var COMPOSANTS_5 = [
         { key: "entrePatients", label: "Entre deux patients", color: "#1baf7a" },
         { key: "examens", label: "Examens", color: "#eda100" },
@@ -2139,54 +2052,6 @@
         { key: "lt", label: "Local technique", color: "#eb6834" },
         { key: "clim", label: "Climatisation salle", color: "#6b5b95" }
       ];
-
-      function toggleSocleDetail(resultats) {
-        var card = document.getElementById("eneCardSocleDetail");
-        card.hidden = !card.hidden;
-        // eneCardSocleDetail est un <details> fermé par défaut (règle "tous les
-        // cadres fermés") — mais ce mécanisme `hidden` (montrer/masquer le cadre
-        // en entier au clic sur le socle) reste distinct : quand on le révèle, on
-        // l'ouvre aussi directement pour ne pas imposer un 2e clic sur le chevron.
-        if (!card.hidden) { card.open = true; dessinerCamembertSocle(resultats); }
-      }
-
-      // Légende A/B — harmonisée le 14/09/2026 avec dessinerLegende()/
-      // dessinerLegendeComposition() (voir plus bas dans ce skill : "uniformiser tous
-      // les graphes comme dans Coût énergétique annuel").
-      function dessinerLegendeSocleDetail(resultats) {
-        var legendEl = document.getElementById("eneLegendSocleDetail");
-        legendEl.innerHTML = "";
-        resultats.forEach(function (r, i) {
-          var item = document.createElement("span");
-          item.className = "simulator__legend-item";
-          var key = document.createElement("span");
-          key.className = "simulator__legend-key";
-          key.style.background = r.color;
-          item.appendChild(key);
-          var text = document.createElement("span");
-          text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
-          item.appendChild(text);
-          legendEl.appendChild(item);
-        });
-      }
-
-      // Remplace l'ancien camembert (2 pies séparés) par le même moteur "paire de
-      // barres par poste" que les 2 autres graphes de la page — demande de Cédric le
-      // 14/09/2026 : "uniformiser tous les graphes ... la barre bleue au-dessus et la
-      // barre orange dessous". Cette carte devient une simple redite, au même niveau de
-      // détail, de la partie "socle" du graphe "Composition du coût énergétique annuel"
-      // plus bas — gardée telle quelle (juste re-stylée), la fusion des 2 cartes n'a pas
-      // été demandée.
-      function dessinerCamembertSocle(resultats) {
-        document.getElementById("eneSocleDetailHint").textContent =
-          "Même détail que la partie \"socle\" du graphe \"Composition du coût énergétique annuel\" plus bas — une paire de barres par composant, même échelle pour les deux machines.";
-        dessinerLegendeSocleDetail(resultats);
-        var categories = COMPOSANTS_5.filter(function (c) { return c.key === "irm" || c.key === "lt" || c.key === "clim"; })
-          .map(function (c) {
-            return { key: c.key, label: c.label, valeur: function (r) { return r.decomp.socle[c.key] * r.prix; } };
-          });
-        dessinerPairesBarres("eneChartSocleDetail", resultats, categories);
-      }
 
       // ---------------------------------------------------------------------------------
       // Export PDF par e-mail — réutilise le même déclencheur Power Automate que le
@@ -2924,9 +2789,9 @@
       // (chaque mémoire comparée = un point), Machine A en haut, Machine B en dessous.
       // Pas de clic vers le détail du socle ici (mode Comparer déjà volontairement plus
       // simple, voir skill "Rendu volontairement plus simple pour une vue secondaire").
-      // Même motif "paire de barres par poste" que dessinerHistogrammeComposition()
-      // (14/09/2026), en chaîne SVG (comme le reste de dessinerCoteComparaison) — pas
-      // de clic ici (mode Comparer déjà volontairement plus simple).
+      // Même motif "paire de barres par poste" que dessinerGraphe() (moteur
+      // dessinerPairesBarres), en chaîne SVG (comme le reste de dessinerCoteComparaison)
+      // — pas de clic ici (mode Comparer déjà volontairement plus simple).
       function histogrammeCompositionSVGString(resultats, W) {
         var top = 20, barH = 12, barGap = 2, groupGap = 10, padL = 4, padR = 4;
         var groupH = barH * 2 + barGap;
@@ -3073,7 +2938,6 @@
       wireInfoBtn("eneInfoTarifClicBtn", "eneInfoTarifClicPop");
       wireInfoBtn("eneInfoTechBtn", "eneInfoTechPop");
       wireInfoBtn("eneInfoTechSourcesBtn", "eneInfoTechSourcesPop");
-      wireInfoBtn("eneInfoSocleDetailBtn", "eneInfoSocleDetailPop");
       wireInfoBtn("eneInfoRecapBtn", "eneInfoRecapPop");
       wireInfoBtn("eneInfoEtudesBtn", "eneInfoEtudesPop");
       wireInfoBtn("eneInfoExportBtn", "eneInfoExportPop");
@@ -3103,19 +2967,16 @@
       // Clé DÉDIÉE à cette page (distincte de celles des 4 autres simulateurs) : chaque
       // simulateur a ses propres cartes/blocs, un layout enregistré ici n'a aucun sens
       // sur un autre simulateur.
-      // 2 cartes seulement reçoivent la disposition libre : celles qui combinent une
-      // légende ET un graphe (les 2 "camemberts/graphiques" mis en avant par Cédric) —
-      // "Coût énergétique annuel — trois couches" (barres) et "Composition du socle"
-      // (camemberts, dessinerCamembertSocle). Les autres cartes (tableaux Empreinte
-      // carbone/Valeurs techniques/Détail du socle/Récapitulatif, graphe seul "Évolution
-      // du prix du kWh", "Voir le détail des calculs"/"Ce que disent les études") gardent
-      // le plein écran simple existant (tout le contenu remplit le canevas, pas de blocs
-      // indépendants) — un seul bloc de contenu par carte n'apporterait rien à déplacer.
-      // Aucun bloc n'est nichée dans un autre ici (légende et chart-wrap sont 2 enfants
-      // frères de chaque <details>), l'ordre de la liste n'a donc pas d'importance.
+      // Seul "Coût énergétique annuel — trois couches" reçoit la disposition libre
+      // (combine une légende ET un graphe). "Composition du socle" (qui la recevait
+      // aussi) a été supprimée le 14/09/2026 — voir COMPOSANTS_5. Les autres cartes
+      // (tableaux Empreinte carbone/Valeurs techniques/Détail du socle/Récapitulatif,
+      // graphe seul "Évolution du prix du kWh", "Hypothèses de ce simulateur"/"Ce que
+      // disent les études") gardent le plein écran simple existant (tout le contenu
+      // remplit le canevas, pas de blocs indépendants) — un seul bloc de contenu par
+      // carte n'apporterait rien à déplacer.
       var PRES_FREE_BLOCKS = {
-        eneCardPrincipal: ["eneLegend", "eneChartWrap"],
-        eneCardSocleDetail: ["eneLegendSocleDetail", "eneSocleDetailChartWrap"]
+        eneCardPrincipal: ["eneLegend", "eneChartWrap"]
       };
       var PRES_FREE_LAYOUT_KEY = "ced4scale-presentation-layout-energie-v1";
       var presFreeCardActif = null;
@@ -3607,10 +3468,10 @@
           } else {
             if (card.tagName === "DETAILS") card.open = true;
             // Ouvre aussi tout <details> NESTÉ (ex. les 2 cadres intérieurs
-            // eneCardTech/eneRecap dans eneDetailCard — eneCardComposition en est sorti
-            // le 14/09/2026, voir plus haut) — sinon leur contenu resterait invisible
-            // (juste le résumé) une fois eneDetailCard passé en plein écran. Voir skill
-            // ced4scale-simulateur-web, motif repris de simulateur-bascule-oscan.html.
+            // eneCardTech/eneRecap dans eneDetailCard) — sinon leur contenu resterait
+            // invisible (juste le résumé) une fois eneDetailCard passé en plein écran.
+            // Voir skill ced4scale-simulateur-web, motif repris de
+            // simulateur-bascule-oscan.html.
             Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
             if (bodyId) {
               var body = document.getElementById(bodyId);
@@ -3645,12 +3506,10 @@
         });
       }
       wireCardFullscreen("eneChartFullscreenBtn", "eneCardPrincipal");
-      wireCardFullscreen("eneSocleDetailFullscreenBtn", "eneCardSocleDetail");
       wireCardFullscreen("eneCo2FullscreenBtn", "eneCardCo2");
       wireCardFullscreen("eneHistoPrixFullscreenBtn", "eneCardHistoPrix");
       wireCardFullscreen("eneDetailFullscreenBtn", "eneDetailCard");
       wireCardFullscreen("eneTechFullscreenBtn", "eneCardTech");
-      wireCardFullscreen("eneCompositionFullscreenBtn", "eneCardComposition");
       wireCardFullscreen("eneRecapFullscreenBtn", "eneRecap");
       wireCardFullscreen("eneEtudesFullscreenBtn", "eneEtudesCard");
     })();
