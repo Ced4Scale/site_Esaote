@@ -1658,6 +1658,12 @@
           lbl.style.cursor = "pointer";
           lbl.addEventListener("click", opts.onClicLabel);
         }
+        // .ene-fact-row-label est en nowrap par défaut (utile pour les libellés courts
+        // alignés avec leurs bâtons) — un libellé plus long (ex. "Consommation annuelle
+        // (Empreinte carbone)") déborde et se fait couper sur mobile. opts.wrap autorise
+        // le retour à la ligne ENTRE les mots pour ces cas-là (jamais pour un nom de
+        // machine, qui garde le nowrap habituel).
+        if (opts && opts.wrap) lbl.style.whiteSpace = "normal";
         row.appendChild(lbl);
         // Réserve une largeur FIXE en pixels (pas un pourcentage) pour le montant après
         // la barre la plus longue — une marge en % (essayée d'abord) représente trop peu
@@ -1696,10 +1702,12 @@
         // "Valeurs techniques utilisées" (remplirTableauTech), pas dupliqué ici.
         // "Consommation annuelle" a un triangle ▸/▾ (demande de Cédric le 14/09/2026) qui
         // déplie l'empreinte carbone juste en dessous — mêmes formules que
-        // remplirTableauCo2() (jamais dupliquées sous une forme différente).
-        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; }, {
+        // remplirTableauCo2() (jamais dupliquées sous une forme différente). "(Empreinte
+        // carbone)" ajouté au libellé (2e demande) pour annoncer ce que le triangle révèle.
+        ligneFaitBarre(container, "Consommation annuelle (Empreinte carbone)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; }, {
           triangle: eneConsoOuvert,
-          onClicLabel: function () { eneConsoOuvert = !eneConsoOuvert; remplirTableau(resultats); }
+          onClicLabel: function () { eneConsoOuvert = !eneConsoOuvert; remplirTableau(resultats); },
+          wrap: true
         });
         if (eneConsoOuvert) {
           // Décalage d'1cm (demande de Cédric le 14/09/2026) — même principe que le
