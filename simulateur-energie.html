@@ -1745,18 +1745,13 @@
         // libellé de catégorie suivant au-dessus de ses barres, sans bande vide en trop.
         var barH = 30, barGap = 5, groupGap = 16, top = 22;
         var groupH = barH * 2 + barGap;
-        var maxVal = Math.max.apply(null,
-          resultats.map(function (r) { return categories.map(function (c) { return c.valeur(r); }); })
-            .reduce(function (a, b) { return a.concat(b); }, [])
-            .concat([0.0001])
-        );
-        // Marge à droite de 22 % (au lieu des graduations d'axe retirées) pour que le
-        // montant, toujours collé à la fin de la barre, ait sa place même sur la barre la
-        // plus longue — même principe que RESERVE_PX dans ligneFaitBarre, mais ici un
-        // pourcentage suffit puisque tout (barre ET texte) est dans le même système de
-        // coordonnées mis à l'échelle ensemble (contrairement au HTML, où le texte garde
-        // une taille fixe en pixels quelle que soit la largeur du conteneur).
-        var xMax = maxVal * 1.28;
+        // Échelle PROPRE À CHAQUE POSTE depuis le 14/09/2026 (retour de Cédric : une
+        // échelle commune aux 5 postes de "Composition du coût énergétique annuel"
+        // écrasait les petits montants — ex. "100 €" quasi invisible à côté de
+        // "7.513 €"). Même principe que les lignes des tableaux de faits
+        // (ligneFaitBarre) : chaque paire de barres se lit à SA propre échelle, la plus
+        // grande des 2 valeurs occupant ~78 % de la largeur pour laisser la place au
+        // montant collé à la fin de la barre.
         var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap;
 
         categories.forEach(function (c, gi) {
@@ -1772,6 +1767,7 @@
           titleLabel.textContent = c.label;
           svg.appendChild(titleLabel);
 
+          var xMax = Math.max.apply(null, resultats.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
           resultats.forEach(function (r, i) {
             var val = c.valeur(r);
             var barW = xMax > 0 ? (val / xMax) * plotW : 0;
