@@ -679,7 +679,7 @@
             <div class="field">
               <label for="eneInstallA">Temps changement de patient (ready to scan)</label>
               <div class="simulator__field-suffix">
-                <input type="number" id="eneInstallA" min="0" step="1" />
+                <input type="number" id="eneInstallA" min="1" step="1" />
                 <span>minutes</span>
               </div>
             </div>
@@ -704,7 +704,7 @@
             <div class="field">
               <label for="eneInstallB">Temps changement de patient (ready to scan)</label>
               <div class="simulator__field-suffix">
-                <input type="number" id="eneInstallB" min="0" step="1" />
+                <input type="number" id="eneInstallB" min="1" step="1" />
                 <span>minutes</span>
               </div>
             </div>
@@ -1166,26 +1166,46 @@
       // Même principe pour le temps de changement de patient (demandé par Cédric le
       // 11/08/2026, renommé/rechiffré le 14/09/2026) — pré-rempli depuis
       // assets/machines-energie-data.js, éditable ensuite.
-      function reinitialiserInstall(select, input) {
+      // eneChangementPlancher{A,B} : plancher du plafond Patients/h de la table de mixage
+      // (demande de Cédric le 15/09/2026, "le minimum est ce qui est dans la colonne de
+      // gauche") — PAS une constante universelle, mais la valeur de "Temps changement de
+      // patient" telle que fixée directement dans le formulaire (par défaut à la
+      // sélection d'une machine, ou par une frappe manuelle dans cette case précise) ;
+      // ne bouge JAMAIS quand le fader Patients/h écrit dans ce même champ, sinon le
+      // plancher suivrait le fader et perdrait tout son sens.
+      // Distingué via un drapeau explicite (eneInstallEcritureProgrammatique), PAS
+      // document.activeElement — piège vécu en testant : le focus donné par .focus() n'est
+      // pas toujours reflété immédiatement par document.activeElement (Chrome headless
+      // notamment), un drapeau JS classique est fiable partout. Posé à true juste avant
+      // que la table de mixage écrive dans installA/B, remis à false juste après.
+      var eneChangementPlancher = { A: null, B: null };
+      var eneInstallEcritureProgrammatique = false;
+      function reinitialiserInstall(select, input, cle) {
         input.value = machineParKey(select.value).dureeChangementMinutes;
+        eneChangementPlancher[cle] = +input.value;
       }
       var installA = document.getElementById("eneInstallA"), installB = document.getElementById("eneInstallB");
+      [["A", installA], ["B", installB]].forEach(function (t) {
+        t[1].addEventListener("input", function () {
+          if (!eneInstallEcritureProgrammatique) eneChangementPlancher[t[0]] = Math.max(1, parseFloat(this.value) || 1);
+        });
+      });
       reinitialiserDureeAcq(selectA, acqA);
       reinitialiserDureeAcq(selectB, acqB);
-      reinitialiserInstall(selectA, installA);
-      reinitialiserInstall(selectB, installB);
-      selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); reinitialiserInstall(selectA, installA); recalculer(); });
-      selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); reinitialiserInstall(selectB, installB); recalculer(); });
+      reinitialiserInstall(selectA, installA, "A");
+      reinitialiserInstall(selectB, installB, "B");
+      selectA.addEventListener("change", function () { reinitialiserDureeAcq(selectA, acqA); reinitialiserInstall(selectA, installA, "A"); recalculer(); });
+      selectB.addEventListener("change", function () { reinitialiserDureeAcq(selectB, acqB); reinitialiserInstall(selectB, installB, "B"); recalculer(); });
       champA.addEventListener("change", function () {
         repeuplerMachineSelect(selectA, champA);
         reinitialiserDureeAcq(selectA, acqA);
-        reinitialiserInstall(selectA, installA);
+        reinitialiserInstall(selectA, installA, "A");
         recalculer();
       });
       champB.addEventListener("change", function () {
         repeuplerMachineSelect(selectB, champB);
         reinitialiserDureeAcq(selectB, acqB);
-        reinitialiserInstall(selectB, installB);
+        reinitialiserInstall(selectB, installB, "B");
         recalculer();
       });
 
@@ -1385,9 +1405,11 @@
         // "temps de prise en charge total". Le temps total par patient (utilisé pour la
         // capacité et le calcul électrique "prêt") est toujours changement + acquisition,
         // recalculé ci-dessous (dureesTotal), jamais stocké tel quel.
+        // Jamais sous 1 minute — filet de sécurité générique (le vrai plancher, propre à
+        // chaque machine, est eneChangementPlancher, plus bas dans le fichier).
         var dureesInstall = [
-          Math.max(0, parseFloat(installA.value) || 0),
-          Math.max(0, parseFloat(installB.value) || 0)
+          Math.max(1, parseFloat(installA.value) || 1),
+          Math.max(1, parseFloat(installB.value) || 1)
         ];
         var dureesTotal = [dureesInstall[0] + dureesAcq[0], dureesInstall[1] + dureesAcq[1]];
 
@@ -2626,13 +2648,21 @@
       // temps de changement seul, pas l'inverse direct comme avant. 0 patient/h saisi via
       // le curseur (min="0.5" ici, jamais 0) reste toujours une capacité non nulle, pas de
       // division par zéro possible.
-      [["enePatientsHeureASlider", "eneInstallA", "eneAcqA"], ["enePatientsHeureBSlider", "eneInstallB", "eneAcqB"]].forEach(function (pair) {
+      // Changement JAMAIS sous son plancher (demande de Cédric le 15/09/2026, revenue sur
+      // une 1re version à constante fixe : "le minimum est ce qui est dans la colonne de
+      // gauche") — le fader Patients/h ne peut RACCOURCIR le changement qu'en s'arrêtant à
+      // eneChangementPlancher (valeur fixée manuellement dans le formulaire), jamais en
+      // dessous ; il reste libre de l'ALLONGER au-delà (patients/h plus bas).
+      [["enePatientsHeureASlider", "eneInstallA", "eneAcqA", "A"], ["enePatientsHeureBSlider", "eneInstallB", "eneAcqB", "B"]].forEach(function (pair) {
         document.getElementById(pair[0]).addEventListener("input", function () {
           var patientsHeure = Math.max(0.1, parseFloat(this.value) || 0.1);
           var acqMin = Math.max(1, parseFloat(document.getElementById(pair[2]).value) || 1);
           var installInput = document.getElementById(pair[1]);
-          installInput.value = Math.round(Math.max(0, (60 / patientsHeure) - acqMin) * 10) / 10;
+          var plancher = eneChangementPlancher[pair[3]];
+          installInput.value = Math.round(Math.max(plancher, (60 / patientsHeure) - acqMin) * 10) / 10;
+          eneInstallEcritureProgrammatique = true;
           installInput.dispatchEvent(new Event("input", { bubbles: true }));
+          eneInstallEcritureProgrammatique = false;
         });
       });
       // Durée d'acquisition — curseur miroir direct de eneAcqA/B (même unité, minutes).
@@ -2722,17 +2752,20 @@
 
         // "Temps changement de patient" (eneInstallA/B) exclut désormais l'acquisition
         // (renommé/rechiffré le 14/09/2026) — Patients/h = 60 / (changement + acquisition),
-        // plus le simple inverse du changement seul. Plafond théorique du fader (changement
-        // → 0) = 60 / durée d'acquisition courante (demande de Cédric : "si l'acquisition
-        // dure 15 min, pas possible de faire plus de 4 examens par heure").
-        [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA", "eneAcqA"],
-         ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB", "eneAcqB"]].forEach(function (t) {
+        // plus le simple inverse du changement seul. Plafond du fader = 60 / (acquisition +
+        // eneChangementPlancher) — demande de Cédric le 15/09/2026 ("le minimum est ce qui
+        // est dans la colonne de gauche") : le plancher n'est PAS une constante fixe, c'est
+        // la valeur de "Temps changement de patient" telle que fixée manuellement dans le
+        // formulaire (par défaut machine, ou retapée à la main) — voir eneChangementPlancher,
+        // déclarée plus haut, jamais mise à jour par ce fader lui-même.
+        [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA", "eneAcqA", "A"],
+         ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB", "eneAcqB", "B"]].forEach(function (t) {
           var acqMin = Math.max(1, parseFloat(document.getElementById(t[3]).value) || 1);
           var installEl = document.getElementById(t[2]);
           var installMin = Math.max(0, parseFloat(installEl.value) || 0);
           var patientsHeure = 60 / (installMin + acqMin);
           var slider = document.getElementById(t[0]);
-          slider.max = Math.round((60 / acqMin) * 10) / 10;
+          slider.max = Math.round((60 / (acqMin + eneChangementPlancher[t[4]])) * 10) / 10;
           slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
           var champ = document.getElementById(t[1]);
           if (document.activeElement !== champ) champ.value = Math.round(patientsHeure * 10) / 10;
@@ -2848,6 +2881,13 @@
         etat.__socleOuvert = eneSocleOuvert;
         etat.__consoOuvert = eneConsoOuvert;
         etat.__ventilHoraireOuverte = eneVentilHoraireOuverte;
+        // Plancher de "Temps changement de patient" (table de mixage, 15/09/2026) — sans
+        // ça, rappeler une mémoire remettrait la bonne valeur dans eneInstallA (déjà dans
+        // ENE_MEMOIRE_FIELDS) mais laisserait le plafond de Patients/h périmé, puisque
+        // definirChamp() ne déclenche jamais une frappe RÉELLE (document.activeElement) —
+        // seul déclencheur qui met à jour ce plancher normalement.
+        etat.__changementPlancherA = eneChangementPlancher.A;
+        etat.__changementPlancherB = eneChangementPlancher.B;
         return etat;
       }
 
@@ -2883,6 +2923,8 @@
         if (etat.__socleOuvert !== undefined) eneSocleOuvert = etat.__socleOuvert;
         if (etat.__consoOuvert !== undefined) eneConsoOuvert = etat.__consoOuvert;
         if (etat.__ventilHoraireOuverte !== undefined) eneVentilHoraireOuverte = etat.__ventilHoraireOuverte;
+        if (etat.__changementPlancherA !== undefined) eneChangementPlancher.A = etat.__changementPlancherA;
+        if (etat.__changementPlancherB !== undefined) eneChangementPlancher.B = etat.__changementPlancherB;
         recalculer();
       }
 
