@@ -1897,22 +1897,24 @@
 
       // 3 postes de 1er niveau — le socle a lui-même son propre triangle (voir plus bas)
       // qui déplie ses 3 composants (IRM/local technique/climatisation), sur le même
-      // principe que le triangle "Total" plus bas.
+      // principe que le triangle "Total" plus bas. indent: 38 ≈ 1cm (demande de Cédric le
+      // 14/09/2026) : ces 3 postes sont le détail DE "Total", décalés vers la droite.
       var CATEGORIES_SOCLE_3 = [
-        { key: "socle", label: "Socle (arrêt)", valeur: function (r) { return r.decomp.socle.total * r.prix; } },
-        { key: "entrePatients", label: "Entre deux patients", valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
-        { key: "examens", label: "Examens", valeur: function (r) { return r.decomp.examens.total * r.prix; } }
+        { key: "socle", label: "Socle (arrêt)", indent: 38, valeur: function (r) { return r.decomp.socle.total * r.prix; } },
+        { key: "entrePatients", label: "Entre deux patients", indent: 38, valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
+        { key: "examens", label: "Examens", indent: 38, valeur: function (r) { return r.decomp.examens.total * r.prix; } }
       ];
       // Détail du socle (demande de Cédric le 14/09/2026, "un triangle à côté de Socle
       // pour remplacer [la ligne] par" ces 3 postes) — mêmes clés/valeurs/libellés que
       // COMPOSANTS_5/valeurComposant() (utilisées par le mode Comparer), jamais dupliquées
       // sous une forme différente : une seule vérité pour "de quoi le socle est fait".
-      // indent: 38 ≈ 1cm à 96dpi (demande de Cédric le 14/09/2026) — ces 3 postes sont le
-      // détail DE "Socle (arrêt)", décalés vers la droite pour le montrer visuellement.
+      // indent: 76 ≈ 2cm à 96dpi (demande de Cédric le 14/09/2026, décalage de "Socle
+      // (arrêt)" lui-même à 1cm — ces 3 postes restent son détail, donc encore plus
+      // imbriqués : 2cm, un niveau de plus que leur parent).
       var CATEGORIES_SOCLE_DETAIL = [
-        { key: "irm", label: "IRM (talon de consommation)", indent: 38, valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
-        { key: "lt", label: "Local technique", indent: 38, valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
-        { key: "clim", label: "Climatisation salle", indent: 38, valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
+        { key: "irm", label: "IRM (talon de consommation)", indent: 76, valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
+        { key: "lt", label: "Local technique", indent: 76, valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
+        { key: "clim", label: "Climatisation salle", indent: 76, valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
       ];
       // Paire "Total" en tête du graphe, avec triangle ▸/▾ qui révèle la ventilation en
       // 3 postes en dessous (demande de Cédric le 14/09/2026) — fermée par défaut, même
@@ -1940,6 +1942,7 @@
         var categorieSocle = {
           key: "socle",
           label: (eneSocleOuvert ? "▾ " : "▸ ") + "Socle (arrêt)",
+          indent: CATEGORIES_SOCLE_3[0].indent,
           valeur: CATEGORIES_SOCLE_3[0].valeur,
           // Prix masqué une fois déplié (demande de Cédric le 14/09/2026) — redondant avec
           // la somme des 3 lignes de détail juste en dessous, voir dessinerPairesBarres().
