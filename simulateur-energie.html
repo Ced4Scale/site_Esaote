@@ -1876,7 +1876,12 @@
         // (ligneFaitBarre) : chaque paire de barres se lit à SA propre échelle, la plus
         // grande des 2 valeurs occupant ~78 % de la largeur pour laisser la place au
         // montant collé à la fin de la barre.
-        var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap;
+        // Espace après la dernière paire de barres (demande de Cédric le 14/09/2026,
+        // "il manque un espace à la fin de la paire de deux bâtons") : sans lui, la
+        // dernière paire touchait presque le bord bas de la carte, contrairement aux
+        // autres paires qui ont l'espace du libellé suivant au-dessus d'elles.
+        var bottomMargin = 20;
+        var bottomAxisY = top + categories.length * (groupH + groupGap) - groupGap + bottomMargin;
 
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap);
@@ -1911,7 +1916,7 @@
           });
         });
 
-        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 12));
+        svg.setAttribute("viewBox", "0 0 640 " + bottomAxisY);
       }
 
       // 3 postes de 1er niveau (pas le détail du socle, réservé au clic -> camembert) —
