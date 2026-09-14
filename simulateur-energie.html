@@ -421,7 +421,20 @@
     .ene-mixer-strip--rouge { --fader-color: var(--red); }
     .ene-mixer-strip--bleu { --fader-color: #2a78d6; }
     .ene-mixer-strip--orange { --fader-color: #eb6834; }
-    .ene-mixer-strip--violet { --fader-color: #6b5b95; }
+    .ene-mixer-strip--turquoise { --fader-color: #1fb6b6; }
+    /* Groupe "Patients/h"/"Durée acq." (demande de Cédric le 14/09/2026) : 1 seul titre
+       pour les 2 pistes A/B au lieu d'un titre répété sur chaque piste — chaque piste
+       garde sa propre couleur de machine (repère A/B coloré via .simulator__swatch-text,
+       auto-coloré au chargement avec SLOT_COLORS comme partout ailleurs sur la page). */
+    .ene-mixer-group { display: flex; flex-direction: column; align-items: center; }
+    .ene-mixer-group__title {
+      color: #c7cede; font-size: .64rem; font-weight: 700; text-align: center; line-height: 1.2;
+      min-height: 2.3em; display: flex; align-items: flex-end; margin-bottom: .5rem;
+    }
+    .ene-mixer-group__pistes { display: flex; gap: .6rem; }
+    .ene-mixer-strip--sub { width: auto; }
+    .ene-mixer-strip__sublabel { font-size: .68rem; font-weight: 700; margin-bottom: .35rem; }
+    .ene-mixer-group > .ene-mixer-strip__unit { margin-top: .5rem; }
     .ene-mixer-strip__value {
       width: 100%; margin-top: .55rem; text-align: center; font: 700 .82rem/1.3 inherit;
       color: #fff; background: #11141b; border: 1px solid #454b59; border-radius: .3rem;
@@ -862,7 +875,7 @@
               <input type="text" inputmode="numeric" class="ene-mixer-strip__value" id="eneActiviteSliderVal" aria-label="Activité en patients par an, modifiable" />
               <div class="ene-mixer-strip__unit">patients/an</div>
             </div>
-            <div class="ene-mixer-strip ene-mixer-strip--violet">
+            <div class="ene-mixer-strip ene-mixer-strip--turquoise">
               <div class="ene-mixer-strip__label">Coût kWh</div>
               <div class="ene-mixer-fader-track">
                 <input type="range" id="enePrixSlider" class="ene-mixer-fader" min="0" max="1" step="0.01" aria-label="Coût du kWh" />
@@ -870,36 +883,49 @@
               <input type="number" step="0.01" min="0" max="1" class="ene-mixer-strip__value" id="enePrixSliderVal" aria-label="Coût du kWh, modifiable" />
               <div class="ene-mixer-strip__unit">€ TTC</div>
             </div>
-            <div class="ene-mixer-strip ene-mixer-strip--bleu">
-              <div class="ene-mixer-strip__label">Patients/h — <span class="simulator__swatch-text" data-slot="0">A</span></div>
-              <div class="ene-mixer-fader-track">
-                <input type="range" id="enePatientsHeureASlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine A" />
+            <!-- Groupe "Patients/h" (demande de Cédric du 14/09/2026) : 1 seul titre pour
+                 les 2 pistes A/B, chacune gardant sa propre couleur de machine (bleu/orange,
+                 identique à SLOT_COLORS/.simulator__machine-box) via le petit repère A/B
+                 coloré au-dessus du fader. -->
+            <div class="ene-mixer-group">
+              <div class="ene-mixer-group__title">Patients/h</div>
+              <div class="ene-mixer-group__pistes">
+                <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--bleu">
+                  <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="0">A</div>
+                  <div class="ene-mixer-fader-track">
+                    <input type="range" id="enePatientsHeureASlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine A" />
+                  </div>
+                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureASliderVal" aria-label="Patients par heure, Machine A, modifiable" />
+                </div>
+                <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--orange">
+                  <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="1">B</div>
+                  <div class="ene-mixer-fader-track">
+                    <input type="range" id="enePatientsHeureBSlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine B" />
+                  </div>
+                  <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureBSliderVal" aria-label="Patients par heure, Machine B, modifiable" />
+                </div>
               </div>
-              <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureASliderVal" aria-label="Patients par heure, Machine A, modifiable" />
               <div class="ene-mixer-strip__unit">patients/h</div>
             </div>
-            <div class="ene-mixer-strip ene-mixer-strip--orange">
-              <div class="ene-mixer-strip__label">Patients/h — <span class="simulator__swatch-text" data-slot="1">B</span></div>
-              <div class="ene-mixer-fader-track">
-                <input type="range" id="enePatientsHeureBSlider" class="ene-mixer-fader" min="0.5" max="8" step="0.1" aria-label="Patients par heure, Machine B" />
+            <!-- Groupe "Durée acq." — même principe que "Patients/h" ci-dessus. -->
+            <div class="ene-mixer-group">
+              <div class="ene-mixer-group__title">Durée acq.</div>
+              <div class="ene-mixer-group__pistes">
+                <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--bleu">
+                  <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="0">A</div>
+                  <div class="ene-mixer-fader-track">
+                    <input type="range" id="eneAcqASlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine A" />
+                  </div>
+                  <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqASliderVal" aria-label="Durée d'acquisition, Machine A, modifiable" />
+                </div>
+                <div class="ene-mixer-strip ene-mixer-strip--sub ene-mixer-strip--orange">
+                  <div class="ene-mixer-strip__sublabel simulator__swatch-text" data-slot="1">B</div>
+                  <div class="ene-mixer-fader-track">
+                    <input type="range" id="eneAcqBSlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine B" />
+                  </div>
+                  <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqBSliderVal" aria-label="Durée d'acquisition, Machine B, modifiable" />
+                </div>
               </div>
-              <input type="number" step="0.1" min="0.5" max="8" class="ene-mixer-strip__value" id="enePatientsHeureBSliderVal" aria-label="Patients par heure, Machine B, modifiable" />
-              <div class="ene-mixer-strip__unit">patients/h</div>
-            </div>
-            <div class="ene-mixer-strip ene-mixer-strip--bleu">
-              <div class="ene-mixer-strip__label">Durée acq. — <span class="simulator__swatch-text" data-slot="0">A</span></div>
-              <div class="ene-mixer-fader-track">
-                <input type="range" id="eneAcqASlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine A" />
-              </div>
-              <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqASliderVal" aria-label="Durée d'acquisition, Machine A, modifiable" />
-              <div class="ene-mixer-strip__unit">min</div>
-            </div>
-            <div class="ene-mixer-strip ene-mixer-strip--orange">
-              <div class="ene-mixer-strip__label">Durée acq. — <span class="simulator__swatch-text" data-slot="1">B</span></div>
-              <div class="ene-mixer-fader-track">
-                <input type="range" id="eneAcqBSlider" class="ene-mixer-fader" min="1" max="60" step="1" aria-label="Durée d'acquisition, Machine B" />
-              </div>
-              <input type="number" step="1" min="1" max="60" class="ene-mixer-strip__value" id="eneAcqBSliderVal" aria-label="Durée d'acquisition, Machine B, modifiable" />
               <div class="ene-mixer-strip__unit">min</div>
             </div>
           </div>
@@ -920,29 +946,6 @@
           </summary>
           <div class="simulator__legend" id="eneLegendCo2"></div>
           <div class="ene-fact-list" id="eneTableCo2Body"></div>
-        </details>
-
-        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardHistoPrix">
-          <summary>Évolution du prix du kWh en France depuis 2000
-            <button type="button" class="chart-card-fullscreen-btn" id="eneHistoPrixFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
-            <span class="ene-info-wrap">
-              <button type="button" class="ene-info-btn" id="eneInfoTarifBtn" aria-expanded="false" aria-controls="eneInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button>
-              <div class="ene-info-pop" id="eneInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.<br /><br /><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div>
-            </span>
-          </summary>
-          <div class="simulator__chart-wrap">
-            <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
-            <div class="simulator__tooltip" id="eneHistoTooltip" hidden></div>
-          </div>
-          <span class="ene-info-wrap" style="margin-top:.4rem">
-            <button type="button" class="ene-info-btn" id="eneInfoTarifClicBtn" aria-expanded="false" aria-controls="eneInfoTarifClicPop" aria-label="Interaction et sources de ce graphe">💡</button>
-            <div class="ene-info-pop" id="eneInfoTarifClicPop" hidden>Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée) — l'info s'affiche quelques secondes puis disparaît.<br /><br />Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</div>
-          </span>
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneDetailCard">
@@ -1011,6 +1014,29 @@
             </details>
           </div>
         </details>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardHistoPrix">
+          <summary>Évolution du prix du kWh en France depuis 2000
+            <button type="button" class="chart-card-fullscreen-btn" id="eneHistoPrixFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            <span class="ene-info-wrap">
+              <button type="button" class="ene-info-btn" id="eneInfoTarifBtn" aria-expanded="false" aria-controls="eneInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button>
+              <div class="ene-info-pop" id="eneInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées ci-dessus.<br /><br /><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div>
+            </span>
+          </summary>
+          <div class="simulator__chart-wrap">
+            <svg id="eneChartHistoPrix" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
+            <div class="simulator__tooltip" id="eneHistoTooltip" hidden></div>
+          </div>
+          <span class="ene-info-wrap" style="margin-top:.4rem">
+            <button type="button" class="ene-info-btn" id="eneInfoTarifClicBtn" aria-expanded="false" aria-controls="eneInfoTarifClicPop" aria-label="Interaction et sources de ce graphe">💡</button>
+            <div class="ene-info-pop" id="eneInfoTarifClicPop" hidden>Cliquez sur une barre pour voir son évolution en % par rapport à l'année la plus ancienne affichée (2000, estimée) — l'info s'affiche quelques secondes puis disparaît.<br /><br />Sources : historique des délibérations tarifaires de la CRE pour 2012-2026, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a> (consulté le 03/09/2026) ; taux d'évolution 1986-2007 : INSEE Première n°1746 (avril 2019), pour l'estimation 2000-2011.</div>
+          </span>
+        </details>
+
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneEtudesCard">
           <summary>Ce que disent les études indépendantes
