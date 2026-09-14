@@ -1667,9 +1667,12 @@
         // aucune 2ᵉ légende à redessiner ici.
         var container = document.getElementById("eneTableBody");
         container.innerHTML = "";
+        // "Coût par patient" en tête (demande de Cédric le 14/09/2026, "juste en dessous de
+        // Total") — ce bloc de faits suit directement le graphe, dont "Total" est la 1ʳᵉ
+        // ligne par défaut (fermé), donc "Coût par patient" est ce qu'on voit juste après.
+        ligneFaitBarre(container, "Coût par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
         ligneFaitTexte(container, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
         ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneFaitBarre(container, "Coût par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
         ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
         ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
         ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
