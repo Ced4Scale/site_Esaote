@@ -37,6 +37,10 @@
       font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
     }
     .pm-gear-btn:hover, .pm-gear-btn:focus-visible { opacity: 1; }
+    /* Bouton ⏴/⏵ déplacé le 14/09/2026 (demande de Cédric) : n'appartient plus à la
+       ligne de titre d'un onglet en particulier — ancré en haut à droite de TOUT le
+       bloc .simulator__form. */
+    .form-panel-toggle-btn { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
     /* Roue crantée "Réglages avancés" — motif repris de simulateur-recettes.html
        (panneau ancré à gauche, sans fond assombri) le 08/09/2026, sur demande de
        Cédric ("il manque la roue crantée dans paramètres commun"). Remplace
@@ -408,18 +412,263 @@
     </div>
 
     <div class="simulator__layout">
-      <div class="form-card simulator__form">
-        <div class="simulator__field-group" style="border-left-color:#6b5b95">
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <h3 style="margin:0">Paramètres</h3>
-            <div style="display:flex;align-items:center;gap:.3rem">
-              <button type="button" class="pm-gear-btn" id="pmBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
-              <button type="button" class="pm-gear-btn" id="pmBtnHypotheses" aria-label="Réglages avancés" title="Réglages avancés">⚙</button>
-            </div>
-          </div>
-        </div>
+      <div class="form-card simulator__form" style="position:relative">
+        <!-- Bouton ⏴ déplacé le 14/09/2026 (demande de Cédric) : n'appartient plus à
+             l'onglet "Paramètres" — ancré en haut à droite de TOUT le bloc qui regroupe
+             les onglets. -->
+        <button type="button" class="pm-gear-btn form-panel-toggle-btn" id="pmBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
 
+        <!-- "Paramètres" — la roue crantée ⚙ (modale "Réglages avancés" séparée) a
+             disparu le 14/09/2026 (demande de Cédric) : ce contenu devient un onglet
+             comme les autres, même triangle ▸/▾, même accordéon (pmMainAccordion) —
+             l'accordéon interne (pmParamAccordion : Forfait technique/Horaires
+             d'ouverture/Salaires/Charges partagées) reste inchangé À L'INTÉRIEUR. -->
         <details class="simulator__field-group bascule-hyp-section" name="pmMainAccordion" style="border-left-color:#6b5b95">
+          <summary>Paramètres
+            <span class="pm-info-wrap">
+              <button type="button" class="pm-info-btn" id="pmInfoReglagesBtn" aria-expanded="false" aria-controls="pmInfoReglagesPop" aria-label="À propos de ces réglages">💡</button>
+              <div class="pm-info-pop" id="pmInfoReglagesPop" hidden>Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</div>
+            </span>
+          </summary>
+          <details class="bascule-hyp-section" name="pmParamAccordion">
+            <summary>Forfait technique</summary>
+            <div class="field">
+              <label for="pmDate">Date d'application des F.T.</label>
+              <select id="pmDate"></select>
+            </div>
+            <div class="field">
+              <label for="pmZone">Zone tarifaire (forfait technique)</label>
+              <select id="pmZone">
+                <option value="province">Province</option>
+                <option value="idf">Île-de-France (hors Paris)</option>
+                <option value="paris">Paris</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pmAmorti">Machine amortie ou non ?</label>
+              <select id="pmAmorti">
+                <option value="nonAmorti">Non amortie</option>
+                <option value="amorti">Amortie (&gt; 7 ans)</option>
+              </select>
+            </div>
+          </details>
+
+          <details class="bascule-hyp-section" name="pmParamAccordion">
+            <summary>Horaires d'ouverture</summary>
+            <div class="field">
+              <label for="pmHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmHeuresSemaine" value="8" min="0" max="24" step="0.5" />
+                <span>h/jour</span>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:.5rem;margin:-.5rem 0 .8rem">
+              <input type="checkbox" id="pmCoupureSemaine" style="width:16px;height:16px;margin:0" />
+              <span>Coupure dans la journée (lundi-vendredi) ?</span>
+            </label>
+            <div class="field" id="pmCoupureDureeSemaineWrap" hidden style="margin:-.4rem 0 .8rem">
+              <label for="pmCoupureDureeSemaine">Durée de la coupure</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmCoupureDureeSemaine" value="1" min="0" step="0.25" />
+                <span>heures</span>
+              </div>
+            </div>
+
+            <details class="pm-autre-rh">
+              <summary>Autre jour</summary>
+              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                <input type="checkbox" id="pmOuvertSamedi" style="width:16px;height:16px;margin:0" />
+                <span>Ouvert le samedi</span>
+              </label>
+              <div class="field" id="pmHeuresSamediWrap" hidden>
+                <label for="pmHeuresSamedi">Amplitude d'ouverture, samedi</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="pmHeuresSamedi" value="4" min="0" max="24" step="0.5" />
+                  <span>h/jour</span>
+                </div>
+              </div>
+              <label id="pmCoupureSamediLabel" class="pm-inline-check" hidden>
+                <input type="checkbox" id="pmCoupureSamedi" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le samedi ?</span>
+              </label>
+              <div class="field" id="pmCoupureDureeSamediWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="pmCoupureDureeSamedi">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="pmCoupureDureeSamedi" value="1" min="0" step="0.25" />
+                  <span>heures</span>
+                </div>
+              </div>
+
+              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                <input type="checkbox" id="pmOuvertDimanche" style="width:16px;height:16px;margin:0" />
+                <span>Ouvert le dimanche</span>
+              </label>
+              <div class="field" id="pmHeuresDimancheWrap" hidden>
+                <label for="pmHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="pmHeuresDimanche" value="4" min="0" max="24" step="0.5" />
+                  <span>h/jour</span>
+                </div>
+              </div>
+              <label id="pmCoupureDimancheLabel" class="pm-inline-check" hidden>
+                <input type="checkbox" id="pmCoupureDimanche" style="width:16px;height:16px;margin:0" />
+                <span>Coupure le dimanche ?</span>
+              </label>
+              <div class="field" id="pmCoupureDureeDimancheWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="pmCoupureDureeDimanche">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="pmCoupureDureeDimanche" value="1" min="0" step="0.25" />
+                  <span>heures</span>
+                </div>
+              </div>
+            </details>
+            <p class="simulator__hint" id="pmJoursTotalTxt" style="margin:.8rem 0 0"></p>
+          </details>
+
+          <details class="bascule-hyp-section" name="pmParamAccordion">
+            <summary>Salaires</summary>
+            <div class="field">
+              <label for="pmSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+              <select id="pmSalaireUnite">
+                <option value="mensuel">Mensuel</option>
+                <option value="annuel" selected>Annuel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="pmNetMerm">Salaire MERM net avant impôt</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmNetMerm" value="21.600" />
+                <span id="pmNetMermSuffix">€ / an</span>
+              </div>
+            </div>
+            <p class="simulator__hint" id="pmCoutMermCalcule"></p>
+            <details class="pm-autre-rh">
+              <summary>Autre RH</summary>
+              <div class="field">
+                <label for="pmIntegreSecretaire">Secrétaire médicale</label>
+                <select id="pmIntegreSecretaire">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="pmNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="pmNetSecretaire" value="19.800" />
+                  <span id="pmNetSecretaireSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreCadreSante">Cadre de santé</label>
+                <select id="pmIntegreCadreSante">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="pmNetCadreSante">Salaire cadre de santé net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="pmNetCadreSante" value="33.600" />
+                  <span id="pmNetCadreSanteSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreAideManip">Aide-manip</label>
+                <select id="pmIntegreAideManip">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="pmNetAideManip">Salaire aide-manip net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="pmNetAideManip" value="19.200" />
+                  <span id="pmNetAideManipSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreInfirmiere">Infirmière</label>
+                <select id="pmIntegreInfirmiere">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="pmNetInfirmiere">Salaire infirmière net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="pmNetInfirmiere" value="24.000" />
+                  <span id="pmNetInfirmiereSuffix">€ / an</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="pmIntegreManipAlternance">Manip en alternance</label>
+                <select id="pmIntegreManipAlternance">
+                  <option value="non" selected>Pas intégré au simu</option>
+                  <option value="oui">Intégré au simu</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="pmNetManipAlternance">Salaire manip en alternance net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="pmNetManipAlternance" value="9.600" />
+                  <span id="pmNetManipAlternanceSuffix">€ / an</span>
+                </div>
+              </div>
+            </details>
+            <span class="pm-info-wrap">
+              <button type="button" class="pm-info-btn" id="pmInfoTauxBtn" aria-expanded="false" aria-controls="pmInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
+              <div class="pm-info-pop pm-info-pop--table" id="pmInfoTauxPop" hidden>
+                <table class="pm-info-table">
+                  <tbody>
+                    <tr><td>Non-cadre (MERM, secrétaire, aide-manip, infirmière)</td><td>~78 % net/brut, +42 % charges patronales</td></tr>
+                    <tr><td>Cadre de santé</td><td>~75 % net/brut, +45 % (retraite cadre plus élevée)</td></tr>
+                    <tr><td>Manip en alternance</td><td>Taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire</td></tr>
+                  </tbody>
+                </table>
+                <p style="margin:.5rem 0 0">Coût réel employeur = net avant impôt → brut → charges patronales. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</p>
+              </div>
+            </span>
+          </details>
+
+          <details class="bascule-hyp-section" name="pmParamAccordion">
+            <summary>Charges partagées</summary>
+            <div class="field">
+              <label for="pmKwh">Coût du kWh</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
+                <span>€ TTC</span>
+              </div>
+            </div>
+            <div class="pm-hyp-subtitle">Autres charges partagées</div>
+            <div class="field">
+              <label for="pmContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+              <div class="simulator__field-suffix">
+                <input type="number" id="pmContrasteCout" value="0" min="0" step="0.5" />
+                <span>€</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="pmCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
+              <div class="simulator__field-suffix">
+                <input type="text" inputmode="numeric" id="pmCoutRis" value="0" />
+                <span>€ / mois</span>
+              </div>
+              <span class="pm-info-wrap">
+                <button type="button" class="pm-info-btn" id="pmInfoRisBtn" aria-expanded="false" aria-controls="pmInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
+                <div class="pm-info-pop" id="pmInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les machines comparées se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+              </span>
+            </div>
+          </details>
+
+          <span class="pm-info-wrap">
+            <button type="button" class="pm-info-btn" id="pmInfoConstatBtn" aria-expanded="false" aria-controls="pmInfoConstatPop" aria-label="À propos du tarif utilisé">💡</button>
+            <div class="pm-info-pop" id="pmInfoConstatPop" hidden>Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</div>
+          </span>
+          <span class="pm-info-wrap" style="margin-top:.8rem">
+            <button type="button" class="pm-info-btn" id="pmInfoChampsBtn" aria-expanded="false" aria-controls="pmInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
+            <div class="pm-info-pop" id="pmInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le résultat changer pendant que tu ajustes.</div>
+          </span>
+        </details>
           <summary>Machines à comparer</summary>
           <div class="field">
             <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
@@ -450,7 +699,7 @@
               <span>ETP</span>
             </div>
           </div>
-          <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
+          <p class="simulator__hint" id="pmAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (onglet Paramètres).</p>
           <div class="field" hidden>
             <label for="pmSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -566,7 +815,7 @@
             <label for="pmMermB">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
             <input type="number" id="pmMermB" value="2" min="0" step="0.1" />
           </div>
-          <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (Réglages avancés ⚙).</p>
+          <p class="simulator__hint" id="pmAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (onglet Paramètres).</p>
           <div class="field" hidden>
             <label for="pmSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
             <div class="simulator__field-suffix">
@@ -889,274 +1138,6 @@
       </div>
     </div>
   </main>
-
-  <div class="modal-overlay" id="pmHypOverlay" role="dialog" aria-modal="true" aria-labelledby="pmHypTitle" hidden>
-    <div class="modal" style="width:min(420px, 100%); position:relative">
-      <button type="button" class="pm-hyp-fullscreen-btn" id="pmHypFullscreenBtn" aria-pressed="false" aria-label="Agrandir le panneau" title="Agrandir le panneau">
-        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-          <g class="icon-expand">
-            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </g>
-          <g class="icon-compress">
-            <path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-          </g>
-        </svg>
-      </button>
-      <button type="button" class="modal__close" id="pmHypClose" aria-label="Fermer">&times;</button>
-      <div class="modal__scroll">
-        <div class="pm-hyp-body">
-          <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.8rem">
-            <h3 id="pmHypTitle" style="margin:0">Réglages avancés</h3>
-            <span class="pm-info-wrap">
-              <button type="button" class="pm-info-btn" id="pmInfoReglagesBtn" aria-expanded="false" aria-controls="pmInfoReglagesPop" aria-label="À propos de ces réglages">💡</button>
-              <div class="pm-info-pop" id="pmInfoReglagesPop" hidden>Valeurs par défaut raisonnables, à ajuster si ta situation diffère — inutile d'y toucher pour une première simulation.</div>
-            </span>
-          </div>
-          <details class="bascule-hyp-section" name="pmParamAccordion">
-            <summary>Forfait technique</summary>
-            <div class="field">
-              <label for="pmDate">Date d'application des F.T.</label>
-              <select id="pmDate"></select>
-            </div>
-            <div class="field">
-              <label for="pmZone">Zone tarifaire (forfait technique)</label>
-              <select id="pmZone">
-                <option value="province">Province</option>
-                <option value="idf">Île-de-France (hors Paris)</option>
-                <option value="paris">Paris</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="pmAmorti">Machine amortie ou non ?</label>
-              <select id="pmAmorti">
-                <option value="nonAmorti">Non amortie</option>
-                <option value="amorti">Amortie (&gt; 7 ans)</option>
-              </select>
-            </div>
-          </details>
-
-          <details class="bascule-hyp-section" name="pmParamAccordion">
-            <summary>Horaires d'ouverture</summary>
-            <div class="field">
-              <label for="pmHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmHeuresSemaine" value="8" min="0" max="24" step="0.5" />
-                <span>h/jour</span>
-              </div>
-            </div>
-            <label style="display:flex;align-items:center;gap:.5rem;margin:-.5rem 0 .8rem">
-              <input type="checkbox" id="pmCoupureSemaine" style="width:16px;height:16px;margin:0" />
-              <span>Coupure dans la journée (lundi-vendredi) ?</span>
-            </label>
-            <div class="field" id="pmCoupureDureeSemaineWrap" hidden style="margin:-.4rem 0 .8rem">
-              <label for="pmCoupureDureeSemaine">Durée de la coupure</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmCoupureDureeSemaine" value="1" min="0" step="0.25" />
-                <span>heures</span>
-              </div>
-            </div>
-
-            <details class="pm-autre-rh">
-              <summary>Autre jour</summary>
-              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
-                <input type="checkbox" id="pmOuvertSamedi" style="width:16px;height:16px;margin:0" />
-                <span>Ouvert le samedi</span>
-              </label>
-              <div class="field" id="pmHeuresSamediWrap" hidden>
-                <label for="pmHeuresSamedi">Amplitude d'ouverture, samedi</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="pmHeuresSamedi" value="4" min="0" max="24" step="0.5" />
-                  <span>h/jour</span>
-                </div>
-              </div>
-              <label id="pmCoupureSamediLabel" class="pm-inline-check" hidden>
-                <input type="checkbox" id="pmCoupureSamedi" style="width:16px;height:16px;margin:0" />
-                <span>Coupure le samedi ?</span>
-              </label>
-              <div class="field" id="pmCoupureDureeSamediWrap" hidden style="margin:-.4rem 0 .8rem">
-                <label for="pmCoupureDureeSamedi">Durée de la coupure</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="pmCoupureDureeSamedi" value="1" min="0" step="0.25" />
-                  <span>heures</span>
-                </div>
-              </div>
-
-              <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
-                <input type="checkbox" id="pmOuvertDimanche" style="width:16px;height:16px;margin:0" />
-                <span>Ouvert le dimanche</span>
-              </label>
-              <div class="field" id="pmHeuresDimancheWrap" hidden>
-                <label for="pmHeuresDimanche">Amplitude d'ouverture, dimanche</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="pmHeuresDimanche" value="4" min="0" max="24" step="0.5" />
-                  <span>h/jour</span>
-                </div>
-              </div>
-              <label id="pmCoupureDimancheLabel" class="pm-inline-check" hidden>
-                <input type="checkbox" id="pmCoupureDimanche" style="width:16px;height:16px;margin:0" />
-                <span>Coupure le dimanche ?</span>
-              </label>
-              <div class="field" id="pmCoupureDureeDimancheWrap" hidden style="margin:-.4rem 0 .8rem">
-                <label for="pmCoupureDureeDimanche">Durée de la coupure</label>
-                <div class="simulator__field-suffix">
-                  <input type="number" id="pmCoupureDureeDimanche" value="1" min="0" step="0.25" />
-                  <span>heures</span>
-                </div>
-              </div>
-            </details>
-            <p class="simulator__hint" id="pmJoursTotalTxt" style="margin:.8rem 0 0"></p>
-          </details>
-
-          <details class="bascule-hyp-section" name="pmParamAccordion">
-            <summary>Salaires</summary>
-            <div class="field">
-              <label for="pmSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
-              <select id="pmSalaireUnite">
-                <option value="mensuel">Mensuel</option>
-                <option value="annuel" selected>Annuel</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="pmNetMerm">Salaire MERM net avant impôt</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="pmNetMerm" value="21.600" />
-                <span id="pmNetMermSuffix">€ / an</span>
-              </div>
-            </div>
-            <p class="simulator__hint" id="pmCoutMermCalcule"></p>
-            <details class="pm-autre-rh">
-              <summary>Autre RH</summary>
-              <div class="field">
-                <label for="pmIntegreSecretaire">Secrétaire médicale</label>
-                <select id="pmIntegreSecretaire">
-                  <option value="non" selected>Pas intégré au simu</option>
-                  <option value="oui">Intégré au simu</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="pmNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
-                <div class="simulator__field-suffix">
-                  <input type="text" inputmode="numeric" id="pmNetSecretaire" value="19.800" />
-                  <span id="pmNetSecretaireSuffix">€ / an</span>
-                </div>
-              </div>
-              <div class="field">
-                <label for="pmIntegreCadreSante">Cadre de santé</label>
-                <select id="pmIntegreCadreSante">
-                  <option value="non" selected>Pas intégré au simu</option>
-                  <option value="oui">Intégré au simu</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="pmNetCadreSante">Salaire cadre de santé net avant impôt</label>
-                <div class="simulator__field-suffix">
-                  <input type="text" inputmode="numeric" id="pmNetCadreSante" value="33.600" />
-                  <span id="pmNetCadreSanteSuffix">€ / an</span>
-                </div>
-              </div>
-              <div class="field">
-                <label for="pmIntegreAideManip">Aide-manip</label>
-                <select id="pmIntegreAideManip">
-                  <option value="non" selected>Pas intégré au simu</option>
-                  <option value="oui">Intégré au simu</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="pmNetAideManip">Salaire aide-manip net avant impôt</label>
-                <div class="simulator__field-suffix">
-                  <input type="text" inputmode="numeric" id="pmNetAideManip" value="19.200" />
-                  <span id="pmNetAideManipSuffix">€ / an</span>
-                </div>
-              </div>
-              <div class="field">
-                <label for="pmIntegreInfirmiere">Infirmière</label>
-                <select id="pmIntegreInfirmiere">
-                  <option value="non" selected>Pas intégré au simu</option>
-                  <option value="oui">Intégré au simu</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="pmNetInfirmiere">Salaire infirmière net avant impôt</label>
-                <div class="simulator__field-suffix">
-                  <input type="text" inputmode="numeric" id="pmNetInfirmiere" value="24.000" />
-                  <span id="pmNetInfirmiereSuffix">€ / an</span>
-                </div>
-              </div>
-              <div class="field">
-                <label for="pmIntegreManipAlternance">Manip en alternance</label>
-                <select id="pmIntegreManipAlternance">
-                  <option value="non" selected>Pas intégré au simu</option>
-                  <option value="oui">Intégré au simu</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="pmNetManipAlternance">Salaire manip en alternance net avant impôt</label>
-                <div class="simulator__field-suffix">
-                  <input type="text" inputmode="numeric" id="pmNetManipAlternance" value="9.600" />
-                  <span id="pmNetManipAlternanceSuffix">€ / an</span>
-                </div>
-              </div>
-            </details>
-            <span class="pm-info-wrap">
-              <button type="button" class="pm-info-btn" id="pmInfoTauxBtn" aria-expanded="false" aria-controls="pmInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
-              <div class="pm-info-pop pm-info-pop--table" id="pmInfoTauxPop" hidden>
-                <table class="pm-info-table">
-                  <tbody>
-                    <tr><td>Non-cadre (MERM, secrétaire, aide-manip, infirmière)</td><td>~78 % net/brut, +42 % charges patronales</td></tr>
-                    <tr><td>Cadre de santé</td><td>~75 % net/brut, +45 % (retraite cadre plus élevée)</td></tr>
-                    <tr><td>Manip en alternance</td><td>Taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire</td></tr>
-                  </tbody>
-                </table>
-                <p style="margin:.5rem 0 0">Coût réel employeur = net avant impôt → brut → charges patronales. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage (SMIC, réduction générale, aide unique aux employeurs) — à revérifier avant chaque nouvelle année civile.</p>
-              </div>
-            </span>
-          </details>
-
-          <details class="bascule-hyp-section" name="pmParamAccordion">
-            <summary>Charges partagées</summary>
-            <div class="field">
-              <label for="pmKwh">Coût du kWh</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmKwh" value="0.20" min="0" step="0.01" />
-                <span>€ TTC</span>
-              </div>
-            </div>
-            <div class="pm-hyp-subtitle">Autres charges partagées</div>
-            <div class="field">
-              <label for="pmContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
-              <div class="simulator__field-suffix">
-                <input type="number" id="pmContrasteCout" value="0" min="0" step="0.5" />
-                <span>€</span>
-              </div>
-            </div>
-            <div class="field">
-              <label for="pmCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
-              <div class="simulator__field-suffix">
-                <input type="text" inputmode="numeric" id="pmCoutRis" value="0" />
-                <span>€ / mois</span>
-              </div>
-              <span class="pm-info-wrap">
-                <button type="button" class="pm-info-btn" id="pmInfoRisBtn" aria-expanded="false" aria-controls="pmInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
-                <div class="pm-info-pop" id="pmInfoRisPop" hidden>Coût total pour le centre, comme secrétaire/cadre de santé — la répartition entre les machines comparées se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
-              </span>
-            </div>
-          </details>
-
-          <span class="pm-info-wrap">
-            <button type="button" class="pm-info-btn" id="pmInfoConstatBtn" aria-expanded="false" aria-controls="pmInfoConstatPop" aria-label="À propos du tarif utilisé">💡</button>
-            <div class="pm-info-pop" id="pmInfoConstatPop" hidden>Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</div>
-          </span>
-          <span class="pm-info-wrap" style="margin-top:.8rem">
-            <button type="button" class="pm-info-btn" id="pmInfoChampsBtn" aria-expanded="false" aria-controls="pmInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
-            <div class="pm-info-pop" id="pmInfoChampsPop" hidden>Chaque champ s'applique tout de suite — regarde le résultat changer pendant que tu ajustes.</div>
-          </span>
-          <div class="pm-hyp-actions">
-            <button type="button" class="btn" id="pmHypDone">Fermer</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <script>
     (function () {
@@ -1648,39 +1629,6 @@
         appliquerVisibilitePanel(false);
       });
 
-      // Roue crantée "Réglages avancés" (motif porté de simulateur-recettes.html le
-      // 08/09/2026) — panneau ancré à gauche, sans fond assombri.
-      var pmHypOverlay = document.getElementById("pmHypOverlay");
-      document.getElementById("pmBtnHypotheses").addEventListener("click", function () {
-        pmHypOverlay.hidden = false;
-        pmHypOverlay.classList.add("is-open");
-      });
-      function fermerPmHyp() {
-        pmHypOverlay.classList.remove("is-open");
-        pmHypOverlay.hidden = true;
-      }
-      document.getElementById("pmHypClose").addEventListener("click", fermerPmHyp);
-      document.getElementById("pmHypDone").addEventListener("click", fermerPmHyp);
-
-      // Bouton "agrandir/réduire" du panneau ⚙ (motif porté de simulateur-recettes.html
-      // le 10/09/2026) : bascule juste la largeur du panneau entre 420px et 100%, en
-      // manipulant directement le même style inline que le HTML de départ.
-      var pmHypModal = document.querySelector("#pmHypOverlay .modal");
-      var pmHypLargeurNormale = pmHypModal.style.width; // "min(420px, 100%)" posé dans le HTML
-      var pmHypFullscreenBtn = document.getElementById("pmHypFullscreenBtn");
-      var pmHypFullscreen = false;
-      pmHypFullscreenBtn.addEventListener("click", function () {
-        pmHypFullscreen = !pmHypFullscreen;
-        pmHypModal.style.width = pmHypFullscreen ? "100%" : pmHypLargeurNormale;
-        pmHypFullscreenBtn.classList.toggle("is-compressed", pmHypFullscreen);
-        pmHypFullscreenBtn.setAttribute("aria-pressed", String(pmHypFullscreen));
-        var libelle = pmHypFullscreen ? "Réduire le panneau" : "Agrandir le panneau";
-        pmHypFullscreenBtn.setAttribute("aria-label", libelle);
-        pmHypFullscreenBtn.title = libelle;
-      });
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "Escape" && pmHypOverlay.classList.contains("is-open")) fermerPmHyp();
-      });
 
       document.getElementById("pmActiviteMode").addEventListener("change", function () {
         var mode = document.getElementById("pmActiviteMode").value;
