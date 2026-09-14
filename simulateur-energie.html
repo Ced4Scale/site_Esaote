@@ -407,6 +407,20 @@
     .ene-fact-bar-fill2 { height: 100%; border-radius: 4px; }
     .ene-fact-value { flex: 0 0 auto; min-width: 3.5rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     .ene-fact-row--texte .ene-fact-texte-wrap { display: flex; gap: 1.4rem; flex-wrap: wrap; }
+    /* Les 3 graphes en barres (SVG) doivent rendre EXACTEMENT à la même taille (même
+       échelle de police, même largeur de barre) — demande explicite de Cédric le
+       14/09/2026, "même taille - même police - même style... que Composition du coût
+       énergétique annuel". Or "Composition..." vit dans une carte nichée une fois de
+       plus que les 2 autres (#eneCardComposition à l'intérieur de #eneDetailCard,
+       chacune avec son propre padding de carte .simulator__chart-card, 1,2rem de
+       chaque côté) — elle dispose donc d'environ 38px de moins en largeur utile. Comme
+       le texte du SVG est dimensionné en unités internes au viewBox (mis à l'échelle
+       avec la largeur du conteneur), cette différence de largeur suffisait à rendre le
+       texte visiblement plus petit sur "Composition" que sur les 2 autres graphes.
+       Correction : appliquer le même retrait de largeur (1,2rem de chaque côté) aux 2
+       graphes non nichés, pour qu'ils rendent tous à la même largeur, donc à la même
+       échelle de police, quelle que soit la largeur de la page. */
+    #eneChartWrap, #eneSocleDetailChartWrap { padding: 0 1.2rem; }
     .ene-fact-row--texte .ene-fact-texte-value { font-weight: 700; white-space: nowrap; }
   </style>
 </head>
