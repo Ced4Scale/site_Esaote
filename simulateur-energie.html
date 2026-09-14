@@ -1901,98 +1901,42 @@
         if (!card.hidden) { card.open = true; dessinerCamembertSocle(resultats); }
       }
 
-      function dessinerLegendeSocleDetail() {
+      // Légende A/B — harmonisée le 14/09/2026 avec dessinerLegende()/
+      // dessinerLegendeComposition() (voir plus bas dans ce skill : "uniformiser tous
+      // les graphes comme dans Coût énergétique annuel").
+      function dessinerLegendeSocleDetail(resultats) {
         var legendEl = document.getElementById("eneLegendSocleDetail");
         legendEl.innerHTML = "";
-        COMPOSANTS_5.forEach(function (c) {
+        resultats.forEach(function (r, i) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
           var key = document.createElement("span");
           key.className = "simulator__legend-key";
-          key.style.background = c.color;
+          key.style.background = r.color;
           item.appendChild(key);
           var text = document.createElement("span");
-          text.textContent = c.label;
+          text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           item.appendChild(text);
           legendEl.appendChild(item);
         });
       }
 
+      // Remplace l'ancien camembert (2 pies séparés) par le même moteur "paire de
+      // barres par poste" que les 2 autres graphes de la page — demande de Cédric le
+      // 14/09/2026 : "uniformiser tous les graphes ... la barre bleue au-dessus et la
+      // barre orange dessous". Cette carte devient une simple redite, au même niveau de
+      // détail, de la partie "socle" du graphe "Composition du coût énergétique annuel"
+      // plus bas — gardée telle quelle (juste re-stylée), la fusion des 2 cartes n'a pas
+      // été demandée.
       function dessinerCamembertSocle(resultats) {
         document.getElementById("eneSocleDetailHint").textContent =
-          "Un camembert par machine, 5 parts qui somment exactement au coût annuel total de chacune — les deux camemberts sont ici à la même échelle (même rayon), pour comparer directement la composition sans que la taille elle-même serve d'indice.";
-        dessinerLegendeSocleDetail();
-        var svg2 = document.getElementById("eneChartSocleDetail");
-        svg2.innerHTML = "";
-
-        var camemberts = resultats.map(function (r) {
-          var d = r.decomp;
-          return {
-            label: (r === resultats[0] ? "A — " : "B — ") + r.machine.nomCourt,
-            total: r.coutAnnuel,
-            parts: {
-              entrePatients: d.entrePatients.total * r.prix,
-              examens: d.examens.total * r.prix,
-              irm: d.socle.irm * r.prix,
-              lt: d.socle.lt * r.prix,
-              clim: d.socle.clim * r.prix
-            }
-          };
-        });
-
-        // Même rayon (le plus grand possible dans l'espace disponible) pour les deux
-        // camemberts — demande explicite de Cédric (10/08/2026) : contrairement au
-        // camembert "composition des recettes" du simulateur de recettes IRM (taille
-        // proportionnelle au total, décision documentée là-bas), ici on privilégie la
-        // lisibilité de la composition plutôt que l'indice visuel de taille.
-        var maxR = 80, centerY = 145;
-        var centers = [170, 470];
-
-        camemberts.forEach(function (cam, i) {
-          var r = maxR;
-          var startAngle = -Math.PI / 2;
-          COMPOSANTS_5.forEach(function (c) {
-            var part = cam.parts[c.key];
-            if (!part || part <= 0) return;
-            var fraction = part / cam.total;
-            var endAngle = startAngle + fraction * 2 * Math.PI;
-            svg2.appendChild(svgEl("path", { d: pieSlicePathSocle(centers[i], centerY, r, startAngle, endAngle), fill: c.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
-
-            var midAngle = (startAngle + endAngle) / 2;
-            var lx1 = centers[i] + r * 1.02 * Math.cos(midAngle), ly1 = centerY + r * 1.02 * Math.sin(midAngle);
-            var lx2 = centers[i] + r * 1.2 * Math.cos(midAngle), ly2 = centerY + r * 1.2 * Math.sin(midAngle);
-            svg2.appendChild(svgEl("line", { x1: lx1, y1: ly1, x2: lx2, y2: ly2, stroke: c.color, "stroke-width": "1.5" }));
-            var cosA = Math.cos(midAngle);
-            var anchor = cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle";
-            var lx3 = centers[i] + r * 1.28 * Math.cos(midAngle), ly3 = centerY + r * 1.28 * Math.sin(midAngle);
-            var pct = Math.round(fraction * 100);
-            var label = svgEl("text", { x: lx3, y: ly3, class: "simulator__axis-label", "text-anchor": anchor });
-            label.style.fontSize = "10px";
-            label.style.fontWeight = "700";
-            var lineMontant = svgEl("tspan", { x: lx3, dy: "0" });
-            lineMontant.textContent = euros.format(part);
-            label.appendChild(lineMontant);
-            var linePct = svgEl("tspan", { x: lx3, dy: "11" });
-            linePct.style.fontWeight = "400";
-            linePct.textContent = pct + " %";
-            label.appendChild(linePct);
-            svg2.appendChild(label);
-            startAngle = endAngle;
+          "Même détail que la partie \"socle\" du graphe \"Composition du coût énergétique annuel\" plus bas — une paire de barres par composant, même échelle pour les deux machines.";
+        dessinerLegendeSocleDetail(resultats);
+        var categories = COMPOSANTS_5.filter(function (c) { return c.key === "irm" || c.key === "lt" || c.key === "clim"; })
+          .map(function (c) {
+            return { key: c.key, label: c.label, valeur: function (r) { return r.decomp.socle[c.key] * r.prix; } };
           });
-
-          var caption = svgEl("text", { x: centers[i], y: 26, class: "simulator__axis-label", "text-anchor": "middle" });
-          caption.style.fontSize = "12px";
-          caption.style.fontWeight = "700";
-          caption.textContent = cam.label + " — total : " + euros.format(cam.total) + " / an";
-          svg2.appendChild(caption);
-        });
-      }
-
-      function pieSlicePathSocle(cx, cy, r, startAngle, endAngle) {
-        var largeArc = (endAngle - startAngle) > Math.PI ? 1 : 0;
-        var x1 = cx + r * Math.cos(startAngle), y1 = cy + r * Math.sin(startAngle);
-        var x2 = cx + r * Math.cos(endAngle), y2 = cy + r * Math.sin(endAngle);
-        return "M" + cx + "," + cy + " L" + x1 + "," + y1 + " A" + r + "," + r + " 0 " + largeArc + " 1 " + x2 + "," + y2 + " Z";
+        dessinerPairesBarres("eneChartSocleDetail", resultats, categories);
       }
 
       // ---------------------------------------------------------------------------------
