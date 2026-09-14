@@ -392,6 +392,22 @@
     .ene-fact-bar-track { flex: 1 1 auto; min-width: 30px; height: 12px; background: var(--wash, #f0f0f0); border-radius: 3px; overflow: hidden; }
     .ene-fact-bar-fill { height: 100%; border-radius: 3px; }
     .ene-fact-bar-cell span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+    /* Rangées pleine largeur, une barre A au-dessus d'une barre B (14/09/2026,
+       "je souhaite que tout les graphes RSE soient comme [le graphe en barres]") —
+       remplace les tableaux ci-dessus (colonnes A/B côte à côte) par le même langage
+       visuel que les histogrammes SVG : légende commune en tête, puis pour chaque
+       ligne le libellé au-dessus et une barre par machine empilée verticalement,
+       échelle propre à chaque ligne (les unités diffèrent d'une ligne à l'autre). */
+    .ene-fact-list { display: flex; flex-direction: column; gap: 1.1rem; }
+    .ene-fact-row-label { font-weight: 700; font-size: .92rem; margin-bottom: .35rem; }
+    .ene-fact-row--strong .ene-fact-row-label { font-size: .98rem; }
+    .ene-fact-bar-line { display: flex; align-items: center; gap: .6rem; margin-bottom: .3rem; }
+    .ene-fact-bar-line:last-child { margin-bottom: 0; }
+    .ene-fact-bar-track2 { flex: 1 1 auto; height: 20px; background: var(--wash, #f0f0f0); border-radius: 4px; overflow: hidden; }
+    .ene-fact-bar-fill2 { height: 100%; border-radius: 4px; }
+    .ene-fact-value { flex: 0 0 auto; min-width: 3.5rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ene-fact-row--texte .ene-fact-texte-wrap { display: flex; gap: 1.4rem; flex-wrap: wrap; }
+    .ene-fact-row--texte .ene-fact-texte-value { font-weight: 700; white-space: nowrap; }
   </style>
 </head>
 <body class="tool-page">
@@ -726,18 +742,8 @@
               <div class="ene-info-pop" id="eneInfoCo2Pop" hidden>Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</div>
             </span>
           </summary>
-          <div style="overflow-x:auto">
-            <table class="stats-table simulator__table simulator__table--compare2" id="eneTableCo2">
-            <thead>
-              <tr>
-                <th></th>
-                <th><span class="simulator__swatch-text" data-slot="0" id="eneTableCo2HeadA"></span></th>
-                <th><span class="simulator__swatch-text" data-slot="1" id="eneTableCo2HeadB"></span></th>
-              </tr>
-            </thead>
-            <tbody id="eneTableCo2Body"></tbody>
-          </table>
-          </div>
+          <div class="simulator__legend" id="eneLegendCo2"></div>
+          <div class="ene-fact-list" id="eneTableCo2Body"></div>
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardHistoPrix">
@@ -790,18 +796,8 @@
                   <div class="ene-info-pop" id="eneInfoTechPop" hidden>Les puissances (kW) qui alimentent tous les calculs de cette page, pour les deux machines choisies.</div>
                 </span>
               </summary>
-              <div style="overflow-x:auto">
-                <table class="stats-table simulator__table simulator__table--compare2" id="eneTableTech">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableTechHeadA"></span></th>
-                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableTechHeadB"></span></th>
-                  </tr>
-                </thead>
-                <tbody id="eneTableTechBody"></tbody>
-              </table>
-              </div>
+              <div class="simulator__legend" id="eneLegendTech"></div>
+              <div class="ene-fact-list" id="eneTableTechBody"></div>
               <span class="ene-info-wrap" style="margin-top:.6rem">
                 <button type="button" class="ene-info-btn" id="eneInfoTechSourcesBtn" aria-expanded="false" aria-controls="eneInfoTechSourcesPop" aria-label="Où trouver les sources détaillées">💡</button>
                 <div class="ene-info-pop" id="eneInfoTechSourcesPop" hidden>Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</div>
@@ -842,17 +838,7 @@
               <div class="simulator__chart-wrap">
                 <svg id="eneChartComposition" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du coût énergétique annuel par poste, pour les deux machines choisies"></svg>
               </div>
-              <div style="overflow-x:auto">
-                <table class="stats-table simulator__table simulator__table--compare2" id="eneTable" style="margin-top:.8rem">
-                <thead>
-                  <tr>
-                    <th></th>
-                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
-                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
-                  </tr>
-                </thead>
-                <tbody id="eneTableBody"></tbody>
-              </table>
+              <div class="ene-fact-list" id="eneTableBody" style="margin-top:.8rem">
               </div>
               <!-- Curseurs sous le graphe (demande de Cédric le 14/09/2026) — tous en
                    curseur MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
@@ -1349,34 +1335,12 @@
         });
         derniereComparaison = { resultats: resultats, patientsAn: patientsAn, prix: prix };
 
-        var nomA = machineA.nomCourt;
-        var nomB = machineB.nomCourt;
-        document.getElementById("eneTableHeadA").textContent = nomA;
-        ["eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
-          document.getElementById(id).textContent = nomB;
-        });
-        document.getElementById("eneTableCo2HeadA").textContent = nomA;
-
-        // Dans le tableau "Valeurs techniques utilisées" uniquement : le nom de la machine
-        // devient un lien vers sa source officielle (EPD) quand elle existe.
-        function remplirHeadTech(id, machine) {
-          var el = document.getElementById(id);
-          el.innerHTML = "";
-          if (machine.sourceUrl) {
-            var a = document.createElement("a");
-            a.href = machine.sourceUrl;
-            a.target = "_blank";
-            a.rel = "noopener";
-            a.title = "Voir la source officielle (EPD)";
-            a.textContent = machine.nomCourt;
-            el.appendChild(a);
-          } else {
-            el.textContent = machine.nomCourt;
-          }
-        }
-        remplirHeadTech("eneTableTechHeadA", machineA);
-        remplirHeadTech("eneTableTechHeadB", machineB);
-
+        // Les noms de machine (A/B) sont désormais uniquement portés par la légende de
+        // chaque bloc (dessinerLegendeNoms/dessinerLegende/dessinerLegendeComposition),
+        // plus par des en-têtes de colonne de tableau — retiré le 14/09/2026 en même temps
+        // que la conversion des tableaux de faits en listes de barres pleine largeur. Le
+        // lien vers la source officielle (EPD) d'une machine, qui vivait dans l'en-tête du
+        // tableau "Valeurs techniques", est repris par dessinerLegendeNoms() elle-même.
         remplirTableauTech([machineA, machineB]);
         dessinerLegendeComposition(resultats);
         dessinerHistogrammeComposition(resultats);
@@ -1423,18 +1387,27 @@
         }
       }
 
-      function ligneTable(tbody, label, cells, opts) {
-        var tr = document.createElement("tr");
-        if (opts && opts.strong) tr.style.fontWeight = "700";
-        var tdLabel = document.createElement("td");
-        tdLabel.textContent = label;
-        tr.appendChild(tdLabel);
-        cells.forEach(function (c) {
-          var td = document.createElement("td");
-          td.textContent = c;
-          tr.appendChild(td);
+      // Rangée texte (catégorielle, ex. "Aimant" — pas une grandeur à comparer par une
+      // barre) — même schéma "libellé au-dessus, valeurs par machine" que ligneFaitBarre()
+      // plus bas, sans barre : la couleur du texte suffit à distinguer A/B.
+      function ligneFaitTexte(container, label, cells) {
+        var row = document.createElement("div");
+        row.className = "ene-fact-row ene-fact-row--texte";
+        var lbl = document.createElement("div");
+        lbl.className = "ene-fact-row-label";
+        lbl.textContent = label;
+        row.appendChild(lbl);
+        var wrap = document.createElement("div");
+        wrap.className = "ene-fact-texte-wrap";
+        cells.forEach(function (c, i) {
+          var span = document.createElement("span");
+          span.className = "ene-fact-texte-value";
+          span.style.color = SLOT_COLORS[i];
+          span.textContent = c;
+          wrap.appendChild(span);
         });
-        tbody.appendChild(tr);
+        row.appendChild(wrap);
+        container.appendChild(row);
       }
 
       // Valeurs techniques brutes utilisées dans le calcul, affichées directement sur la
@@ -1444,14 +1417,15 @@
       // barres que #eneTable, appliquée aussi ici et à remplirTableauCo2() juste en
       // dessous. "Aimant" reste du texte (catégoriel, pas une grandeur).
       function remplirTableauTech(machines) {
-        var tbody = document.getElementById("eneTableTechBody");
-        tbody.innerHTML = "";
-        ligneTable(tbody, "Aimant", machines.map(function (m) { return m.aimant === "permanent" ? "Permanent" : "Supraconducteur"; }));
-        ligneTableBarre(tbody, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint; }), function (v) { return v + " kW"; });
-        ligneTableBarre(tbody, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret; }), function (v) { return v + " kW"; });
-        ligneTableBarre(tbody, "Puissance en acquisition", machines.map(function (m) { return m.mesure; }), function (v) { return v + " kW"; });
-        ligneTableBarre(tbody, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT * 100; }), function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; });
-        ligneTableBarre(tbody, "Climatisation salle d'examen (en continu)", machines.map(function (m) { return m.climSalleKw; }), function (v) { return v + " kW"; });
+        dessinerLegendeNoms("eneLegendTech", machines);
+        var container = document.getElementById("eneTableTechBody");
+        container.innerHTML = "";
+        ligneFaitTexte(container, "Aimant", machines.map(function (m) { return m.aimant === "permanent" ? "Permanent" : "Supraconducteur"; }));
+        ligneFaitBarre(container, "Puissance à l'arrêt", machines.map(function (m) { return m.eteint; }), function (v) { return v + " kW"; });
+        ligneFaitBarre(container, "Puissance prête (sans acquisition)", machines.map(function (m) { return m.pret; }), function (v) { return v + " kW"; });
+        ligneFaitBarre(container, "Puissance en acquisition", machines.map(function (m) { return m.mesure; }), function (v) { return v + " kW"; });
+        ligneFaitBarre(container, "Surcoût local technique", machines.map(function (m) { return m.coeffRefroidissementLT * 100; }), function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; });
+        ligneFaitBarre(container, "Climatisation salle d'examen (en continu)", machines.map(function (m) { return m.climSalleKw; }), function (v) { return v + " kW"; });
       }
 
       // ---- Paramètres saisis par le visiteur — demandé par Cédric le 10/08/2026, en
@@ -1513,12 +1487,13 @@
       // française (voir ENERGIE_HYPOTHESES... non, voir CO2_G_PAR_KWH_FRANCE dans le fichier de
       // données partagé). kgFmt réutilise le même format que les kWh (pas de décimale).
       function remplirTableauCo2(resultats) {
-        var tbody = document.getElementById("eneTableCo2Body");
-        tbody.innerHTML = "";
-        ligneTableBarre(tbody, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneTableBarre(tbody, "Émissions de CO₂ associées (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
-        ligneTableBarre(tbody, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
-        ligneTableBarre(tbody, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
+        dessinerLegendeNoms("eneLegendCo2", resultats.map(function (r) { return r.machine; }));
+        var container = document.getElementById("eneTableCo2Body");
+        container.innerHTML = "";
+        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        ligneFaitBarre(container, "Émissions de CO₂ associées (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
+        ligneFaitBarre(container, "Équivalent à l'absorption annuelle de", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
+        ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
       }
 
       function remplirEtudesListe() {
@@ -1588,36 +1563,48 @@
         dessinerPairesBarres("eneChartComposition", resultats, categories);
       }
 
-      // Ligne de tableau avec une paire de barres (comme dessinerHistogrammeComposition()
-      // ci-dessus, demande de Cédric le 14/09/2026 : "il faut aussi faire le tableau du
-      // dessous") — chaque ligne a sa PROPRE échelle (0 → la plus grande des 2 valeurs),
-      // les unités différant d'une ligne à l'autre (kWh, €, heures) contrairement au
-      // graphe de composition où tout est en €.
-      function ligneTableBarre(tbody, label, valeurs, formateur, opts) {
-        var tr = document.createElement("tr");
-        if (opts && opts.strong) tr.style.fontWeight = "700";
-        var tdLabel = document.createElement("td");
-        tdLabel.textContent = label;
-        tr.appendChild(tdLabel);
+      // Rangée pleine largeur avec une barre par machine, empilées A au-dessus de B (comme
+      // dessinerPairesBarres() ci-dessus, demande de Cédric le 14/09/2026 : "je souhaite que
+      // tout les graphes RSE soient comme [le graphe en barres]") — chaque ligne a sa PROPRE
+      // échelle (0 → la plus grande des 2 valeurs), les unités différant d'une ligne à
+      // l'autre (kWh, €, heures) contrairement au graphe de composition où tout est en €.
+      function ligneFaitBarre(container, label, valeurs, formateur, opts) {
+        var row = document.createElement("div");
+        row.className = "ene-fact-row" + (opts && opts.strong ? " ene-fact-row--strong" : "");
+        var lbl = document.createElement("div");
+        lbl.className = "ene-fact-row-label";
+        lbl.textContent = label;
+        row.appendChild(lbl);
         var maxV = Math.max.apply(null, valeurs.concat([0.0001]));
         valeurs.forEach(function (v, i) {
-          var td = document.createElement("td");
-          var pct = maxV > 0 ? Math.max(v > 0 ? 3 : 0, (v / maxV) * 100) : 0;
-          td.innerHTML = '<div class="ene-fact-bar-cell"><div class="ene-fact-bar-track"><div class="ene-fact-bar-fill" style="width:' + pct + '%;background:' + SLOT_COLORS[i] + '"></div></div><span>' + formateur(v) + '</span></div>';
-          tr.appendChild(td);
+          var line = document.createElement("div");
+          line.className = "ene-fact-bar-line";
+          var pct = maxV > 0 ? Math.max(v > 0 ? 1 : 0, (v / maxV) * 100) : 0;
+          var track = document.createElement("div");
+          track.className = "ene-fact-bar-track2";
+          track.innerHTML = '<div class="ene-fact-bar-fill2" style="width:' + pct + '%;background:' + SLOT_COLORS[i] + '"></div>';
+          line.appendChild(track);
+          var val = document.createElement("span");
+          val.className = "ene-fact-value";
+          val.textContent = formateur(v);
+          line.appendChild(val);
+          row.appendChild(line);
         });
-        tbody.appendChild(tr);
+        container.appendChild(row);
       }
 
       function remplirTableau(resultats) {
-        var tbody = document.getElementById("eneTableBody");
-        tbody.innerHTML = "";
-        ligneTable(tbody, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
-        ligneTableBarre(tbody, "Consommation annuelle (kWh)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneTableBarre(tbody, "Coût énergétique par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
-        ligneTableBarre(tbody, "Dont heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
-        ligneTableBarre(tbody, "Dont heures prêt (sans patient) / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
-        ligneTableBarre(tbody, "Dont heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
+        // Légende déjà affichée juste au-dessus, par dessinerLegendeComposition() (le
+        // graphe et ce bloc de détail partagent la même carte "Composition du coût
+        // énergétique annuel") — aucune 2ᵉ légende à redessiner ici.
+        var container = document.getElementById("eneTableBody");
+        container.innerHTML = "";
+        ligneFaitTexte(container, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
+        ligneFaitBarre(container, "Consommation annuelle (kWh)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        ligneFaitBarre(container, "Coût énergétique par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
+        ligneFaitBarre(container, "Dont heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
+        ligneFaitBarre(container, "Dont heures prêt (sans patient) / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
+        ligneFaitBarre(container, "Dont heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
       }
 
       // Légende A/B (couleur machine) — harmonisée le 14/09/2026 avec
@@ -1638,6 +1625,43 @@
           var text = document.createElement("span");
           text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
+
+      // Légende générique à partir d'objets machine (SLOT_COLORS par index) — pour les
+      // blocs de faits (Valeurs techniques, Empreinte carbone) qui ne disposent pas d'un
+      // tableau `resultats` complet (couleur/machine imbriqués), juste les machines.
+      // Reprend le lien vers la source officielle (EPD) quand `machine.sourceUrl` existe
+      // (ex-en-tête de colonne du tableau "Valeurs techniques", avant sa conversion en
+      // liste de barres le 14/09/2026).
+      function dessinerLegendeNoms(elId, machines) {
+        var legendEl = document.getElementById(elId);
+        legendEl.innerHTML = "";
+        machines.forEach(function (machine, i) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = SLOT_COLORS[i];
+          item.appendChild(key);
+          var prefixe = (i === 0 ? "A — " : "B — ");
+          if (machine.sourceUrl) {
+            var text = document.createElement("span");
+            text.textContent = prefixe;
+            item.appendChild(text);
+            var a = document.createElement("a");
+            a.href = machine.sourceUrl;
+            a.target = "_blank";
+            a.rel = "noopener";
+            a.title = "Voir la source officielle (EPD)";
+            a.textContent = machine.nomCourt;
+            item.appendChild(a);
+          } else {
+            var text2 = document.createElement("span");
+            text2.textContent = prefixe + machine.nomCourt;
+            item.appendChild(text2);
+          }
           legendEl.appendChild(item);
         });
       }
