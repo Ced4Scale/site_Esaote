@@ -1636,7 +1636,15 @@
         row.className = "ene-fact-row" + (opts && opts.strong ? " ene-fact-row--strong" : "");
         var lbl = document.createElement("div");
         lbl.className = "ene-fact-row-label";
-        lbl.textContent = label;
+        // Triangle ▸/▾ optionnel (demande de Cédric le 14/09/2026, "Consommation
+        // annuelle" qui déplie l'empreinte carbone en dessous) — même convention que les
+        // triangles du graphe SVG (dessinerPairesBarres) : opts.triangle indique l'état
+        // (ouvert/fermé), opts.onClicLabel est appelé au clic sur le libellé.
+        lbl.textContent = (opts && opts.triangle !== undefined ? (opts.triangle ? "▾ " : "▸ ") : "") + label;
+        if (opts && opts.onClicLabel) {
+          lbl.style.cursor = "pointer";
+          lbl.addEventListener("click", opts.onClicLabel);
+        }
         row.appendChild(lbl);
         // Réserve une largeur FIXE en pixels (pas un pourcentage) pour le montant après
         // la barre la plus longue — une marge en % (essayée d'abord) représente trop peu
@@ -1672,7 +1680,18 @@
         // ligne par défaut (fermé), donc "Coût par patient" est ce qu'on voit juste après.
         ligneFaitBarre(container, "Coût par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
         ligneFaitTexte(container, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
-        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        // "Consommation annuelle" a un triangle ▸/▾ (demande de Cédric le 14/09/2026) qui
+        // déplie l'empreinte carbone juste en dessous — mêmes formules que
+        // remplirTableauCo2() (jamais dupliquées sous une forme différente).
+        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; }, {
+          triangle: eneConsoOuvert,
+          onClicLabel: function () { eneConsoOuvert = !eneConsoOuvert; remplirTableau(resultats); }
+        });
+        if (eneConsoOuvert) {
+          ligneFaitBarre(container, "Émissions de CO₂ (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
+          ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
+          ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
+        }
         ligneFaitBarre(container, "Heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
         ligneFaitBarre(container, "Heures prêt / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
         ligneFaitBarre(container, "Heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
@@ -1895,6 +1914,11 @@
       // si elle l'est aussi.
       var eneVentilationOuverte = false;
       var eneSocleOuvert = false;
+      // "Consommation annuelle" (liste de faits sous le graphe, pas le graphe lui-même) a
+      // aussi son triangle ▸/▾ (demande de Cédric le 14/09/2026) — déplie l'empreinte
+      // carbone (Émissions de CO₂/Absorption/Sur 7 ans) juste en dessous, voir
+      // remplirTableau(). Même variable capturée/restaurée par la mémoire de simulation.
+      var eneConsoOuvert = false;
       function dessinerGraphe(resultats) {
         var categorieTotal = {
           key: "total",
@@ -2707,11 +2731,13 @@
           etat[f.id] = { valeur: f.type === "checkbox" ? el.checked : el.value };
         });
         // Variables JS pures (pas des champs de formulaire) : les triangles "Total" et
-        // "Socle" du graphe "trois couches" — voir "Mémoire de simulation : capturer
-        // aussi les variables JS pures" dans le skill, à ne jamais oublier au moment où
-        // on les ajoute.
+        // "Socle" du graphe "trois couches", et "Consommation annuelle" (empreinte
+        // carbone) juste en dessous — voir "Mémoire de simulation : capturer aussi les
+        // variables JS pures" dans le skill, à ne jamais oublier au moment où on les
+        // ajoute.
         etat.__ventilationOuverte = eneVentilationOuverte;
         etat.__socleOuvert = eneSocleOuvert;
+        etat.__consoOuvert = eneConsoOuvert;
         return etat;
       }
 
@@ -2745,6 +2771,7 @@
         });
         if (etat.__ventilationOuverte !== undefined) eneVentilationOuverte = etat.__ventilationOuverte;
         if (etat.__socleOuvert !== undefined) eneSocleOuvert = etat.__socleOuvert;
+        if (etat.__consoOuvert !== undefined) eneConsoOuvert = etat.__consoOuvert;
         recalculer();
       }
 
