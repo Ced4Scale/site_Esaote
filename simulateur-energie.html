@@ -1806,7 +1806,16 @@
 
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap);
-          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 8, class: "simulator__axis-label", "text-anchor": "start" });
+          // Retrait (demande de Cédric le 14/09/2026, "une marge d'1 centimètre") pour les
+          // postes qui sont le détail d'un autre juste au-dessus (ex. IRM/Local technique/
+          // Climatisation salle sous "Socle (arrêt)") — 38 unités SVG ≈ 1cm à 96dpi, sur la
+          // largeur réelle habituelle de ce graphe (voir CATEGORIES_SOCLE_DETAIL). Décale le
+          // libellé ET les bâtons, sans changer la position du bord droit (montant collé à
+          // la fin de la barre) : seule la largeur disponible pour les bâtons se réduit.
+          var indent = c.indent || 0;
+          var barX0 = plotX0 + indent;
+          var barPlotW = plotW - indent;
+          var titleLabel = svgEl("text", { x: barX0, y: groupY - 8, class: "simulator__axis-label", "text-anchor": "start" });
           titleLabel.style.fontSize = "16px";
           titleLabel.style.fontWeight = "700";
           // .simulator__axis-label vient avec fill:var(--muted) (gris clair, pensé pour de
@@ -1828,15 +1837,21 @@
           var xMax = Math.max.apply(null, resultats.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
           resultats.forEach(function (r, i) {
             var val = c.valeur(r);
-            var barW = xMax > 0 ? (val / xMax) * plotW : 0;
+            var barW = xMax > 0 ? (val / xMax) * barPlotW : 0;
             var barY = groupY + i * (barH + barGap);
-            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, rx: 4, fill: r.color });
+            var rectBar = svgEl("rect", { x: barX0, y: barY, width: Math.max(0, barW), height: barH, rx: 4, fill: r.color });
             if (onClicCategorie) {
               rectBar.style.cursor = "pointer";
               rectBar.addEventListener("click", function () { onClicCategorie(c, resultats); });
             }
             svg.appendChild(rectBar);
-            var valLabel = svgEl("text", { x: plotX0 + barW + 8, y: barY + barH / 2 + 5, class: "simulator__axis-label", "text-anchor": "start" });
+            // Prix masqué (demande de Cédric le 14/09/2026, "le prix des deux socles ne
+            // doivent plus être affichés" une fois "Socle (arrêt)" déplié — redondant avec
+            // la somme des 3 lignes de détail juste en dessous) : le bâton reste (la
+            // proportion reste un repère utile), seul le montant chiffré disparaît. Ne
+            // concerne que la catégorie marquée `masquerValeurs`, jamais "Total".
+            if (c.masquerValeurs) return;
+            var valLabel = svgEl("text", { x: barX0 + barW + 8, y: barY + barH / 2 + 5, class: "simulator__axis-label", "text-anchor": "start" });
             valLabel.style.fontSize = "16px";
             valLabel.style.fontWeight = "700";
             valLabel.style.fill = "var(--ink)";
@@ -1860,10 +1875,12 @@
       // pour remplacer [la ligne] par" ces 3 postes) — mêmes clés/valeurs/libellés que
       // COMPOSANTS_5/valeurComposant() (utilisées par le mode Comparer), jamais dupliquées
       // sous une forme différente : une seule vérité pour "de quoi le socle est fait".
+      // indent: 38 ≈ 1cm à 96dpi (demande de Cédric le 14/09/2026) — ces 3 postes sont le
+      // détail DE "Socle (arrêt)", décalés vers la droite pour le montrer visuellement.
       var CATEGORIES_SOCLE_DETAIL = [
-        { key: "irm", label: "IRM (talon de consommation)", valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
-        { key: "lt", label: "Local technique", valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
-        { key: "clim", label: "Climatisation salle", valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
+        { key: "irm", label: "IRM (talon de consommation)", indent: 38, valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
+        { key: "lt", label: "Local technique", indent: 38, valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
+        { key: "clim", label: "Climatisation salle", indent: 38, valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
       ];
       // Paire "Total" en tête du graphe, avec triangle ▸/▾ qui révèle la ventilation en
       // 3 postes en dessous (demande de Cédric le 14/09/2026) — fermée par défaut, même
@@ -1886,7 +1903,10 @@
         var categorieSocle = {
           key: "socle",
           label: (eneSocleOuvert ? "▾ " : "▸ ") + "Socle (arrêt)",
-          valeur: CATEGORIES_SOCLE_3[0].valeur
+          valeur: CATEGORIES_SOCLE_3[0].valeur,
+          // Prix masqué une fois déplié (demande de Cédric le 14/09/2026) — redondant avec
+          // la somme des 3 lignes de détail juste en dessous, voir dessinerPairesBarres().
+          masquerValeurs: eneSocleOuvert
         };
         var categoriesDetail = [categorieSocle]
           .concat(eneSocleOuvert ? CATEGORIES_SOCLE_DETAIL : [])
