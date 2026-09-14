@@ -813,6 +813,7 @@
                     <tr><td>Climatisation de la salle</td><td>Obligatoire pour toute IRM, y compris les modèles Esaote sans hélium</td></tr>
                   </tbody>
                 </table>
+                <p style="margin:.5rem 0 0">L'empreinte carbone (sous "Consommation annuelle") convertit le coût énergétique en kg de CO₂ à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</p>
               </div>
             </span>
           </div>
@@ -897,23 +898,6 @@
               <div class="ene-mixer-strip__unit">min</div>
             </div>
           </div>
-        </details>
-
-        <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardCo2">
-          <summary>Empreinte carbone
-            <button type="button" class="chart-card-fullscreen-btn" id="eneCo2FullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
-              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
-                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
-              </svg>
-            </button>
-            <span class="ene-info-wrap">
-              <button type="button" class="ene-info-btn" id="eneInfoCo2Btn" aria-expanded="false" aria-controls="eneInfoCo2Pop" aria-label="Source de la conversion CO2">💡</button>
-              <div class="ene-info-pop" id="eneInfoCo2Pop" hidden>Conversion du coût énergétique en kg de CO₂, à partir du facteur d'émission de l'électricité française (ADEME, Base Carbone) — un indicateur mobilisable directement dans une grille RSE d'appel d'offres ou un dossier d'achat responsable.</div>
-            </span>
-          </summary>
-          <div class="simulator__legend" id="eneLegendCo2"></div>
-          <div class="ene-fact-list" id="eneTableCo2Body"></div>
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneDetailCard">
@@ -1450,7 +1434,6 @@
         // techniques", est repris par dessinerLegendeNoms() elle-même.
         remplirTableauTech([machineA, machineB]);
         remplirTableau(resultats);
-        remplirTableauCo2(resultats);
         remplirTableauParamsSaisis(machineA, machineB, {
           prix: prix, heuresSemaineJour: heuresSemaineJour, heuresSamediJour: heuresSamediJour,
           heuresDimancheJour: heuresDimancheJour, dureesAcq: dureesAcq, dureesInstall: dureesInstall
@@ -1537,8 +1520,7 @@
       // page (pas seulement sur sources-energie.html) — demande explicite de transparence.
       // Barres ajoutées le 14/09/2026 (demande de Cédric : "la présentation en double
       // bâton ... n'est pas dupliquée sur l'ensemble des deux tableaux") — même paire de
-      // barres que #eneTable, appliquée aussi ici et à remplirTableauCo2() juste en
-      // dessous. "Aimant" reste du texte (catégoriel, pas une grandeur).
+      // barres que #eneTable.
       function remplirTableauTech(machines) {
         dessinerLegendeNoms("eneLegendTech", machines);
         var container = document.getElementById("eneTableTechBody");
@@ -1608,17 +1590,11 @@
       }
 
       // Conversion kWh -> kg CO2 (volet RSE), à partir du facteur d'émission de l'électricité
-      // française (voir ENERGIE_HYPOTHESES... non, voir CO2_G_PAR_KWH_FRANCE dans le fichier de
-      // données partagé). kgFmt réutilise le même format que les kWh (pas de décimale).
-      function remplirTableauCo2(resultats) {
-        dessinerLegendeNoms("eneLegendCo2", resultats.map(function (r) { return r.machine; }));
-        var container = document.getElementById("eneTableCo2Body");
-        container.innerHTML = "";
-        ligneFaitBarre(container, "Consommation annuelle", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
-        ligneFaitBarre(container, "Émissions de CO₂ (par an)", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }), function (v) { return kwhFmt.format(v) + " kg"; }, { strong: true });
-        ligneFaitBarre(container, "Absorption annuelle équivalente", resultats.map(function (r) { return Math.round(r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }), function (v) { return kwhFmt.format(v) + " arbres"; });
-        ligneFaitBarre(container, "Sur 7 ans", resultats.map(function (r) { return r.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }), function (v) { return kwhFmt.format(v) + " kg CO₂"; });
-      }
+      // française (CO2_G_PAR_KWH_FRANCE, fichier de données partagé). Affichée directement
+      // sous "Consommation annuelle" du cadre "Coûts" (triangle ▸/▾, voir remplirTableau())
+      // depuis le 14/09/2026 — l'ancienne carte "Empreinte carbone" séparée, qui montrait
+      // exactement les mêmes 4 lignes, a été supprimée ce jour-là (doublon repéré par
+      // Cédric).
 
       function remplirEtudesListe() {
         var ul = document.getElementById("eneEtudesListe");
@@ -1722,9 +1698,10 @@
         // "Aimant" retiré (demande de Cédric le 14/09/2026) — déjà présent dans
         // "Valeurs techniques utilisées" (remplirTableauTech), pas dupliqué ici.
         // "Consommation annuelle" a un triangle ▸/▾ (demande de Cédric le 14/09/2026) qui
-        // déplie l'empreinte carbone juste en dessous — mêmes formules que
-        // remplirTableauCo2() (jamais dupliquées sous une forme différente). "(Empreinte
-        // carbone)" ajouté au libellé (2e demande) pour annoncer ce que le triangle révèle.
+        // déplie l'empreinte carbone juste en dessous — seule source de cette donnée
+        // désormais (l'ancienne carte "Empreinte carbone" séparée, doublon, a été
+        // supprimée). "(Empreinte carbone)" ajouté au libellé (2e demande) pour annoncer
+        // ce que le triangle révèle.
         ligneFaitBarre(container, "Consommation annuelle (Empreinte carbone)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; }, {
           triangle: eneConsoOuvert,
           onClicLabel: function () { eneConsoOuvert = !eneConsoOuvert; remplirTableau(resultats); },
@@ -1773,9 +1750,9 @@
         });
       }
 
-      // Légende générique à partir d'objets machine (SLOT_COLORS par index) — pour les
-      // blocs de faits (Valeurs techniques, Empreinte carbone) qui ne disposent pas d'un
-      // tableau `resultats` complet (couleur/machine imbriqués), juste les machines.
+      // Légende générique à partir d'objets machine (SLOT_COLORS par index) — pour un
+      // bloc de faits (Valeurs techniques) qui ne dispose pas d'un tableau `resultats`
+      // complet (couleur/machine imbriqués), juste les machines.
       // Reprend le lien vers la source officielle (EPD) quand `machine.sourceUrl` existe
       // (ex-en-tête de colonne du tableau "Valeurs techniques", avant sa conversion en
       // liste de barres le 14/09/2026).
@@ -3076,7 +3053,6 @@
       wireInfoBtn("eneInfoMemoireBtn", "eneInfoMemoirePop");
       wireInfoBtn("eneInfoActiviteBtn", "eneInfoActivitePop");
       wireInfoBtn("eneInfoTotalBtn", "eneInfoTotalPop");
-      wireInfoBtn("eneInfoCo2Btn", "eneInfoCo2Pop");
       wireInfoBtn("eneInfoTarifBtn", "eneInfoTarifPop");
       wireInfoBtn("eneInfoTarifClicBtn", "eneInfoTarifClicPop");
       wireInfoBtn("eneInfoTechBtn", "eneInfoTechPop");
@@ -3110,12 +3086,14 @@
       // Clé DÉDIÉE à cette page (distincte de celles des 4 autres simulateurs) : chaque
       // simulateur a ses propres cartes/blocs, un layout enregistré ici n'a aucun sens
       // sur un autre simulateur.
-      // Seul "Coût énergétique annuel — trois couches" reçoit la disposition libre
-      // (combine une légende ET un graphe). "Composition du socle" (qui la recevait
-      // aussi) a été supprimée le 14/09/2026 — voir COMPOSANTS_5. Les autres cartes
-      // (tableaux Empreinte carbone/Valeurs techniques/Détail du socle/Récapitulatif,
-      // graphe seul "Évolution du prix du kWh", "Hypothèses de ce simulateur"/"Ce que
-      // disent les études") gardent le plein écran simple existant (tout le contenu
+      // Seul "Coûts" (le cadre principal, ex-"Coût énergétique annuel — trois couches")
+      // reçoit la disposition libre (combine une légende ET un graphe). "Composition du
+      // socle" (qui la recevait aussi) a été supprimée le 14/09/2026, de même que
+      // "Empreinte carbone" (plein écran simple, jamais la disposition libre) — voir
+      // COMPOSANTS_5. Les autres cartes (tableaux Valeurs techniques/Détail du socle/
+      // Récapitulatif, graphe seul "Évolution du prix du kWh", "Hypothèses de ce
+      // simulateur"/"Ce que disent les études") gardent le plein écran simple existant
+      // (tout le contenu
       // remplit le canevas, pas de blocs indépendants) — un seul bloc de contenu par
       // carte n'apporterait rien à déplacer.
       var PRES_FREE_BLOCKS = {
@@ -3649,7 +3627,6 @@
         });
       }
       wireCardFullscreen("eneChartFullscreenBtn", "eneCardPrincipal");
-      wireCardFullscreen("eneCo2FullscreenBtn", "eneCardCo2");
       wireCardFullscreen("eneHistoPrixFullscreenBtn", "eneCardHistoPrix");
       wireCardFullscreen("eneDetailFullscreenBtn", "eneDetailCard");
       wireCardFullscreen("eneTechFullscreenBtn", "eneCardTech");
