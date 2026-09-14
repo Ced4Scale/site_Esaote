@@ -385,6 +385,13 @@
     .ene-comp-sliders input[type="range"]#eneAcqASlider { accent-color: #2a78d6; }
     .ene-comp-sliders input[type="range"]#enePatientsHeureBSlider,
     .ene-comp-sliders input[type="range"]#eneAcqBSlider { accent-color: #eb6834; }
+    /* Paire de barres dans une cellule de tableau (14/09/2026, "il faut aussi faire le
+       tableau du dessous" — même langage visuel que l'histogramme de composition
+       au-dessus, mais une échelle propre à chaque ligne). */
+    .ene-fact-bar-cell { display: flex; align-items: center; gap: .5rem; }
+    .ene-fact-bar-track { flex: 1 1 auto; min-width: 30px; height: 12px; background: var(--wash, #f0f0f0); border-radius: 3px; overflow: hidden; }
+    .ene-fact-bar-fill { height: 100%; border-radius: 3px; }
+    .ene-fact-bar-cell span { white-space: nowrap; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="tool-page">
@@ -1371,7 +1378,7 @@
         remplirHeadTech("eneTableTechHeadB", machineB);
 
         remplirTableauTech([machineA, machineB]);
-        dessinerLegendeComposition();
+        dessinerLegendeComposition(resultats);
         dessinerHistogrammeComposition(resultats);
         remplirTableau(resultats);
         remplirTableauCo2(resultats);
@@ -1540,35 +1547,47 @@
         return r.decomp.socle[key] * r.prix;
       }
 
-      function dessinerLegendeComposition() {
+      // Légende A/B (couleur machine, plus couleur par catégorie — voir plus bas
+      // pourquoi le codage couleur a changé le 14/09/2026).
+      function dessinerLegendeComposition(resultats) {
         var legendEl = document.getElementById("eneLegendComposition");
         legendEl.innerHTML = "";
-        COMPOSANTS_5.forEach(function (c) {
+        resultats.forEach(function (r, i) {
           var item = document.createElement("span");
           item.className = "simulator__legend-item";
           var key = document.createElement("span");
           key.className = "simulator__legend-key";
-          key.style.background = c.color;
+          key.style.background = r.color;
           item.appendChild(key);
           var text = document.createElement("span");
-          text.textContent = c.label;
+          text.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
           item.appendChild(text);
           legendEl.appendChild(item);
         });
       }
 
-      // Histogramme horizontal — une barre empilée par machine, 5 segments (COMPOSANTS_5).
-      // Remplace les 2 tables "Détail du socle" et "résultats" (demande de Cédric le
-      // 14/09/2026, "au lieu d'un tableau je souhaite un histogramme horizontal") — même
-      // information, présentée en composition visuelle plutôt qu'en lignes de chiffres.
+      // Histogramme horizontal — une PAIRE de barres par poste (COMPOSANTS_5), pas une
+      // barre empilée par machine (1ʳᵉ version du 14/09/2026, jugée illisible par
+      // Cédric : "il faut des paires de bâtons pour comparer point par point"). Pour
+      // chaque poste (IRM, Local technique, Climatisation, Entre deux patients,
+      // Examens) : une barre Machine A juste au-dessus d'une barre Machine B, même
+      // échelle pour toutes les paires — comparaison directe poste par poste. La
+      // couleur encode maintenant la MACHINE (bleu/orange, SLOT_COLORS), plus le
+      // poste — le nom du poste est le libellé de la paire, plus une couleur de
+      // légende à part.
       function dessinerHistogrammeComposition(resultats) {
         var svg = document.getElementById("eneChartComposition");
         svg.innerHTML = "";
         var plotX0 = 10, plotX1 = 610, plotW = plotX1 - plotX0;
-        var barH = 40, gapY = 100, top = 34;
-        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
-        var xMax = niceCeil(maxVal * 1.08);
-        var bottomAxisY = top + (resultats.length - 1) * gapY + barH + 10;
+        var barH = 20, barGap = 3, groupGap = 22, top = 34;
+        var groupH = barH * 2 + barGap;
+        var maxVal = Math.max.apply(null,
+          resultats.map(function (r) { return COMPOSANTS_5.map(function (c) { return valeurComposant(r, c.key); }); })
+            .reduce(function (a, b) { return a.concat(b); }, [])
+            .concat([0.0001])
+        );
+        var xMax = niceCeil(maxVal * 1.12);
+        var bottomAxisY = top + COMPOSANTS_5.length * (groupH + groupGap) - groupGap + 4;
 
         for (var g = 0; g <= 5; g++) {
           var val = (xMax * g) / 5;
@@ -1580,53 +1599,60 @@
           svg.appendChild(labelX);
         }
 
-        resultats.forEach(function (r, i) {
-          var barY = top + i * gapY;
-          var xCursor = plotX0;
-          COMPOSANTS_5.forEach(function (c) {
-            var val = valeurComposant(r, c.key);
-            var segW = xMax > 0 ? (val / xMax) * plotW : 0;
-            var rectSegment = svgEl("rect", { x: xCursor, y: barY, width: Math.max(0, segW), height: barH, fill: c.color });
-            rectSegment.style.cursor = "pointer";
-            rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
-            svg.appendChild(rectSegment);
-            if (segW >= 24) {
-              var segLabel = svgEl("text", { x: xCursor + segW / 2, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "middle" });
-              segLabel.style.fontSize = "10px";
-              segLabel.style.fontWeight = "700";
-              segLabel.style.fill = "#fff";
-              segLabel.textContent = euros.format(val);
-              svg.appendChild(segLabel);
-            }
-            xCursor += segW;
-          });
-          var totalLabel = svgEl("text", { x: xCursor + 8, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
-          totalLabel.style.fontSize = "13px";
-          totalLabel.style.fontWeight = "800";
-          totalLabel.textContent = euros.format(r.coutAnnuel);
-          svg.appendChild(totalLabel);
+        COMPOSANTS_5.forEach(function (c, gi) {
+          var groupY = top + gi * (groupH + groupGap);
+          var titleLabel = svgEl("text", { x: plotX0, y: groupY - 6, class: "simulator__axis-label", "text-anchor": "start" });
+          titleLabel.style.fontSize = "11px";
+          titleLabel.style.fontWeight = "700";
+          titleLabel.textContent = c.label;
+          svg.appendChild(titleLabel);
 
-          var nameLabel = svgEl("text", { x: plotX0, y: barY - 6, class: "simulator__axis-label", "text-anchor": "start" });
-          nameLabel.style.fontSize = "12px";
-          nameLabel.style.fontWeight = "700";
-          nameLabel.style.fill = r.color;
-          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
-          svg.appendChild(nameLabel);
+          resultats.forEach(function (r, i) {
+            var val = valeurComposant(r, c.key);
+            var barW = xMax > 0 ? (val / xMax) * plotW : 0;
+            var barY = groupY + i * (barH + barGap);
+            var rectBar = svgEl("rect", { x: plotX0, y: barY, width: Math.max(0, barW), height: barH, fill: r.color });
+            svg.appendChild(rectBar);
+            var valLabel = svgEl("text", { x: plotX0 + barW + 6, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
+            valLabel.style.fontSize = "10px";
+            valLabel.style.fontWeight = "700";
+            valLabel.textContent = euros.format(val);
+            svg.appendChild(valLabel);
+          });
         });
 
         svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 20));
       }
 
+      // Ligne de tableau avec une paire de barres (comme dessinerHistogrammeComposition()
+      // ci-dessus, demande de Cédric le 14/09/2026 : "il faut aussi faire le tableau du
+      // dessous") — chaque ligne a sa PROPRE échelle (0 → la plus grande des 2 valeurs),
+      // les unités différant d'une ligne à l'autre (kWh, €, heures) contrairement au
+      // graphe de composition où tout est en €.
+      function ligneTableBarre(tbody, label, valeurs, formateur) {
+        var tr = document.createElement("tr");
+        var tdLabel = document.createElement("td");
+        tdLabel.textContent = label;
+        tr.appendChild(tdLabel);
+        var maxV = Math.max.apply(null, valeurs.concat([0.0001]));
+        valeurs.forEach(function (v, i) {
+          var td = document.createElement("td");
+          var pct = maxV > 0 ? Math.max(v > 0 ? 3 : 0, (v / maxV) * 100) : 0;
+          td.innerHTML = '<div class="ene-fact-bar-cell"><div class="ene-fact-bar-track"><div class="ene-fact-bar-fill" style="width:' + pct + '%;background:' + SLOT_COLORS[i] + '"></div></div><span>' + formateur(v) + '</span></div>';
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      }
+
       function remplirTableau(resultats) {
         var tbody = document.getElementById("eneTableBody");
         tbody.innerHTML = "";
-        function ligne(label, cells, opts) { ligneTable(tbody, label, cells, opts); }
-        ligne("Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
-        ligne("Consommation annuelle (kWh)", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
-        ligne("Coût énergétique par patient", resultats.map(function (r) { return eurosCent.format(r.coutParPatient); }));
-        ligne("Dont heures à l'arrêt / an", resultats.map(function (r) { return entiers.format(r.profil.heuresEteint) + " h"; }));
-        ligne("Dont heures prêt (sans patient) / an", resultats.map(function (r) { return entiers.format(r.profil.heuresPret) + " h"; }));
-        ligne("Dont heures en acquisition / an", resultats.map(function (r) { return entiers.format(r.profil.heuresMesure) + " h"; }));
+        ligneTable(tbody, "Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
+        ligneTableBarre(tbody, "Consommation annuelle (kWh)", resultats.map(function (r) { return r.kwh; }), function (v) { return kwhFmt.format(v) + " kWh"; });
+        ligneTableBarre(tbody, "Coût énergétique par patient", resultats.map(function (r) { return r.coutParPatient; }), function (v) { return eurosCent.format(v); });
+        ligneTableBarre(tbody, "Dont heures à l'arrêt / an", resultats.map(function (r) { return r.profil.heuresEteint; }), function (v) { return entiers.format(v) + " h"; });
+        ligneTableBarre(tbody, "Dont heures prêt (sans patient) / an", resultats.map(function (r) { return r.profil.heuresPret; }), function (v) { return entiers.format(v) + " h"; });
+        ligneTableBarre(tbody, "Dont heures en acquisition / an", resultats.map(function (r) { return r.profil.heuresMesure; }), function (v) { return entiers.format(v) + " h"; });
       }
 
       function dessinerLegende() {
@@ -2652,26 +2678,31 @@
       // (chaque mémoire comparée = un point), Machine A en haut, Machine B en dessous.
       // Pas de clic vers le détail du socle ici (mode Comparer déjà volontairement plus
       // simple, voir skill "Rendu volontairement plus simple pour une vue secondaire").
+      // Même motif "paire de barres par poste" que dessinerHistogrammeComposition()
+      // (14/09/2026), en chaîne SVG (comme le reste de dessinerCoteComparaison) — pas
+      // de clic ici (mode Comparer déjà volontairement plus simple).
       function histogrammeCompositionSVGString(resultats, W) {
-        var top = 10, barH = 30, gapY = 60, padL = 4, padR = 4;
-        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
-        var xMax = niceCeil(maxVal * 1.08);
+        var top = 20, barH = 12, barGap = 2, groupGap = 10, padL = 4, padR = 4;
+        var groupH = barH * 2 + barGap;
+        var maxVal = Math.max.apply(null,
+          resultats.map(function (r) { return COMPOSANTS_5.map(function (c) { return valeurComposant(r, c.key); }); })
+            .reduce(function (a, b) { return a.concat(b); }, [])
+            .concat([0.0001])
+        );
+        var xMax = niceCeil(maxVal * 1.12);
         var plotW = W - padL - padR;
         var parts = [];
-        resultats.forEach(function (r, i) {
-          var barY = top + i * gapY;
-          var xCursor = padL;
-          parts.push('<text x="' + padL + '" y="' + (barY - 4) + '" font-size="10" font-weight="700" fill="' + r.color + '">' +
-            ((i === 0 ? "A — " : "B — ") + r.machine.nomCourt).replace(/&/g, "&amp;") + '</text>');
-          COMPOSANTS_5.forEach(function (c) {
+        COMPOSANTS_5.forEach(function (c, gi) {
+          var groupY = top + gi * (groupH + groupGap);
+          parts.push('<text x="' + padL + '" y="' + (groupY - 3) + '" font-size="9" font-weight="700" fill="var(--ink)">' + c.label.replace(/&/g, "&amp;") + '</text>');
+          resultats.forEach(function (r, i) {
             var val = valeurComposant(r, c.key);
-            var segW = xMax > 0 ? (val / xMax) * plotW : 0;
-            parts.push('<rect x="' + xCursor.toFixed(1) + '" y="' + barY + '" width="' + Math.max(0, segW).toFixed(1) + '" height="' + barH + '" fill="' + c.color + '"></rect>');
-            xCursor += segW;
+            var barW = xMax > 0 ? (val / xMax) * plotW : 0;
+            var barY = groupY + i * (barH + barGap);
+            parts.push('<rect x="' + padL + '" y="' + barY + '" width="' + Math.max(0, barW).toFixed(1) + '" height="' + barH + '" fill="' + r.color + '"></rect>');
           });
-          parts.push('<text x="' + Math.min(xCursor + 6, W - 60).toFixed(1) + '" y="' + (barY + barH / 2 + 4) + '" font-size="11" font-weight="800" fill="var(--ink)">' + euros.format(r.coutAnnuel) + '</text>');
         });
-        return { html: parts.join(""), height: top + resultats.length * gapY };
+        return { html: parts.join(""), height: top + COMPOSANTS_5.length * (groupH + groupGap) };
       }
 
       // Les mêmes "faits complémentaires" que le tableau sous la carte principale
