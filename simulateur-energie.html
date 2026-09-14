@@ -364,6 +364,18 @@
     .pm-autre-rh > summary::before { content: "▸ "; }
     .pm-autre-rh[open] > summary::before { content: "▾ "; }
     .pm-autre-rh > summary ~ .field { margin-top: .8rem; }
+    /* Curseurs sous "Composition du coût énergétique annuel" (14/09/2026) — simples
+       <input type="range"> avec accent-color (pas le motif "curseur double" custom du
+       reste du site, réservé aux pistes qui doivent aussi masquer la partie non remplie
+       en gris — voir skill, "accent-color ... la partie non remplie reste grise" : accepté
+       ici comme compromis, ces 5 curseurs sont secondaires, sous un graphe déjà riche). */
+    .ene-comp-sliders { margin-top: 1rem; display: grid; gap: .7rem; }
+    .ene-comp-sliders .field { margin-bottom: 0; }
+    .ene-comp-sliders input[type="range"] { width: 100%; accent-color: var(--red); }
+    .ene-comp-sliders input[type="range"]#enePatientsHeureASlider,
+    .ene-comp-sliders input[type="range"]#eneAcqASlider { accent-color: #2a78d6; }
+    .ene-comp-sliders input[type="range"]#enePatientsHeureBSlider,
+    .ene-comp-sliders input[type="range"]#eneAcqBSlider { accent-color: #eb6834; }
   </style>
 </head>
 <body class="tool-page">
@@ -687,9 +699,9 @@
               </span>
             </details>
 
-            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardSocleTable">
-              <summary>Détail du socle — d'où vient le coût incompressible
-                <button type="button" class="chart-card-fullscreen-btn" id="eneSocleTableFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+            <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneCardComposition">
+              <summary>Composition du coût énergétique annuel
+                <button type="button" class="chart-card-fullscreen-btn" id="eneCompositionFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
                   <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
                     <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
                     <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
@@ -709,32 +721,57 @@
                   </div>
                 </span>
               </summary>
+              <!-- Fusion du 14/09/2026 (demande de Cédric) : l'ancienne table "Détail du
+                   socle" (IRM/local technique/climatisation) et la table de résultats juste
+                   en dessous (socle/entre-patients/examens/coût annuel/etc.) deviennent UN
+                   histogramme horizontal — 5 segments empilés par machine (COMPOSANTS_5,
+                   déjà utilisés par le camembert de détail du graphe principal ci-dessus,
+                   voir dessinerCamembertSocle). La ligne "Patients par an (commun)" disparaît
+                   (remplacée par le curseur d'activité sous le graphe, voir plus bas — même
+                   donnée que le champ du panneau ⚙, curseur miroir). -->
+              <div class="simulator__legend" id="eneLegendComposition"></div>
+              <div class="simulator__chart-wrap">
+                <svg id="eneChartComposition" class="simulator__chart" viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Composition du coût énergétique annuel par poste, pour les deux machines choisies"></svg>
+              </div>
               <div style="overflow-x:auto">
-                <table class="stats-table simulator__table simulator__table--compare2" id="eneTableSocle">
+                <table class="stats-table simulator__table simulator__table--compare2" id="eneTable" style="margin-top:.8rem">
                 <thead>
                   <tr>
                     <th></th>
-                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableSocleHeadA"></span></th>
-                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableSocleHeadB"></span></th>
+                    <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
+                    <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
                   </tr>
                 </thead>
-                <tbody id="eneTableSocleBody"></tbody>
+                <tbody id="eneTableBody"></tbody>
               </table>
               </div>
+              <!-- Curseurs sous le graphe (demande de Cédric le 14/09/2026) — tous en
+                   curseur MIROIR d'un champ déjà existant ailleurs sur la page (même valeur,
+                   synchronisée dans les 2 sens, motif déjà utilisé partout sur le site) :
+                   jamais une donnée séparée qui pourrait diverger. -->
+              <div class="ene-comp-sliders">
+                <div class="field">
+                  <label for="eneActiviteSlider">Activité <span id="eneActiviteSliderVal"></span></label>
+                  <input type="range" id="eneActiviteSlider" min="0" max="15000" step="1" />
+                </div>
+                <div class="field">
+                  <label for="enePatientsHeureASlider">Patients par heure — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="enePatientsHeureASliderVal"></span></label>
+                  <input type="range" id="enePatientsHeureASlider" min="0.5" max="8" step="0.1" />
+                </div>
+                <div class="field">
+                  <label for="enePatientsHeureBSlider">Patients par heure — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="enePatientsHeureBSliderVal"></span></label>
+                  <input type="range" id="enePatientsHeureBSlider" min="0.5" max="8" step="0.1" />
+                </div>
+                <div class="field">
+                  <label for="eneAcqASlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="0">Machine A</span> <span id="eneAcqASliderVal"></span></label>
+                  <input type="range" id="eneAcqASlider" min="1" max="60" step="1" />
+                </div>
+                <div class="field">
+                  <label for="eneAcqBSlider">Durée d'acquisition — <span class="simulator__swatch-text" data-slot="1">Machine B</span> <span id="eneAcqBSliderVal"></span></label>
+                  <input type="range" id="eneAcqBSlider" min="1" max="60" step="1" />
+                </div>
+              </div>
             </details>
-
-            <div style="overflow-x:auto">
-              <table class="stats-table simulator__table simulator__table--compare2" id="eneTable">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th><span class="simulator__swatch-text" data-slot="0" id="eneTableHeadA"></span></th>
-                  <th><span class="simulator__swatch-text" data-slot="1" id="eneTableHeadB"></span></th>
-                </tr>
-              </thead>
-              <tbody id="eneTableBody"></tbody>
-            </table>
-            </div>
             <details class="simulator__chart-card simulator__chart-card--collapsible" id="eneRecap">
               <summary>Paramètres saisis avant de lancer la simulation
                 <button type="button" class="chart-card-fullscreen-btn" id="eneRecapFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
@@ -1318,10 +1355,8 @@
 
         var nomA = machineA.nomCourt;
         var nomB = machineB.nomCourt;
-        ["eneTableSocleHeadA", "eneTableHeadA"].forEach(function (id) {
-          document.getElementById(id).textContent = nomA;
-        });
-        ["eneTableSocleHeadB", "eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
+        document.getElementById("eneTableHeadA").textContent = nomA;
+        ["eneTableHeadB", "eneTableCo2HeadB"].forEach(function (id) {
           document.getElementById(id).textContent = nomB;
         });
         document.getElementById("eneTableCo2HeadA").textContent = nomA;
@@ -1347,8 +1382,9 @@
         remplirHeadTech("eneTableTechHeadB", machineB);
 
         remplirTableauTech([machineA, machineB]);
-        remplirTableauSocle(resultats);
-        remplirTableau(resultats, patientsAn);
+        dessinerLegendeComposition();
+        dessinerHistogrammeComposition(resultats);
+        remplirTableau(resultats);
         remplirTableauCo2(resultats);
         remplirTableauParamsSaisis(machineA, machineB, {
           prix: prix, heuresSemaineJour: heuresSemaineJour, heuresSamediJour: heuresSamediJour,
@@ -1358,6 +1394,7 @@
         dessinerLegende();
         dessinerGraphe(resultats);
         if (!document.getElementById("eneCardSocleDetail").hidden) dessinerCamembertSocle(resultats);
+        majSlidersComposition(patientsAn);
 
         // Bloc "À retenir" en haut de page — le résultat avant les explications techniques
         // (réorganisation du 11/08/2026, demande de Cédric : "plus simple à lire, avec les
@@ -1505,27 +1542,98 @@
       }
 
       // Tableau dédié au détail du socle (demande explicite : "un tableau que pour ça").
-      function remplirTableauSocle(resultats) {
-        var tbody = document.getElementById("eneTableSocleBody");
-        tbody.innerHTML = "";
-        ligneTable(tbody, "IRM (talon de consommation)", resultats.map(function (r) { return euros.format(r.decomp.socle.irm * r.prix); }));
-        ligneTable(tbody, "Local technique (maintien en froid)", resultats.map(function (r) { return r.machine.coeffRefroidissementLT > 0 ? euros.format(r.decomp.socle.lt * r.prix) : "—"; }));
-        ligneTable(tbody, "Climatisation de la salle d'examen", resultats.map(function (r) { return euros.format(r.decomp.socle.clim * r.prix); }));
-        ligneTable(tbody, "Total socle (par an)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }), { strong: true });
-        ligneTable(tbody, "Total socle sur 7 ans", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix * 7); }), { strong: true });
+      // Valeur d'un des 5 composants (COMPOSANTS_5, déjà utilisés par le camembert
+      // "Composition du socle") pour une machine — entrePatients/examens sont des clés de
+      // 1er niveau de r.decomp, irm/lt/clim sont les 3 sous-composants de r.decomp.socle.
+      function valeurComposant(r, key) {
+        if (key === "entrePatients") return r.decomp.entrePatients.total * r.prix;
+        if (key === "examens") return r.decomp.examens.total * r.prix;
+        return r.decomp.socle[key] * r.prix;
       }
 
-      function remplirTableau(resultats, patientsAn) {
+      function dessinerLegendeComposition() {
+        var legendEl = document.getElementById("eneLegendComposition");
+        legendEl.innerHTML = "";
+        COMPOSANTS_5.forEach(function (c) {
+          var item = document.createElement("span");
+          item.className = "simulator__legend-item";
+          var key = document.createElement("span");
+          key.className = "simulator__legend-key";
+          key.style.background = c.color;
+          item.appendChild(key);
+          var text = document.createElement("span");
+          text.textContent = c.label;
+          item.appendChild(text);
+          legendEl.appendChild(item);
+        });
+      }
+
+      // Histogramme horizontal — une barre empilée par machine, 5 segments (COMPOSANTS_5).
+      // Remplace les 2 tables "Détail du socle" et "résultats" (demande de Cédric le
+      // 14/09/2026, "au lieu d'un tableau je souhaite un histogramme horizontal") — même
+      // information, présentée en composition visuelle plutôt qu'en lignes de chiffres.
+      function dessinerHistogrammeComposition(resultats) {
+        var svg = document.getElementById("eneChartComposition");
+        svg.innerHTML = "";
+        var plotX0 = 10, plotX1 = 610, plotW = plotX1 - plotX0;
+        var barH = 40, gapY = 100, top = 34;
+        var maxVal = Math.max.apply(null, resultats.map(function (r) { return r.coutAnnuel; }).concat([0.0001]));
+        var xMax = niceCeil(maxVal * 1.08);
+        var bottomAxisY = top + (resultats.length - 1) * gapY + barH + 10;
+
+        for (var g = 0; g <= 5; g++) {
+          var val = (xMax * g) / 5;
+          var x = plotX0 + (plotW * val) / xMax;
+          svg.appendChild(svgEl("line", { x1: x, x2: x, y1: top - 22, y2: bottomAxisY, class: "simulator__gridline" }));
+          var labelX = svgEl("text", { x: x, y: top - 26, class: "simulator__axis-label", "text-anchor": "middle" });
+          labelX.style.fontSize = "10px";
+          labelX.textContent = euros.format(val);
+          svg.appendChild(labelX);
+        }
+
+        resultats.forEach(function (r, i) {
+          var barY = top + i * gapY;
+          var xCursor = plotX0;
+          COMPOSANTS_5.forEach(function (c) {
+            var val = valeurComposant(r, c.key);
+            var segW = xMax > 0 ? (val / xMax) * plotW : 0;
+            var rectSegment = svgEl("rect", { x: xCursor, y: barY, width: Math.max(0, segW), height: barH, fill: c.color });
+            rectSegment.style.cursor = "pointer";
+            rectSegment.addEventListener("click", function () { toggleSocleDetail(resultats); });
+            svg.appendChild(rectSegment);
+            if (segW >= 24) {
+              var segLabel = svgEl("text", { x: xCursor + segW / 2, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "middle" });
+              segLabel.style.fontSize = "10px";
+              segLabel.style.fontWeight = "700";
+              segLabel.style.fill = "#fff";
+              segLabel.textContent = euros.format(val);
+              svg.appendChild(segLabel);
+            }
+            xCursor += segW;
+          });
+          var totalLabel = svgEl("text", { x: xCursor + 8, y: barY + barH / 2 + 4, class: "simulator__axis-label", "text-anchor": "start" });
+          totalLabel.style.fontSize = "13px";
+          totalLabel.style.fontWeight = "800";
+          totalLabel.textContent = euros.format(r.coutAnnuel);
+          svg.appendChild(totalLabel);
+
+          var nameLabel = svgEl("text", { x: plotX0, y: barY - 6, class: "simulator__axis-label", "text-anchor": "start" });
+          nameLabel.style.fontSize = "12px";
+          nameLabel.style.fontWeight = "700";
+          nameLabel.style.fill = r.color;
+          nameLabel.textContent = (i === 0 ? "A — " : "B — ") + r.machine.nomCourt;
+          svg.appendChild(nameLabel);
+        });
+
+        svg.setAttribute("viewBox", "0 0 640 " + (bottomAxisY + 20));
+      }
+
+      function remplirTableau(resultats) {
         var tbody = document.getElementById("eneTableBody");
         tbody.innerHTML = "";
         function ligne(label, cells, opts) { ligneTable(tbody, label, cells, opts); }
         ligne("Aimant", resultats.map(function (r) { return r.machine.aimant === "permanent" ? "Permanent (sans hélium)" : "Supraconducteur"; }));
-        ligne("Socle (arrêt, jour et nuit)", resultats.map(function (r) { return euros.format(r.decomp.socle.total * r.prix); }));
-        ligne("Entre deux patients (ready to scan)", resultats.map(function (r) { return euros.format(r.decomp.entrePatients.total * r.prix); }));
-        ligne("Examens (acquisition)", resultats.map(function (r) { return euros.format(r.decomp.examens.total * r.prix); }));
-        ligne("Coût énergétique annuel", resultats.map(function (r) { return euros.format(r.coutAnnuel); }), { strong: true });
         ligne("Consommation annuelle (kWh)", resultats.map(function (r) { return kwhFmt.format(r.kwh) + " kWh"; }));
-        ligne("Patients par an (commun)", resultats.map(function () { return entiers.format(patientsAn); }));
         ligne("Coût énergétique par patient", resultats.map(function (r) { return eurosCent.format(r.coutParPatient); }));
         ligne("Dont heures à l'arrêt / an", resultats.map(function (r) { return entiers.format(r.profil.heuresEteint) + " h"; }));
         ligne("Dont heures prêt (sans patient) / an", resultats.map(function (r) { return entiers.format(r.profil.heuresPret) + " h"; }));
@@ -2297,6 +2405,74 @@
       ].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+
+      // ---- Curseurs sous "Composition du coût énergétique annuel" (14/09/2026) — chacun
+      // MIROIR d'un champ déjà existant (jamais une donnée séparée) : déplacer le curseur
+      // écrit dans le champ source et redéclenche recalculer(), qui rappelle
+      // majSlidersComposition() pour remettre tous les curseurs à jour (y compris celui
+      // qu'on vient de bouger — sans danger, une resynchronisation redondante ne casse
+      // rien, motif déjà utilisé partout sur ce site).
+      document.getElementById("eneActiviteSlider").addEventListener("input", function () {
+        var patientsAnCible = Math.max(0, parseFloat(this.value) || 0);
+        var mode = document.getElementById("eneActiviteMode").value;
+        var activiteInput = document.getElementById("eneActivite");
+        if (mode === "an") {
+          activiteInput.value = Math.round(patientsAnCible);
+        } else {
+          var heuresSemaineJour = ampliEff("eneHeuresSemaine", "eneCoupureSemaineActive", "eneCoupureSemaine");
+          var heuresSamediJour = ampliEff("eneSamedi", "eneCoupureSamediActive", "eneCoupureSamedi");
+          var heuresDimancheJour = ampliEff("eneDimanche", "eneCoupureDimancheActive", "eneCoupureDimanche");
+          activiteInput.value = Math.round(convertirActivite(patientsAnCible, false, heuresSemaineJour, heuresSamediJour, heuresDimancheJour) * 10) / 10;
+        }
+        recalculer();
+      });
+      // Patients par heure = 60 / temps de prise en charge (minutes) — même conversion que
+      // le motif "patients par heure" déjà en place sur bascule-oscan/point-mort/ct-vs-irm
+      // (skill ced4scale-simulateur-web). 0 patient/h saisi via le curseur (min="0.5" ici,
+      // jamais 0) reste toujours une capacité non nulle, pas de division par zéro possible.
+      [["enePatientsHeureASlider", "eneInstallA"], ["enePatientsHeureBSlider", "eneInstallB"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var patientsHeure = Math.max(0.1, parseFloat(this.value) || 0.1);
+          var installInput = document.getElementById(pair[1]);
+          installInput.value = Math.round((60 / patientsHeure) * 10) / 10;
+          installInput.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+      // Durée d'acquisition — curseur miroir direct de eneAcqA/B (même unité, minutes).
+      [["eneAcqASlider", "eneAcqA"], ["eneAcqBSlider", "eneAcqB"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var acqInput = document.getElementById(pair[1]);
+          acqInput.value = this.value;
+          acqInput.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+      // Remet les 5 curseurs à jour depuis les champs sources — appelé à chaque
+      // recalculer() (voir plus haut), jamais seulement au chargement, pour rester
+      // synchronisé quel que soit l'endroit où une valeur a changé (champ direct, mémoire
+      // rappelée, changement de machine qui réinitialise durée/débit...).
+      function majSlidersComposition(patientsAn) {
+        var sliderActivite = document.getElementById("eneActiviteSlider");
+        if (patientsAn > +sliderActivite.max) sliderActivite.max = Math.ceil(patientsAn / 1000) * 1000;
+        sliderActivite.value = Math.min(Math.max(patientsAn, 0), +sliderActivite.max);
+        document.getElementById("eneActiviteSliderVal").textContent = "— " + entiers.format(patientsAn) + " patients/an";
+
+        [["enePatientsHeureASlider", "enePatientsHeureASliderVal", "eneInstallA"],
+         ["enePatientsHeureBSlider", "enePatientsHeureBSliderVal", "eneInstallB"]].forEach(function (t) {
+          var installMin = Math.max(0, parseFloat(document.getElementById(t[2]).value) || 0);
+          var patientsHeure = installMin > 0 ? 60 / installMin : 0;
+          var slider = document.getElementById(t[0]);
+          slider.value = Math.min(Math.max(patientsHeure, +slider.min), +slider.max);
+          document.getElementById(t[1]).textContent = "(" + (Math.round(patientsHeure * 10) / 10) + " patients/h)";
+        });
+
+        [["eneAcqASlider", "eneAcqASliderVal", "eneAcqA"],
+         ["eneAcqBSlider", "eneAcqBSliderVal", "eneAcqB"]].forEach(function (t) {
+          var acqMin = Math.max(1, parseFloat(document.getElementById(t[2]).value) || 1);
+          var slider = document.getElementById(t[0]);
+          slider.value = Math.min(Math.max(acqMin, +slider.min), +slider.max);
+          document.getElementById(t[1]).textContent = "(" + acqMin + " min)";
+        });
+      }
       // Case "Coupure ... ?" : révèle/masque le champ de durée juste en dessous et relance
       // le calcul — motif porté de simulateur-bascule-oscan.html (voir skill
       // ced4scale-simulateur-web, "Horaires d'ouverture avec coupure").
@@ -3163,7 +3339,7 @@
           } else {
             if (card.tagName === "DETAILS") card.open = true;
             // Ouvre aussi tout <details> NESTÉ (ex. les 3 cadres intérieurs
-            // eneCardTech/eneCardSocleTable/eneRecap dans eneDetailCard) — sinon leur
+            // eneCardTech/eneCardComposition/eneRecap dans eneDetailCard) — sinon leur
             // contenu resterait invisible (juste le résumé) une fois eneDetailCard
             // passé en plein écran. Voir skill ced4scale-simulateur-web, motif repris
             // de simulateur-bascule-oscan.html.
@@ -3206,7 +3382,7 @@
       wireCardFullscreen("eneHistoPrixFullscreenBtn", "eneCardHistoPrix");
       wireCardFullscreen("eneDetailFullscreenBtn", "eneDetailCard");
       wireCardFullscreen("eneTechFullscreenBtn", "eneCardTech");
-      wireCardFullscreen("eneSocleTableFullscreenBtn", "eneCardSocleTable");
+      wireCardFullscreen("eneCompositionFullscreenBtn", "eneCardComposition");
       wireCardFullscreen("eneRecapFullscreenBtn", "eneRecap");
       wireCardFullscreen("eneEtudesFullscreenBtn", "eneEtudesCard");
     })();
