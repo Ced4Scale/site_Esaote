@@ -1894,6 +1894,14 @@
           // couleur (--ink, quasi noir), sinon même en gras il paraît "moins gras".
           titleLabel.style.fill = "var(--ink)";
           titleLabel.textContent = c.label;
+          // Le libellé devient lui aussi cliquable dès qu'un clic sur les barres l'est
+          // (demande de Cédric le 14/09/2026, pour la paire "Total" avec triangle
+          // ▸/▾ — mais s'applique aussi aux autres libellés déjà cliquables comme
+          // "Socle (arrêt)", cible plus grande, sans rien changer à leur comportement).
+          if (onClicCategorie) {
+            titleLabel.style.cursor = "pointer";
+            titleLabel.addEventListener("click", function () { onClicCategorie(c, resultats); });
+          }
           svg.appendChild(titleLabel);
 
           var xMax = Math.max.apply(null, resultats.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
@@ -1926,9 +1934,24 @@
         { key: "entrePatients", label: "Entre deux patients", valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
         { key: "examens", label: "Examens", valeur: function (r) { return r.decomp.examens.total * r.prix; } }
       ];
+      // Paire "Total" en tête du graphe, avec triangle ▸/▾ qui révèle la ventilation en
+      // 3 postes en dessous (demande de Cédric le 14/09/2026) — fermée par défaut, même
+      // convention que les autres triangles du site (.bascule-hyp-section). État gardé
+      // dans une variable de module (comme modeCamembert ailleurs sur ce site), donc
+      // aussi capturé/restauré par la mémoire de simulation (voir ENE_MEMOIRE_FIELDS).
+      var eneVentilationOuverte = false;
       function dessinerGraphe(resultats) {
-        dessinerPairesBarres("eneChart", resultats, CATEGORIES_SOCLE_3, function (c, res) {
-          if (c.key === "socle") toggleSocleDetail(res);
+        var categorieTotal = {
+          key: "total",
+          label: (eneVentilationOuverte ? "▾ " : "▸ ") + "Total",
+          valeur: function (r) {
+            return CATEGORIES_SOCLE_3.reduce(function (s, c) { return s + c.valeur(r); }, 0);
+          }
+        };
+        var categories = eneVentilationOuverte ? [categorieTotal].concat(CATEGORIES_SOCLE_3) : [categorieTotal];
+        dessinerPairesBarres("eneChart", resultats, categories, function (c, res) {
+          if (c.key === "total") { eneVentilationOuverte = !eneVentilationOuverte; dessinerGraphe(res); }
+          else if (c.key === "socle") toggleSocleDetail(res);
         });
       }
 
@@ -2763,6 +2786,10 @@
           if (!el) return;
           etat[f.id] = { valeur: f.type === "checkbox" ? el.checked : el.value };
         });
+        // Variable JS pure (pas un champ de formulaire) : la triangle "Total" du graphe
+        // "trois couches" — voir "Mémoire de simulation : capturer aussi les variables
+        // JS pures" dans le skill, à ne jamais oublier au moment où on l'ajoute.
+        etat.__ventilationOuverte = eneVentilationOuverte;
         return etat;
       }
 
@@ -2794,6 +2821,7 @@
           if (etat[f.id] === undefined) return;
           definirChamp(f, etat[f.id].valeur);
         });
+        if (etat.__ventilationOuverte !== undefined) eneVentilationOuverte = etat.__ventilationOuverte;
         recalculer();
       }
 
