@@ -1875,7 +1875,14 @@ ul { margin: 0; padding: 0; list-style: none; }
 .simulator__chart-card--collapsible > summary::before { content: "▸ "; }
 .simulator__chart-card--collapsible[open] > summary::before { content: "▾ "; }
 .simulator__chart-card--collapsible > summary ~ * { margin-top: .8rem; }
-.simulator__legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: .4rem; font-size: .82rem; color: var(--ink-soft); }
+/* Écart vertical resserré (row-gap .35rem) quand la légende passe à la ligne sur un écran
+   étroit — demande de Cédric le 14/09/2026 (repéré sur simulateur-energie.html, mais le
+   défaut est partagé par tous les simulateurs qui ont une légende A/B) : avec un gap
+   uniforme de 1rem, deux entrées de légende qui retombent chacune sur sa propre ligne
+   laissaient un vide disproportionné entre elles, comme si elles n'avaient plus de lien
+   visuel. L'écart horizontal (column-gap) entre A et B reste 1rem quand elles tiennent
+   sur la même ligne. */
+.simulator__legend { display: flex; flex-wrap: wrap; row-gap: .35rem; column-gap: 1rem; margin-bottom: .4rem; font-size: .82rem; color: var(--ink-soft); }
 .simulator__legend-item { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600; }
 .simulator__legend-key { display: inline-block; width: 14px; height: 3px; border-radius: 2px; }
 .simulator__chart-wrap { position: relative; }
