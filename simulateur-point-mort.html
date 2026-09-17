@@ -370,6 +370,91 @@
     /* Sous-titre visuel à l'intérieur d'une section ⚙ (13/09/2026) — pas un repli, juste
        un regroupement visuel simple. Motif porté de simulateur-bascule-oscan.html. */
     .pm-hyp-subtitle { font-weight: 700; font-size: .82rem; color: var(--ink-soft); margin: 1rem 0 .5rem; }
+    /* Table de mixage (17/09/2026, demande de Cédric) — porté tel quel de
+       simulateur-energie.html (motif "Table de mixage" du skill ced4scale-simulateur-web),
+       préfixe local pm- pour ne jamais entrer en collision avec les ids/classes déjà
+       présents ici. 3 groupes : Activité, Coût du kWh, Part membre (A/B). Chaque fader est
+       un simple MIROIR d'un champ déjà existant (pmActivite/pmKwh/pmMembreA/pmMembreB) —
+       jamais une donnée séparée qui pourrait diverger. Curseur vertical natif via
+       writing-mode+direction (pas -webkit-appearance:slider-vertical, retiré des
+       navigateurs récents). Valeur éditable au clavier en plus du glissé, synchronisée
+       dans les 2 sens (voir JS "Table de mixage" plus bas). */
+    .pm-mixer-panel {
+      margin-top: 1rem; display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 1.1rem 1.4rem; border-radius: .8rem; padding: 1.1rem .9rem 1rem;
+      background: linear-gradient(135deg, #5cfff2 0%, #0f8f92 55%, #072e2c 100%);
+    }
+    .pm-mixer-strip { display: flex; flex-direction: column; align-items: center; width: 4.6rem; }
+    /* Piège déjà documenté du skill : une classe qui pose display: sur un élément togglé
+       par [hidden] doit avoir sa variante [hidden] à côté, sinon [hidden] seul ne suffit
+       pas à masquer l'élément (piste B masquée en mode 1 seule machine). */
+    .pm-mixer-strip[hidden] { display: none; }
+    .pm-mixer-strip__label {
+      color: #eafffe; font-size: .64rem; font-weight: 700; text-align: center; line-height: 1.2;
+      min-height: 2.3em; display: flex; align-items: flex-end; margin-bottom: .5rem;
+    }
+    .pm-mixer-fader-track {
+      position: relative; width: 2.6rem; height: 8.5rem;
+      background: linear-gradient(180deg, #08312f, #114a47); border-radius: .35rem;
+      box-shadow: inset 0 0 0 1px #04201e, inset 0 2px 4px rgba(0,0,0,.5);
+      display: flex; justify-content: center;
+    }
+    .pm-mixer-fader-track::before {
+      content: ""; position: absolute; top: .5rem; bottom: .5rem; width: 3px;
+      background: #04201e; border-radius: 2px;
+    }
+    .pm-mixer-fader {
+      writing-mode: vertical-lr; direction: rtl; appearance: slider-vertical;
+      width: 2.6rem; height: 8.5rem; margin: 0; background: transparent; cursor: pointer;
+      /* Sans accent-color, le navigateur peint la partie "remplie" en bleu par défaut
+         quelle que soit la couleur du fader — fixé une bonne fois pour toutes ici. */
+      accent-color: var(--fader-color, var(--red));
+    }
+    .pm-mixer-fader::-webkit-slider-runnable-track { background: transparent; }
+    .pm-mixer-fader::-moz-range-track { background: transparent; border: none; }
+    .pm-mixer-fader::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .pm-mixer-fader::-moz-range-thumb {
+      width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .pm-mixer-strip--rouge { --fader-color: var(--red); }
+    .pm-mixer-strip--bleu { --fader-color: #2a78d6; }
+    .pm-mixer-strip--orange { --fader-color: #eb6834; }
+    .pm-mixer-strip--turquoise { --fader-color: #1fb6b6; }
+    /* Groupe "Part membre" : 1 seul titre pour les 2 pistes A/B, chacune gardant sa propre
+       couleur de machine (bleu/orange, SLOT_COLORS) via le petit repère A/B coloré. */
+    .pm-mixer-group { display: flex; flex-direction: column; align-items: center; }
+    .pm-mixer-group__title {
+      color: #eafffe; font-size: .64rem; font-weight: 700; text-align: center; line-height: 1.2;
+      min-height: 2.3em; display: flex; align-items: flex-end; margin-bottom: .5rem;
+    }
+    .pm-mixer-group__pistes { display: flex; gap: .6rem; }
+    .pm-mixer-strip--sub { width: auto; }
+    .pm-mixer-strip__sublabel { font-size: .68rem; font-weight: 700; margin-bottom: .35rem; }
+    .pm-mixer-group > .pm-mixer-strip__unit { margin-top: .5rem; }
+    .pm-mixer-strip__value {
+      width: 100%; margin-top: .55rem; text-align: center; font: 700 .82rem/1.3 inherit;
+      color: #fff; background: #0c2b2a; border: 1px solid #1c5854; border-radius: .3rem;
+      padding: .28rem .15rem; box-sizing: border-box;
+    }
+    .pm-mixer-strip__value:focus {
+      outline: 2px solid var(--fader-color, var(--red)); outline-offset: 1px;
+      border-color: var(--fader-color, var(--red));
+    }
+    .pm-mixer-strip__value[type="number"] { -moz-appearance: textfield; }
+    .pm-mixer-strip__value[type="number"]::-webkit-outer-spin-button,
+    .pm-mixer-strip__value[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .pm-mixer-strip__unit { color: #d4f5f3; font-size: .6rem; text-align: center; margin-top: .2rem; }
+    @media (max-width: 480px) {
+      .pm-mixer-panel { gap: .9rem 1rem; padding: .9rem .6rem; }
+      .pm-mixer-strip { width: 4rem; }
+      .pm-mixer-fader-track, .pm-mixer-fader { height: 7rem; }
+    }
   </style>
 </head>
 <body class="tool-page">
@@ -1035,6 +1120,63 @@
           </div>
         </details>
 
+        <!-- Table de mixage (17/09/2026, demande de Cédric) — porté de
+             simulateur-energie.html (motif "Table de mixage" du skill
+             ced4scale-simulateur-web), préfixe local pm-mixer- pour ne jamais entrer en
+             collision avec les ids/classes déjà présents sur cette page. 3 groupes :
+             Activité (miroir de pmActivite, cohérent avec pmActiviteMode jour/an),
+             Coût du kWh (miroir de pmKwh), Part membre A/B (miroir de pmMembreA/pmMembreB).
+             Toujours de simples curseurs MIROIR d'un champ déjà existant : jamais une
+             donnée séparée qui pourrait diverger. -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="pmMixerCard">
+          <summary>Table de mixage
+            <button type="button" class="chart-card-fullscreen-btn" id="pmMixerFullscreenBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+          </summary>
+          <div class="pm-mixer-panel">
+            <div class="pm-mixer-strip pm-mixer-strip--rouge">
+              <div class="pm-mixer-strip__label">Activité</div>
+              <div class="pm-mixer-fader-track">
+                <input type="range" id="pmMixerActiviteSlider" class="pm-mixer-fader" min="0" max="60" step="0.5" aria-label="Activité" />
+              </div>
+              <input type="number" step="0.5" min="0" class="pm-mixer-strip__value" id="pmMixerActiviteSliderVal" aria-label="Activité, modifiable" />
+              <div class="pm-mixer-strip__unit" id="pmMixerActiviteUnit">patients/jour</div>
+            </div>
+            <div class="pm-mixer-strip pm-mixer-strip--turquoise">
+              <div class="pm-mixer-strip__label">Coût kWh</div>
+              <div class="pm-mixer-fader-track">
+                <input type="range" id="pmMixerKwhSlider" class="pm-mixer-fader" min="0" max="1" step="0.01" aria-label="Coût du kWh" />
+              </div>
+              <input type="number" step="0.01" min="0" class="pm-mixer-strip__value" id="pmMixerKwhSliderVal" aria-label="Coût du kWh, modifiable" />
+              <div class="pm-mixer-strip__unit">€ TTC</div>
+            </div>
+            <div class="pm-mixer-group">
+              <div class="pm-mixer-group__title">Part membre</div>
+              <div class="pm-mixer-group__pistes">
+                <div class="pm-mixer-strip pm-mixer-strip--sub pm-mixer-strip--bleu">
+                  <div class="pm-mixer-strip__sublabel simulator__swatch-text" data-slot="0">A</div>
+                  <div class="pm-mixer-fader-track">
+                    <input type="range" id="pmMixerMembreASlider" class="pm-mixer-fader" min="0" max="100" step="5" aria-label="Part des examens membre, Machine A" />
+                  </div>
+                  <input type="number" step="5" min="0" max="100" class="pm-mixer-strip__value" id="pmMixerMembreASliderVal" aria-label="Part des examens membre, Machine A, modifiable" />
+                </div>
+                <div class="pm-mixer-strip pm-mixer-strip--sub pm-mixer-strip--orange" id="pmMixerMembreBStrip">
+                  <div class="pm-mixer-strip__sublabel simulator__swatch-text" data-slot="1">B</div>
+                  <div class="pm-mixer-fader-track">
+                    <input type="range" id="pmMixerMembreBSlider" class="pm-mixer-fader" min="0" max="100" step="5" aria-label="Part des examens membre, Machine B" />
+                  </div>
+                  <input type="number" step="5" min="0" max="100" class="pm-mixer-strip__value" id="pmMixerMembreBSliderVal" aria-label="Part des examens membre, Machine B, modifiable" />
+                </div>
+              </div>
+              <div class="pm-mixer-strip__unit">%</div>
+            </div>
+          </div>
+        </details>
+
         <span class="pm-info-wrap">
           <button type="button" class="pm-info-btn" id="pmInfoHypBtn" aria-expanded="false" aria-controls="pmInfoHypPop" aria-label="Hypothèses de calcul">💡</button>
           <div class="pm-info-pop pm-info-pop--table" id="pmInfoHypPop" hidden>
@@ -1591,6 +1733,9 @@
         tableHeadBTh.hidden = single;
         pmTableEl.classList.toggle("simulator__table--compare2", !single);
         pmTableEl.classList.toggle("simulator__table--compare1", single);
+        // Piste B de la table de mixage ("Part membre") — pas de sens sans Machine B.
+        var mixerMembreBStrip = document.getElementById("pmMixerMembreBStrip");
+        if (mixerMembreBStrip) mixerMembreBStrip.hidden = single;
       }
       appliquerNbMachines();
       document.querySelectorAll('input[name="pmNbMachines"]').forEach(function (radio) {
@@ -1647,6 +1792,103 @@
           : Math.round(ancienne * joursParMois * 12);
         recalculer();
       });
+
+      // ---- Table de mixage (17/09/2026) — chaque fader est MIROIR d'un champ déjà
+      // existant (jamais une donnée séparée) : le déplacer écrit dans le champ source et
+      // redéclenche recalculer(), qui rappelle majMixerPanel() pour remettre tous les
+      // faders ET leurs cases de valeur à jour (y compris celui qu'on vient de bouger —
+      // sans danger, une resynchronisation redondante ne casse rien, motif déjà utilisé
+      // partout sur ce site). Motif/CSS repris tel quel de simulateur-energie.html.
+      document.getElementById("pmMixerActiviteSlider").addEventListener("input", function () {
+        var activiteInput = document.getElementById("pmActivite");
+        activiteInput.value = this.value;
+        activiteInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      document.getElementById("pmMixerKwhSlider").addEventListener("input", function () {
+        var kwhInput = document.getElementById("pmKwh");
+        kwhInput.value = Math.round(parseFloat(this.value) * 100) / 100;
+        kwhInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      [["pmMixerMembreASlider", "pmMembreA"], ["pmMixerMembreBSlider", "pmMembreB"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var champ = document.getElementById(pair[1]);
+          champ.value = this.value;
+          champ.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+      // Cases de valeur éditables au clavier, en plus du glissé — écrivent directement
+      // dans le fader correspondant puis déclenchent son évènement "input" : rejoint la
+      // cascade déjà en place ci-dessus (fader → champ source → recalculer()), jamais un
+      // 2e chemin de calcul séparé.
+      [["pmMixerActiviteSliderVal", "pmMixerActiviteSlider"],
+       ["pmMixerKwhSliderVal", "pmMixerKwhSlider"],
+       ["pmMixerMembreASliderVal", "pmMixerMembreASlider"],
+       ["pmMixerMembreBSliderVal", "pmMixerMembreBSlider"]].forEach(function (pair) {
+        document.getElementById(pair[0]).addEventListener("input", function () {
+          var slider = document.getElementById(pair[1]);
+          var val = parseFloat(this.value);
+          if (isNaN(val)) return; // laisse taper "4." ou effacer sans recalculer sur une valeur incomplète
+          // Étend le plafond du fader Activité si la valeur tapée le dépasse déjà (comme
+          // "Coût kWh" plus bas) — l'activité n'a pas de vrai plafond fixe.
+          if (pair[1] === "pmMixerActiviteSlider" && val > +slider.max) slider.max = Math.ceil(val);
+          if (pair[1] === "pmMixerKwhSlider" && val > +slider.max) slider.max = Math.ceil(val * 10) / 10;
+          slider.value = Math.min(Math.max(val, +slider.min), +slider.max);
+          if (+slider.value !== val) this.value = slider.value;
+          slider.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
+      // Remet les faders ET leurs cases de valeur à jour depuis les champs sources —
+      // appelé à chaque recalculer(), jamais seulement au chargement, pour rester
+      // synchronisé quel que soit l'endroit où une valeur a changé (champ direct, mémoire
+      // rappelée, bascule jour/an...). Ne réécrit jamais la case actuellement en cours de
+      // frappe (document.activeElement) — sinon le curseur de saisie sauterait à chaque
+      // recalcul.
+      function majMixerPanel(resultats, params) {
+        // Activité — plafond dynamique = capacité physique de la machine la plus lente
+        // (goulot d'étranglement), avec une marge de 50% au-delà pour ne pas bloquer
+        // pile à la limite (règle du skill : jamais une constante arbitraire).
+        var mode = document.getElementById("pmActiviteMode").value;
+        var capaciteJourMin = resultats.reduce(function (min, r) {
+          var cap = (params.heuresParJour * 60) / (r.tempsInstallation || 1);
+          return Math.min(min, cap);
+        }, Infinity);
+        if (!isFinite(capaciteJourMin) || capaciteJourMin <= 0) capaciteJourMin = 60;
+        var plafondJour = Math.max(10, Math.ceil(capaciteJourMin * 1.5));
+        var joursParMois = Math.max(1, params.joursParMois);
+        var plafondActivite = mode === "jour" ? plafondJour : Math.round(plafondJour * joursParMois * 12);
+        var sliderActivite = document.getElementById("pmMixerActiviteSlider");
+        var activiteInput = document.getElementById("pmActivite");
+        var activiteActuelle = Math.max(0, parseFloat(activiteInput.value) || 0);
+        sliderActivite.max = Math.max(plafondActivite, activiteActuelle);
+        sliderActivite.step = mode === "jour" ? "0.5" : "1";
+        sliderActivite.value = Math.min(Math.max(activiteActuelle, 0), +sliderActivite.max);
+        document.getElementById("pmMixerActiviteUnit").textContent = mode === "jour" ? "patients/jour" : "patients/an";
+        var champActivite = document.getElementById("pmMixerActiviteSliderVal");
+        champActivite.step = sliderActivite.step;
+        if (document.activeElement !== champActivite) {
+          champActivite.value = mode === "jour" ? (Math.round(activiteActuelle * 10) / 10) : Math.round(activiteActuelle);
+        }
+
+        // Coût du kWh — miroir direct de pmKwh.
+        var sliderKwh = document.getElementById("pmMixerKwhSlider");
+        var kwhActuel = Math.max(0, parseFloat(document.getElementById("pmKwh").value) || 0);
+        if (kwhActuel > +sliderKwh.max) sliderKwh.max = Math.ceil(kwhActuel * 10) / 10;
+        sliderKwh.value = Math.min(Math.max(kwhActuel, +sliderKwh.min), +sliderKwh.max);
+        var champKwh = document.getElementById("pmMixerKwhSliderVal");
+        if (document.activeElement !== champKwh) champKwh.value = Math.round(kwhActuel * 100) / 100;
+
+        // Part membre A/B — miroirs directs de pmMembreA/pmMembreB.
+        [["pmMixerMembreASlider", "pmMixerMembreASliderVal", "pmMembreA"],
+         ["pmMixerMembreBSlider", "pmMixerMembreBSliderVal", "pmMembreB"]].forEach(function (t) {
+          var champSource = document.getElementById(t[2]);
+          if (!champSource) return;
+          var valeur = Math.max(0, Math.min(100, parseFloat(champSource.value) || 0));
+          var slider = document.getElementById(t[0]);
+          slider.value = valeur;
+          var champVal = document.getElementById(t[1]);
+          if (document.activeElement !== champVal) champVal.value = valeur;
+        });
+      }
 
       var derniers = null;
       // État ouvert/fermé des lignes "cumul" du tableau (clic sur le montant pour
@@ -1730,6 +1972,8 @@
 
         verifierCapacite(resultats, params.heuresParJour, params.activitePatientsJour, document.getElementById("pmCapaciteWarning"),
           [document.getElementById("pmActivite"), document.getElementById("pmHeuresSemaine")]);
+
+        majMixerPanel(resultats, params);
 
         document.getElementById("pmResultatActivite").innerHTML = "Résultat mensuel à cette activité : " +
           resultats.map(function (r) {
@@ -3127,6 +3371,7 @@
       }
       wireCardFullscreen("pmVerdictFullscreenBtn", "pmVerdictCard");
       wireCardFullscreen("pmGrapheFullscreenBtn", "pmGrapheCard");
+      wireCardFullscreen("pmMixerFullscreenBtn", "pmMixerCard");
       wireCardFullscreen("pmRecapFullscreenBtn", "pmRecap", "pmRecapBody");
       document.addEventListener("click", function () {
         pmInfoPopsOuverts.forEach(function (f) { f(); });

@@ -338,6 +338,76 @@
       border-radius: 5px; white-space: nowrap; color: var(--ink); font-family: inherit;
     }
     .pres-ctx-menu button:hover { background: var(--wash); }
+
+    /* Table de mixage (17/09/2026, motif copié de simulateur-energie.html, préfixe
+       sim-mixer- pour ne jamais entrer en collision avec les classes/ids déjà présents
+       ici) — un seul curseur "Activité", MIROIR du champ #simVolume déjà existant
+       (jamais une donnée séparée) : le glisser écrit dans #simVolume et redéclenche
+       recalculer(), taper dans #simVolume remet le fader à jour via
+       majSliderActivite(), appelée à chaque recalculer(). Ce simulateur n'a qu'un seul
+       concept partagé avec la table de mixage des autres pages (l'activité) — pas de
+       "part membres" ni de "coût du kWh" ici, ne pas en inventer. Curseur vertical
+       writing-mode+direction (pas -webkit-appearance:slider-vertical, retiré des
+       navigateurs récents). */
+    .sim-mixer-panel {
+      margin-top: 1rem; display: flex; flex-wrap: wrap; justify-content: center;
+      gap: 1.1rem 1.4rem; border-radius: .8rem; padding: 1.1rem .9rem 1rem;
+      background: linear-gradient(135deg, #5cfff2 0%, #0f8f92 55%, #072e2c 100%);
+    }
+    .sim-mixer-strip { display: flex; flex-direction: column; align-items: center; width: 4.6rem; }
+    .sim-mixer-strip__label {
+      color: #eafffe; font-size: .64rem; font-weight: 700; text-align: center; line-height: 1.2;
+      min-height: 2.3em; display: flex; align-items: flex-end; margin-bottom: .5rem;
+    }
+    .sim-mixer-fader-track {
+      position: relative; width: 2.6rem; height: 8.5rem;
+      background: linear-gradient(180deg, #08312f, #114a47); border-radius: .35rem;
+      box-shadow: inset 0 0 0 1px #04201e, inset 0 2px 4px rgba(0,0,0,.5);
+      display: flex; justify-content: center;
+    }
+    .sim-mixer-fader-track::before {
+      content: ""; position: absolute; top: .5rem; bottom: .5rem; width: 3px;
+      background: #04201e; border-radius: 2px;
+    }
+    .sim-mixer-fader {
+      writing-mode: vertical-lr; direction: rtl; appearance: slider-vertical;
+      width: 2.6rem; height: 8.5rem; margin: 0; background: transparent; cursor: pointer;
+      /* Sans accent-color, le navigateur peint la partie "remplie" de la piste native en
+         bleu par défaut quelle que soit la couleur du fader — même piège que sur
+         simulateur-energie.html, corrigé ici dès la construction. */
+      accent-color: var(--fader-color, var(--red));
+    }
+    .sim-mixer-fader::-webkit-slider-runnable-track { background: transparent; }
+    .sim-mixer-fader::-moz-range-track { background: transparent; border: none; }
+    .sim-mixer-fader::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .sim-mixer-fader::-moz-range-thumb {
+      width: 2.4rem; height: 1.05rem; border-radius: .25rem;
+      background: var(--fader-color, var(--red)); border: 2px solid #fff;
+      box-shadow: 0 2px 4px rgba(0,0,0,.6); cursor: pointer;
+    }
+    .sim-mixer-strip--rouge { --fader-color: var(--red); }
+    .sim-mixer-strip__value {
+      width: 100%; margin-top: .55rem; text-align: center; font: 700 .82rem/1.3 inherit;
+      color: #fff; background: #0c2b2a; border: 1px solid #1c5854; border-radius: .3rem;
+      padding: .28rem .15rem; box-sizing: border-box;
+    }
+    .sim-mixer-strip__value:focus {
+      outline: 2px solid var(--fader-color, var(--red)); outline-offset: 1px;
+      border-color: var(--fader-color, var(--red));
+    }
+    .sim-mixer-strip__value[type="number"] { -moz-appearance: textfield; }
+    .sim-mixer-strip__value[type="number"]::-webkit-outer-spin-button,
+    .sim-mixer-strip__value[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .sim-mixer-strip__unit { color: #d4f5f3; font-size: .6rem; text-align: center; margin-top: .2rem; }
+    @media (max-width: 480px) {
+      .sim-mixer-panel { gap: .9rem 1rem; padding: .9rem .6rem; }
+      .sim-mixer-strip { width: 4rem; }
+      .sim-mixer-fader-track, .sim-mixer-fader { height: 7rem; }
+    }
   </style>
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
@@ -543,6 +613,19 @@
           <div class="simulator__legend" id="simLegend2"></div>
           <div class="simulator__chart-wrap" id="simCompoChartWrap">
             <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
+          </div>
+          <!-- Table de mixage (17/09/2026) : un seul curseur "Activité", miroir de
+               #simVolume — voir commentaire CSS .sim-mixer-panel et le JS de
+               synchronisation (majSliderActivite()/écouteur simVolumeSlider). -->
+          <div class="sim-mixer-panel">
+            <div class="sim-mixer-strip sim-mixer-strip--rouge">
+              <div class="sim-mixer-strip__label">Activité</div>
+              <div class="sim-mixer-fader-track">
+                <input type="range" id="simVolumeSlider" class="sim-mixer-fader" min="0" max="15000" step="50" aria-label="Activité, examens IRM par an" />
+              </div>
+              <input type="text" inputmode="numeric" class="sim-mixer-strip__value" id="simVolumeSliderVal" aria-label="Activité en examens IRM par an, modifiable" />
+              <div class="sim-mixer-strip__unit">examens/an</div>
+            </div>
           </div>
         </details>
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="simTrajectoireCard">
@@ -944,6 +1027,7 @@
         dessinerLegendeCamembert();
         dessinerRecap(scenarios, classe, zone, volume, rejoue);
         dessinerActe(volume);
+        majSliderActivite(volume);
       }
 
       // ---- Recettes de l'acte intellectuel du radiologue — demande de Cédric du 11/08/2026,
@@ -1390,6 +1474,53 @@
       ["simZone", "simVolume"].forEach(function (id) {
         document.getElementById(id).addEventListener("input", recalculer);
       });
+
+      // ---- Table de mixage : curseur "Activité", miroir direct de #simVolume (motif
+      // copié de simulateur-energie.html, voir skill ced4scale-simulateur-web) — jamais
+      // une donnée séparée. Le glisser écrit dans #simVolume et redéclenche recalculer(),
+      // qui rappelle majSliderActivite() pour remettre le fader ET sa case de valeur à
+      // jour (y compris depuis une mémoire rappelée, une frappe directe dans #simVolume,
+      // ou ce fader lui-même — resynchronisation redondante sans danger).
+      document.getElementById("simVolumeSlider").addEventListener("input", function () {
+        var volumeInput = document.getElementById("simVolume");
+        volumeInput.value = Math.round(parseFloat(this.value) || 0);
+        volumeInput.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+      // Case de valeur éditable au clavier, en texte libre pour garder le point comme
+      // séparateur de milliers à l'affichage (règle du site : un <input type="number">
+      // ne peut pas afficher de séparateur de milliers). Reformatée EN DIRECT à chaque
+      // frappe, curseur de saisie replacé après le même nombre de chiffres.
+      (function () {
+        var champ = document.getElementById("simVolumeSliderVal");
+        var slider = document.getElementById("simVolumeSlider");
+        champ.addEventListener("input", function () {
+          var curseurAvant = this.selectionStart;
+          var chiffresAvantCurseur = this.value.slice(0, curseurAvant).replace(/[^0-9]/g, "").length;
+          var brut = this.value.replace(/[^0-9]/g, "");
+          var valeur = brut === "" ? 0 : parseInt(brut, 10);
+          this.value = brut === "" ? "" : seuilsEntiers.format(valeur);
+          var pos = 0, chiffresVus = 0;
+          while (pos < this.value.length && chiffresVus < chiffresAvantCurseur) {
+            if (/[0-9]/.test(this.value[pos])) chiffresVus++;
+            pos++;
+          }
+          this.setSelectionRange(pos, pos);
+          if (valeur > +slider.max) slider.max = Math.ceil(valeur / 1000) * 1000;
+          slider.value = Math.min(Math.max(valeur, +slider.min), +slider.max);
+          slider.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      })();
+      // Remet le fader ET sa case de valeur à jour depuis #simVolume — appelé à chaque
+      // recalculer(), jamais seulement au chargement. Ne réécrit jamais la case
+      // actuellement en cours de frappe (document.activeElement), sinon le curseur de
+      // saisie de l'utilisateur sauterait à chaque recalcul.
+      function majSliderActivite(volume) {
+        var slider = document.getElementById("simVolumeSlider");
+        if (volume > +slider.max) slider.max = Math.ceil(volume / 1000) * 1000;
+        slider.value = Math.min(Math.max(volume, +slider.min), +slider.max);
+        var champ = document.getElementById("simVolumeSliderVal");
+        if (document.activeElement !== champ) champ.value = seuilsEntiers.format(volume);
+      }
       // Le tarif plein affiché dans "Seuils de cette classe" dépend de la zone —
       // recalcule le tableau aussi quand elle change (pas seulement les dates).
       document.getElementById("simZone").addEventListener("change", afficherSeuils);
