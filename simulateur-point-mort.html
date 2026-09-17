@@ -736,10 +736,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmInstallA">Nombre de patients par heure</label>
+            <label for="pmInstallA">Examens par heure</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmInstallA" value="4" min="0" step="0.5" />
-              <span>patients/h</span>
+              <span>FT/h</span>
             </div>
           </div>
           <div class="field">
@@ -852,10 +852,10 @@
             </div>
           </div>
           <div class="field">
-            <label for="pmInstallB">Nombre de patients par heure</label>
+            <label for="pmInstallB">Examens par heure</label>
             <div class="simulator__field-suffix">
               <input type="number" id="pmInstallB" value="4" min="0" step="0.5" />
-              <span>patients/h</span>
+              <span>FT/h</span>
             </div>
           </div>
           <div class="field">
@@ -1492,7 +1492,7 @@
         var lignes = [["Ouverture", patientsFmt.format(heuresParJour) + " h/jour"]];
         depassements.forEach(function (r) {
           lignes.push([r.machine.nomCourt + " — capacité max", patientsFmt.format(r.capaciteJour) + " patients/jour"]);
-          lignes.push([r.machine.nomCourt + " — prise en charge", patientsFmt.format(60 / r.tempsInstallation) + " patients/h"]);
+          lignes.push([r.machine.nomCourt + " — prise en charge", patientsFmt.format(60 / r.tempsInstallation) + " FT/h"]);
         });
         lignes.push(["Activité saisie", patientsFmt.format(activitePatientsJour) + " patients/jour"]);
         warningEl.innerHTML = capnoteHTML("⚠", "Activité irréaliste pour " + (depassements.length > 1 ? "ces machines" : "cette machine"),
@@ -1910,7 +1910,7 @@
           { label: "Puissance prête (sans patient)", valeurs: resultats.map(function (r) { return r.machine.pret.toFixed(2) + " kW"; }) },
           { label: "Puissance en acquisition", valeurs: resultats.map(function (r) { return r.machine.mesure.toFixed(1) + " kW"; }) },
           { label: "Durée d'acquisition", valeurs: resultats.map(function (r) { return r.machine.dureeAcquisitionMinutes + " min"; }) },
-          { label: "Nombre de patients par heure", valeurs: resultats.map(function (r) { return patientsFmt.format(60 / r.tempsInstallation) + " patients/h"; }) },
+          { label: "Examens par heure", valeurs: resultats.map(function (r) { return patientsFmt.format(60 / r.tempsInstallation) + " FT/h"; }) },
           { label: "Climatisation de la salle", valeurs: resultats.map(function (r) { return r.machine.climSalleKw.toFixed(1) + " kW"; }) },
           { label: "Surconsommation local technique", valeurs: resultats.map(function (r) { return (r.machine.coeffRefroidissementLT * 100).toFixed(0) + " %"; }) }
         ];
