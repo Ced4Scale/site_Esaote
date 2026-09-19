@@ -217,6 +217,15 @@
        mais le bouton doit rester lisible sur le dégradé (pas de changement de
        structure, juste le contexte visuel autour). */
     .un-mixer .un-info-btn { background: rgba(255,255,255,.85); }
+
+    /* Bascule Point mort en examens/jour <-> Point mort annuel (19/09/2026) */
+    #unPointMortSummary { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
+    .un-pm-toggle-btn { margin-left: auto; }
+    .un-pm-annuel { display: flex; flex-direction: column; gap: .9rem; }
+    .un-pm-annuel-machine { border-left: 4px solid var(--slot-color); border-radius: .5rem; background: var(--wash); padding: .8rem 1rem; }
+    .un-pm-annuel-machine-title { font-weight: 800; color: var(--slot-color); margin-bottom: .5rem; }
+    .un-pm-annuel-line { font-size: .92rem; line-height: 1.7; }
+    .un-pm-annuel-line strong { color: var(--slot-color); }
   </style>
 </head>
 <body class="tool-page">
@@ -731,10 +740,21 @@
            n'est pas une conversion inventée ici. Bascule progressive et CT vs IRM
            restent hors périmètre (voir consigne). -->
       <details class="simulator__chart-card simulator__chart-card--collapsible" id="unPointMortCard">
-        <summary>Point mort — nombre d'examens par jour</summary>
-        <div class="simulator__chart-wrap">
+        <summary id="unPointMortSummary">Point mort — nombre d'examens par jour
+          <button type="button" class="btn btn--sm btn--ghost un-pm-toggle-btn" id="unBtnTogglePointMortVue">Voir le point mort annuel</button>
+        </summary>
+        <div class="simulator__chart-wrap" id="unPointMortJourVue">
           <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
         </div>
+
+        <!-- Point mort ANNUEL — bascule ajoutée le 19/09/2026 (demande de Cédric) :
+             pour chaque machine, temps nécessaire pour rembourser le loyer annuel
+             et le coût annuel des manip (charge fixe, indépendante du volume —
+             effectif × coût mensuel employeur × 12, PAS la somme des coûts
+             marginaux déjà comptés dans calculerPointMortMachine), en réutilisant
+             margeParPatient telle que calculerPointMortMachine() la calcule en
+             interne — jamais une 2ᵉ formule de marge séparée. -->
+        <div class="un-pm-annuel" id="unPointMortAnnuelVue" hidden></div>
 
         <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
              Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
@@ -1268,6 +1288,12 @@
           joursParMois: Math.max(1, unJoursParMois())
         };
         params.coutMermHoraire = coutMermDepuisNet(unSalaireMensuel("Merm")) / HEURES_LEGALES_MENSUELLES;
+        // Coût mensuel employeur du MERM (net→brut→charges patronales, même
+        // conversion que coutMermHoraire ci-dessus, mais SANS diviser par les
+        // heures légales) — sert au point mort ANNUEL, charge FIXE indépendante
+        // du volume (effectif × ce coût mensuel × 12), jamais le coût marginal
+        // horaire déjà utilisé pour le point mort en examens/jour.
+        params.coutMermMensuel = coutMermDepuisNet(unSalaireMensuel("Merm"));
         params.coutSecretaireHoraire = coutMermDepuisNet(unSalaireMensuel("Secretaire")) / HEURES_LEGALES_MENSUELLES;
         params.coutCadreSanteMensuel = coutCadreDepuisNet(unSalaireMensuel("CadreSante"));
         params.coutAideManipHoraire = coutMermDepuisNet(unSalaireMensuel("AideManip")) / HEURES_LEGALES_MENSUELLES;
@@ -1293,6 +1319,11 @@
           slot: slot,
           machine: machine,
           loyer: valeurMilliers(document.getElementById("unLoyer" + suffix)),
+          // Débit horaire (Examens par heure, valeur brute du champ/fader) —
+          // sert au point mort ANNUEL (examensParJour = débit × heuresParJour),
+          // jamais dérivé à l'envers de tempsInstallation (qui vaut Infinity si
+          // le débit est à 0, division impossible).
+          debitHoraire: effectif("unInstall" + suffix),
           nombreMerm: effectif("unMerm" + suffix),
           pctMembre: membreFieldVisible ? pourcent("unMembre" + suffix) : 0,
           tempsInstallation: minutesDepuisPatientsHeure(document.getElementById("unInstall" + suffix).value),
@@ -1374,6 +1405,97 @@
         });
       }
 
+      // ---------------------------------------------------------------------
+      // Point mort ANNUEL (19/09/2026) — combien de temps pour rembourser le
+      // loyer annuel / le coût annuel des manip de chaque machine, à partir de
+      // la marge par examen déjà calculée par calculerPointMortMachine()
+      // (res.margeParPatient) — jamais une 2ᵉ formule de marge séparée.
+      // ---------------------------------------------------------------------
+      function unCalculerAnnuel(config, res, params) {
+        // examensParJour : débit horaire (Examens par heure) × heures
+        // d'ouverture réelles par jour (params.heuresParJour, déjà calculé par
+        // unHeuresParJourMoyen() pour le point mort en examens/jour).
+        var examensParJour = config.debitHoraire * params.heuresParJour;
+        var margeParJour = res.margeParPatient * examensParJour;
+        var chargeLoyerAnnuelle = config.loyer * 12;
+        var chargeManipAnnuelle = config.nombreMerm * params.coutMermMensuel * 12;
+
+        function convertir(chargeAnnuelle) {
+          // Même garde-fou que le point mort en examens/jour : marge nulle ou
+          // négative => "jamais atteint", jamais une division par zéro/NaN.
+          if (!(margeParJour > 0)) return null;
+          var totalJours = Math.max(0, chargeAnnuelle / margeParJour);
+          var joursParMoisVal = params.joursParMois;
+          var moisEntiers = Math.floor(totalJours / joursParMoisVal);
+          var resteJours = totalJours - moisEntiers * joursParMoisVal;
+          var joursEntiers = Math.floor(resteJours);
+          var fractionJour = resteJours - joursEntiers;
+          return { mois: moisEntiers, jours: joursEntiers, heures: fractionJour * params.heuresParJour };
+        }
+
+        return { loyer: convertir(chargeLoyerAnnuelle), manip: convertir(chargeManipAnnuelle) };
+      }
+
+      function unFormatDuree(d) {
+        if (!d) return "jamais atteint";
+        var heures = Math.round(d.heures);
+        return milliersFmt.format(d.mois) + " mois, " + milliersFmt.format(d.jours) + " jour" + (d.jours === 1 ? "" : "s") +
+          ", " + milliersFmt.format(heures) + " heure" + (heures === 1 ? "" : "s");
+      }
+
+      function unRenderPointMortAnnuel(entries) {
+        var container = document.getElementById("unPointMortAnnuelVue");
+        while (container.firstChild) container.removeChild(container.firstChild);
+        entries.forEach(function (e) {
+          var bloc = document.createElement("div");
+          bloc.className = "un-pm-annuel-machine";
+          bloc.style.setProperty("--slot-color", e.color);
+
+          var titre = document.createElement("div");
+          titre.className = "un-pm-annuel-machine-title";
+          titre.textContent = e.label;
+          bloc.appendChild(titre);
+
+          var ligneLoyer = document.createElement("div");
+          ligneLoyer.className = "un-pm-annuel-line";
+          ligneLoyer.appendChild(document.createTextNode("Loyer annuel remboursé après : "));
+          var fortLoyer = document.createElement("strong");
+          fortLoyer.textContent = unFormatDuree(e.annuel.loyer);
+          ligneLoyer.appendChild(fortLoyer);
+          bloc.appendChild(ligneLoyer);
+
+          var ligneManip = document.createElement("div");
+          ligneManip.className = "un-pm-annuel-line";
+          ligneManip.appendChild(document.createTextNode("Coût annuel des manip remboursé après : "));
+          var fortManip = document.createElement("strong");
+          fortManip.textContent = unFormatDuree(e.annuel.manip);
+          ligneManip.appendChild(fortManip);
+          bloc.appendChild(ligneManip);
+
+          container.appendChild(bloc);
+        });
+      }
+
+      // ---------------------------------------------------------------------
+      // Bouton bascule Point mort en examens/jour <-> Point mort annuel — clic
+      // à l'intérieur du <summary>, preventDefault+stopPropagation pour ne pas
+      // aussi (re)fermer le cadre repliable (motif du skill).
+      // ---------------------------------------------------------------------
+      var unPointMortVueAnnuelle = false;
+      function unAppliquerVuePointMort() {
+        document.getElementById("unPointMortJourVue").hidden = unPointMortVueAnnuelle;
+        document.getElementById("unPointMortAnnuelVue").hidden = !unPointMortVueAnnuelle;
+        document.getElementById("unBtnTogglePointMortVue").textContent = unPointMortVueAnnuelle
+          ? "Voir le point mort en examens/jour"
+          : "Voir le point mort annuel";
+      }
+      document.getElementById("unBtnTogglePointMortVue").addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        unPointMortVueAnnuelle = !unPointMortVueAnnuelle;
+        unAppliquerVuePointMort();
+      });
+
       function unRenderPointMort() {
         // Resynchronise la table de mixage sur l'état réel des champs de
         // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
@@ -1394,10 +1516,12 @@
           return {
             label: config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"),
             color: UN_SLOT_COLORS[slot],
-            value: res.pointMortJour
+            value: res.pointMortJour,
+            annuel: unCalculerAnnuel(config, res, params)
           };
         });
         unDessinerBarresPointMort(entries);
+        unRenderPointMortAnnuel(entries);
       }
 
       // ---------------------------------------------------------------------
@@ -1488,6 +1612,7 @@
       // Initialisation
       // ---------------------------------------------------------------------
       majActiviteLabel();
+      unAppliquerVuePointMort();
     })();
   </script>
 </body>
