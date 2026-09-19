@@ -183,6 +183,40 @@
 
     /* Étape 3 : espace réservé */
     .un-placeholder-card { background: #fff; border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 2.4rem; text-align: center; color: var(--ink-soft); }
+
+    /* Table de mixage du point mort (motif "Table de mixage (faders verticaux)"
+       du skill) — panneau sombre à dégradé turquoise, faders natifs en
+       writing-mode vertical, accent-color posé explicitement par piste. */
+    .un-mixer {
+      margin-top: 1.2rem; border-radius: var(--radius); padding: 1.3rem 1.2rem 1.1rem;
+      background: linear-gradient(180deg, #5cfff2 0%, #0f8f92 55%, #072e2c 100%);
+      color: #eafffd; display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start;
+    }
+    .un-mixer__header { flex: 1 1 100%; display: flex; align-items: center; gap: .5rem; margin-bottom: .2rem; }
+    .un-mixer__title { font-weight: 700; font-size: .88rem; }
+    .un-mixer__group { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+    .un-mixer__group-title { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: center; opacity: .9; }
+    .un-mixer__faders { display: flex; gap: 1.1rem; }
+    .un-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
+    .un-mixer__fader-col[hidden] { display: none; }
+    .un-mixer__fader-col-slot { font-size: .68rem; font-weight: 800; color: var(--fader-color); background: #fff; border-radius: 999px; width: 1.3rem; height: 1.3rem; display: flex; align-items: center; justify-content: center; }
+    .un-mixer__fader-col input[type="range"] {
+      writing-mode: vertical-lr; direction: rtl; width: 10px; height: 118px;
+      accent-color: var(--fader-color); background: transparent; cursor: pointer;
+    }
+    .un-mixer__fader-value {
+      width: 3.7rem; text-align: center; font-size: .8rem; font-weight: 600;
+      border-radius: .4rem; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14);
+      color: #fff; padding: .18rem .2rem;
+    }
+    .un-mixer__fader-value:focus-visible { outline: 2px solid #fff; }
+    .un-mixer__check-group { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; justify-content: center; min-width: 12rem; }
+    .un-mixer__check-group label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; }
+    .un-mixer__check-group input[type="checkbox"] { width: 17px; height: 17px; margin: 0; }
+    /* Bulle d'aide 💡 sur fond sombre : reprendre les mêmes variables .un-info-wrap
+       mais le bouton doit rester lisible sur le dégradé (pas de changement de
+       structure, juste le contexte visuel autour). */
+    .un-mixer .un-info-btn { background: rgba(255,255,255,.85); }
   </style>
 </head>
 <body class="tool-page">
@@ -701,6 +735,67 @@
         <div class="simulator__chart-wrap">
           <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
         </div>
+
+        <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
+             Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
+             en poste) + une case à cocher NOUVELLE (Acte intellectuel, absente de
+             simulateur-point-mort.html — voir commentaire JS). Déplacer un fader
+             ou cocher/décocher recalcule et redessine le graphique EN DIRECT,
+             contrairement au reste du formulaire (lu seulement au clic "Voir les
+             résultats possibles" sur l'écran 2). -->
+        <div class="un-mixer" id="unMixerPointMort">
+          <div class="un-mixer__header">
+            <span class="un-mixer__title">Table de mixage — ajuste le point mort en direct</span>
+            <span class="un-info-wrap">
+              <button type="button" class="un-info-btn" id="unInfoMixerBtn" aria-expanded="false" aria-controls="unInfoMixerPop" aria-label="À propos de la table de mixage">💡</button>
+              <div class="un-info-pop" id="unInfoMixerPop" hidden>Ces curseurs pilotent les mêmes champs que le formulaire de l'écran précédent (Examens par heure, Manip en poste) — les déplacer redessine immédiatement le graphique ci-dessus, sans repasser par le bouton « Voir les résultats possibles ».</div>
+            </span>
+          </div>
+
+          <div class="un-mixer__group">
+            <span class="un-mixer__group-title">Examens par heure</span>
+            <div class="un-mixer__faders">
+              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+                <span class="un-mixer__fader-col-slot">A</span>
+                <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
+                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
+              </div>
+              <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
+                <span class="un-mixer__fader-col-slot">B</span>
+                <input type="range" id="unMixInstallBFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine B" />
+                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallBVal" value="4" aria-label="Examens par heure — Machine B, valeur" />
+              </div>
+            </div>
+          </div>
+
+          <div class="un-mixer__group">
+            <span class="un-mixer__group-title">Manip en poste</span>
+            <div class="un-mixer__faders">
+              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+                <span class="un-mixer__fader-col-slot">A</span>
+                <input type="range" id="unMixMermAFader" min="0" max="3" step="0.1" value="1" aria-label="Manip en poste — Machine A" />
+                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermAVal" value="1" aria-label="Manip en poste — Machine A, valeur" />
+              </div>
+              <div class="un-mixer__fader-col" id="unMixMermBCol" style="--fader-color:#eb6834">
+                <span class="un-mixer__fader-col-slot">B</span>
+                <input type="range" id="unMixMermBFader" min="0" max="3" step="0.1" value="2" aria-label="Manip en poste — Machine B" />
+                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermBVal" value="2" aria-label="Manip en poste — Machine B, valeur" />
+              </div>
+            </div>
+          </div>
+
+          <div class="un-mixer__check-group">
+            <span class="un-mixer__group-title">Recette</span>
+            <label>
+              <input type="checkbox" id="unActeIntellectuelActif" checked />
+              <span>Facturer l'acte intellectuel</span>
+            </label>
+            <span class="un-info-wrap">
+              <button type="button" class="un-info-btn" id="unInfoActeBtn" aria-expanded="false" aria-controls="unInfoActePop" aria-label="À propos de l'acte intellectuel">💡</button>
+              <div class="un-info-pop" id="unInfoActePop" hidden>Ajoute la valeur de l'acte intellectuel du radiologue (55&nbsp;€ à 69&nbsp;€ selon la répartition « membre »/« autre région » réglée pour chaque machine à l'écran précédent) à la recette par patient utilisée pour le point mort — à cocher seulement si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple). Réglage propre à cet outil unifié : simulateur-point-mort.html (fichier réel) ajoute toujours cette recette, sans case à cocher.</div>
+            </span>
+          </div>
+        </div>
       </details>
     </section>
 
@@ -1140,7 +1235,12 @@
       // présent tel quel dans le fichier source, pas une conversion inventée). ----
       function calculerPointMortMachine(m, params) {
         var recetteFt = recettePatient(m.machine, params.dateIso, params.zone, params.amortiKey);
-        var acte = acteIntellectuelMoyen(m.pctMembre);
+        // Acte intellectuel : recette ajoutée seulement si la case "Facturer
+        // l'acte intellectuel" de la table de mixage est cochée — case NOUVELLE
+        // pour cet outil unifié (simulateur-point-mort.html, fichier réel,
+        // ajoute toujours cette recette, sans bascule). Lue via .checked,
+        // jamais .value (motif "cases à cocher" du skill).
+        var acte = params.acteIntellectuelActif ? acteIntellectuelMoyen(m.pctMembre) : 0;
         var recette = recetteFt + acte;
         var elec = electriciteMensuellePointMort(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
         var rh = m.nombreCadreSante * params.coutCadreSanteMensuel;
@@ -1174,6 +1274,7 @@
         params.coutInfirmiereHoraire = coutMermDepuisNet(unSalaireMensuel("Infirmiere")) / HEURES_LEGALES_MENSUELLES;
         params.coutManipAlternanceHoraire = coutAlternanceDepuisNet(unSalaireMensuel("ManipAlternance")) / HEURES_LEGALES_MENSUELLES;
         params.coutRisMensuel = valeurMilliers(document.getElementById("unCoutRis"));
+        params.acteIntellectuelActif = document.getElementById("unActeIntellectuelActif").checked;
         return params;
       }
 
@@ -1274,9 +1375,19 @@
       }
 
       function unRenderPointMort() {
+        // Resynchronise la table de mixage sur l'état réel des champs de
+        // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
+        // changé de machine, ce qui réinitialise Examens/h et Manip en poste
+        // à leurs valeurs par défaut) — n'a aucun effet quand c'est un fader
+        // qui vient lui-même de déclencher ce recalcul (valeur déjà écrite
+        // dans le champ source juste avant, la resynchronisation est un no-op).
+        unMixSyncTous();
         var params = unConstruireParamsPointMort();
+        var uneSeuleMachine = document.getElementById("unColB").hidden;
+        document.getElementById("unMixInstallBCol").hidden = uneSeuleMachine;
+        document.getElementById("unMixMermBCol").hidden = uneSeuleMachine;
         var slots = [0];
-        if (!document.getElementById("unColB").hidden) slots.push(1);
+        if (!uneSeuleMachine) slots.push(1);
         var entries = slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
           var res = calculerPointMortMachine(config, params);
@@ -1288,6 +1399,90 @@
         });
         unDessinerBarresPointMort(entries);
       }
+
+      // ---------------------------------------------------------------------
+      // Table de mixage — synchronisation bidirectionnelle fader <-> champ
+      // texte <-> champ source de l'écran 2 (motif "Table de mixage (faders
+      // verticaux)" du skill). Drapeau JS explicite pour éviter toute boucle,
+      // jamais document.activeElement (pas fiable pour distinguer une frappe
+      // utilisateur d'une écriture programmatique — même piège documenté dans
+      // le skill).
+      // ---------------------------------------------------------------------
+      var unMixEcritureProg = false;
+      var UN_MIX_FIELDS = [
+        { faderId: "unMixInstallAFader", valId: "unMixInstallAVal", sourceId: "unInstallA" },
+        { faderId: "unMixInstallBFader", valId: "unMixInstallBVal", sourceId: "unInstallB" },
+        { faderId: "unMixMermAFader", valId: "unMixMermAVal", sourceId: "unMermA" },
+        { faderId: "unMixMermBFader", valId: "unMixMermBVal", sourceId: "unMermB" }
+      ];
+
+      // Lit la valeur ACTUELLE du champ source (écran 2) et met à jour le
+      // fader + son champ texte miroir — jamais l'inverse ici (le champ
+      // source reste la référence tant que ce n'est pas le fader/son champ
+      // texte qui vient de changer, voir unMixEcrireVersSource ci-dessous).
+      function unMixSyncDepuisSource(champ) {
+        var source = document.getElementById(champ.sourceId);
+        var fader = document.getElementById(champ.faderId);
+        var val = document.getElementById(champ.valId);
+        var min = parseFloat(fader.min), max = parseFloat(fader.max);
+        var v = parseFloat(source.value);
+        if (!isFinite(v)) v = min;
+        v = Math.max(min, Math.min(max, v));
+        unMixEcritureProg = true;
+        fader.value = v;
+        val.value = patientsFmt.format(v);
+        unMixEcritureProg = false;
+      }
+
+      function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); }
+
+      // Écrit une nouvelle valeur (venant du fader ou de son champ texte) vers
+      // les 3 éléments (fader, champ texte, champ source de l'écran 2), puis
+      // relance le calcul/dessin — c'est CE qui rend la table de mixage "en
+      // direct", contrairement au reste du formulaire.
+      function unMixEcrireVersSource(champ, v) {
+        var fader = document.getElementById(champ.faderId);
+        var min = parseFloat(fader.min), max = parseFloat(fader.max);
+        v = Math.max(min, Math.min(max, v));
+        unMixEcritureProg = true;
+        fader.value = v;
+        document.getElementById(champ.valId).value = patientsFmt.format(v);
+        document.getElementById(champ.sourceId).value = v;
+        unMixEcritureProg = false;
+        unRenderPointMort();
+      }
+
+      UN_MIX_FIELDS.forEach(function (champ) {
+        var fader = document.getElementById(champ.faderId);
+        var val = document.getElementById(champ.valId);
+        var source = document.getElementById(champ.sourceId);
+
+        fader.addEventListener("input", function () {
+          if (unMixEcritureProg) return;
+          unMixEcrireVersSource(champ, parseFloat(fader.value) || 0);
+        });
+        val.addEventListener("input", function () {
+          if (unMixEcritureProg) return;
+          var v = parseFloat(String(val.value).replace(",", "."));
+          if (!isFinite(v)) return;
+          unMixEcrireVersSource(champ, v);
+        });
+        // Taper directement dans le champ de l'écran 2 (Examens par heure /
+        // Manip en poste) doit aussi déplacer le fader correspondant et
+        // recalculer, s'il est déjà visible sur l'écran Résultats.
+        source.addEventListener("input", function () {
+          if (unMixEcritureProg) return;
+          unMixSyncDepuisSource(champ);
+          if (!screenResultats.hidden) unRenderPointMort();
+        });
+      });
+
+      document.getElementById("unActeIntellectuelActif").addEventListener("change", function () {
+        unRenderPointMort();
+      });
+
+      wireInfoBtn("unInfoMixerBtn", "unInfoMixerPop");
+      wireInfoBtn("unInfoActeBtn", "unInfoActePop");
 
       // ---------------------------------------------------------------------
       // Initialisation
