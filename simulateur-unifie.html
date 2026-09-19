@@ -680,17 +680,28 @@
       </div>
     </section>
 
-    <!-- ================= ÉCRAN 3 — espace réservé ================= -->
+    <!-- ================= ÉCRAN 3 — Résultats ================= -->
     <section id="unScreenResultats" hidden>
       <div class="simulator__intro">
         <button type="button" class="btn btn--sm btn--ghost" id="unBtnRetourForm" style="margin-bottom:1rem">◂ Revenir au formulaire</button>
         <span class="kicker">Simulateur unifié</span>
         <h1>Résultats</h1>
       </div>
-      <div class="un-placeholder-card">
-        <p><strong>Résultats — à construire.</strong></p>
-        <p>Cet écran sera bâti dans une prochaine étape séparée.</p>
-      </div>
+
+      <!-- Point mort — seul écran de résultat construit à cette étape (19/09/2026,
+           demande de Cédric). Calcul et graphique portés tels quels de
+           simulateur-point-mort.html (calculerMachine → calculerPointMortMachine,
+           mêmes constantes/taux) — seule différence : unité affichée en
+           examens/JOUR au lieu de la comparaison mensuelle, alors que pointMortJour
+           existe déjà dans le fichier source (pointMortMois / joursParMois), ce
+           n'est pas une conversion inventée ici. Bascule progressive et CT vs IRM
+           restent hors périmètre (voir consigne). -->
+      <details class="simulator__chart-card simulator__chart-card--collapsible" id="unPointMortCard">
+        <summary>Point mort — nombre d'examens par jour</summary>
+        <div class="simulator__chart-wrap">
+          <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
+        </div>
+      </details>
     </section>
 
   </main>
@@ -727,7 +738,7 @@
       });
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { afficherEcran("resultats"); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); afficherEcran("resultats"); });
 
       function choisirProjet(n) {
         projetActuel = n;
@@ -1039,6 +1050,244 @@
       document.getElementById("unClose").addEventListener("click", function () {
         if (document.referrer) window.history.back(); else window.location.href = "index.html";
       });
+
+      // ---------------------------------------------------------------------
+      // Écran 3 — Point mort, en nombre d'examens par jour (19/09/2026).
+      // Calcul intégralement porté de simulateur-point-mort.html (fonctions
+      // acteIntellectuelMoyen / recettePatient / electriciteMensuelle /
+      // calculerMachine, mêmes constantes de taux net→brut→charges patronales),
+      // pas une reconstruction — seule l'unité affichée change (pointMortJour
+      // existe déjà tel quel dans le fichier source, ce n'est pas une conversion
+      // inventée). Tarif PLEIN uniquement (recettePatient ne lit jamais le
+      // barème dégressif), conforme à ce que fait réellement point-mort.html.
+      // ---------------------------------------------------------------------
+      var UN_SLOT_COLORS = ["#2a78d6", "#eb6834"];
+
+      // ---- Jours/heures d'ouverture (identique à pmJoursParMois/pmHeuresParJourMoyen) ----
+      function unJoursOuvertsParSemaine() {
+        return 5 + (document.getElementById("unOuvertSamedi").checked ? 1 : 0) + (document.getElementById("unOuvertDimanche").checked ? 1 : 0);
+      }
+      function unJoursParMois() { return unJoursOuvertsParSemaine() * (52 / 12); }
+      function unHeuresEffectives(segment) {
+        var amplitude = Math.max(0, parseFloat(document.getElementById("unHeures" + segment).value) || 0);
+        var coupureCochee = document.getElementById("unCoupure" + segment).checked;
+        var duree = coupureCochee ? Math.max(0, parseFloat(document.getElementById("unCoupureDuree" + segment).value) || 0) : 0;
+        return Math.max(0, amplitude - duree);
+      }
+      function unHeuresParJourMoyen() {
+        var samedi = document.getElementById("unOuvertSamedi").checked;
+        var dimanche = document.getElementById("unOuvertDimanche").checked;
+        var total = 5 * unHeuresEffectives("Semaine") + (samedi ? unHeuresEffectives("Samedi") : 0) + (dimanche ? unHeuresEffectives("Dimanche") : 0);
+        var jours = unJoursOuvertsParSemaine();
+        return jours > 0 ? total / jours : 0;
+      }
+
+      // ---- Salaire mensuel réel d'un rôle, quel que soit le mode d'affichage
+      // mensuel/annuel du panneau Salaires (identique à pmSalaireMensuel). ----
+      function unSalaireMensuel(role) {
+        var v = valeurMilliers(document.getElementById("unNet" + role));
+        return unSalaireModeAnnuel ? v / 12 : v;
+      }
+
+      // ---- Coût réel employeur net→brut→charges patronales (mêmes 3 taux que
+      // point-mort.html : non-cadre, cadre de santé, manip en alternance). ----
+      var TAUX_NET_VERS_BRUT_NON_CADRE = 0.78, TAUX_CHARGES_PATRONALES_NON_CADRE = 1.42;
+      function coutMermDepuisNet(netAvantIR) { return (netAvantIR / TAUX_NET_VERS_BRUT_NON_CADRE) * TAUX_CHARGES_PATRONALES_NON_CADRE; }
+      var TAUX_NET_VERS_BRUT_CADRE = 0.75, TAUX_CHARGES_PATRONALES_CADRE = 1.45;
+      function coutCadreDepuisNet(netAvantIR) { return (netAvantIR / TAUX_NET_VERS_BRUT_CADRE) * TAUX_CHARGES_PATRONALES_CADRE; }
+      var TAUX_NET_VERS_BRUT_ALTERNANCE = 0.96, TAUX_CHARGES_PATRONALES_ALTERNANCE = 1.08;
+      function coutAlternanceDepuisNet(netAvantIR) { return (netAvantIR / TAUX_NET_VERS_BRUT_ALTERNANCE) * TAUX_CHARGES_PATRONALES_ALTERNANCE; }
+      var HEURES_LEGALES_MENSUELLES = 151.67;
+
+      // ---- Recette par patient : acte intellectuel (tarif fixe, pas de barème
+      // dégressif) + forfait technique au tarif PLEIN (recettePatient ci-dessous
+      // ne lit jamais de barème dégressif, comme point-mort.html). ----
+      var TARIF_ACTE_MEMBRE = 55, TARIF_ACTE_AUTRE = 69;
+      function acteIntellectuelMoyen(pctMembre) {
+        var p = Math.max(0, Math.min(100, pctMembre)) / 100;
+        return p * TARIF_ACTE_MEMBRE + (1 - p) * TARIF_ACTE_AUTRE;
+      }
+      function classKeyFromChampT(t) {
+        if (t < 0.5) return "le05";
+        if (t < 1.5) return "mid";
+        if (t === 1.5) return "t15";
+        return "sup15";
+      }
+      function recettePatient(machine, dateIso, zone, amortiKey) {
+        var classe = FT_CLASSES[classKeyFromChampT(machine.champT)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+      }
+      function minutesDepuisPatientsHeure(patientsHeure) {
+        var p = Math.max(0, parseFloat(patientsHeure) || 0);
+        return p > 0 ? 60 / p : Infinity;
+      }
+      function electriciteMensuellePointMort(machine, heuresParJour, joursParMois, prixKwh) {
+        var coeffLT = machine.coeffRefroidissementLT;
+        var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
+        var socleMensuel = puissanceSocle * 24 * 30 * prixKwh;
+        var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
+        var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
+        var deltaMesure = (machine.mesure - machine.eteint) * (1 + coeffLT);
+        var coutVariablePatient = deltaMesure * (machine.dureeAcquisitionMinutes / 60) * prixKwh;
+        return { fixeMensuel: socleMensuel + entrePatientsMensuel, variablePatient: coutVariablePatient };
+      }
+
+      // ---- Point mort d'une machine (charges fixes mensuelles / marge par
+      // patient), converti en patients/jour — identique à calculerMachine() de
+      // point-mort.html (pointMortJour = pointMortMois / joursParMois, déjà
+      // présent tel quel dans le fichier source, pas une conversion inventée). ----
+      function calculerPointMortMachine(m, params) {
+        var recetteFt = recettePatient(m.machine, params.dateIso, params.zone, params.amortiKey);
+        var acte = acteIntellectuelMoyen(m.pctMembre);
+        var recette = recetteFt + acte;
+        var elec = electriciteMensuellePointMort(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
+        var rh = m.nombreCadreSante * params.coutCadreSanteMensuel;
+        var autresChargesFixes = m.salle + m.assurance + m.entretien + m.injecteur + m.fractionRis * params.coutRisMensuel;
+        var chargesFixesMensuelles = m.loyer + rh + elec.fixeMensuel + autresChargesFixes;
+        var rhVariable = (m.nombreMerm * params.coutMermHoraire
+          + m.nombreSecretaire * params.coutSecretaireHoraire
+          + m.nombreAideManip * params.coutAideManipHoraire
+          + m.nombreInfirmiere * params.coutInfirmiereHoraire
+          + m.nombreManipAlternance * params.coutManipAlternanceHoraire) * (m.tempsInstallation / 60);
+        var coutContraste = m.contrasteCout * (m.contrastePct / 100);
+        var margeParPatient = recette - elec.variablePatient - rhVariable - coutContraste;
+        var pointMortMois = margeParPatient > 0 ? chargesFixesMensuelles / margeParPatient : Infinity;
+        var pointMortJour = pointMortMois / params.joursParMois;
+        return { pointMortJour: pointMortJour, pointMortMois: pointMortMois, margeParPatient: margeParPatient, chargesFixesMensuelles: chargesFixesMensuelles };
+      }
+
+      function unConstruireParamsPointMort() {
+        var params = {
+          dateIso: document.getElementById("unDate").value,
+          zone: document.getElementById("unZone").value,
+          amortiKey: document.getElementById("unAmorti").value,
+          prixKwh: Math.max(0, parseFloat(document.getElementById("unKwh").value) || 0),
+          heuresParJour: Math.max(0, unHeuresParJourMoyen()),
+          joursParMois: Math.max(1, unJoursParMois())
+        };
+        params.coutMermHoraire = coutMermDepuisNet(unSalaireMensuel("Merm")) / HEURES_LEGALES_MENSUELLES;
+        params.coutSecretaireHoraire = coutMermDepuisNet(unSalaireMensuel("Secretaire")) / HEURES_LEGALES_MENSUELLES;
+        params.coutCadreSanteMensuel = coutCadreDepuisNet(unSalaireMensuel("CadreSante"));
+        params.coutAideManipHoraire = coutMermDepuisNet(unSalaireMensuel("AideManip")) / HEURES_LEGALES_MENSUELLES;
+        params.coutInfirmiereHoraire = coutMermDepuisNet(unSalaireMensuel("Infirmiere")) / HEURES_LEGALES_MENSUELLES;
+        params.coutManipAlternanceHoraire = coutAlternanceDepuisNet(unSalaireMensuel("ManipAlternance")) / HEURES_LEGALES_MENSUELLES;
+        params.coutRisMensuel = valeurMilliers(document.getElementById("unCoutRis"));
+        return params;
+      }
+
+      // ---- Paramètres propres à Machine A/B, lus directement dans le formulaire
+      // de l'écran 2 (mêmes champs que point-mort.html, préfixés "un" au lieu de
+      // "pm") — jamais de valeur inventée. « Part membre » forcée à 0 si le champ
+      // est masqué (scanner du projet 03, qui n'a pas de tarif « membre »). ----
+      function unConfigMachinePointMort(slot) {
+        var suffix = slot === 0 ? "A" : "B";
+        var select = slot === 0 ? selectA : selectB;
+        var machine = machineParKey(select.value);
+        function effectif(id) { var el = document.getElementById(id); return el ? Math.max(0, parseFloat(el.value) || 0) : 0; }
+        function pourcent(id) { return Math.max(0, Math.min(100, effectif(id))); }
+        var membreFieldVisible = !document.getElementById("unMembreField" + suffix).hidden;
+        return {
+          slot: slot,
+          machine: machine,
+          loyer: valeurMilliers(document.getElementById("unLoyer" + suffix)),
+          nombreMerm: effectif("unMerm" + suffix),
+          pctMembre: membreFieldVisible ? pourcent("unMembre" + suffix) : 0,
+          tempsInstallation: minutesDepuisPatientsHeure(document.getElementById("unInstall" + suffix).value),
+          nombreSecretaire: unPosteAnnexeIntegre("Secretaire") ? effectif("unSecretaire" + suffix) : 0,
+          nombreCadreSante: unPosteAnnexeIntegre("CadreSante") ? effectif("unCadreSante" + suffix) : 0,
+          nombreAideManip: unPosteAnnexeIntegre("AideManip") ? effectif("unAideManip" + suffix) : 0,
+          nombreInfirmiere: unPosteAnnexeIntegre("Infirmiere") ? effectif("unInfirmiere" + suffix) : 0,
+          nombreManipAlternance: unPosteAnnexeIntegre("ManipAlternance") ? effectif("unManipAlternance" + suffix) : 0,
+          salle: valeurMilliers(document.getElementById("unSalle" + suffix)),
+          assurance: valeurMilliers(document.getElementById("unAssurance" + suffix)),
+          entretien: valeurMilliers(document.getElementById("unEntretien" + suffix)),
+          injecteur: valeurMilliers(document.getElementById("unInjecteur" + suffix)),
+          fractionRis: effectif("unRis" + suffix),
+          contrasteCout: effectif("unContrasteCout"),
+          contrastePct: pourcent("unContrastePct" + suffix)
+        };
+      }
+
+      // ---- Histogramme en bâtons horizontaux — Machine A en haut, Machine B en
+      // bas (demande de Cédric du 19/09/2026), échelle commune aux 2 barres pour
+      // pouvoir les comparer visuellement. Une seule barre si Machine B est
+      // masquée ("Une seule IRM"). Nom de machine toujours sur une seule ligne
+      // (texte SVG, pas de retour à la ligne possible), valeur au bout de la
+      // barre — jamais de nombre à 4 chiffres ici (valeurs à 1 décimale), mais
+      // patientsFmt (de-DE) reste centralisé comme partout ailleurs sur le site. ----
+      function unDessinerBarresPointMort(entries) {
+        var svg = document.getElementById("unPointMortChart");
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        var svgWidth = 640;
+        var leftPad = 6;
+        var rightPad = 150; // réservé pour "12,4 examens/jour" affiché après la barre
+        var barAreaWidth = svgWidth - leftPad - rightPad;
+        var barHeight = 36;
+        var ligneHauteur = 26 + 6 + barHeight; // libellé + espace + barre
+        var espacement = 18;
+        var topPad = 18;
+        var svgHeight = topPad * 2 + entries.length * ligneHauteur + Math.max(0, entries.length - 1) * espacement;
+        svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
+
+        var valeursFinies = entries.map(function (e) { return e.value; }).filter(function (v) { return isFinite(v) && v > 0; });
+        var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
+
+        var ns = "http://www.w3.org/2000/svg";
+        entries.forEach(function (e, i) {
+          var rowTop = topPad + i * (ligneHauteur + espacement);
+          var labelY = rowTop + 16;
+          var barY = rowTop + 26 + 6;
+          var estFini = isFinite(e.value) && e.value > 0;
+          var largeur = estFini ? Math.max(4, (e.value / maxVal) * barAreaWidth) : barAreaWidth * 0.55;
+
+          var label = document.createElementNS(ns, "text");
+          label.setAttribute("x", leftPad);
+          label.setAttribute("y", labelY);
+          label.setAttribute("font-size", "15");
+          label.setAttribute("font-weight", "700");
+          label.setAttribute("fill", e.color);
+          label.textContent = e.label;
+          svg.appendChild(label);
+
+          var rect = document.createElementNS(ns, "rect");
+          rect.setAttribute("x", leftPad);
+          rect.setAttribute("y", barY);
+          rect.setAttribute("width", largeur);
+          rect.setAttribute("height", barHeight);
+          rect.setAttribute("rx", 6);
+          rect.setAttribute("fill", e.color);
+          if (!estFini) rect.setAttribute("opacity", "0.35");
+          svg.appendChild(rect);
+
+          var valeur = document.createElementNS(ns, "text");
+          valeur.setAttribute("x", leftPad + largeur + 10);
+          valeur.setAttribute("y", barY + barHeight / 2 + 5);
+          valeur.setAttribute("font-size", "14");
+          valeur.setAttribute("font-weight", estFini ? "700" : "600");
+          valeur.setAttribute("fill", estFini ? "#1c1c1c" : "#8a8a8a");
+          valeur.textContent = estFini ? patientsFmt.format(e.value) + " examens/jour" : "jamais atteint";
+          svg.appendChild(valeur);
+        });
+      }
+
+      function unRenderPointMort() {
+        var params = unConstruireParamsPointMort();
+        var slots = [0];
+        if (!document.getElementById("unColB").hidden) slots.push(1);
+        var entries = slots.map(function (slot) {
+          var config = unConfigMachinePointMort(slot);
+          var res = calculerPointMortMachine(config, params);
+          return {
+            label: config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"),
+            color: UN_SLOT_COLORS[slot],
+            value: res.pointMortJour
+          };
+        });
+        unDessinerBarresPointMort(entries);
+      }
 
       // ---------------------------------------------------------------------
       // Initialisation
