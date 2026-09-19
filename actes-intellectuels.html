@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <script>
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
+        if (v && v.expiresAt && v.expiresAt > Date.now()) {
+          window.__ced4scaleProfile = v.profile || null;
+        } else {
+          document.documentElement.style.visibility = "hidden";
+        }
+      } catch (e) {
+        document.documentElement.style.visibility = "hidden";
+      }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Actes intellectuels IRM et scanner — synthèse maison — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="assets/actes-intellectuels-data.js?v=20260919a"></script>
+  <style>
+    /* Sans ça, .simulator__layout (grid-template-columns:1fr) et .form-card ne se réduisent
+       pas sous la largeur de leur contenu (motif "1fr = minmax(auto,1fr)" déjà documenté
+       dans le skill simulateur-web) — provoque un débordement horizontal de toute la page
+       sur mobile, pas seulement du tableau. Correctif local à cette page uniquement. */
+    .simulator__layout, .form-card { min-width: 0; }
+    .ai-filtres { display: flex; flex-wrap: wrap; gap: .9rem; margin-bottom: 1.1rem; }
+    .ai-filtres .field { min-width: 200px; flex: 1 1 200px; margin-bottom: 0; }
+    .ai-table td, .ai-table th { vertical-align: top; }
+    .ai-table .ai-libelle { display: block; font-size: .74rem; color: var(--ink-soft); margin-top: .15rem; }
+    .ai-table .ai-code { display: block; font-size: .7rem; color: var(--ink-soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; margin-top: .2rem; }
+    .ai-table td:last-child, .ai-table th:last-child { text-align: right; white-space: nowrap; }
+    .ai-specialites { display: flex; flex-wrap: wrap; gap: .3rem; }
+    .ai-specialites span { display: inline-block; background: var(--wash); border: 1px solid var(--line-2); border-radius: 999px; padding: .1rem .55rem; font-size: .7rem; color: var(--ink-soft); white-space: nowrap; }
+    .ai-count { font-size: .8rem; color: var(--ink-soft); margin-bottom: .6rem; }
+    .ai-badge-combine { display: inline-block; margin-left: .4rem; font-size: .65rem; font-weight: 700; color: #9c5b00; background: #fff3d9; border-radius: 999px; padding: .05rem .5rem; white-space: nowrap; }
+    .ai-cas-liste { margin: .6rem 0 0; padding-left: 1.2rem; }
+    .ai-cas-liste li { margin-bottom: .55rem; }
+  </style>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-esaote.svg" alt="Esaote" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Synthèse maison</span>
+      <strong>Actes intellectuels — IRM et scanner</strong>
+    </div>
+    <button class="document-viewer__close" id="aiClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Nomenclature CCAM</span>
+      <h1>Actes intellectuels IRM et scanner</h1>
+      <p>La part « acte médical » de l'examen — hors forfait technique (voir la <a href="forfait-technique.html?date=2026-01-01">synthèse forfait technique</a>) — tarif de base opposable (secteur 1), avec la spécialité qui la réalise en pratique et le mode de dépassement d'honoraires possible.</p>
+      <p class="simulator__source">Source : nomenclature CCAM v80.0 (novembre 2025), consultée le 19/09/2026 sur aideaucodage.fr. La CCAM ne distingue pas l'articulation précise pour les membres (un seul code par segment, quelle que soit l'articulation explorée).</p>
+    </div>
+
+    <div class="simulator__layout" style="grid-template-columns:1fr">
+      <div class="form-card">
+        <div class="ai-filtres">
+          <div class="field">
+            <label for="aiFiltreModalite">Modalité</label>
+            <select id="aiFiltreModalite">
+              <option value="">Toutes (IRM et scanner)</option>
+              <option value="IRM">IRM</option>
+              <option value="Scanner">Scanner</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aiFiltreSpecialite">Spécialité qui réalise l'acte</label>
+            <select id="aiFiltreSpecialite">
+              <option value="">Toutes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aiFiltreRecrutement">Mode de recrutement typique</label>
+            <select id="aiFiltreRecrutement">
+              <option value="">Tous</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="aiTri">Trier par</label>
+            <select id="aiTri">
+              <option value="zone">Zone anatomique (A → Z)</option>
+              <option value="tarifAsc">Tarif croissant</option>
+              <option value="tarifDesc">Tarif décroissant</option>
+              <option value="specialite">Spécialité</option>
+            </select>
+          </div>
+        </div>
+
+        <p class="ai-count" id="aiCount"></p>
+
+        <div style="overflow-x:auto">
+          <table class="stats-table simulator__table ai-table" id="aiTable">
+            <thead>
+              <tr>
+                <th>Modalité</th>
+                <th>Zone anatomique</th>
+                <th>Spécialité(s)</th>
+                <th>Recrutement typique</th>
+                <th>Tarif acte intellectuel</th>
+              </tr>
+            </thead>
+            <tbody id="aiTableBody"></tbody>
+          </table>
+        </div>
+
+        <p class="simulator__hint" style="margin-top:1rem">La spécialité indiquée est une déduction Ced4Scale par pratique courante en France, <strong>pas une règle officielle</strong> de la nomenclature CCAM — plusieurs spécialités qualifiées peuvent légalement facturer le même acte. Le mode de recrutement est une estimation du même type. <span class="ai-badge-combine">Acte combiné</span> signale un tarif qui inclut déjà un geste (injection intra-articulaire, intradiscale ou intrathécale), pas un simple examen d'imagerie seul. Liste de référence, pas exhaustive à 100 % de la nomenclature.</p>
+
+        <div class="form-card" style="margin-top:1.6rem">
+          <h2 style="margin-top:0">Le dépassement d'honoraires — comment il fonctionne, sans le chiffrer</h2>
+          <p>Le tarif ci-dessus est le tarif <strong>opposable</strong> (secteur 1, remboursé intégralement par l'Assurance Maladie hors participation forfaitaire). Au-delà, le médecin peut facturer un dépassement selon son secteur d'exercice :</p>
+          <ul class="ai-cas-liste">
+            <li><strong>Secteur 1 sans droit à dépassement</strong> — aucun dépassement possible, sauf exigence particulière du patient (horaire, consultation sans rendez-vous) qui reste rare en imagerie.</li>
+            <li><strong>Secteur 1 avec option OPTAM/OPTAM-CO</strong> — dépassement encadré et modéré, plafonné par engagement avec l'Assurance Maladie (taux moyen de dépassement contrôlé), meilleur remboursement pour le patient qu'un secteur 2 hors option.</li>
+            <li><strong>Secteur 2 (honoraires libres)</strong> — dépassement fixé « avec tact et mesure », sans plafond réglementaire chiffré ni barème officiel publié. C'est pourquoi cette page n'affiche aucun montant de dépassement : toute fourchette serait une estimation non sourcée, pas une donnée officielle.</li>
+          </ul>
+          <p class="simulator__hint">Le droit à dépassement dépend du médecin et de son secteur d'exercice, pas de l'acte CCAM lui-même — un même acte (ex. IRM du genou) peut être facturé au tarif opposable pur chez un radiologue secteur 1, ou avec un dépassement libre chez un confrère en secteur 2, dans le même centre d'imagerie.</p>
+        </div>
+
+        <div class="form-card" style="margin-top:1.2rem">
+          <h2 style="margin-top:0">Plusieurs actes le même jour — la règle de cumul</h2>
+          <p>Quand plusieurs actes d'imagerie CCAM sont réalisés <strong>au cours de la même séance, par le même médecin, sur le même patient</strong>, la nomenclature applique une règle de dégressivité (dispositions générales de la CCAM) — indépendante de la modalité (IRM et/ou scanner) :</p>
+          <ul class="ai-cas-liste">
+            <li><strong>Un seul acte d'imagerie dans la journée</strong> → facturé à taux plein, au tarif de la ligne correspondante ci-dessus.</li>
+            <li><strong>Deux actes d'imagerie le même jour, même séance</strong> (ex. IRM rachis cervical + IRM rachis lombaire, ou IRM et scanner de la même zone) → l'acte au tarif le plus élevé est facturé à taux plein, le second à <strong>50 % de son tarif</strong>.</li>
+            <li><strong>Trois actes ou plus le même jour</strong> → au-delà des deux premiers, les actes suivants ne sont en général <strong>pas facturés séparément</strong> (considérés inclus), sauf association explicitement prévue comme cumulable par la nomenclature — à vérifier acte par acte sur le texte officiel avant de construire un devis, cette règle générale connaît des exceptions.</li>
+            <li><strong>IRM et scanner combinés le même jour sur des zones différentes</strong> (ex. bilan associant un scanner thoraco-abdomino-pelvien et une IRM cérébrale) → même mécanique de cumul, sans lien avec la modalité : c'est le montant des deux actes qui détermine lequel passe à taux plein et lequel est minoré à 50 %.</li>
+          </ul>
+          <p class="simulator__hint">Règle générale des dispositions générales de la CCAM (article III-3), résumée ici pour la lecture courante — certaines associations d'actes ont un statut particulier (non soumises à réduction, ou au contraire non cumulables du tout) prévu explicitement par la nomenclature officielle, à vérifier au cas par cas si un devis précis en dépend.</p>
+        </div>
+
+        <div class="form-card" style="margin-top:1.2rem">
+          <h2 style="margin-top:0">Mode de recrutement — ce que recouvrent les 3 catégories</h2>
+          <ul class="ai-cas-liste">
+            <li><strong>Adressé par un spécialiste</strong> — l'examen fait suite à une consultation chez un confrère (chirurgien, rhumatologue, cardiologue, gynécologue...) qui prescrit l'imagerie pour affiner un diagnostic déjà engagé.</li>
+            <li><strong>Médecin traitant ou spécialiste</strong> — l'examen est prescrit aussi bien en 1ʳᵉ intention par le médecin généraliste que par un spécialiste, selon le contexte clinique (typiquement les examens de l'appareil locomoteur).</li>
+            <li><strong>Médecin traitant, urgences ou bilan hospitalier</strong> — l'examen est le plus souvent prescrit hors consultation spécialisée programmée : suspicion aiguë (AVC, traumatisme), ou bilan systématique dans un parcours hospitalier.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var euros = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      var COMBINES = ["LHQH005", "AFQH003", "MZQH001", "NZQH002"];
+
+      var selModalite = document.getElementById("aiFiltreModalite");
+      var selSpecialite = document.getElementById("aiFiltreSpecialite");
+      var selRecrutement = document.getElementById("aiFiltreRecrutement");
+      var selTri = document.getElementById("aiTri");
+      var tbody = document.getElementById("aiTableBody");
+      var compteur = document.getElementById("aiCount");
+
+      // Remplissage dynamique des options Spécialité/Recrutement à partir des données réelles —
+      // jamais une liste en dur qui pourrait diverger si une ligne de ACTES_INTELLECTUELS change.
+      var specialitesVues = {};
+      var recrutementsVus = {};
+      ACTES_INTELLECTUELS.forEach(function (a) {
+        a.specialites.forEach(function (s) { specialitesVues[s] = true; });
+        recrutementsVus[a.recrutement] = true;
+      });
+      Object.keys(specialitesVues).sort().forEach(function (s) {
+        var opt = document.createElement("option");
+        opt.value = s; opt.textContent = s;
+        selSpecialite.appendChild(opt);
+      });
+      Object.keys(recrutementsVus).sort().forEach(function (r) {
+        var opt = document.createElement("option");
+        opt.value = r; opt.textContent = r;
+        selRecrutement.appendChild(opt);
+      });
+
+      function rendre() {
+        var modalite = selModalite.value;
+        var specialite = selSpecialite.value;
+        var recrutement = selRecrutement.value;
+        var tri = selTri.value;
+
+        var lignes = ACTES_INTELLECTUELS.filter(function (a) {
+          if (modalite && a.modalite !== modalite) return false;
+          if (specialite && a.specialites.indexOf(specialite) === -1) return false;
+          if (recrutement && a.recrutement !== recrutement) return false;
+          return true;
+        });
+
+        lignes = lignes.slice().sort(function (a, b) {
+          if (tri === "tarifAsc") return a.tarif - b.tarif;
+          if (tri === "tarifDesc") return b.tarif - a.tarif;
+          if (tri === "specialite") return a.specialites[0].localeCompare(b.specialites[0]) || a.zone.localeCompare(b.zone);
+          return a.zone.localeCompare(b.zone) || a.tarif - b.tarif;
+        });
+
+        compteur.textContent = lignes.length + (lignes.length > 1 ? " actes affichés" : " acte affiché") + " sur " + ACTES_INTELLECTUELS.length + ".";
+
+        tbody.innerHTML = "";
+        lignes.forEach(function (a) {
+          var tr = document.createElement("tr");
+
+          var tdModalite = document.createElement("td");
+          tdModalite.textContent = a.modalite;
+          tr.appendChild(tdModalite);
+
+          var tdZone = document.createElement("td");
+          var estCombine = COMBINES.indexOf(a.code.split(" ")[0]) !== -1;
+          tdZone.innerHTML = "<strong>" + a.zone + "</strong>" + (estCombine ? '<span class="ai-badge-combine">Acte combiné</span>' : "") +
+            '<span class="ai-libelle">' + a.libelle + "</span>" +
+            '<span class="ai-code">' + a.code + "</span>";
+          tr.appendChild(tdZone);
+
+          var tdSpe = document.createElement("td");
+          var wrapSpe = document.createElement("div");
+          wrapSpe.className = "ai-specialites";
+          a.specialites.forEach(function (s) {
+            var span = document.createElement("span");
+            span.textContent = s;
+            wrapSpe.appendChild(span);
+          });
+          tdSpe.appendChild(wrapSpe);
+          tr.appendChild(tdSpe);
+
+          var tdRecrutement = document.createElement("td");
+          tdRecrutement.textContent = a.recrutement;
+          tr.appendChild(tdRecrutement);
+
+          var tdTarif = document.createElement("td");
+          tdTarif.innerHTML = "<strong>" + euros.format(a.tarif) + "</strong>";
+          tr.appendChild(tdTarif);
+
+          tbody.appendChild(tr);
+        });
+      }
+
+      [selModalite, selSpecialite, selRecrutement, selTri].forEach(function (el) {
+        el.addEventListener("change", rendre);
+      });
+      rendre();
+
+      function goBack() {
+        if (window.history.length > 1) {
+          window.history.back();
+        } else {
+          window.location.href = "simulateurs.html";
+        }
+      }
+      document.getElementById("aiClose").addEventListener("click", goBack);
+    })();
+  </script>
+  <script src="assets/site-gate.js"></script>
+
+</body>
+</html>
