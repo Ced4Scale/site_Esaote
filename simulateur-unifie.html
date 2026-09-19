@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <!--
+    ============================================================================
+    simulateur-unifie.html — PHASE 1 (écran "Quel est mon projet ?" + formulaire
+    à 3 colonnes Paramètres/Machine A/Machine B). Écran 3 = espace réservé.
+
+    Construit le 19/09/2026 en lisant intégralement les sections concernées de
+    simulateur-point-mort.html, simulateur-ct-vs-irm.html et
+    simulateur-bascule-oscan.html (skill ced4scale-simulateur-web) — pas de
+    reprise du brouillon artefact abandonné (bug de case manquante). Choix
+    documentés ci-dessous là où les 3 fichiers réels divergent entre eux, ou
+    où le comportement RÉEL constaté diffère de ce que le libellé de la
+    consigne suggérait :
+
+    1. Écran 1 "Quel est mon projet ?" (3 cartes) n'existe dans AUCUN des 3
+       fichiers réels — c'est une construction neuve pour cet outil unifié,
+       pas une reprise fidèle d'un écran existant.
+
+    2. Panneau ⚙ "Réglages avancés" en MODALE séparée : ABANDONNÉ après
+       vérification des 3 fichiers réels. La modale ⚙ pour le panneau commun
+       "Paramètres" a été retirée des 3 fichiers (point-mort.html le
+       14/09/2026 d'après son propre historique de commentaires ; bascule-oscan.html
+       et ct-vs-irm.html ont aujourd'hui exactement la MÊME structure : un
+       simple <details class="simulator__field-group bascule-hyp-section"> en
+       accordéon dans la colonne de gauche, SANS modale). Seuls des panneaux ⚙
+       PAR MACHINE existent encore sur bascule-oscan/ct-vs-irm (réglages
+       spécifiques à une machine) — hors périmètre de cette phase. Le motif
+       ⏴/⏵ (masquer la colonne de gauche) reste, lui, bien réel et repris tel
+       quel ; il n'y a simplement plus de ⚙ à côté de lui dans aucun des 3
+       fichiers actuels.
+
+    3. Ordre interne du panneau "Paramètres" : Forfait technique (Date → Zone
+       → Amorti) → SALAIRES → Horaires d'ouverture → Charges partagées — suit
+       la règle générale du skill ("Ordre des questions dans un panneau ⚙ ...
+       Date → Zone → Amorti → (jour/an) → Salaire → le reste"), PAS l'ordre
+       actuellement affiché par point-mort.html (qui a Horaires avant
+       Salaires, hérité d'avant que cette règle soit généralisée).
+
+    4. Machine B TOUJOURS visible par défaut, comme les 3 fichiers réels —
+       PAS derrière une question de validation "Je souhaite un comparatif" +
+       bouton Valider (invention du brouillon artefact abandonné, absente des
+       3 fichiers réels). Pour les projets 01/02 (comparaison de 2 IRM), on
+       reprend le radio "Comparer deux IRM / Une seule IRM" de
+       point-mort.html (Machine B se masque avec [hidden] si "Une seule IRM"
+       est choisi, jamais de validation bloquante). Le projet 03 (remplacement
+       de scanner) n'a pas ce choix : toujours 2 machines, comme
+       ct-vs-irm.html qui n'a jamais eu ce radio.
+
+    5. Sens des colonnes pour le projet 03 : Machine A = la machine EN PLACE
+       (le scanner), Machine B = la machine CANDIDATE (l'IRM Esaote) — choix
+       délibéré, à l'inverse de ct-vs-irm.html (qui met l'IRM Esaote en slot 0
+       et le scanner en slot 1). Retenu pour coller au sens métier du projet
+       tel que décrit ("un scanner en place, étudier son remplacement par une
+       IRM Esaote") : la colonne A représente toujours "ce qui existe déjà".
+
+    6. Liste des machines par projet : projets 01/02 → liste IRM complète
+       (Esaote + concurrence), identique à MACHINES de point-mort.html.
+       Projet 03, colonne A → liste des scanners (type "ct" de
+       assets/machines-energie-data.js, 5 modèles réels) ; colonne B → IRM
+       Esaote UNIQUEMENT (comme MACHINES_IRM de ct-vs-irm.html, pas la
+       concurrence — on étudie un remplacement PAR une IRM Esaote).
+
+    7. "Part des examens membre" et "Autre charge" (loyer salle/assurance/
+       entretien/injecteur/part du RIS) sur la machine SCANNER (projet 03,
+       colonne A) : ct-vs-irm.html réel n'a NI l'un NI l'autre sur sa colonne
+       scanner. La consigne de cette tâche demande explicitement ces champs
+       "charges fixes propres à la machine" pour Machine A ET Machine B — on
+       les ajoute donc aussi au scanner (repris tels quels de point-mort.html),
+       mais "Part des examens membre" reste masquée pour un scanner (elle n'a
+       pas de sens pour la tarification CT, cohérent avec l'absence de ce
+       champ sur ct-vs-irm.html).
+
+    8. Écran 3 : simple espace réservé ("Résultats — à construire") avec un
+       bouton d'accès — aucun calcul, aucun graphique. Hors périmètre de
+       cette phase.
+
+    9. Champs "€" (loyer, salaires, charges) : reformatage au blur uniquement
+       (formaterMilliers/valeurMilliers), pas de reformatage en direct à
+       chaque frappe — fidèle au comportement RÉEL des 3 fichiers sources
+       (qui n'ont pas encore adopté le motif de reformatage en direct décrit
+       ailleurs dans le skill pour un autre outil).
+    ============================================================================
+  -->
+  <script>
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
+        if (v && v.expiresAt && v.expiresAt > Date.now()) {
+          window.__ced4scaleProfile = v.profile || null;
+        } else {
+          document.documentElement.style.visibility = "hidden";
+        }
+      } catch (e) {
+        document.documentElement.style.visibility = "hidden";
+      }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur unifié — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
+  <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+  <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
+  <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
+  <style>
+    /* ---- Écran 1 : cartes de choix de projet ---- */
+    .un-projet-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 1.6rem; }
+    @media (max-width: 900px) { .un-projet-grille { grid-template-columns: 1fr; } }
+    .un-projet-card {
+      display: block; text-align: left; width: 100%; background: #fff; border: 1px solid var(--line);
+      border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow-sm); cursor: pointer;
+      font-family: inherit; transition: border-color .15s, box-shadow .15s, transform .15s;
+    }
+    .un-projet-card:hover, .un-projet-card:focus-visible { border-color: var(--red); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    .un-projet-card__num { display: inline-block; font-weight: 800; font-size: .78rem; color: #fff; background: var(--red); border-radius: 999px; padding: .15rem .6rem; margin-bottom: .7rem; }
+    .un-projet-card h3 { margin: 0 0 .5rem; font-size: 1.05rem; }
+    .un-projet-card p { margin: 0; color: var(--ink-soft); font-size: .9rem; line-height: 1.5; }
+
+    /* ---- Écran 2 : layout à 3 colonnes (Paramètres / Machine A / Machine B) ----
+       Override local de .simulator__layout (300px minmax(0,1fr) dans styles.css) :
+       on reprend la même variante @media (empiler sous 780px) que la règle
+       d'origine — sinon la règle plate posée ici l'emporterait à spécificité égale
+       même sous le seuil de la media query (piège déjà documenté dans le skill). */
+    .un-layout3 { display: grid; grid-template-columns: minmax(260px, 300px) 1fr 1fr; gap: 1.4rem; align-items: start; }
+    @media (max-width: 1000px) { .un-layout3 { grid-template-columns: minmax(0, 1fr); } }
+    .un-layout3.un-panel-hidden .un-col-params { display: none; }
+    .un-col-params { position: relative; }
+    .un-col-machine { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow-sm); }
+
+    .un-gear-btn {
+      background: none; border: 0; padding: .1rem .2rem; margin: 0 0 1.2rem; cursor: pointer;
+      font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
+    }
+    .un-gear-btn:hover, .un-gear-btn:focus-visible { opacity: 1; }
+    .un-panel-toggle-btn { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
+    #unBtnShowPanel[hidden] { display: none; }
+
+    /* Bulle d'aide 💡 (motif "Phrase explicative fixe repliée derrière une icône
+       ampoule" du skill, repris tel quel — aucun ancêtre en position:sticky ici). */
+    .un-info-wrap {
+      position: relative; display: inline-block;
+      --un-info-bg: #fff6e0; --un-info-bg-hover: #ffe9ad; --un-info-bd: #f0d998;
+      --un-info-fg: #8a6d1e; --un-info-pop-bg: #fffaf0; --un-info-pop-fg: #6b5b2a;
+    }
+    .un-info-btn {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--un-info-bd);
+      background: var(--un-info-bg); color: var(--un-info-fg); font-size: .95rem; line-height: 1;
+      cursor: pointer; padding: 0;
+    }
+    .un-info-btn:hover, .un-info-btn[aria-expanded="true"] { background: var(--un-info-bg-hover); }
+    .un-info-pop {
+      position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 4;
+      background: var(--un-info-pop-bg); border: 1px solid var(--un-info-bd); border-radius: .6rem;
+      box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem;
+      font-size: .82rem; line-height: 1.45; color: var(--un-info-pop-fg);
+      width: max-content; max-width: min(calc(100vw - 4.5rem), 340px); overflow-x: auto;
+    }
+    .un-info-pop[hidden] { display: none; }
+    .un-info-pop--table { max-width: min(calc(100vw - 4.5rem), 420px); }
+    .un-info-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .un-info-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    .un-info-table tr:last-child td { border-bottom: none; }
+    .un-info-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
+
+    /* Case togglée par [hidden] qui a aussi une classe display: — motif "Un élément
+       togglé par hidden avec sa propre règle display" du skill : correctif explicite
+       systématique, jamais laissé à la règle UA seule. */
+    .un-inline-check { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .un-inline-check[hidden] { display: none; }
+
+    /* Sous-accordéon "Autre RH"/"Autre jour"/"Autre charge" — triangle plus petit,
+       sans name partagé (repris tel quel de .pm-autre-rh / .bascule-hyp-section). */
+    .un-autre-rh { margin: .3rem 0 1rem; }
+    .un-autre-rh > summary { font-size: .85rem; font-weight: 600; color: var(--ink-soft); cursor: pointer; margin-bottom: .5rem; }
+
+    /* Étape 3 : espace réservé */
+    .un-placeholder-card { background: #fff; border: 1px dashed var(--line-2); border-radius: var(--radius); padding: 2.4rem; text-align: center; color: var(--ink-soft); }
+  </style>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>Simulateur unifié</strong>
+    </div>
+    <button class="document-viewer__close" id="unClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+
+    <!-- ================= ÉCRAN 1 — Quel est mon projet ? ================= -->
+    <section id="unScreenProjet">
+      <div class="simulator__intro">
+        <span class="kicker">Simulateur unifié</span>
+        <h1>Quel est mon projet ?</h1>
+        <p>Choisissez la situation qui correspond à votre projet — le formulaire qui suit s'adapte en conséquence.</p>
+      </div>
+      <div class="un-projet-grille">
+        <button type="button" class="un-projet-card" data-projet="1">
+          <span class="un-projet-card__num">01</span>
+          <h3>Première installation d'IRM</h3>
+          <p>Aucune IRM n'est encore en place — comparez deux modèles envisagés pour choisir votre premier équipement.</p>
+        </button>
+        <button type="button" class="un-projet-card" data-projet="2">
+          <span class="un-projet-card__num">02</span>
+          <h3>IRM supplémentaire</h3>
+          <p>Une IRM tourne déjà — évaluez l'ajout d'une seconde machine à côté de la première.</p>
+        </button>
+        <button type="button" class="un-projet-card" data-projet="3">
+          <span class="un-projet-card__num">03</span>
+          <h3>Remplacement d'un scanner</h3>
+          <p>Un scanner (CT) est en place — étudiez son remplacement par une IRM Esaote.</p>
+        </button>
+      </div>
+    </section>
+
+    <!-- ================= ÉCRAN 2 — Formulaire à 3 colonnes ================= -->
+    <section id="unScreenForm" hidden>
+      <div class="simulator__intro">
+        <button type="button" class="btn btn--sm btn--ghost" id="unBtnRetourProjet" style="margin-bottom:1rem">◂ Changer de projet</button>
+        <span class="kicker" id="unProjetKicker">Projet</span>
+        <h1 id="unProjetTitre">Paramètres de la simulation</h1>
+      </div>
+
+      <div class="un-layout3" id="unLayout3">
+        <!-- ---- Colonne 1 : Paramètres (commun) ---- -->
+        <div class="un-col-params">
+          <button type="button" class="un-gear-btn un-panel-toggle-btn" id="unBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
+
+          <details class="simulator__field-group bascule-hyp-section" name="unMainAccordion" style="border-left-color:#6b5b95">
+            <summary>Paramètres
+              <span class="un-info-wrap">
+                <button type="button" class="un-info-btn" id="unInfoReglagesBtn" aria-expanded="false" aria-controls="unInfoReglagesPop" aria-label="À propos de ces réglages">💡</button>
+                <div class="un-info-pop" id="unInfoReglagesPop" hidden>Valeurs par défaut raisonnables, à ajuster si votre situation diffère — inutile d'y toucher pour une première simulation.</div>
+              </span>
+            </summary>
+
+            <details class="bascule-hyp-section" name="unParamAccordion">
+              <summary>Forfait technique</summary>
+              <div class="field">
+                <label for="unDate">Date d'application des F.T.</label>
+                <select id="unDate"></select>
+              </div>
+              <div class="field">
+                <label for="unZone">Zone tarifaire (forfait technique)</label>
+                <select id="unZone">
+                  <option value="province">Province</option>
+                  <option value="idf">Île-de-France (hors Paris)</option>
+                  <option value="paris">Paris</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="unAmorti">Machine amortie ou non ?</label>
+                <select id="unAmorti">
+                  <option value="nonAmorti">Non amortie</option>
+                  <option value="amorti">Amortie (&gt; 7 ans)</option>
+                </select>
+              </div>
+            </details>
+
+            <details class="bascule-hyp-section" name="unParamAccordion">
+              <summary>Salaires</summary>
+              <div class="field">
+                <label for="unSalaireUnite">Vous raisonnez en salaire mensuel ou annuel ? <span class="simulator__hint" style="display:block;font-weight:400">S'applique aux 6 salaires ci-dessous.</span></label>
+                <select id="unSalaireUnite">
+                  <option value="mensuel">Mensuel</option>
+                  <option value="annuel" selected>Annuel</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="unNetMerm">Salaire MERM net avant impôt</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="unNetMerm" value="21.600" />
+                  <span id="unNetMermSuffix">€ / an</span>
+                </div>
+              </div>
+              <details class="un-autre-rh">
+                <summary>Autre RH</summary>
+                <div class="field">
+                  <label for="unIntegreSecretaire">Secrétaire médicale</label>
+                  <select id="unIntegreSecretaire">
+                    <option value="non" selected>Pas intégré au simu</option>
+                    <option value="oui">Intégré au simu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="unNetSecretaire">Salaire secrétaire médicale net avant impôt</label>
+                  <div class="simulator__field-suffix">
+                    <input type="text" inputmode="numeric" id="unNetSecretaire" value="19.800" />
+                    <span id="unNetSecretaireSuffix">€ / an</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="unIntegreCadreSante">Cadre de santé</label>
+                  <select id="unIntegreCadreSante">
+                    <option value="non" selected>Pas intégré au simu</option>
+                    <option value="oui">Intégré au simu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="unNetCadreSante">Salaire cadre de santé net avant impôt</label>
+                  <div class="simulator__field-suffix">
+                    <input type="text" inputmode="numeric" id="unNetCadreSante" value="33.600" />
+                    <span id="unNetCadreSanteSuffix">€ / an</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="unIntegreAideManip">Aide-manip</label>
+                  <select id="unIntegreAideManip">
+                    <option value="non" selected>Pas intégré au simu</option>
+                    <option value="oui">Intégré au simu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="unNetAideManip">Salaire aide-manip net avant impôt</label>
+                  <div class="simulator__field-suffix">
+                    <input type="text" inputmode="numeric" id="unNetAideManip" value="19.200" />
+                    <span id="unNetAideManipSuffix">€ / an</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="unIntegreInfirmiere">Infirmière</label>
+                  <select id="unIntegreInfirmiere">
+                    <option value="non" selected>Pas intégré au simu</option>
+                    <option value="oui">Intégré au simu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="unNetInfirmiere">Salaire infirmière net avant impôt</label>
+                  <div class="simulator__field-suffix">
+                    <input type="text" inputmode="numeric" id="unNetInfirmiere" value="24.000" />
+                    <span id="unNetInfirmiereSuffix">€ / an</span>
+                  </div>
+                </div>
+                <div class="field">
+                  <label for="unIntegreManipAlternance">Manip en alternance</label>
+                  <select id="unIntegreManipAlternance">
+                    <option value="non" selected>Pas intégré au simu</option>
+                    <option value="oui">Intégré au simu</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="unNetManipAlternance">Salaire manip en alternance net avant impôt</label>
+                  <div class="simulator__field-suffix">
+                    <input type="text" inputmode="numeric" id="unNetManipAlternance" value="9.600" />
+                    <span id="unNetManipAlternanceSuffix">€ / an</span>
+                  </div>
+                </div>
+              </details>
+              <span class="un-info-wrap">
+                <button type="button" class="un-info-btn" id="unInfoTauxBtn" aria-expanded="false" aria-controls="unInfoTauxPop" aria-label="À propos des taux employeur utilisés">💡</button>
+                <div class="un-info-pop un-info-pop--table" id="unInfoTauxPop" hidden>
+                  <table class="un-info-table">
+                    <tbody>
+                      <tr><td>Non-cadre (MERM, secrétaire, aide-manip, infirmière)</td><td>~78 % net/brut, +42 % charges patronales</td></tr>
+                      <tr><td>Cadre de santé</td><td>~75 % net/brut, +45 % (retraite cadre plus élevée)</td></tr>
+                      <tr><td>Manip en alternance</td><td>Taux calés sur une moyenne d'âge 18-22 ans (grille officielle du salaire d'un apprenti en % du SMIC) — plus d'exonération patronale spécifique à l'apprentissage depuis 2019, mais réduction générale très favorable sur un bas salaire</td></tr>
+                    </tbody>
+                  </table>
+                  <p style="margin:.5rem 0 0">Coût réel employeur = net avant impôt → brut → charges patronales. ⚠️ La loi de finance change chaque année les seuils et taux de l'apprentissage — à revérifier avant chaque nouvelle année civile.</p>
+                </div>
+              </span>
+            </details>
+
+            <details class="bascule-hyp-section" name="unParamAccordion">
+              <summary>Horaires d'ouverture</summary>
+              <div class="field">
+                <label for="unHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unHeuresSemaine" value="8" min="0" max="24" step="0.5" />
+                  <span>h/jour</span>
+                </div>
+              </div>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:-.5rem 0 .8rem">
+                <input type="checkbox" id="unCoupureSemaine" style="width:16px;height:16px;margin:0" />
+                <span>Coupure dans la journée (lundi-vendredi) ?</span>
+              </label>
+              <div class="field" id="unCoupureDureeSemaineWrap" hidden style="margin:-.4rem 0 .8rem">
+                <label for="unCoupureDureeSemaine">Durée de la coupure</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unCoupureDureeSemaine" value="1" min="0" step="0.25" />
+                  <span>heures</span>
+                </div>
+              </div>
+
+              <details class="un-autre-rh">
+                <summary>Autre jour</summary>
+                <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                  <input type="checkbox" id="unOuvertSamedi" style="width:16px;height:16px;margin:0" />
+                  <span>Ouvert le samedi</span>
+                </label>
+                <div class="field" id="unHeuresSamediWrap" hidden>
+                  <label for="unHeuresSamedi">Amplitude d'ouverture, samedi</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="unHeuresSamedi" value="4" min="0" max="24" step="0.5" />
+                    <span>h/jour</span>
+                  </div>
+                </div>
+                <label id="unCoupureSamediLabel" class="un-inline-check" hidden>
+                  <input type="checkbox" id="unCoupureSamedi" style="width:16px;height:16px;margin:0" />
+                  <span>Coupure le samedi ?</span>
+                </label>
+                <div class="field" id="unCoupureDureeSamediWrap" hidden style="margin:-.4rem 0 .8rem">
+                  <label for="unCoupureDureeSamedi">Durée de la coupure</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="unCoupureDureeSamedi" value="1" min="0" step="0.25" />
+                    <span>heures</span>
+                  </div>
+                </div>
+
+                <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
+                  <input type="checkbox" id="unOuvertDimanche" style="width:16px;height:16px;margin:0" />
+                  <span>Ouvert le dimanche</span>
+                </label>
+                <div class="field" id="unHeuresDimancheWrap" hidden>
+                  <label for="unHeuresDimanche">Amplitude d'ouverture, dimanche</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="unHeuresDimanche" value="4" min="0" max="24" step="0.5" />
+                    <span>h/jour</span>
+                  </div>
+                </div>
+                <label id="unCoupureDimancheLabel" class="un-inline-check" hidden>
+                  <input type="checkbox" id="unCoupureDimanche" style="width:16px;height:16px;margin:0" />
+                  <span>Coupure le dimanche ?</span>
+                </label>
+                <div class="field" id="unCoupureDureeDimancheWrap" hidden style="margin:-.4rem 0 .8rem">
+                  <label for="unCoupureDureeDimanche">Durée de la coupure</label>
+                  <div class="simulator__field-suffix">
+                    <input type="number" id="unCoupureDureeDimanche" value="1" min="0" step="0.25" />
+                    <span>heures</span>
+                  </div>
+                </div>
+              </details>
+              <p class="simulator__hint" id="unJoursTotalTxt" style="margin:.8rem 0 0"></p>
+            </details>
+
+            <details class="bascule-hyp-section" name="unParamAccordion">
+              <summary>Charges partagées</summary>
+              <div class="field">
+                <label for="unKwh">Coût du kWh</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unKwh" value="0.20" min="0" step="0.01" />
+                  <span>€ TTC</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="unContrasteCout">Coût du produit de contraste, par injection (partagé)</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unContrasteCout" value="0" min="0" step="0.5" />
+                  <span>€</span>
+                </div>
+              </div>
+              <div class="field">
+                <label for="unCoutRis">Coût RIS + robot de gravure + imprimante (partagé)</label>
+                <div class="simulator__field-suffix">
+                  <input type="text" inputmode="numeric" id="unCoutRis" value="0" />
+                  <span>€ / mois</span>
+                </div>
+                <span class="un-info-wrap">
+                  <button type="button" class="un-info-btn" id="unInfoRisBtn" aria-expanded="false" aria-controls="unInfoRisPop" aria-label="Comment répartir ce coût">💡</button>
+                  <div class="un-info-pop" id="unInfoRisPop" hidden>Coût total pour le centre — la répartition entre les machines comparées se règle avec le champ "Part du RIS..." de chaque machine (fraction, ex. 0,5 = la moitié du coût).</div>
+                </span>
+              </div>
+            </details>
+          </details>
+
+          <details class="simulator__field-group bascule-hyp-section" name="unMainAccordion" style="border-left-color:#1baf7a" open>
+            <summary>Votre activité</summary>
+            <div class="field">
+              <label for="unActiviteMode">Vous raisonnez plutôt en</label>
+              <select id="unActiviteMode">
+                <option value="jour" selected>Patients par jour</option>
+                <option value="an">Patients par an</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="unActivite" id="unActiviteLabel">Nombre de patients par jour</label>
+              <input type="number" id="unActivite" value="15" min="0" step="0.5" />
+            </div>
+            <p class="simulator__hint" id="unActiviteEquivalent"></p>
+          </details>
+
+          <div class="field" id="unNbMachinesField" style="margin-top:1.2rem">
+            <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
+            <div class="simulator__toggle">
+              <label><input type="radio" name="unNbMachines" value="2" checked /> Comparer deux IRM</label>
+              <label><input type="radio" name="unNbMachines" value="1" /> Une seule IRM</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---- Colonne 2 : Machine A ---- -->
+        <div class="un-col-machine" id="unColA">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" id="unTitreA">Machine A</h4>
+          <div class="field">
+            <label for="unMachineA" id="unMachineALabel">Choix IRM</label>
+            <select id="unMachineA"></select>
+          </div>
+          <div class="field">
+            <label for="unLoyerA" id="unLoyerALabel">Loyer de l'IRM, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="text" inputmode="numeric" id="unLoyerA" value="5.700" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="unLoyerHintA"></p>
+          <div class="field">
+            <label for="unMermA">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unMermA" value="1" min="0" step="0.1" />
+              <span>ETP</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="unAutresPostesHintA" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (colonne Paramètres).</p>
+          <div class="field" hidden>
+            <label for="unSecretaireA">Secrétaire médicale (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unSecretaireA" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unCadreSanteA">Cadre de santé (charge fixe, poste souvent partagé)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unCadreSanteA" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unAideManipA">Aide-manip (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unAideManipA" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unInfirmiereA">Infirmière (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unInfirmiereA" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unManipAlternanceA">Manip en alternance (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unManipAlternanceA" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field">
+            <label for="unInstallA">Examens par heure</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unInstallA" value="4" min="0" step="0.5" />
+              <span>FT/h</span>
+            </div>
+          </div>
+          <div class="field" id="unMembreFieldA">
+            <label for="unMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unMembreA" value="25" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
+          </div>
+          <details class="un-autre-rh">
+            <summary>Autre charge</summary>
+            <div class="field">
+              <label for="unContrastePctA">Part des examens injectés (produit de contraste)</label>
+              <div class="simulator__field-suffix"><input type="number" id="unContrastePctA" value="0" min="0" max="100" step="5" /><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="unSalleA">Loyer de la salle</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unSalleA" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unAssuranceA">Assurance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unAssuranceA" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unEntretienA">Entretien / nettoyage</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unEntretienA" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unInjecteurA">Injecteur, avec maintenance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unInjecteurA" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unRisA">Part du RIS + graveur + imprimante (partagé, voir Paramètres)</label>
+              <div class="simulator__field-suffix"><input type="number" id="unRisA" value="0" min="0" step="0.1" /><span>fraction</span></div>
+            </div>
+          </details>
+        </div>
+
+        <!-- ---- Colonne 3 : Machine B ---- -->
+        <div class="un-col-machine" id="unColB">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" id="unTitreB">Machine B</h4>
+          <div class="field">
+            <label for="unMachineB" id="unMachineBLabel">Choix IRM</label>
+            <select id="unMachineB"></select>
+          </div>
+          <div class="field">
+            <label for="unLoyerB" id="unLoyerBLabel">Loyer de l'IRM, SAV inclus</label>
+            <div class="simulator__field-suffix">
+              <input type="text" inputmode="numeric" id="unLoyerB" value="11.500" />
+              <span>€ / mois</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="unLoyerHintB"></p>
+          <div class="field">
+            <label for="unMermB">Manip en poste (tous profils confondus, ex. 1 manip + 1 infirmière = 2)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unMermB" value="2" min="0" step="0.1" />
+              <span>ETP</span>
+            </div>
+          </div>
+          <p class="simulator__hint" id="unAutresPostesHintB" style="margin:-.4rem 0 .8rem" hidden>Autres postes — n'apparaissent ici que pour les postes réglés sur « Intégré au simu » dans « Autre RH » (colonne Paramètres).</p>
+          <div class="field" hidden>
+            <label for="unSecretaireB">Secrétaire médicale (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unSecretaireB" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unCadreSanteB">Cadre de santé (charge fixe, poste souvent partagé)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unCadreSanteB" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unAideManipB">Aide-manip (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unAideManipB" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unInfirmiereB">Infirmière (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unInfirmiereB" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field" hidden>
+            <label for="unManipAlternanceB">Manip en alternance (aide pendant l'examen)</label>
+            <div class="simulator__field-suffix"><input type="number" id="unManipAlternanceB" value="0" min="0" step="0.1" /><span>ETP</span></div>
+          </div>
+          <div class="field">
+            <label for="unInstallB">Examens par heure</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unInstallB" value="4" min="0" step="0.5" />
+              <span>FT/h</span>
+            </div>
+          </div>
+          <div class="field" id="unMembreFieldB">
+            <label for="unMembreB">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unMembreB" value="25" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
+          </div>
+          <details class="un-autre-rh">
+            <summary>Autre charge</summary>
+            <div class="field">
+              <label for="unContrastePctB">Part des examens injectés (produit de contraste)</label>
+              <div class="simulator__field-suffix"><input type="number" id="unContrastePctB" value="0" min="0" max="100" step="5" /><span>%</span></div>
+            </div>
+            <div class="field">
+              <label for="unSalleB">Loyer de la salle</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unSalleB" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unAssuranceB">Assurance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unAssuranceB" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unEntretienB">Entretien / nettoyage</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unEntretienB" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unInjecteurB">Injecteur, avec maintenance</label>
+              <div class="simulator__field-suffix"><input type="text" inputmode="numeric" id="unInjecteurB" value="0" /><span>€ / mois</span></div>
+            </div>
+            <div class="field">
+              <label for="unRisB">Part du RIS + graveur + imprimante (partagé, voir Paramètres)</label>
+              <div class="simulator__field-suffix"><input type="number" id="unRisB" value="0" min="0" step="0.1" /><span>fraction</span></div>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn--sm" id="unBtnShowPanel" hidden style="margin-top:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
+
+      <div style="margin-top:1.6rem; text-align:right">
+        <button type="button" class="btn" id="unBtnVoirResultats">Voir les résultats possibles ▸</button>
+      </div>
+    </section>
+
+    <!-- ================= ÉCRAN 3 — espace réservé ================= -->
+    <section id="unScreenResultats" hidden>
+      <div class="simulator__intro">
+        <button type="button" class="btn btn--sm btn--ghost" id="unBtnRetourForm" style="margin-bottom:1rem">◂ Revenir au formulaire</button>
+        <span class="kicker">Simulateur unifié</span>
+        <h1>Résultats</h1>
+      </div>
+      <div class="un-placeholder-card">
+        <p><strong>Résultats — à construire.</strong></p>
+        <p>Cet écran sera bâti dans une prochaine étape séparée.</p>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    (function () {
+      "use strict";
+
+      // ---------------------------------------------------------------------
+      // Navigation entre les 3 écrans
+      // ---------------------------------------------------------------------
+      var screenProjet = document.getElementById("unScreenProjet");
+      var screenForm = document.getElementById("unScreenForm");
+      var screenResultats = document.getElementById("unScreenResultats");
+      var projetActuel = null;
+
+      function afficherEcran(nom) {
+        screenProjet.hidden = nom !== "projet";
+        screenForm.hidden = nom !== "form";
+        screenResultats.hidden = nom !== "resultats";
+        window.scrollTo(0, 0);
+      }
+
+      var PROJET_INFOS = {
+        1: { kicker: "Projet 01", titre: "Première installation d'IRM", nbMachinesVisible: true },
+        2: { kicker: "Projet 02", titre: "IRM supplémentaire", nbMachinesVisible: true },
+        3: { kicker: "Projet 03", titre: "Remplacement d'un scanner", nbMachinesVisible: false }
+      };
+
+      document.querySelectorAll(".un-projet-card").forEach(function (card) {
+        card.addEventListener("click", function () {
+          choisirProjet(parseInt(card.getAttribute("data-projet"), 10));
+        });
+      });
+      document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
+      document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { afficherEcran("resultats"); });
+
+      function choisirProjet(n) {
+        projetActuel = n;
+        var infos = PROJET_INFOS[n];
+        document.getElementById("unProjetKicker").textContent = infos.kicker;
+        document.getElementById("unProjetTitre").textContent = infos.titre;
+        document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
+
+        if (n === 3) {
+          // Projet 03 : Machine A = le scanner en place, Machine B = l'IRM Esaote
+          // candidate — toujours 2 machines, jamais de radio "1 seule" (voir choix
+          // documenté n°4/5 en tête de fichier).
+          document.getElementById("unTitreA").textContent = "Machine A — scanner en place";
+          document.getElementById("unTitreB").textContent = "Machine B — IRM Esaote candidate";
+          document.getElementById("unMachineALabel").textContent = "Choix scanner";
+          document.getElementById("unMachineBLabel").textContent = "Choix IRM Esaote";
+          document.getElementById("unLoyerALabel").textContent = "Loyer du scanner, SAV inclus";
+          document.getElementById("unLoyerBLabel").textContent = "Loyer de l'IRM, SAV inclus";
+          document.getElementById("unColB").hidden = false;
+          document.getElementById("unMembreFieldA").hidden = true; // pas de tarif "membre" pour un scanner
+          document.getElementById("unMembreFieldB").hidden = false;
+          peuplerMachineSelect(selectA, MACHINES_SCANNER, "siemens-goall");
+          peuplerMachineSelect(selectB, MACHINES_ESAOTE, "esaote-o-scan");
+        } else {
+          document.getElementById("unTitreA").textContent = "Machine A";
+          document.getElementById("unTitreB").textContent = "Machine B";
+          document.getElementById("unMachineALabel").textContent = "Choix IRM";
+          document.getElementById("unMachineBLabel").textContent = "Choix IRM";
+          document.getElementById("unLoyerALabel").textContent = "Loyer de l'IRM, SAV inclus";
+          document.getElementById("unLoyerBLabel").textContent = "Loyer de l'IRM, SAV inclus";
+          document.getElementById("unMembreFieldA").hidden = false;
+          document.getElementById("unMembreFieldB").hidden = false;
+          peuplerMachineSelect(selectA, MACHINES_IRM, "esaote-g-scan");
+          peuplerMachineSelect(selectB, MACHINES_IRM, "siemens-altea");
+          appliquerNbMachines();
+        }
+        reinitialiserMerm(selectA, mermA); reinitialiserMerm(selectB, mermB);
+        reinitialiserInstall(selectA, installA); reinitialiserInstall(selectB, installB);
+        reinitialiserLoyer(selectA, document.getElementById("unLoyerA"), loyerHintA);
+        reinitialiserLoyer(selectB, document.getElementById("unLoyerB"), loyerHintB);
+
+        afficherEcran("form");
+      }
+
+      // ---------------------------------------------------------------------
+      // Listes de machines (assets/machines-energie-data.js)
+      // ---------------------------------------------------------------------
+      var MACHINES_IRM = ENERGIE_MACHINES.filter(function (m) { return m.type !== "ct" && m.type !== "peroperatoire"; });
+      var MACHINES_SCANNER = ENERGIE_MACHINES.filter(function (m) { return m.type === "ct"; });
+      var MACHINES_ESAOTE = ENERGIE_MACHINES.filter(function (m) { return m.marque === "Esaote" && m.type !== "peroperatoire"; });
+
+      var selectA = document.getElementById("unMachineA");
+      var selectB = document.getElementById("unMachineB");
+
+      function machineParKey(key) {
+        return ENERGIE_MACHINES.filter(function (m) { return m.key === key; })[0];
+      }
+
+      function peuplerMachineSelect(machineSelect, liste, valeurParDefaut) {
+        machineSelect.innerHTML = "";
+        liste.forEach(function (m) {
+          var opt = document.createElement("option");
+          opt.value = m.key;
+          opt.textContent = m.nomCourt;
+          machineSelect.appendChild(opt);
+        });
+        if (valeurParDefaut && liste.some(function (m) { return m.key === valeurParDefaut; })) {
+          machineSelect.value = valeurParDefaut;
+        } else if (liste.length) {
+          machineSelect.value = liste[0].key;
+        }
+      }
+
+      // ---- Loyer de base par machine (SAV inclus) — mêmes valeurs que
+      // point-mort.html (IRM) et ct-vs-irm.html (scanners), fichier propriétaire
+      // de cette page, pas partagé avec ENERGIE_MACHINES. ----
+      var LOYERS_BASE = {
+        "esaote-o-scan": 12000,
+        "esaote-s-scan": 14000,
+        "esaote-g-scan": 16000,
+        "esaote-magnifico": 16000,
+        "siemens-altea": 24000,
+        "siemens-sola-xj": 25500,
+        "siemens-sola-xq": 26500,
+        "siemens-prisma": 32000,
+        "siemens-aera": 23000,
+        "ge-optima-mr450w": 25000,
+        "philips-ambition-s": 23000,
+        "philips-ambition-x": 24500,
+        "siemens-goall": 10500,
+        "siemens-gotop": 12000
+      };
+      var LOYER_REPLI = 15000;
+      function loyerParDefaut(machine) { return LOYERS_BASE[machine.key] != null ? LOYERS_BASE[machine.key] : LOYER_REPLI; }
+      function reinitialiserLoyer(select, input, hintEl) {
+        var machine = machineParKey(select.value);
+        if (!machine) return;
+        var connu = LOYERS_BASE[machine.key] != null;
+        input.value = milliersFmt.format(loyerParDefaut(machine));
+        hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
+      }
+      var loyerHintA = document.getElementById("unLoyerHintA"), loyerHintB = document.getElementById("unLoyerHintB");
+
+      // ---- Manip en poste par défaut selon le type d'aimant ----
+      function mermParDefaut(machine) { return machine && machine.aimant === "permanent" ? 1 : 2; }
+      function reinitialiserMerm(select, input) { var m = machineParKey(select.value); if (m) input.value = mermParDefaut(m); }
+      var mermA = document.getElementById("unMermA"), mermB = document.getElementById("unMermB");
+
+      // ---- Examens par heure par défaut (dérivé de assets/machines-energie-data.js) ----
+      function reinitialiserInstall(select, input) {
+        var m = machineParKey(select.value);
+        if (!m) return;
+        var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
+        input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+      }
+      var installA = document.getElementById("unInstallA"), installB = document.getElementById("unInstallB");
+
+      selectA.addEventListener("change", function () {
+        reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA);
+        reinitialiserLoyer(selectA, document.getElementById("unLoyerA"), loyerHintA);
+      });
+      selectB.addEventListener("change", function () {
+        reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB);
+        reinitialiserLoyer(selectB, document.getElementById("unLoyerB"), loyerHintB);
+      });
+
+      // ---------------------------------------------------------------------
+      // Formatage des montants (point comme séparateur de milliers, reformatage
+      // au blur — fidèle au comportement réel des 3 fichiers sources).
+      // ---------------------------------------------------------------------
+      var milliersFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+      function formaterMilliers(input) {
+        var brut = String(input.value).replace(/[^\d]/g, "");
+        input.value = brut ? milliersFmt.format(parseInt(brut, 10)) : "";
+      }
+      function valeurMilliers(input) {
+        return parseInt(String(input.value).replace(/[^\d]/g, ""), 10) || 0;
+      }
+      [
+        "unNetMerm", "unNetSecretaire", "unNetCadreSante", "unNetAideManip", "unNetInfirmiere", "unNetManipAlternance",
+        "unCoutRis", "unLoyerA", "unLoyerB",
+        "unSalleA", "unAssuranceA", "unEntretienA", "unInjecteurA",
+        "unSalleB", "unAssuranceB", "unEntretienB", "unInjecteurB"
+      ].forEach(function (id) {
+        var input = document.getElementById(id);
+        input.addEventListener("blur", function () { formaterMilliers(input); });
+      });
+
+      // ---------------------------------------------------------------------
+      // Toggle mensuel/annuel partagé par les 6 salaires
+      // ---------------------------------------------------------------------
+      var UN_SALAIRE_ROLES = ["Merm", "Secretaire", "CadreSante", "AideManip", "Infirmiere", "ManipAlternance"];
+      var unSalaireModeAnnuel = true;
+      document.getElementById("unSalaireUnite").addEventListener("change", function (e) {
+        var annuel = e.target.value === "annuel";
+        if (annuel === unSalaireModeAnnuel) return;
+        UN_SALAIRE_ROLES.forEach(function (role) {
+          var input = document.getElementById("unNet" + role);
+          var actuel = valeurMilliers(input);
+          var converti = annuel ? actuel * 12 : Math.round(actuel / 12);
+          input.value = milliersFmt.format(converti);
+          document.getElementById("unNet" + role + "Suffix").textContent = annuel ? "€ / an" : "€ / mois";
+        });
+        unSalaireModeAnnuel = annuel;
+      });
+
+      // ---------------------------------------------------------------------
+      // Postes annexes : visibilité pilotée UNIQUEMENT par le sélecteur "Intégré
+      // au simu ?" du panneau Salaires — jamais une heuristique de comparaison de
+      // salaire (voir skill, "Poste optionnel activé explicitement").
+      // ---------------------------------------------------------------------
+      var UN_POSTES_ANNEXES_ROLES = ["Secretaire", "CadreSante", "AideManip", "Infirmiere", "ManipAlternance"];
+      function unPosteAnnexeIntegre(role) {
+        var select = document.getElementById("unIntegre" + role);
+        return !!select && select.value === "oui";
+      }
+      function majVisibilitePostesAnnexes() {
+        var auMoinsUnA = false, auMoinsUnB = false;
+        UN_POSTES_ANNEXES_ROLES.forEach(function (role) {
+          var visible = unPosteAnnexeIntegre(role);
+          var champA = document.getElementById("un" + role + "A");
+          var champB = document.getElementById("un" + role + "B");
+          if (champA) { champA.closest(".field").hidden = !visible; if (visible) auMoinsUnA = true; if (!visible) champA.value = 0; }
+          if (champB) { champB.closest(".field").hidden = !visible; if (visible) auMoinsUnB = true; if (!visible) champB.value = 0; }
+        });
+        document.getElementById("unAutresPostesHintA").hidden = !auMoinsUnA;
+        document.getElementById("unAutresPostesHintB").hidden = !auMoinsUnB;
+      }
+      UN_POSTES_ANNEXES_ROLES.forEach(function (role) {
+        document.getElementById("unIntegre" + role).addEventListener("change", majVisibilitePostesAnnexes);
+      });
+      majVisibilitePostesAnnexes();
+
+      // ---------------------------------------------------------------------
+      // Horaires d'ouverture — coupures + jours supplémentaires (checkboxes qui
+      // révèlent des champs togglés par [hidden], motif du skill)
+      // ---------------------------------------------------------------------
+      function toggleWrap(checkboxId, wrapId) {
+        var cb = document.getElementById(checkboxId), wrap = document.getElementById(wrapId);
+        cb.addEventListener("change", function () { wrap.hidden = !cb.checked; });
+      }
+      toggleWrap("unCoupureSemaine", "unCoupureDureeSemaineWrap");
+      toggleWrap("unCoupureSamedi", "unCoupureDureeSamediWrap");
+      toggleWrap("unCoupureDimanche", "unCoupureDureeDimancheWrap");
+
+      document.getElementById("unOuvertSamedi").addEventListener("change", function (e) {
+        document.getElementById("unHeuresSamediWrap").hidden = !e.target.checked;
+        document.getElementById("unCoupureSamediLabel").hidden = !e.target.checked;
+        if (!e.target.checked) document.getElementById("unCoupureDureeSamediWrap").hidden = true;
+      });
+      document.getElementById("unOuvertDimanche").addEventListener("change", function (e) {
+        document.getElementById("unHeuresDimancheWrap").hidden = !e.target.checked;
+        document.getElementById("unCoupureDimancheLabel").hidden = !e.target.checked;
+        if (!e.target.checked) document.getElementById("unCoupureDureeDimancheWrap").hidden = true;
+      });
+
+      // ---------------------------------------------------------------------
+      // Radio "Comparer deux IRM / Une seule IRM" (projets 01/02 uniquement) —
+      // masque la colonne Machine B, ne bloque jamais rien derrière une
+      // validation (voir choix documenté n°4 en tête de fichier).
+      // ---------------------------------------------------------------------
+      function appliquerNbMachines() {
+        var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
+        document.getElementById("unColB").hidden = !deux;
+      }
+      document.querySelectorAll('input[name="unNbMachines"]').forEach(function (r) {
+        r.addEventListener("change", appliquerNbMachines);
+      });
+
+      // ---------------------------------------------------------------------
+      // "Votre activité" — libellé + équivalent jour/an
+      // ---------------------------------------------------------------------
+      var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
+      function majActiviteLabel() {
+        var mode = document.getElementById("unActiviteMode").value;
+        var champ = document.getElementById("unActivite");
+        var label = document.getElementById("unActiviteLabel");
+        var equiv = document.getElementById("unActiviteEquivalent");
+        var v = parseFloat(champ.value) || 0;
+        var joursParMois = 5 * (52 / 12);
+        if (mode === "jour") {
+          label.textContent = "Nombre de patients par jour";
+          equiv.textContent = "Soit environ " + patientsFmt.format(v * joursParMois * 12) + " patients par an.";
+        } else {
+          label.textContent = "Nombre de patients par an";
+          equiv.textContent = "Soit environ " + patientsFmt.format(v / (joursParMois * 12)) + " patients par jour.";
+        }
+      }
+      document.getElementById("unActiviteMode").addEventListener("change", majActiviteLabel);
+      document.getElementById("unActivite").addEventListener("input", majActiviteLabel);
+
+      // ---------------------------------------------------------------------
+      // Bulles d'aide 💡 (motif wireInfoBtn du skill, repris tel quel)
+      // ---------------------------------------------------------------------
+      var unInfoPopsOuverts = [];
+      function wireInfoBtn(btnId, popId) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        function fermer() { pop.hidden = true; btn.setAttribute("aria-expanded", "false"); pop.style.transform = ""; }
+        function ouvrir() {
+          unInfoPopsOuverts.forEach(function (f) { f(); });
+          pop.hidden = false; btn.setAttribute("aria-expanded", "true");
+          var marge = 12, r = pop.getBoundingClientRect(), decalage = 0;
+          if (r.right > window.innerWidth - marge) decalage = (window.innerWidth - marge) - r.right;
+          if (r.left + decalage < marge) decalage = marge - r.left;
+          pop.style.transform = decalage ? "translateX(" + decalage + "px)" : "";
+        }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          if (pop.hidden) ouvrir(); else fermer();
+        });
+        unInfoPopsOuverts.push(fermer);
+      }
+      wireInfoBtn("unInfoReglagesBtn", "unInfoReglagesPop");
+      wireInfoBtn("unInfoTauxBtn", "unInfoTauxPop");
+      wireInfoBtn("unInfoRisBtn", "unInfoRisPop");
+      document.addEventListener("click", function () { unInfoPopsOuverts.forEach(function (f) { f(); }); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") unInfoPopsOuverts.forEach(function (f) { f(); }); });
+
+      // ---------------------------------------------------------------------
+      // ⏴/⏵ masquer/réafficher la colonne Paramètres
+      // ---------------------------------------------------------------------
+      function appliquerVisibilitePanel(masque) {
+        document.getElementById("unLayout3").classList.toggle("un-panel-hidden", masque);
+        document.getElementById("unBtnTogglePanel").setAttribute("aria-pressed", String(masque));
+        document.getElementById("unBtnShowPanel").hidden = !masque;
+      }
+      document.getElementById("unBtnTogglePanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(!document.getElementById("unLayout3").classList.contains("un-panel-hidden"));
+      });
+      document.getElementById("unBtnShowPanel").addEventListener("click", function () {
+        appliquerVisibilitePanel(false);
+      });
+
+      // ---------------------------------------------------------------------
+      // Forfait technique — liste des dates (assets/forfaits-techniques-data.js)
+      // ---------------------------------------------------------------------
+      var dateSelect = document.getElementById("unDate");
+      FT_CLASSES.le05.dates.forEach(function (d) {
+        var opt = document.createElement("option");
+        opt.value = d.iso;
+        opt.textContent = d.label;
+        dateSelect.appendChild(opt);
+      });
+      dateSelect.value = "2027-01-01";
+
+      // ---------------------------------------------------------------------
+      // Bouton fermer (retour à la page précédente, comme les autres simulateurs)
+      // ---------------------------------------------------------------------
+      document.getElementById("unClose").addEventListener("click", function () {
+        if (document.referrer) window.history.back(); else window.location.href = "index.html";
+      });
+
+      // ---------------------------------------------------------------------
+      // Initialisation
+      // ---------------------------------------------------------------------
+      majActiviteLabel();
+    })();
+  </script>
+</body>
+</html>
