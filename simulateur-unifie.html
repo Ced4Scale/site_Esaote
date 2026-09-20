@@ -225,11 +225,6 @@
     /* Bascule Point mort en examens/jour <-> Point mort annuel (19/09/2026) */
     #unPointMortSummary { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
     .un-pm-toggle-btn { margin-left: auto; }
-    .un-pm-annuel { display: flex; flex-direction: column; gap: .9rem; }
-    .un-pm-annuel-machine { border-left: 4px solid var(--slot-color); border-radius: .5rem; background: var(--wash); padding: .8rem 1rem; }
-    .un-pm-annuel-machine-title { font-weight: 800; color: var(--slot-color); margin-bottom: .5rem; }
-    .un-pm-annuel-line { font-size: .92rem; line-height: 1.7; }
-    .un-pm-annuel-line strong { color: var(--slot-color); }
 
     /* ================= Étape 3 : Bascule progressive A↔B ==================
        Motif "Curseur de répartition entre deux machines" du skill, repris de
@@ -886,12 +881,15 @@
 
         <!-- Point mort ANNUEL — bascule ajoutée le 19/09/2026 (demande de Cédric) :
              pour chaque machine, temps nécessaire pour rembourser le loyer annuel
-             et le coût annuel des manip (charge fixe, indépendante du volume —
-             effectif × coût mensuel employeur × 12, PAS la somme des coûts
-             marginaux déjà comptés dans calculerPointMortMachine), en réutilisant
-             margeParPatient telle que calculerPointMortMachine() la calcule en
-             interne — jamais une 2ᵉ formule de marge séparée. -->
-        <div class="un-pm-annuel" id="unPointMortAnnuelVue" hidden></div>
+             (charge fixe, indépendante du volume), en réutilisant margeParPatient
+             telle que calculerPointMortMachine() la calcule en interne — jamais
+             une 2ᵉ formule de marge séparée. Affiché en barres horizontales (même
+             motif que le point mort en examens/jour ci-dessus), demande de Cédric
+             du 21/09/2026 ("en forme de bâton allongé") — seule la durée du loyer
+             est affichée, plus celle des manip (retirée du même geste). -->
+        <div class="simulator__chart-wrap" id="unPointMortAnnuelVue" hidden>
+          <svg id="unPointMortAnnuelChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Loyer annuel remboursé après, par machine"></svg>
+        </div>
 
         <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
              Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
@@ -1195,7 +1193,14 @@
       });
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); afficherEcran("resultats"); });
+      // Révéler l'écran Résultats AVANT de calculer/dessiner les graphiques (pas
+      // après) — sinon toute mesure SVG (getBBox()) faite pendant que l'écran est
+      // encore `hidden` renvoie 0 (un élément cache/un ancêtre caché n'a pas de
+      // boîte de rendu), ce qui a faussé silencieusement la réserve de largeur du
+      // graphique "Point mort annuel" tant que ce n'était pas encore corrigé le
+      // 21/09/2026 — un seul tick JS synchrone entre les deux, rien de visible
+      // pour le visiteur.
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
       function choisirProjet(n) {
         projetActuel = n;
@@ -1893,7 +1898,7 @@
           var resteJours = totalJours - moisEntiers * joursParMoisVal;
           var joursEntiers = Math.floor(resteJours);
           var fractionJour = resteJours - joursEntiers;
-          return { mois: moisEntiers, jours: joursEntiers, heures: fractionJour * params.heuresParJour };
+          return { mois: moisEntiers, jours: joursEntiers, heures: fractionJour * params.heuresParJour, totalJours: totalJours };
         }
 
         return { loyer: convertir(chargeLoyerAnnuelle), manip: convertir(chargeManipAnnuelle) };
@@ -1906,36 +1911,124 @@
           ", " + milliersFmt.format(heures) + " heure" + (heures === 1 ? "" : "s");
       }
 
-      function unRenderPointMortAnnuel(entries) {
-        var container = document.getElementById("unPointMortAnnuelVue");
-        while (container.firstChild) container.removeChild(container.firstChild);
+      // ---- Barres horizontales "Loyer annuel remboursé après" — même motif que
+      // unDessinerBarresPointMort() ci-dessus (nom de machine en blanc dans la
+      // barre si la place le permet, sinon au-dessus ; barre à opacité réduite +
+      // "jamais atteint" si la marge ne couvre jamais le loyer). La phrase de
+      // valeur ("Loyer annuel remboursé après : X mois, Y jours, Z heures") est
+      // mesurée réellement via getBBox() (jamais une estimation par nombre de
+      // caractères, règle du skill) : si elle tient à droite de la barre elle y
+      // reste, sinon elle repasse EN DESSOUS (motif "un libellé qui peut manquer
+      // de place", déjà utilisé plus haut sur ce fichier pour le nom de machine)
+      // plutôt que de compresser la barre à presque rien. ----
+      function unDessinerBarresPointMortAnnuel(entries) {
+        var svg = document.getElementById("unPointMortAnnuelChart");
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+
+        var svgWidth = 640;
+        var leftPad = 6;
+        var barHeight = 36;
+        var espacement = 18;
+        var topPad = 18;
+        var valeurSousHauteur = 20;
+        var ns = "http://www.w3.org/2000/svg";
+        var labelPadInterieur = 10;
+
+        var PREFIXE_VALEUR = "Loyer annuel remboursé après : ";
+        var textesValeur = entries.map(function (e) { return PREFIXE_VALEUR + unFormatDuree(e.annuel.loyer); });
+
+        var mesure = document.createElementNS(ns, "text");
+        mesure.setAttribute("font-size", "14");
+        mesure.setAttribute("font-weight", "700");
+        svg.appendChild(mesure);
+        function largeurTexteFn(t) { mesure.textContent = t; return mesure.getBBox().width; }
+        var largeurMaxValeur = textesValeur.reduce(function (max, t) { return Math.max(max, largeurTexteFn(t)); }, 0);
+
+        // Plafond : passée une largeur de valeur trop grande par rapport au
+        // graphique (durées à 2 chiffres sur les 3 unités), la réserver à droite
+        // écraserait la barre à presque rien — la valeur repasse alors sous la
+        // barre, sur toute la largeur disponible.
+        var valeurSousLaBarre = largeurMaxValeur > svgWidth * 0.42;
+        var rightPad = valeurSousLaBarre ? 16 : (largeurMaxValeur + 20);
+        var barAreaWidth = svgWidth - leftPad - rightPad;
+
+        var valeursFinies = entries.map(function (e) { return e.annuel.loyer ? e.annuel.loyer.totalJours : NaN; }).filter(function (v) { return isFinite(v) && v > 0; });
+        var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
+
+        var largeurs = [];
+        var libelleDansBarre = [];
         entries.forEach(function (e) {
-          var bloc = document.createElement("div");
-          bloc.className = "un-pm-annuel-machine";
-          bloc.style.setProperty("--slot-color", e.color);
+          var v = e.annuel.loyer ? e.annuel.loyer.totalJours : NaN;
+          var estFini = isFinite(v) && v > 0;
+          var largeur = estFini ? Math.max(4, (v / maxVal) * barAreaWidth) : barAreaWidth * 0.55;
+          largeurs.push(largeur);
+          libelleDansBarre.push(largeurTexteFn(e.label) + labelPadInterieur * 2 <= largeur);
+        });
+        svg.removeChild(mesure);
 
-          var titre = document.createElement("div");
-          titre.className = "un-pm-annuel-machine-title";
-          titre.textContent = e.label;
-          bloc.appendChild(titre);
+        // Hauteur de chaque ligne : barre seule, + place pour le nom au-dessus si
+        // besoin, + place pour la valeur en dessous si elle ne tient pas à côté.
+        var ligneHauteurs = libelleDansBarre.map(function (dedans) {
+          return (dedans ? 0 : 26 + 6) + barHeight + (valeurSousLaBarre ? valeurSousHauteur : 0);
+        });
+        var svgHeight = topPad * 2 + ligneHauteurs.reduce(function (a, b) { return a + b; }, 0) + Math.max(0, entries.length - 1) * espacement;
+        svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
 
-          var ligneLoyer = document.createElement("div");
-          ligneLoyer.className = "un-pm-annuel-line";
-          ligneLoyer.appendChild(document.createTextNode("Loyer annuel remboursé après : "));
-          var fortLoyer = document.createElement("strong");
-          fortLoyer.textContent = unFormatDuree(e.annuel.loyer);
-          ligneLoyer.appendChild(fortLoyer);
-          bloc.appendChild(ligneLoyer);
+        var rowTop = topPad;
+        entries.forEach(function (e, i) {
+          var v = e.annuel.loyer ? e.annuel.loyer.totalJours : NaN;
+          var estFini = isFinite(v) && v > 0;
+          var largeur = largeurs[i];
+          var dedans = libelleDansBarre[i];
+          var barY = dedans ? rowTop : rowTop + 26 + 6;
 
-          var ligneManip = document.createElement("div");
-          ligneManip.className = "un-pm-annuel-line";
-          ligneManip.appendChild(document.createTextNode("Coût annuel des manip remboursé après : "));
-          var fortManip = document.createElement("strong");
-          fortManip.textContent = unFormatDuree(e.annuel.manip);
-          ligneManip.appendChild(fortManip);
-          bloc.appendChild(ligneManip);
+          if (!dedans) {
+            var labelAuDessus = document.createElementNS(ns, "text");
+            labelAuDessus.setAttribute("x", leftPad);
+            labelAuDessus.setAttribute("y", rowTop + 16);
+            labelAuDessus.setAttribute("font-size", "15");
+            labelAuDessus.setAttribute("font-weight", "700");
+            labelAuDessus.setAttribute("fill", e.color);
+            labelAuDessus.textContent = e.label;
+            svg.appendChild(labelAuDessus);
+          }
 
-          container.appendChild(bloc);
+          var rect = document.createElementNS(ns, "rect");
+          rect.setAttribute("x", leftPad);
+          rect.setAttribute("y", barY);
+          rect.setAttribute("width", largeur);
+          rect.setAttribute("height", barHeight);
+          rect.setAttribute("rx", 6);
+          rect.setAttribute("fill", e.color);
+          if (!estFini) rect.setAttribute("opacity", "0.35");
+          svg.appendChild(rect);
+
+          if (dedans) {
+            var labelDedans = document.createElementNS(ns, "text");
+            labelDedans.setAttribute("x", leftPad + labelPadInterieur);
+            labelDedans.setAttribute("y", barY + barHeight / 2 + 5);
+            labelDedans.setAttribute("font-size", "14");
+            labelDedans.setAttribute("font-weight", "700");
+            labelDedans.setAttribute("fill", "#fff");
+            labelDedans.textContent = e.label;
+            svg.appendChild(labelDedans);
+          }
+
+          var valeur = document.createElementNS(ns, "text");
+          valeur.setAttribute("font-size", "14");
+          valeur.setAttribute("font-weight", estFini ? "700" : "600");
+          valeur.setAttribute("fill", estFini ? "#1c1c1c" : "#8a8a8a");
+          valeur.textContent = textesValeur[i];
+          if (valeurSousLaBarre) {
+            valeur.setAttribute("x", leftPad);
+            valeur.setAttribute("y", barY + barHeight + valeurSousHauteur - 4);
+          } else {
+            valeur.setAttribute("x", leftPad + largeur + 10);
+            valeur.setAttribute("y", barY + barHeight / 2 + 5);
+          }
+          svg.appendChild(valeur);
+
+          rowTop += ligneHauteurs[i] + espacement;
         });
       }
 
@@ -1945,12 +2038,20 @@
       // aussi (re)fermer le cadre repliable (motif du skill).
       // ---------------------------------------------------------------------
       var unPointMortVueAnnuelle = false;
+      var unDernieresEntreesPointMort = null;
       function unAppliquerVuePointMort() {
         document.getElementById("unPointMortJourVue").hidden = unPointMortVueAnnuelle;
         document.getElementById("unPointMortAnnuelVue").hidden = !unPointMortVueAnnuelle;
         document.getElementById("unBtnTogglePointMortVue").textContent = unPointMortVueAnnuelle
           ? "Voir le point mort en examens/jour"
           : "Voir le point mort annuel";
+        // Redessine le graphique annuel SEULEMENT en le révélant — jamais pendant
+        // qu'il est encore `hidden` (un <text> dans un conteneur caché a une
+        // getBBox() à 0, la mesure de largeur de la phrase "Loyer annuel..."
+        // donnerait alors une réserve nulle, piège vécu le 21/09/2026).
+        if (unPointMortVueAnnuelle && unDernieresEntreesPointMort) {
+          unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
+        }
       }
       document.getElementById("unBtnTogglePointMortVue").addEventListener("click", function (e) {
         e.preventDefault();
@@ -1984,7 +2085,8 @@
           };
         });
         unDessinerBarresPointMort(entries);
-        unRenderPointMortAnnuel(entries);
+        unDernieresEntreesPointMort = entries;
+        if (unPointMortVueAnnuelle) unDessinerBarresPointMortAnnuel(entries);
       }
 
       // ---------------------------------------------------------------------
