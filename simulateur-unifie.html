@@ -873,167 +873,6 @@
           <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
         </div>
 
-        <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
-             Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
-             en poste) + une case à cocher NOUVELLE (Acte intellectuel, absente de
-             simulateur-point-mort.html — voir commentaire JS). Déplacer un fader
-             ou cocher/décocher recalcule et redessine le graphique EN DIRECT,
-             contrairement au reste du formulaire (lu seulement au clic "Voir les
-             résultats possibles" sur l'écran 2). -->
-        <div class="un-mixer" id="unMixerPointMort">
-          <div class="un-mixer__header">
-            <span class="un-mixer__title">Table de mixage — ajuste le point mort en direct</span>
-            <span class="un-info-wrap">
-              <button type="button" class="un-info-btn" id="unInfoMixerBtn" aria-expanded="false" aria-controls="unInfoMixerPop" aria-label="À propos de la table de mixage">💡</button>
-              <div class="un-info-pop" id="unInfoMixerPop" hidden>Ces curseurs pilotent les mêmes champs que le formulaire de l'écran précédent (Examens par heure, Manip en poste) — les déplacer redessine immédiatement le graphique ci-dessus, sans repasser par le bouton « Voir les résultats possibles ».</div>
-            </span>
-          </div>
-
-          <div class="un-mixer__group">
-            <span class="un-mixer__group-title">Examens par heure</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixInstallBFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallBVal" value="4" aria-label="Examens par heure — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-
-          <div class="un-mixer__group">
-            <span class="un-mixer__group-title">Manip en poste</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixMermAFader" min="0" max="3" step="0.1" value="1" aria-label="Manip en poste — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermAVal" value="1" aria-label="Manip en poste — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixMermBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixMermBFader" min="0" max="3" step="0.1" value="2" aria-label="Manip en poste — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermBVal" value="2" aria-label="Manip en poste — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-
-          <!-- % examens membre (MSK) — miroir de #unMembreA/#unMembreB (écran 2).
-               Masqué en même temps que le champ source (projet 03 : pas de tarif
-               "membre" pour un scanner, colonne A) via unRenderPointMort(),
-               même motif que unMixMermBCol pour le mode "Une seule IRM". -->
-          <div class="un-mixer__group" id="unMixMembreGroup">
-            <span class="un-mixer__group-title">% examens membre (MSK)</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" id="unMixMembreACol" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixMembreAFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreAVal" value="25" aria-label="Part des examens membre (MSK) — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixMembreBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixMembreBFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreBVal" value="25" aria-label="Part des examens membre (MSK) — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-
-          <!-- Postes annexes (RH) — un groupe par poste, visible seulement s'il est
-               "Intégré au simu" (écran 2, panneau Salaires) — piloté par
-               majVisibilitePostesAnnexes(), jamais une case à part ici (règle du
-               skill "poste optionnel activé explicitement", une seule source de
-               vérité pour l'activation). Miroir de #un<Role>A/#un<Role>B. -->
-          <div class="un-mixer__group" id="unMixPosteGroupSecretaire" hidden>
-            <span class="un-mixer__group-title">Secrétaire médicale</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixSecretaireAFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireAVal" value="0" aria-label="Secrétaire médicale, ETP — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixSecretaireBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixSecretaireBFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireBVal" value="0" aria-label="Secrétaire médicale, ETP — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-          <div class="un-mixer__group" id="unMixPosteGroupCadreSante" hidden>
-            <span class="un-mixer__group-title">Cadre de santé</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixCadreSanteAFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteAVal" value="0" aria-label="Cadre de santé, ETP — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixCadreSanteBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixCadreSanteBFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteBVal" value="0" aria-label="Cadre de santé, ETP — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-          <div class="un-mixer__group" id="unMixPosteGroupAideManip" hidden>
-            <span class="un-mixer__group-title">Aide-manip</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixAideManipAFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipAVal" value="0" aria-label="Aide-manip, ETP — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixAideManipBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixAideManipBFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipBVal" value="0" aria-label="Aide-manip, ETP — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-          <div class="un-mixer__group" id="unMixPosteGroupInfirmiere" hidden>
-            <span class="un-mixer__group-title">Infirmière</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixInfirmiereAFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereAVal" value="0" aria-label="Infirmière, ETP — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixInfirmiereBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixInfirmiereBFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereBVal" value="0" aria-label="Infirmière, ETP — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-          <div class="un-mixer__group" id="unMixPosteGroupManipAlternance" hidden>
-            <span class="un-mixer__group-title">Manip en alternance</span>
-            <div class="un-mixer__faders">
-              <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-                <span class="un-mixer__fader-col-slot">A</span>
-                <input type="range" id="unMixManipAlternanceAFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine A" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceAVal" value="0" aria-label="Manip en alternance, ETP — Machine A, valeur" />
-              </div>
-              <div class="un-mixer__fader-col" id="unMixManipAlternanceBCol" style="--fader-color:#eb6834">
-                <span class="un-mixer__fader-col-slot">B</span>
-                <input type="range" id="unMixManipAlternanceBFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine B" />
-                <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceBVal" value="0" aria-label="Manip en alternance, ETP — Machine B, valeur" />
-              </div>
-            </div>
-          </div>
-
-          <div class="un-mixer__check-group">
-            <span class="un-mixer__group-title">Recette</span>
-            <label>
-              <input type="checkbox" id="unActeIntellectuelActif" checked />
-              <span>Facturer l'acte intellectuel</span>
-            </label>
-            <span class="un-info-wrap">
-              <button type="button" class="un-info-btn" id="unInfoActeBtn" aria-expanded="false" aria-controls="unInfoActePop" aria-label="À propos de l'acte intellectuel">💡</button>
-              <div class="un-info-pop" id="unInfoActePop" hidden>Ajoute la valeur de l'acte intellectuel du radiologue (55&nbsp;€ à 69&nbsp;€ selon la répartition « membre »/« autre région » réglée pour chaque machine à l'écran précédent) à la recette par patient utilisée pour le point mort — à cocher seulement si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple). Réglage propre à cet outil unifié : simulateur-point-mort.html (fichier réel) ajoute toujours cette recette, sans case à cocher.</div>
-            </span>
-          </div>
-        </div>
       </details>
 
       <!-- Point mort ANNUEL — carte séparée depuis le 21/09/2026 (demande de
@@ -1055,6 +894,190 @@
           <svg id="unPointMortAnnuelChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Loyer annuel remboursé après, en jours, par machine"></svg>
         </div>
       </details>
+
+      <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
+           Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
+           en poste) + une case à cocher NOUVELLE (Acte intellectuel, absente de
+           simulateur-point-mort.html — voir commentaire JS). Déplacer un fader
+           ou cocher/décocher recalcule et redessine le graphique EN DIRECT,
+           contrairement au reste du formulaire (lu seulement au clic "Voir les
+           résultats possibles" sur l'écran 2). -->
+      <div class="un-mixer" id="unMixerPointMort">
+        <div class="un-mixer__header">
+          <span class="un-mixer__title">Table de mixage — ajuste le point mort en direct</span>
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unInfoMixerBtn" aria-expanded="false" aria-controls="unInfoMixerPop" aria-label="À propos de la table de mixage">💡</button>
+            <div class="un-info-pop" id="unInfoMixerPop" hidden>Ces curseurs pilotent les mêmes champs que le formulaire de l'écran précédent (Examens par heure, Manip en poste) — les déplacer redessine immédiatement le graphique ci-dessus, sans repasser par le bouton « Voir les résultats possibles ».</div>
+          </span>
+        </div>
+
+        <div class="un-mixer__group">
+          <span class="un-mixer__group-title">Examens par heure</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixInstallBFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallBVal" value="4" aria-label="Examens par heure — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
+        <div class="un-mixer__group">
+          <span class="un-mixer__group-title">Manip en poste</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixMermAFader" min="0" max="3" step="0.1" value="1" aria-label="Manip en poste — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermAVal" value="1" aria-label="Manip en poste — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixMermBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixMermBFader" min="0" max="3" step="0.1" value="2" aria-label="Manip en poste — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermBVal" value="2" aria-label="Manip en poste — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
+        <!-- % examens membre (MSK) — miroir de #unMembreA/#unMembreB (écran 2).
+             Masqué en même temps que le champ source (projet 03 : pas de tarif
+             "membre" pour un scanner, colonne A) via unRenderPointMort(),
+             même motif que unMixMermBCol pour le mode "Une seule IRM". -->
+        <div class="un-mixer__group" id="unMixMembreGroup">
+          <span class="un-mixer__group-title">% examens membre (MSK)</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" id="unMixMembreACol" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixMembreAFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreAVal" value="25" aria-label="Part des examens membre (MSK) — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixMembreBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixMembreBFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreBVal" value="25" aria-label="Part des examens membre (MSK) — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Postes annexes (RH) — un groupe par poste, visible seulement s'il est
+             "Intégré au simu" (écran 2, panneau Salaires) — piloté par
+             majVisibilitePostesAnnexes(), jamais une case à part ici (règle du
+             skill "poste optionnel activé explicitement", une seule source de
+             vérité pour l'activation). Miroir de #un<Role>A/#un<Role>B. -->
+        <div class="un-mixer__group" id="unMixPosteGroupSecretaire" hidden>
+          <span class="un-mixer__group-title">Secrétaire médicale</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixSecretaireAFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireAVal" value="0" aria-label="Secrétaire médicale, ETP — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixSecretaireBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixSecretaireBFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireBVal" value="0" aria-label="Secrétaire médicale, ETP — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+        <div class="un-mixer__group" id="unMixPosteGroupCadreSante" hidden>
+          <span class="un-mixer__group-title">Cadre de santé</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixCadreSanteAFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteAVal" value="0" aria-label="Cadre de santé, ETP — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixCadreSanteBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixCadreSanteBFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteBVal" value="0" aria-label="Cadre de santé, ETP — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+        <div class="un-mixer__group" id="unMixPosteGroupAideManip" hidden>
+          <span class="un-mixer__group-title">Aide-manip</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixAideManipAFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipAVal" value="0" aria-label="Aide-manip, ETP — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixAideManipBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixAideManipBFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipBVal" value="0" aria-label="Aide-manip, ETP — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+        <div class="un-mixer__group" id="unMixPosteGroupInfirmiere" hidden>
+          <span class="un-mixer__group-title">Infirmière</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixInfirmiereAFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereAVal" value="0" aria-label="Infirmière, ETP — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixInfirmiereBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixInfirmiereBFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereBVal" value="0" aria-label="Infirmière, ETP — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+        <div class="un-mixer__group" id="unMixPosteGroupManipAlternance" hidden>
+          <span class="un-mixer__group-title">Manip en alternance</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixManipAlternanceAFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceAVal" value="0" aria-label="Manip en alternance, ETP — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixManipAlternanceBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixManipAlternanceBFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceBVal" value="0" aria-label="Manip en alternance, ETP — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Part des examens injectés (produit de contraste) — miroir de
+             #unContrastePctA/#unContrastePctB (écran 2), visible SEULEMENT si
+             "renseigné" (valeur > 0, demande explicite de Cédric le 21/09/2026
+             — dérogation volontaire à la règle habituelle "poste activé par un
+             sélecteur explicite", propre à CE champ). Réévalué à chaque rendu
+             (unRenderPointMort()), jamais une seule fois au chargement. -->
+        <div class="un-mixer__group" id="unMixContrasteGroup" hidden>
+          <span class="un-mixer__group-title">% examens injectés</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" id="unMixContrasteACol" style="--fader-color:#2a78d6">
+              <span class="un-mixer__fader-col-slot">A</span>
+              <input type="range" id="unMixContrasteAFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine A" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixContrasteAVal" value="0" aria-label="Part des examens injectés — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixContrasteBCol" style="--fader-color:#eb6834">
+              <span class="un-mixer__fader-col-slot">B</span>
+              <input type="range" id="unMixContrasteBFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine B" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixContrasteBVal" value="0" aria-label="Part des examens injectés — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
+        <div class="un-mixer__check-group">
+          <span class="un-mixer__group-title">Recette</span>
+          <label>
+            <input type="checkbox" id="unActeIntellectuelActif" checked />
+            <span>Facturer l'acte intellectuel</span>
+          </label>
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unInfoActeBtn" aria-expanded="false" aria-controls="unInfoActePop" aria-label="À propos de l'acte intellectuel">💡</button>
+            <div class="un-info-pop" id="unInfoActePop" hidden>Ajoute la valeur de l'acte intellectuel du radiologue (55&nbsp;€ à 69&nbsp;€ selon la répartition « membre »/« autre région » réglée pour chaque machine à l'écran précédent) à la recette par patient utilisée pour le point mort — à cocher seulement si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple). Réglage propre à cet outil unifié : simulateur-point-mort.html (fichier réel) ajoute toujours cette recette, sans case à cocher.</div>
+          </span>
+        </div>
+      </div>
 
       <!-- ================= Étape 3 — Bascule progressive A↔B (projet 02 uniquement) =========
            Porté de simulateur-bascule-oscan.html, lu intégralement le 20/09/2026 avant de
@@ -2156,6 +2179,14 @@
         document.getElementById("unMixMembreACol").hidden = !membreAVisible;
         document.getElementById("unMixMembreBCol").hidden = !membreBVisible || uneSeuleMachine;
         document.getElementById("unMixMembreGroup").hidden = !membreAVisible && !membreBVisible;
+        // % examens injectés : visible SEULEMENT si renseigné (valeur > 0),
+        // demande explicite de Cédric — contrairement aux autres groupes,
+        // aucun sélecteur d'activation dédié pour ce champ.
+        var contrasteA = parseFloat(document.getElementById("unContrastePctA").value) || 0;
+        var contrasteB = parseFloat(document.getElementById("unContrastePctB").value) || 0;
+        document.getElementById("unMixContrasteACol").hidden = !(contrasteA > 0);
+        document.getElementById("unMixContrasteBCol").hidden = !(contrasteB > 0) || uneSeuleMachine;
+        document.getElementById("unMixContrasteGroup").hidden = !(contrasteA > 0) && !(contrasteB > 0);
         var slots = [0];
         if (!uneSeuleMachine) slots.push(1);
         var entries = slots.map(function (slot) {
@@ -2188,7 +2219,9 @@
         { faderId: "unMixMermAFader", valId: "unMixMermAVal", sourceId: "unMermA" },
         { faderId: "unMixMermBFader", valId: "unMixMermBVal", sourceId: "unMermB" },
         { faderId: "unMixMembreAFader", valId: "unMixMembreAVal", sourceId: "unMembreA" },
-        { faderId: "unMixMembreBFader", valId: "unMixMembreBVal", sourceId: "unMembreB" }
+        { faderId: "unMixMembreBFader", valId: "unMixMembreBVal", sourceId: "unMembreB" },
+        { faderId: "unMixContrasteAFader", valId: "unMixContrasteAVal", sourceId: "unContrastePctA" },
+        { faderId: "unMixContrasteBFader", valId: "unMixContrasteBVal", sourceId: "unContrastePctB" }
       ].concat(UN_POSTES_ANNEXES_ROLES.reduce(function (acc, role) {
         return acc.concat([
           { faderId: "unMix" + role + "AFader", valId: "unMix" + role + "AVal", sourceId: "un" + role + "A" },
