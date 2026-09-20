@@ -108,8 +108,12 @@
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
-  <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
+  <script src="assets/machines-energie-data.js?v=20260921-irm-generiques"></script>
   <style>
+    /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
+       inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
+    #unGateConcurrenceForm { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+    #unGateConcurrenceForm[hidden] { display: none; }
     /* ---- Écran 1 : cartes de choix de projet ---- */
     .un-projet-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.2rem; margin-top: 1.6rem; }
     @media (max-width: 900px) { .un-projet-grille { grid-template-columns: 1fr; } }
@@ -612,6 +616,23 @@
             <div class="simulator__toggle">
               <label><input type="radio" name="unNbMachines" value="2" checked /> Comparer deux IRM</label>
               <label><input type="radio" name="unNbMachines" value="1" /> Une seule IRM</label>
+            </div>
+          </div>
+
+          <!-- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
+               pour le motif d'origine. Concerne uniquement les listes IRM des projets 01/02
+               (MACHINES_IRM) ; masqué pour le projet 03 (scanner/Esaote uniquement, pas de
+               marque concurrente d'IRM affichée). Esaote et les 2 IRM génériques restent
+               toujours visibles, verrou ou pas. -->
+          <div class="field" id="unGateConcurrenceWrap">
+            <p class="simulator__hint" style="margin:0">
+              Les marques concurrentes ne sont pas affichées dans les listes ci-dessous.
+              <button type="button" class="btn btn--sm btn--ghost" id="unGateConcurrenceBtn">🔒 Débloquer</button>
+            </p>
+            <div id="unGateConcurrenceForm" hidden>
+              <input type="password" id="unGateConcurrenceCode" placeholder="Code" style="width:8rem" />
+              <button type="button" class="btn btn--sm" id="unGateConcurrenceValider">Valider</button>
+              <span id="unGateConcurrenceErreur" style="color:var(--red);display:none">Code incorrect.</span>
             </div>
           </div>
         </div>
@@ -1178,6 +1199,10 @@
         document.getElementById("unProjetKicker").textContent = infos.kicker;
         document.getElementById("unProjetTitre").textContent = infos.titre;
         document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
+        // Verrou "marques concurrentes" : concerne uniquement MACHINES_IRM (projets 01/02),
+        // masqué pour le projet 03 (scanner/Esaote uniquement, pas de marque concurrente
+        // d'IRM affichée dans ces 2 listes-là).
+        document.getElementById("unGateConcurrenceWrap").hidden = (n === 3) || gateConcurrenceDeverrouille();
 
         if (n === 3) {
           // Projet 03 : Machine A = le scanner en place, Machine B = l'IRM Esaote
@@ -1207,8 +1232,8 @@
           document.getElementById("unMembreFieldB").hidden = false;
           document.getElementById("unMultiRegionFieldA").hidden = true;
           document.getElementById("unRseWrapA").hidden = true;
-          peuplerMachineSelect(selectA, MACHINES_IRM, "esaote-g-scan");
-          peuplerMachineSelect(selectB, MACHINES_IRM, "siemens-altea");
+          peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-g-scan");
+          peuplerMachineSelect(selectB, machinesIrmVisibles(), "generique-15t");
           appliquerNbMachines();
         }
         reinitialiserMerm(selectA, mermA); reinitialiserMerm(selectB, mermB);
@@ -1225,6 +1250,56 @@
       var MACHINES_IRM = ENERGIE_MACHINES.filter(function (m) { return m.type !== "ct" && m.type !== "peroperatoire"; });
       var MACHINES_SCANNER = ENERGIE_MACHINES.filter(function (m) { return m.type === "ct"; });
       var MACHINES_ESAOTE = ENERGIE_MACHINES.filter(function (m) { return m.marque === "Esaote" && m.type !== "peroperatoire"; });
+
+      // ---- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
+      // pour le détail du motif (code = numéro de téléphone de Cédric, SHA-256, jamais en
+      // clair). Ne concerne que MACHINES_IRM (projets 01/02) — MACHINES_SCANNER et
+      // MACHINES_ESAOTE (projet 03) ne contiennent aucune marque concurrente d'IRM. ----
+      var GATE_CONCURRENCE_KEY = "ced4scale-concurrence-access";
+      var GATE_CONCURRENCE_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
+      var GATE_CONCURRENCE_DAYS = 15;
+      function gateConcurrenceDeverrouille() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(GATE_CONCURRENCE_KEY) || "null");
+          return !!(v && v.expiresAt && v.expiresAt > Date.now());
+        } catch (e) { return false; }
+      }
+      function gateConcurrenceHash(value) {
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) return Promise.resolve("");
+        return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+          return Array.from(new Uint8Array(buffer)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        });
+      }
+      function machinesIrmVisibles() {
+        return gateConcurrenceDeverrouille() ? MACHINES_IRM : MACHINES_IRM.filter(function (m) { return !estMarqueConcurrenteIRM(m); });
+      }
+      (function () {
+        var wrap = document.getElementById("unGateConcurrenceWrap");
+        var btn = document.getElementById("unGateConcurrenceBtn");
+        var form = document.getElementById("unGateConcurrenceForm");
+        var input = document.getElementById("unGateConcurrenceCode");
+        var valider = document.getElementById("unGateConcurrenceValider");
+        var erreur = document.getElementById("unGateConcurrenceErreur");
+        btn.addEventListener("click", function () { form.hidden = !form.hidden; });
+        function essayer() {
+          gateConcurrenceHash(input.value).then(function (h) {
+            if (h === GATE_CONCURRENCE_HASH) {
+              try {
+                window.localStorage.setItem(GATE_CONCURRENCE_KEY, JSON.stringify({ expiresAt: Date.now() + GATE_CONCURRENCE_DAYS * 86400000 }));
+              } catch (e) {}
+              wrap.hidden = true;
+              if (projetActuel !== 3) {
+                peuplerMachineSelect(selectA, machinesIrmVisibles(), selectA.value);
+                peuplerMachineSelect(selectB, machinesIrmVisibles(), selectB.value);
+              }
+            } else {
+              erreur.style.display = "inline";
+            }
+          });
+        }
+        valider.addEventListener("click", essayer);
+        input.addEventListener("keydown", function (e) { if (e.key === "Enter") essayer(); });
+      })();
 
       var selectA = document.getElementById("unMachineA");
       var selectB = document.getElementById("unMachineB");

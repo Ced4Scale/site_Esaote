@@ -29,6 +29,10 @@
   <script src="assets/machines-energie-data.js"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260910-bascule-oscan"></script>
   <style>
+    /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
+       inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
+    #boGateConcurrenceForm { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+    #boGateConcurrenceForm[hidden] { display: none; }
     /* Réglages propres à ce simulateur (curseur + courbe), pas encore dans styles.css partagé. */
     .bascule-champ { margin-bottom: 1rem; }
     .bascule-champ label { display: block; font-weight: 600; font-size: .88rem; margin-bottom: .4rem; }
@@ -2079,6 +2083,19 @@
               <button type="button" class="bascule-info-btn" id="boHypModeleInfoBtn" aria-expanded="false" aria-controls="boHypModeleInfoPop" aria-label="Origine de cette estimation">💡</button>
               <div class="bascule-info-pop" id="boHypModeleInfoPop" hidden>Estimations Ced4Scale à partir des guides d'implantation officiels, pas des données constructeur — détail et niveau de confiance par modèle sur la <a href="sources-energie.html" target="_blank" rel="noopener">page des sources</a>.</div>
             </span>
+            <!-- Verrou "marques concurrentes" (21/09/2026) — cette liste ne contient QUE
+                 des marques concurrentes (Esaote ne fait pas d'IRM tunnel) + les 2 IRM
+                 génériques, toujours visibles. Voir simulateur-point-mort.html pour le
+                 motif d'origine. -->
+            <p class="simulator__hint" id="boGateConcurrenceWrap" style="margin-top:.4rem">
+              Les marques concurrentes ne sont pas affichées dans cette liste.
+              <button type="button" class="btn btn--sm btn--ghost" id="boGateConcurrenceBtn">🔒 Débloquer</button>
+            </p>
+            <div id="boGateConcurrenceForm" hidden>
+              <input type="password" id="boGateConcurrenceCode" placeholder="Code" style="width:8rem" />
+              <button type="button" class="btn btn--sm" id="boGateConcurrenceValider">Valider</button>
+              <span id="boGateConcurrenceErreur" style="color:var(--red);display:none">Code incorrect.</span>
+            </div>
           </div>
           <div class="field" style="margin-bottom:0">
             <label for="boHypDureeAcqA">Durée d'acquisition pure — Machine A</label>
@@ -3570,6 +3587,31 @@
           return m.aimant === "supraconducteur" && m.champT === champCible;
         });
       }
+
+      // ---- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
+      // pour le détail du motif (code = numéro de téléphone de Cédric, SHA-256, jamais en
+      // clair). Cette liste ne contient QUE des marques concurrentes (Esaote ne fait pas
+      // d'IRM tunnel) + les 2 IRM génériques (toujours visibles, estMarqueConcurrenteIRM()
+      // renvoie false pour elles). ----
+      var GATE_CONCURRENCE_KEY = "ced4scale-concurrence-access";
+      var GATE_CONCURRENCE_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
+      var GATE_CONCURRENCE_DAYS = 15;
+      function gateConcurrenceDeverrouille() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(GATE_CONCURRENCE_KEY) || "null");
+          return !!(v && v.expiresAt && v.expiresAt > Date.now());
+        } catch (e) { return false; }
+      }
+      function gateConcurrenceHash(value) {
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) return Promise.resolve("");
+        return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+          return Array.from(new Uint8Array(buffer)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        });
+      }
+      function modelesTunnelVisibles(classeA) {
+        var modeles = modelesTunnelPourChamp(classeA);
+        return gateConcurrenceDeverrouille() ? modeles : modeles.filter(function (m) { return !estMarqueConcurrenteIRM(m); });
+      }
       function elecPourClasse(classeKey) {
         if ((classeKey === "t15" || classeKey === "sup15") && MODELE_A_KEY) {
           var m = modelesTunnelPourChamp(classeKey).filter(function (x) { return x.key === MODELE_A_KEY; })[0];
@@ -3580,7 +3622,7 @@
       function remplirModelesA() {
         var classeA = document.getElementById("boClasseA").value;
         var select = document.getElementById("boHypModeleA");
-        var modeles = modelesTunnelPourChamp(classeA);
+        var modeles = modelesTunnelVisibles(classeA);
         select.innerHTML = "<option value=\"\">Valeur générique " + NOM_CLASSE[classeA] + "</option>";
         modeles.forEach(function (m) {
           var o = document.createElement("option");
@@ -3588,7 +3630,33 @@
           select.appendChild(o);
         });
         select.value = modeles.some(function (m) { return m.key === MODELE_A_KEY; }) ? MODELE_A_KEY : "";
+        if (select.value !== MODELE_A_KEY) MODELE_A_KEY = "";
       }
+      (function () {
+        var wrap = document.getElementById("boGateConcurrenceWrap");
+        var btn = document.getElementById("boGateConcurrenceBtn");
+        var form = document.getElementById("boGateConcurrenceForm");
+        var input = document.getElementById("boGateConcurrenceCode");
+        var valider = document.getElementById("boGateConcurrenceValider");
+        var erreur = document.getElementById("boGateConcurrenceErreur");
+        if (gateConcurrenceDeverrouille()) { wrap.hidden = true; return; }
+        btn.addEventListener("click", function () { form.hidden = !form.hidden; });
+        function essayer() {
+          gateConcurrenceHash(input.value).then(function (h) {
+            if (h === GATE_CONCURRENCE_HASH) {
+              try {
+                window.localStorage.setItem(GATE_CONCURRENCE_KEY, JSON.stringify({ expiresAt: Date.now() + GATE_CONCURRENCE_DAYS * 86400000 }));
+              } catch (e) {}
+              wrap.hidden = true;
+              remplirModelesA();
+            } else {
+              erreur.style.display = "inline";
+            }
+          });
+        }
+        valider.addEventListener("click", essayer);
+        input.addEventListener("keydown", function (e) { if (e.key === "Enter") essayer(); });
+      })();
       document.getElementById("boClasseA").addEventListener("change", function () {
         MODELE_A_KEY = ""; // la liste de modèles change avec le champ, on repart générique
         // La durée d'acquisition par défaut dépend aussi du champ (8 min en 1,5 T,

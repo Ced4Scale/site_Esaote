@@ -27,8 +27,12 @@
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
-  <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
+  <script src="assets/machines-energie-data.js?v=20260921-irm-generiques"></script>
   <style>
+    /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
+       inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
+    #pmGateConcurrenceForm { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+    #pmGateConcurrenceForm[hidden] { display: none; }
     /* Masquer/réafficher la colonne de gauche entière au clic sur l'icône ⏴/⏵ (motif
        porté de simulateur-ct-vs-irm.html le 08/09/2026, sur demande de Cédric — la
        colonne de résultats prend alors toute la largeur). */
@@ -763,6 +767,22 @@
             </div>
           </div>
 
+          <!-- Verrou "marques concurrentes" (21/09/2026) — les 2 IRM génériques
+               (1,5 T/3 T) et les modèles Esaote restent en accès libre dans les
+               listes ci-dessous ; les marques concurrentes (Siemens/GE/Philips/
+               Canon) n'apparaissent qu'une fois ce code entré. -->
+          <div class="field" id="pmGateConcurrenceWrap">
+            <p class="simulator__hint" style="margin:0">
+              Les marques concurrentes ne sont pas affichées dans les listes ci-dessous.
+              <button type="button" class="btn btn--sm btn--ghost" id="pmGateConcurrenceBtn">🔒 Débloquer</button>
+            </p>
+            <div id="pmGateConcurrenceForm" hidden>
+              <input type="password" id="pmGateConcurrenceCode" placeholder="Code" style="width:8rem" />
+              <button type="button" class="btn btn--sm" id="pmGateConcurrenceValider">Valider</button>
+              <span id="pmGateConcurrenceErreur" style="color:var(--red);display:none">Code incorrect.</span>
+            </div>
+          </div>
+
           <div class="simulator__machine-box" data-slot="0">
           <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
           <div class="field">
@@ -1385,6 +1405,58 @@
       // comparés à une IRM Esaote sur le simulateur dédié simulateur-ct-vs-irm.html.
       var MACHINES = ENERGIE_MACHINES.filter(function (m) { return m.type !== "ct" && m.type !== "peroperatoire"; });
 
+      // ---- Verrou "marques concurrentes" (21/09/2026) — code = numéro de téléphone de
+      // Cédric, jamais en clair dans le code source (SHA-256). Même mécanisme que le
+      // mot de passe global du site (assets/site-gate.js), clé/portée séparées :
+      // débloqué une fois, valable 15 jours, partagé entre les fichiers qui en ont
+      // besoin (même clé localStorage). Esaote et les 2 IRM génériques restent TOUJOURS
+      // visibles, verrou ou pas — estMarqueConcurrenteIRM() vient de
+      // assets/machines-energie-data.js (propriétaire de cette règle). ----
+      var GATE_CONCURRENCE_KEY = "ced4scale-concurrence-access";
+      var GATE_CONCURRENCE_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
+      var GATE_CONCURRENCE_DAYS = 15;
+      function gateConcurrenceDeverrouille() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(GATE_CONCURRENCE_KEY) || "null");
+          return !!(v && v.expiresAt && v.expiresAt > Date.now());
+        } catch (e) { return false; }
+      }
+      function gateConcurrenceHash(value) {
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) return Promise.resolve("");
+        return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+          return Array.from(new Uint8Array(buffer)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        });
+      }
+      function machinesVisibles() {
+        return gateConcurrenceDeverrouille() ? MACHINES : MACHINES.filter(function (m) { return !estMarqueConcurrenteIRM(m); });
+      }
+      (function () {
+        var wrap = document.getElementById("pmGateConcurrenceWrap");
+        var btn = document.getElementById("pmGateConcurrenceBtn");
+        var form = document.getElementById("pmGateConcurrenceForm");
+        var input = document.getElementById("pmGateConcurrenceCode");
+        var valider = document.getElementById("pmGateConcurrenceValider");
+        var erreur = document.getElementById("pmGateConcurrenceErreur");
+        if (gateConcurrenceDeverrouille()) { wrap.hidden = true; return; }
+        btn.addEventListener("click", function () { form.hidden = !form.hidden; });
+        function essayer() {
+          gateConcurrenceHash(input.value).then(function (h) {
+            if (h === GATE_CONCURRENCE_HASH) {
+              try {
+                window.localStorage.setItem(GATE_CONCURRENCE_KEY, JSON.stringify({ expiresAt: Date.now() + GATE_CONCURRENCE_DAYS * 86400000 }));
+              } catch (e) {}
+              wrap.hidden = true;
+              peuplerMachineSelect(selectA, selectA.value);
+              peuplerMachineSelect(selectB, selectB.value);
+            } else {
+              erreur.style.display = "inline";
+            }
+          });
+        }
+        valider.addEventListener("click", essayer);
+        input.addEventListener("keydown", function (e) { if (e.key === "Enter") essayer(); });
+      })();
+
       var dateSelect = document.getElementById("pmDate");
       FT_CLASSES.le05.dates.forEach(function (d) {
         var opt = document.createElement("option");
@@ -1404,22 +1476,27 @@
       // Retiré le 13/09/2026 (demande de Cédric, "on peut retirer gamme de champ") :
       // liste des IRM à plat, sans filtre préalable par gamme de champ — même
       // logique que ct-vs-irm.html/bascule-oscan.html, qui n'ont jamais eu ce filtre.
+      // Repeuplée aussi au déverrouillage du verrou "marques concurrentes"
+      // (21/09/2026) — d'où le nettoyage `innerHTML` avant reconstruction, absent
+      // avant cette date car la fonction n'était appelée qu'une fois par select.
       function peuplerMachineSelect(machineSelect, valeurParDefaut) {
-        MACHINES.forEach(function (m) {
+        var liste = machinesVisibles();
+        machineSelect.innerHTML = "";
+        liste.forEach(function (m) {
           var opt = document.createElement("option");
           opt.value = m.key;
           opt.textContent = m.nomCourt;
           machineSelect.appendChild(opt);
         });
-        if (valeurParDefaut && MACHINES.some(function (m) { return m.key === valeurParDefaut; })) {
+        if (valeurParDefaut && liste.some(function (m) { return m.key === valeurParDefaut; })) {
           machineSelect.value = valeurParDefaut;
-        } else if (MACHINES.length) {
-          machineSelect.value = MACHINES[0].key;
+        } else if (liste.length) {
+          machineSelect.value = liste[0].key;
         }
       }
 
       peuplerMachineSelect(selectA, "esaote-g-scan");
-      peuplerMachineSelect(selectB, "siemens-altea");
+      peuplerMachineSelect(selectB, "generique-15t");
 
       // Nombre de MERM par défaut selon le type d'aimant : un aimant permanent (IRM ouverte
       // Esaote) se manipule seul, un aimant supraconducteur (IRM tunnel) demande en général

@@ -26,8 +26,12 @@
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script src="assets/machines-energie-data.js?v=20260812-prise-en-charge"></script>
+  <script src="assets/machines-energie-data.js?v=20260921-irm-generiques"></script>
   <style>
+    /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
+       inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
+    #eneGateConcurrenceForm { display: flex; gap: .5rem; align-items: center; margin-top: .5rem; flex-wrap: wrap; }
+    #eneGateConcurrenceForm[hidden] { display: none; }
     /* Masquer/réafficher la colonne de gauche entière au clic sur l'icône ⏴/⏵ (motif
        porté de simulateur-ct-vs-irm.html le 08/09/2026, sur demande de Cédric — la
        colonne de résultats prend alors toute la largeur). */
@@ -659,6 +663,22 @@
 
         <details class="simulator__field-group bascule-hyp-section" name="eneParamAccordion">
           <summary>Machines à comparer</summary>
+
+          <!-- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
+               pour le motif d'origine. Esaote, scanners et les 2 IRM génériques
+               (1,5 T/3 T) restent toujours visibles, verrou ou pas. -->
+          <div class="field" id="eneGateConcurrenceWrap">
+            <p class="simulator__hint" style="margin:0">
+              Les marques concurrentes d'IRM ne sont pas affichées dans les listes ci-dessous.
+              <button type="button" class="btn btn--sm btn--ghost" id="eneGateConcurrenceBtn">🔒 Débloquer</button>
+            </p>
+            <div id="eneGateConcurrenceForm" hidden>
+              <input type="password" id="eneGateConcurrenceCode" placeholder="Code" style="width:8rem" />
+              <button type="button" class="btn btn--sm" id="eneGateConcurrenceValider">Valider</button>
+              <span id="eneGateConcurrenceErreur" style="color:var(--red);display:none">Code incorrect.</span>
+            </div>
+          </div>
+
           <div class="simulator__machine-box" data-slot="0">
             <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0">Machine A</h4>
             <div class="field">
@@ -1113,6 +1133,56 @@
         return MACHINES.filter(function (m) { return m.key === key; })[0];
       }
 
+      // ---- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
+      // pour le détail du motif (code = numéro de téléphone de Cédric, SHA-256, jamais en
+      // clair). Ne gate QUE les IRM concurrentes (estMarqueConcurrenteIRM(), propriétaire
+      // dans assets/machines-energie-data.js) — les scanners et machines péropératoires de
+      // cette page restent toujours visibles, verrou ou pas. ----
+      var GATE_CONCURRENCE_KEY = "ced4scale-concurrence-access";
+      var GATE_CONCURRENCE_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
+      var GATE_CONCURRENCE_DAYS = 15;
+      function gateConcurrenceDeverrouille() {
+        try {
+          var v = JSON.parse(window.localStorage.getItem(GATE_CONCURRENCE_KEY) || "null");
+          return !!(v && v.expiresAt && v.expiresAt > Date.now());
+        } catch (e) { return false; }
+      }
+      function gateConcurrenceHash(value) {
+        if (!window.crypto || !window.crypto.subtle || !window.TextEncoder) return Promise.resolve("");
+        return window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value)).then(function (buffer) {
+          return Array.from(new Uint8Array(buffer)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
+        });
+      }
+      function machinesVisibles() {
+        return gateConcurrenceDeverrouille() ? MACHINES : MACHINES.filter(function (m) { return !estMarqueConcurrenteIRM(m); });
+      }
+      (function () {
+        var wrap = document.getElementById("eneGateConcurrenceWrap");
+        var btn = document.getElementById("eneGateConcurrenceBtn");
+        var form = document.getElementById("eneGateConcurrenceForm");
+        var input = document.getElementById("eneGateConcurrenceCode");
+        var valider = document.getElementById("eneGateConcurrenceValider");
+        var erreur = document.getElementById("eneGateConcurrenceErreur");
+        if (gateConcurrenceDeverrouille()) { wrap.hidden = true; return; }
+        btn.addEventListener("click", function () { form.hidden = !form.hidden; });
+        function essayer() {
+          gateConcurrenceHash(input.value).then(function (h) {
+            if (h === GATE_CONCURRENCE_HASH) {
+              try {
+                window.localStorage.setItem(GATE_CONCURRENCE_KEY, JSON.stringify({ expiresAt: Date.now() + GATE_CONCURRENCE_DAYS * 86400000 }));
+              } catch (e) {}
+              wrap.hidden = true;
+              repeuplerMachineSelect(selectA, champA);
+              repeuplerMachineSelect(selectB, champB);
+            } else {
+              erreur.style.display = "inline";
+            }
+          });
+        }
+        valider.addEventListener("click", essayer);
+        input.addEventListener("keydown", function (e) { if (e.key === "Enter") essayer(); });
+      })();
+
       // Amplitude d'ouverture BRUTE d'un jour, telle que saisie (sans déduire la coupure) —
       // ajouté le 14/09/2026 à la demande de Cédric ("il manque les coupures"), motif porté
       // de simulateur-bascule-oscan.html (case "Coupure ?" + durée révélée, groupées dans un
@@ -1137,7 +1207,7 @@
       function repeuplerMachineSelect(machineSelect, champSelect, valeurParDefaut) {
         var categorie = CHAMP_CATEGORIES.filter(function (c) { return c.key === champSelect.value; })[0];
         var previous = machineSelect.value;
-        var machinesFiltrees = MACHINES.filter(function (m) { return categorie.test(m.champT); });
+        var machinesFiltrees = machinesVisibles().filter(function (m) { return categorie.test(m.champT); });
         machineSelect.innerHTML = "";
         machinesFiltrees.forEach(function (m) {
           var opt = document.createElement("option");
@@ -1156,7 +1226,7 @@
       }
 
       repeuplerMachineSelect(selectA, champA, "esaote-g-scan");
-      repeuplerMachineSelect(selectB, champB, "siemens-altea");
+      repeuplerMachineSelect(selectB, champB, "generique-15t");
 
       // Pré-remplit la durée d'acquisition avec la valeur par défaut de la machine choisie
       // (un champ plus bas prend en général plus de temps par séquence) — modifiable ensuite.

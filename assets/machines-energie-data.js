@@ -711,8 +711,62 @@ var ENERGIE_MACHINES = [
     climSalleKw: 4.0,
     refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule.",
     confiance: "Aucun guide d'implantation officiel Canon Medical trouvé en accès libre. Puissance en fonctionnement estimée à partir d'une fiche technique constructeur citant \"jusqu'à 85 kVA\" pour ce modèle, convertie en kW avec un facteur de puissance de 0,9. Veille et climatisation de salle estimées par extrapolation depuis Siemens. À confirmer avec Canon Medical Systems."
+  },
+
+  // ---------- IRM génériques (aucune marque) — ajoutées le 21/09/2026, demande de
+  // Cédric : présenter un comparatif générique 1,5 T/3 T sans citer de marque, en
+  // accès libre comme les modèles Esaote (contrairement aux marques concurrentes
+  // ci-dessus, verrouillées par mot de passe dans les simulateurs qui les affichent —
+  // voir GATE_CONCURRENCE_HASH plus bas). Puissances électriques calibrées sur une
+  // machine de référence déjà présente dans ce fichier (même méthode que le "1,5 T
+  // générique"/"3 T générique" déjà utilisés sur simulateur-bascule-oscan.html) :
+  // Siemens Altea pour le 1,5 T, Siemens Prisma pour le 3 T — jamais citées comme
+  // source dans l'interface, seulement en interne pour calibrer. ----------
+  {
+    key: "generique-15t",
+    nomCourt: "IRM générique 1,5 T",
+    champT: 1.5,
+    marque: "Générique",
+    modele: "IRM tunnel générique, 1,5 T",
+    aimant: "supraconducteur",
+    eteint: 4.3,
+    pret: 8.2,
+    mesure: 20.2,
+    dureeAcquisitionMinutes: 10,
+    dureeChangementMinutes: 3,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 2.5,
+    refroidissement: "eau glacée + climatisation de la salle d'examen (valeur générique, non liée à un modèle commercial précis).",
+    confiance: "Valeur générique — puissances calibrées sur la Déclaration Environnementale de Produit d'un modèle 1,5 T de référence du marché (non citée à l'écran), pour représenter une IRM tunnel 1,5 T \"moyenne\" sans engager de marque précise."
+  },
+  {
+    key: "generique-3t",
+    nomCourt: "IRM générique 3 T",
+    champT: 3,
+    marque: "Générique",
+    modele: "IRM tunnel générique, 3 T",
+    aimant: "supraconducteur",
+    eteint: 4.8,
+    pret: 10.8,
+    mesure: 22.4,
+    dureeAcquisitionMinutes: 8,
+    dureeChangementMinutes: 3,
+    coeffRefroidissementLT: 0.33,
+    climSalleKw: 3.2,
+    refroidissement: "eau glacée + climatisation de la salle d'examen (valeur générique, non liée à un modèle commercial précis).",
+    confiance: "Valeur générique — puissances calibrées sur la Déclaration Environnementale de Produit d'un modèle 3 T de référence du marché (non citée à l'écran), pour représenter une IRM tunnel 3 T \"moyenne\" sans engager de marque précise."
   }
 ];
+
+// ---- Marques d'IRM CONCURRENTES verrouillées par mot de passe (21/09/2026) — pas les
+// scanners, pas Esaote, pas les 2 génériques ci-dessus. Fonction partagée par référence
+// (pas de JS partagé entre pages sur ce site : chaque simulateur qui gate ses IRM
+// concurrentes redéfinit sa propre estMarqueConcurrenteIRM(), mais DOIT suivre
+// exactement cette même règle : type IRM (pas "ct"/"peroperatoire") ET marque ni
+// "Esaote" ni "Générique"). ----
+function estMarqueConcurrenteIRM(m) {
+  return m.type !== "ct" && m.type !== "peroperatoire" && m.marque !== "Esaote" && m.marque !== "Générique";
+}
 
 // Facteur d'émission de l'électricité française — pour convertir le coût énergétique en
 // empreinte carbone (volet RSE). Source : ADEME, Base Carbone, mix électrique moyen France
