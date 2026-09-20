@@ -226,6 +226,69 @@
     .un-pm-annuel-machine-title { font-weight: 800; color: var(--slot-color); margin-bottom: .5rem; }
     .un-pm-annuel-line { font-size: .92rem; line-height: 1.7; }
     .un-pm-annuel-line strong { color: var(--slot-color); }
+
+    /* ================= Étape 3 : Bascule progressive A↔B ==================
+       Motif "Curseur de répartition entre deux machines" du skill, repris de
+       simulateur-bascule-oscan.html (#boCurseur/#boCurseur2 — piste
+       transparente superposée à un remplissage coloré en JS, jamais
+       accent-color seul, qui laisse la partie non remplie grise sans qu'aucun
+       CSS ne puisse l'effacer). Renommé ici avec le préfixe "un-" pour rester
+       cohérent avec le reste de ce fichier. ---- */
+    .un-courbe-zone { position: relative; margin: 1.6rem 0 .5rem; }
+    .un-courbe-zone svg { width: 100%; height: 100px; display: block; overflow: visible; }
+    .un-bascule-slider-labels { position: relative; height: 1.4rem; margin-top: .6rem; }
+    .un-bascule-slider-labels .lbl { position: absolute; top: 0; font-size: .82rem; font-weight: 700; white-space: nowrap; transform: translateX(-50%); }
+    .un-bascule-track-wrap { position: relative; margin-bottom: .4rem; }
+    .un-bascule-slider-track { position: relative; height: 30px; border-radius: 15px; overflow: hidden; background: linear-gradient(90deg, #2a78d6, #eb6834); box-shadow: inset 0 0 0 1px var(--line); }
+    .un-bascule-slider-track .un-fill-b { position: absolute; top: 0; right: 0; bottom: 0; background: transparent; }
+    input[type=range].un-bascule-curseur {
+      position: absolute; top: -4px; left: 0; width: 100%; height: 38px; margin: 0;
+      -webkit-appearance: none; appearance: none; background: transparent; cursor: grab;
+    }
+    input[type=range].un-bascule-curseur:active { cursor: grabbing; }
+    input[type=range].un-bascule-curseur::-webkit-slider-thumb {
+      -webkit-appearance: none; width: 18px; height: 38px; border-radius: 6px;
+      background: linear-gradient(135deg, #21c7c1 0%, #0f8f92 100%);
+      border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: grab;
+    }
+    input[type=range].un-bascule-curseur::-moz-range-thumb {
+      width: 18px; height: 38px; border-radius: 6px;
+      background: linear-gradient(135deg, #21c7c1 0%, #0f8f92 100%);
+      border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0,0,0,.25); cursor: grab;
+    }
+    input[type=range].un-bascule-curseur::-webkit-slider-runnable-track { background: transparent; }
+    input[type=range].un-bascule-curseur::-moz-range-track { background: transparent; }
+    .un-bascule-ends { display: flex; justify-content: space-between; font-size: .78rem; color: var(--muted); margin-top: .3rem; }
+
+    .un-bascule-stats { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 1rem; margin-top: 1.4rem; }
+    @media (max-width: 640px) { .un-bascule-stats { grid-template-columns: minmax(0,1fr); } }
+    .un-bascule-stat { background: #fff; border: 1px solid var(--line); border-left: 5px solid var(--line); border-radius: var(--radius); padding: 1rem 1.1rem; box-shadow: var(--shadow-sm); }
+    .un-bascule-stat-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 700; color: var(--ink-soft); margin-bottom: .4rem; }
+    .un-bascule-stat-value { font-size: clamp(1.15rem, 2.6vw, 1.55rem); font-weight: 900; white-space: nowrap; }
+    .un-bascule-stat-detail { margin-top: .5rem; display: flex; flex-direction: column; gap: .2rem; }
+    .un-bascule-stat-detail-row { display: flex; justify-content: space-between; gap: .6rem; font-size: .85rem; font-weight: 700; }
+
+    /* Tableau "Forfait technique - barème dégressif" — motif du skill, repris tel
+       quel de simulateur-bascule-oscan.html (#boCardBareme). */
+    .un-bareme-ligne1 { white-space: nowrap; display: block; }
+    .un-bareme-tarif { font-weight: 400; }
+    .un-bareme-ca { display: block; font-weight: 700; }
+    .un-ca-tranche-btn { background: none; border: 0; padding: 0; margin: 0; font: inherit; font-weight: 700; text-decoration: underline dotted; cursor: pointer; }
+    .un-ca-tranche-btn:hover { color: var(--red); }
+    .un-ca-tranche-info { background: var(--wash); border-radius: .5rem; padding: .7rem .9rem; margin-top: .7rem; font-size: .88rem; }
+    .un-ca-tranche-info[hidden] { display: none; }
+    .un-ca-tranche-info strong { color: var(--red); }
+    .un-bareme-showall { display: flex; align-items: center; gap: .4rem; margin-top: .6rem; font-size: .85rem; cursor: pointer; }
+    .un-bareme-showall input { width: 15px; height: 15px; flex: none; }
+    #unBaremeTable.simulator__table--compare2 td:first-child { width: 20%; }
+    #unBaremeTable td:nth-child(2), #unBaremeTable td:nth-child(3) { text-align: right; }
+
+    /* Boîte à outils 🧰 du graphe "Tarif moyen" — réutilise .un-info-wrap/-btn/-pop
+       (motif "Phrase explicative fixe repliée derrière une icône ampoule"), contenu
+       interactif (cases à cocher) au lieu d'un texte — voir wireOutilsBtn() en JS. */
+    .un-outils-check { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; margin: 0 0 .5rem; white-space: nowrap; }
+    .un-outils-check input { width: 15px; height: 15px; flex: none; margin: 0; }
+    .un-outils-titre { font-weight: 800; font-size: .8rem; margin-bottom: .5rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -817,6 +880,153 @@
           </div>
         </div>
       </details>
+
+      <!-- ================= Étape 3 — Bascule progressive A↔B (projet 02 uniquement) =========
+           Porté de simulateur-bascule-oscan.html, lu intégralement le 20/09/2026 avant de
+           construire (curseur de répartition #boCurseur/#boCurseur2, tableau "Forfait
+           technique - barème dégressif" #boCardBareme, graphe "Tarif moyen du forfait
+           technique selon le volume" #boFtMoyChart + sa boîte à outils 🧰 à 6 cases, courbe
+           "Résultat net total" #boCourbeSvg). Visible UNIQUEMENT pour le projet 02 "IRM
+           supplémentaire" (unBasculeWrap.hidden piloté par unRenderBascule()/
+           unBasculeRedessinerTout() ci-dessous) — seul projet où une bascule progressive
+           entre une machine déjà en place (A) et une nouvelle machine (B) a un sens.
+
+           SIMPLIFIÉ délibérément par rapport au fichier source (périmètre de cette étape) :
+             - PAS de mode Comparer / mémoires 1-2-3 ("photo de paramètres" + cadenas).
+             - PAS de carte joker "Capacité restante sur l'O-scan" (camembert + barres).
+             - PAS de mode présentation + disposition libre en plein écran (16:9/4:3/
+               2 colonnes, blocs déplaçables/redimensionnables).
+             - PAS de bouton "Rentabilité maximale" (trouverOptimum) — le point culminant
+               de la courbe reste affiché à titre indicatif (sous-produit du même
+               échantillonnage), mais rien ne déplace le curseur automatiquement.
+             - PAS de ligne de seuil "part membres/extrémités" : sur bascule-oscan, elle
+               limite le report vers l'O-scan aux seuls examens d'extrémités (machine
+               spécialisée) — n'a pas de sens ici, 2 IRM générales sans restriction de type
+               d'examen entre elles.
+             - Modèle électrique : réutilise electriciteMensuellePointMort() déjà construite
+               pour le Point mort ci-dessus (socle fixe mensuel + coût variable par examen),
+               PAS le modèle à 3 couches "profil d'heures ouvertes réel" du fichier source —
+               évite de dupliquer un 2ᵉ modèle électrique complet dans le même outil, cohérent
+               avec ce qu'unifie.html a déjà construit pour le Point mort. Même personnel/
+               mêmes charges fixes (loyer, salle, assurance, entretien, injecteur, part du
+               RIS) que le Point mort — seule la RECETTE change (barème dégressif complet au
+               lieu du tarif plein seul). -->
+      <div id="unBasculeWrap" hidden>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unBasculeCard">
+          <summary>Bascule progressive — Machine A ↔ Machine B</summary>
+
+          <div class="field" style="margin-bottom:1.2rem">
+            <label for="unBasculeVolumeTotal">Activité totale actuelle (partagée entre les 2 machines)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unBasculeVolumeTotal" min="0" step="100" value="12000" />
+              <span>FT/an</span>
+            </div>
+            <p class="simulator__hint">Reprend « Votre activité » (colonne Paramètres) convertie en examens par an à l'ouverture de cet écran — modifiable ensuite indépendamment ici.</p>
+          </div>
+
+          <div class="un-courbe-zone" id="unBasculeGrapheZone">
+            <svg id="unCourbeSvg" viewBox="0 0 640 170" preserveAspectRatio="none" role="img" aria-label="Résultat net total selon la répartition de l'activité entre Machine A et Machine B">
+              <line id="unCourbeZero" x1="0" y1="0" x2="640" y2="0" stroke="var(--line)" stroke-width="1"></line>
+              <path id="unCourbePath" fill="none" stroke="#eb6834" stroke-width="2.5"></path>
+              <text id="unLabelPic" x="0" y="-16" font-size="12" font-weight="700" text-anchor="middle">
+                <tspan id="unLabelPicA" fill="#2a78d6"></tspan><tspan fill="#8a8f98"> / </tspan><tspan id="unLabelPicB" fill="#eb6834"></tspan>
+              </text>
+              <line id="unLignePointMortA" x1="0" y1="0" x2="0" y2="170" stroke="#2a78d6" stroke-width="1.5" stroke-dasharray="3,3"></line>
+              <text id="unLabelPointMortA" x="0" y="-4" font-size="10" fill="#2a78d6" font-weight="700" text-anchor="middle"></text>
+              <line id="unLignePointMortB" x1="0" y1="0" x2="0" y2="170" stroke="#eb6834" stroke-width="1.5" stroke-dasharray="3,3"></line>
+              <text id="unLabelPointMortB" x="0" y="-4" font-size="10" fill="#eb6834" font-weight="700" text-anchor="middle"></text>
+              <circle id="unCurseurPointHalo" cx="0" cy="0" r="6" fill="#fcfcfb"></circle>
+              <circle id="unCurseurPoint" cx="0" cy="0" r="4" fill="#eb6834"></circle>
+            </svg>
+          </div>
+
+          <div class="un-bascule-slider-labels">
+            <span class="lbl" id="unLblA" style="color:#2a78d6">Machine A : 12.000 FT/an</span>
+            <span class="lbl" id="unLblB" style="color:#eb6834">Machine B : 0 FT/an</span>
+          </div>
+          <div class="un-bascule-track-wrap">
+            <div class="un-bascule-slider-track">
+              <div class="un-fill-b" id="unFillB" style="width:0%"></div>
+            </div>
+            <input type="range" class="un-bascule-curseur" id="unBasculeCurseur" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et Machine B" />
+          </div>
+          <div class="un-bascule-ends"><span>0</span><span id="unBasculeEndMax">12.000</span></div>
+
+          <div class="un-bascule-stats">
+            <div class="un-bascule-stat" style="border-left-color:#eb6834">
+              <div class="un-bascule-stat-label">Résultat net total</div>
+              <div class="un-bascule-stat-value" id="unBasculeResultat">—</div>
+              <div class="un-bascule-stat-detail">
+                <span class="un-bascule-stat-detail-row" style="color:#2a78d6"><span>Machine A</span><span id="unBasculeResultatA">—</span></span>
+                <span class="un-bascule-stat-detail-row" style="color:#eb6834"><span>Machine B</span><span id="unBasculeResultatB">—</span></span>
+              </div>
+            </div>
+            <div class="un-bascule-stat" style="border-left-color:#6b5b95">
+              <div class="un-bascule-stat-label">C.A. total (forfait technique)</div>
+              <div class="un-bascule-stat-value" id="unBasculeCA">—</div>
+              <div class="un-bascule-stat-detail">
+                <span class="un-bascule-stat-detail-row" style="color:#2a78d6"><span>Machine A</span><span id="unBasculeCAA">—</span></span>
+                <span class="un-bascule-stat-detail-row" style="color:#eb6834"><span>Machine B</span><span id="unBasculeCAB">—</span></span>
+              </div>
+            </div>
+          </div>
+        </details>
+
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCardBareme">
+          <summary>Forfait technique - barème dégressif</summary>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table simulator__table--compare2" id="unBaremeTable">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th><span class="simulator__swatch-text" data-slot="0" id="unNomClasseABareme" style="color:#2a78d6">Machine A</span></th>
+                  <th><span class="simulator__swatch-text" data-slot="1" id="unNomClasseBBareme" style="color:#eb6834">Machine B</span></th>
+                </tr>
+              </thead>
+              <tbody id="unBaremeMini"></tbody>
+            </table>
+          </div>
+          <label class="un-bareme-showall">
+            <input type="checkbox" id="unBaremeShowAllCa">
+            Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
+          </label>
+          <div class="un-ca-tranche-info" id="unBaremeCaInfo" hidden></div>
+        </details>
+
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unFtMoyCard">
+          <summary>Tarif moyen du forfait technique selon le volume
+            <span class="un-info-wrap">
+              <button type="button" class="un-info-btn" id="unFtMoyInfoBtn" aria-expanded="false" aria-controls="unFtMoyInfoPop" aria-label="Comment lire ce graphe">💡</button>
+              <div class="un-info-pop un-info-pop--table" id="unFtMoyInfoPop" hidden>
+                <table class="un-info-table">
+                  <tbody>
+                    <tr><td>Trait plein</td><td>Tarif <strong>MOYEN</strong> réellement obtenu compte tenu du barème dégressif — pas le tarif de la seule tranche où tombe le volume.</td></tr>
+                    <tr><td>Pointillé serré ("en marches")</td><td>Tarif <strong>RÉEL</strong> de la tranche où tombe ce volume précis, sans moyenner.</td></tr>
+                    <tr><td>Courbe Machine B</td><td>Part de l'activité totale actuelle (à gauche) et descend vers 0 (à droite), miroir de la courbe Machine A — les 2 machines se partagent le même total d'examens.</td></tr>
+                    <tr><td>Repère vertical</td><td>Suit la répartition actuelle du curseur ci-dessus.</td></tr>
+                    <tr><td>🧰</td><td>Pour choisir quoi afficher.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </span>
+            <span class="un-info-wrap">
+              <button type="button" class="un-info-btn" id="unFtMoyOutilsBtn" aria-expanded="false" aria-controls="unFtMoyOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
+              <div class="un-info-pop" id="unFtMoyOutilsPop" hidden>
+                <div class="un-outils-titre">Afficher sur le graphe</div>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheA" /> Courbe Machine A (moyenne)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheB" /> Courbe Machine B (moyenne)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheReelA" checked /> Tarif réel Machine A (marches)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheReelB" checked /> Tarif réel Machine B (marches)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheMoyenne" /> Courbe moyenne pondérée globale</label>
+                <label class="un-outils-check"><input type="checkbox" id="unFtMoyAfficheSeuils" /> Seuils du barème</label>
+              </div>
+            </span>
+          </summary>
+          <div class="simulator__chart-wrap">
+            <svg id="unFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel de patients, pour Machine A et Machine B"></svg>
+          </div>
+        </details>
+      </div>
     </section>
 
   </main>
@@ -853,7 +1063,7 @@
       });
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); afficherEcran("resultats"); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); unRenderBascule(); afficherEcran("resultats"); });
 
       function choisirProjet(n) {
         projetActuel = n;
@@ -1087,6 +1297,19 @@
       // "Votre activité" — libellé + équivalent jour/an
       // ---------------------------------------------------------------------
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
+      // Conversion en activité ANNUELLE, quel que soit le mode d'affichage du champ
+      // "Votre activité" (jour/an) — extraite en fonction dédiée le 20/09/2026 pour
+      // être réutilisée par l'étape 3 (Bascule progressive, voir plus bas), qui a
+      // besoin d'un volume total annuel partagé entre Machine A et Machine B.
+      // Hypothèse déjà en place dans majActiviteLabel() avant cette extraction (pas
+      // introduite ici) : 5 jours ouvrés/semaine, jamais réajustée sur les jours
+      // d'ouverture réels du panneau "Horaires d'ouverture" (samedi/dimanche).
+      function unActiviteAnnuelle() {
+        var mode = document.getElementById("unActiviteMode").value;
+        var v = parseFloat(document.getElementById("unActivite").value) || 0;
+        var joursParMois = 5 * (52 / 12);
+        return mode === "jour" ? v * joursParMois * 12 : v;
+      }
       function majActiviteLabel() {
         var mode = document.getElementById("unActiviteMode").value;
         var champ = document.getElementById("unActivite");
@@ -1096,7 +1319,7 @@
         var joursParMois = 5 * (52 / 12);
         if (mode === "jour") {
           label.textContent = "Nombre de patients par jour";
-          equiv.textContent = "Soit environ " + patientsFmt.format(v * joursParMois * 12) + " patients par an.";
+          equiv.textContent = "Soit environ " + patientsFmt.format(unActiviteAnnuelle()) + " patients par an.";
         } else {
           label.textContent = "Nombre de patients par an";
           equiv.textContent = "Soit environ " + patientsFmt.format(v / (joursParMois * 12)) + " patients par jour.";
@@ -1649,6 +1872,549 @@
 
       wireInfoBtn("unInfoMixerBtn", "unInfoMixerPop");
       wireInfoBtn("unInfoActeBtn", "unInfoActePop");
+
+      // =======================================================================
+      // Étape 3 — Bascule progressive A↔B (projet 02 "IRM supplémentaire"
+      // uniquement). Voir le commentaire HTML au-dessus de #unBasculeWrap pour ce
+      // qui a été volontairement laissé de côté en portant simulateur-bascule-
+      // oscan.html (mémoires/Comparer, joker, mode présentation, bouton
+      // "Rentabilité maximale", ligne de seuil "part extrémités"). Réutilise le
+      // modèle de charges déjà construit pour le Point mort ci-dessus
+      // (unConfigMachinePointMort/unConstruireParamsPointMort/
+      // electriciteMensuellePointMort) — seule la recette change (barème
+      // dégressif complet au lieu du tarif plein seul).
+      // =======================================================================
+      var unBasculeWrap = document.getElementById("unBasculeWrap");
+      function unEur(n, dec) {
+        dec = dec === undefined ? 0 : dec;
+        var f = new Intl.NumberFormat("de-DE", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+        return f.format(n) + " €";
+      }
+
+      // ---- Tranches {debut, fin, montant} du barème dégressif d'une machine, au
+      // tarif RÉEL de la date/zone/amortissement choisis dans "Paramètres" — même
+      // classe/ligne que recettePatient() ci-dessus, jamais une 2ᵉ lecture des
+      // données (motif "Forfait technique - barème dégressif" du skill). ----
+      function unTranchesAvecMontant(machine, dateIso, zone, amortiKey) {
+        var classe = FT_CLASSES[classKeyFromChampT(machine.champT)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        var pleinVal = plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+        return [
+          { debut: 1, fin: classe.REF, montant: pleinVal },
+          { debut: classe.REF + 1, fin: classe.SEUIL1, montant: ligne.reduits.seuil1 },
+          { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2, montant: ligne.reduits.seuil2 },
+          { debut: classe.SEUIL2 + 1, fin: null, montant: ligne.reduits.plafond }
+        ];
+      }
+      // ---- Recette totale au barème dégressif (jamais une moyenne arbitraire —
+      // règle "coût marginal, jamais une moyenne sur un volume" du skill). ----
+      function unFtAnnuelDegressif(tranches, volumeAnnuel) {
+        var reste = Math.max(0, volumeAnnuel), total = 0;
+        tranches.forEach(function (t) {
+          if (reste <= 0) return;
+          var largeur = t.fin != null ? (t.fin - t.debut + 1) : reste;
+          var qte = Math.min(reste, largeur);
+          total += qte * t.montant;
+          reste -= qte;
+        });
+        return total;
+      }
+      function unTarifMoyenPourVolume(tranches, n) {
+        if (n <= 0) return tranches[0].montant;
+        return unFtAnnuelDegressif(tranches, n) / n;
+      }
+      function unTarifReelPourVolume(tranches, n) {
+        for (var i = 0; i < tranches.length; i++) {
+          var t = tranches[i];
+          if (t.fin == null || n <= t.fin) return t.montant;
+        }
+        return tranches[tranches.length - 1].montant;
+      }
+
+      // ---- Résultat net ANNUEL d'une machine à un volume donné : recette au
+      // barème dégressif complet moins RH variable + élec + charges fixes +
+      // contraste — mêmes formules que calculerPointMortMachine() ci-dessus, en
+      // annuel et avec le barème dégressif (pas le tarif plein seul du Point
+      // mort). Machine à 0 examen : ni loyer ni élec ni aucune charge (règle
+      // "charge comptée seulement si volume > 0" du skill). ----
+      function unResultatAnnuelMachine(config, params, tranches, volumeAnnuel) {
+        if (volumeAnnuel <= 0) return { ca: 0, net: 0 };
+        var ca = unFtAnnuelDegressif(tranches, volumeAnnuel);
+        var rhVariableAnnuel = config.debitHoraire > 0 ? (
+            config.nombreMerm * params.coutMermHoraire
+          + config.nombreSecretaire * params.coutSecretaireHoraire
+          + config.nombreAideManip * params.coutAideManipHoraire
+          + config.nombreInfirmiere * params.coutInfirmiereHoraire
+          + config.nombreManipAlternance * params.coutManipAlternanceHoraire
+        ) / config.debitHoraire * volumeAnnuel : 0;
+        var elec = electriciteMensuellePointMort(config.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
+        var coutElecAnnuel = elec.fixeMensuel * 12 + elec.variablePatient * volumeAnnuel;
+        var chargeFixeMensuelle = config.loyer + config.nombreCadreSante * params.coutCadreSanteMensuel
+          + config.salle + config.assurance + config.entretien + config.injecteur + config.fractionRis * params.coutRisMensuel;
+        var coutContraste = config.contrasteCout * (config.contrastePct / 100) * volumeAnnuel;
+        var net = ca - rhVariableAnnuel - coutElecAnnuel - chargeFixeMensuelle * 12 - coutContraste;
+        return { ca: ca, net: net };
+      }
+      function unTotalPour(x, N, configA, configB, params, trA, trB) {
+        var rA = unResultatAnnuelMachine(configA, params, trA, x);
+        var rB = unResultatAnnuelMachine(configB, params, trB, N - x);
+        return { net: rA.net + rB.net, caA: rA.ca, caB: rB.ca, netA: rA.net, netB: rB.net };
+      }
+
+      // ---- Point mort d'une machine seule (plus petit volume > 0 où son résultat
+      // net passe à 0 €), par échantillonnage + interpolation — porté tel quel de
+      // trouverPointMort() de simulateur-bascule-oscan.html (résultat linéaire par
+      // morceaux à cause du barème dégressif, pas d'inversion analytique simple). ----
+      function unTrouverPointMort(resultatFn, vMax) {
+        var pas = Math.max(1, vMax / 500);
+        var vPrec = 0, netPrec = resultatFn(0);
+        for (var v = pas; v <= vMax; v += pas) {
+          var net = resultatFn(v);
+          if (netPrec <= 0 && net > 0) return vPrec + (0 - netPrec) / (net - netPrec) * (v - vPrec);
+          vPrec = v; netPrec = net;
+        }
+        return null;
+      }
+
+      // ---- Courbe "Résultat net total" selon la répartition (forme en cloche) —
+      // portée de dessinerCourbe(), SANS la ligne de seuil "part extrémités" (pas
+      // de sens pour 2 IRM générales, voir commentaire HTML) ni le bouton
+      // "Rentabilité maximale" (hors périmètre) — le point culminant reste calculé
+      // et affiché à titre indicatif (label au-dessus de la courbe), simple
+      // sous-produit du même échantillonnage. ----
+      var unBasculeCourbeEchelle = null;
+      function unDessinerCourbeBascule(N, configA, configB, params, trA, trB) {
+        var xs = [];
+        for (var i = 0; i <= 200; i++) xs.push(Math.round(N * i / 200));
+        xs = xs.concat([0, 1, Math.max(0, N - 1), N, trA[0].fin, trA[1].fin, trA[2].fin, N - trB[0].fin, N - trB[1].fin, N - trB[2].fin]);
+        xs = xs.filter(function (x) { return x >= 0 && x <= N; });
+        xs = Array.from(new Set(xs)).sort(function (a, b) { return a - b; });
+
+        var pts = xs.map(function (x) { var t = unTotalPour(x, N, configA, configB, params, trA, trB); return { x: x, y: t.net }; });
+        var yMin = Math.min.apply(null, pts.map(function (p) { return p.y; }));
+        var yMax = Math.max.apply(null, pts.map(function (p) { return p.y; }));
+        if (yMin === yMax) { yMin -= 1; yMax += 1; }
+        var pad = (yMax - yMin) * 0.08;
+        yMin -= pad; yMax += pad;
+
+        var W = 640, H = 170, top = 14, bottom = 8;
+        function px(x) { return N > 0 ? (x / N) * W : 0; }
+        function py(y) { return top + (1 - (y - yMin) / (yMax - yMin)) * (H - top - bottom); }
+
+        var d = pts.map(function (p, i) { return (i === 0 ? "M" : "L") + px(p.x).toFixed(1) + "," + py(p.y).toFixed(1); }).join(" ");
+        document.getElementById("unCourbePath").setAttribute("d", d);
+
+        var pic = pts.reduce(function (meilleur, p) { return p.y > meilleur.y ? p : meilleur; }, pts[0]);
+        var xPic = px(pic.x);
+        document.getElementById("unLabelPic").setAttribute("x", xPic);
+        document.getElementById("unLabelPicA").textContent = milliersFmt.format(pic.x);
+        document.getElementById("unLabelPicB").textContent = milliersFmt.format(N - pic.x);
+
+        var zeroLine = document.getElementById("unCourbeZero");
+        var yZeroPx = py(0);
+        if (yZeroPx >= top - 1 && yZeroPx <= H - bottom + 1) {
+          zeroLine.setAttribute("y1", yZeroPx); zeroLine.setAttribute("y2", yZeroPx); zeroLine.style.display = "";
+        } else { zeroLine.style.display = "none"; }
+
+        var pointMortA = unTrouverPointMort(function (v) { return unResultatAnnuelMachine(configA, params, trA, v).net; }, N);
+        var ligneA = document.getElementById("unLignePointMortA"), labelA = document.getElementById("unLabelPointMortA");
+        if (pointMortA !== null && pointMortA > 0 && pointMortA < N) {
+          var xPmA = px(pointMortA);
+          ligneA.setAttribute("x1", xPmA); ligneA.setAttribute("x2", xPmA);
+          labelA.setAttribute("x", xPmA); labelA.textContent = milliersFmt.format(pointMortA);
+          ligneA.style.display = ""; labelA.style.display = "";
+        } else { ligneA.style.display = "none"; labelA.style.display = "none"; }
+
+        var pointMortB = unTrouverPointMort(function (v) { return unResultatAnnuelMachine(configB, params, trB, v).net; }, N);
+        var ligneB = document.getElementById("unLignePointMortB"), labelB = document.getElementById("unLabelPointMortB");
+        if (pointMortB !== null && pointMortB > 0 && pointMortB < N) {
+          var xPmB = px(N - pointMortB);
+          ligneB.setAttribute("x1", xPmB); ligneB.setAttribute("x2", xPmB);
+          labelB.setAttribute("x", xPmB); labelB.textContent = milliersFmt.format(pointMortB);
+          ligneB.style.display = ""; labelB.style.display = "";
+        } else { ligneB.style.display = "none"; labelB.style.display = "none"; }
+
+        unBasculeCourbeEchelle = { px: px, py: py };
+      }
+
+      // ---- Tableau "Forfait technique - barème dégressif" — portée de
+      // dessinerBaremeMini(), sans les 2 lignes "Examens réalisables"/"CA
+      // équivalent" du joker (hors périmètre, aucun joker ici) : les lignes de
+      // total restent donc toujours affichées normalement, pas de réservation
+      // d'espace par visibility:hidden (nécessaire côté source pour que la barre
+      // de curseur SOUS le tableau ne bouge pas selon le joker — pas de curseur
+      // sous ce tableau ici, chaque carte est indépendante). ----
+      function unDessinerBaremeMini(trA, nomA, trB, nomB) {
+        document.getElementById("unNomClasseABareme").textContent = nomA;
+        document.getElementById("unNomClasseBBareme").textContent = nomB;
+        var labels = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
+        var tbody = document.getElementById("unBaremeMini");
+        tbody.innerHTML = "";
+        var afficherTousLesCa = document.getElementById("unBaremeShowAllCa").checked;
+        var totalCaA = 0, totalCaB = 0;
+        labels.forEach(function (label, i) {
+          function plage(t) {
+            return (t.fin != null ? "de " + milliersFmt.format(t.debut) + " à " + milliersFmt.format(t.fin) : "au-delà de " + milliersFmt.format(t.debut - 1)) + " ex./an";
+          }
+          var tr = document.createElement("tr");
+          var tdLabel = document.createElement("td");
+          tdLabel.innerHTML = "<strong>" + label + "</strong>";
+          tr.appendChild(tdLabel);
+          [{ t: trA[i], machine: nomA, volume: unVolActuelA, couleur: "#2a78d6", cote: "a" },
+           { t: trB[i], machine: nomB, volume: unVolActuelB, couleur: "#eb6834", cote: "b" }].forEach(function (o) {
+            var td = document.createElement("td");
+            var ligne1 = document.createElement("span");
+            ligne1.className = "un-bareme-ligne1";
+            var plageSpan = document.createElement("span");
+            plageSpan.textContent = plage(o.t);
+            ligne1.appendChild(plageSpan);
+            ligne1.appendChild(document.createTextNode(" "));
+            var examens = Math.max(0, Math.min(o.volume, o.t.fin != null ? o.t.fin : o.volume) - (o.t.debut - 1));
+            var ca = examens * o.t.montant;
+            if (o.cote === "a") totalCaA += ca; else totalCaB += ca;
+            if (afficherTousLesCa) {
+              var tarifSpan = document.createElement("span");
+              tarifSpan.className = "un-bareme-tarif";
+              tarifSpan.style.color = o.couleur;
+              tarifSpan.textContent = unEur(o.t.montant, 2);
+              ligne1.appendChild(tarifSpan);
+            } else {
+              var btn = document.createElement("button");
+              btn.type = "button"; btn.className = "un-ca-tranche-btn";
+              btn.style.color = o.couleur;
+              btn.textContent = unEur(o.t.montant, 2);
+              btn.dataset.debut = o.t.debut; btn.dataset.fin = o.t.fin == null ? "" : o.t.fin;
+              btn.dataset.montant = o.t.montant; btn.dataset.label = label; btn.dataset.machine = o.machine;
+              btn.dataset.cote = o.cote;
+              ligne1.appendChild(btn);
+            }
+            td.appendChild(ligne1);
+            var caSpan = document.createElement("span");
+            caSpan.className = "un-bareme-ca";
+            caSpan.style.color = o.couleur;
+            caSpan.style.visibility = afficherTousLesCa ? "visible" : "hidden";
+            caSpan.textContent = unEur(ca, 2);
+            td.appendChild(caSpan);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        var trTotal = document.createElement("tr");
+        var tdTotalLabel = document.createElement("td");
+        tdTotalLabel.innerHTML = "<strong>Total</strong>";
+        trTotal.appendChild(tdTotalLabel);
+        [{ total: totalCaA, couleur: "#2a78d6" }, { total: totalCaB, couleur: "#eb6834" }].forEach(function (o) {
+          var td = document.createElement("td");
+          var span = document.createElement("span");
+          span.className = "un-bareme-ca";
+          span.style.color = o.couleur;
+          span.textContent = unEur(o.total, 2);
+          td.appendChild(span);
+          trTotal.appendChild(td);
+        });
+        tbody.appendChild(trTotal);
+        var trTotal2 = document.createElement("tr");
+        var tdTotal2Label = document.createElement("td");
+        tdTotal2Label.innerHTML = "<strong>Total des 2 machines</strong>";
+        trTotal2.appendChild(tdTotal2Label);
+        var tdTotal2Val = document.createElement("td");
+        tdTotal2Val.colSpan = 2;
+        var spanTotal2 = document.createElement("span");
+        spanTotal2.className = "un-bareme-ca";
+        spanTotal2.textContent = unEur(totalCaA + totalCaB, 2);
+        tdTotal2Val.appendChild(spanTotal2);
+        trTotal2.appendChild(tdTotal2Val);
+        tbody.appendChild(trTotal2);
+      }
+      var unBaremeCaInfoTimer = null;
+      document.getElementById("unBaremeTable").addEventListener("click", function (e) {
+        var btn = e.target.closest(".un-ca-tranche-btn");
+        if (!btn) return;
+        var debut = parseInt(btn.dataset.debut, 10);
+        var fin = btn.dataset.fin === "" ? null : parseInt(btn.dataset.fin, 10);
+        var montant = parseFloat(btn.dataset.montant);
+        var volume = btn.dataset.cote === "b" ? unVolActuelB : unVolActuelA;
+        var examens = Math.max(0, Math.min(volume, fin != null ? fin : volume) - (debut - 1));
+        var ca = examens * montant;
+        var info = document.getElementById("unBaremeCaInfo");
+        info.hidden = false;
+        info.innerHTML = "<strong>" + btn.dataset.machine + " — " + btn.dataset.label + "</strong><br>" +
+          milliersFmt.format(examens) + " examen" + (examens === 1 ? "" : "s") + " × " + unEur(montant, 2) +
+          " = <strong>" + unEur(ca, 2) + "</strong>";
+        clearTimeout(unBaremeCaInfoTimer);
+        unBaremeCaInfoTimer = setTimeout(function () { info.hidden = true; }, 6000);
+      });
+      document.getElementById("unBaremeShowAllCa").addEventListener("change", function () {
+        document.getElementById("unBaremeCaInfo").hidden = true;
+        if (unBasculeConfigA && unBasculeConfigB) unDessinerBaremeMini(unBasculeTrA, unBasculeConfigA.machine.nomCourt, unBasculeTrB, unBasculeConfigB.machine.nomCourt);
+      });
+
+      // ---- "Tarif moyen du forfait technique selon le volume" — portée de
+      // dessinerFtMoyenBascule(), 6 cases de la boîte à outils (le bug de
+      // l'artefact abandonné le 19/09/2026 était ici : 5 cases au lieu de 6) :
+      // Courbe A (moyenne) / Courbe B (moyenne) / Tarif réel A (marches) / Tarif
+      // réel B (marches) / Courbe moyenne pondérée globale / Seuils du barème. ----
+      function unDessinerFtMoyChart(volumeTotal, volA, trA, trB, nomA, nomB) {
+        var svg = document.getElementById("unFtMoyChart");
+        svg.innerHTML = "";
+        var NS = "http://www.w3.org/2000/svg";
+        function el(tag, attrs) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+        var pad = { left: 62, right: 16, top: 20, bottom: 46 };
+        var W = 640, H = 300, plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+        var xMax = Math.max(volumeTotal, 1);
+        function px(x) { return pad.left + (x / xMax) * plotW; }
+        var yMax = Math.max(trA[0].montant, trB[0].montant) * 1.05;
+        function py(y) { return pad.top + plotH - (y / yMax) * plotH; }
+
+        var afficherA = document.getElementById("unFtMoyAfficheA").checked;
+        var afficherB = document.getElementById("unFtMoyAfficheB").checked;
+        var afficherReelA = document.getElementById("unFtMoyAfficheReelA").checked;
+        var afficherReelB = document.getElementById("unFtMoyAfficheReelB").checked;
+        var afficherMoyenne = document.getElementById("unFtMoyAfficheMoyenne").checked;
+        var afficherSeuils = document.getElementById("unFtMoyAfficheSeuils").checked;
+
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
+
+        for (var g = 0; g <= 4; g++) {
+          var valY = (yMax * g) / 4, yy = py(valY);
+          if (g > 0) svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: yy, y2: yy, class: "simulator__gridline" }));
+          var lblY = el("text", { x: pad.left - 8, y: yy + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          lblY.textContent = unEur(valY, 0);
+          svg.appendChild(lblY);
+        }
+        for (var p = 0; p <= 4; p++) {
+          var xv = (xMax * p) / 4, xx = px(xv);
+          var lblX = el("text", { x: xx, y: pad.top + plotH + 15, class: "simulator__axis-label", "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle"), fill: "#2a78d6" });
+          lblX.textContent = milliersFmt.format(xv) + (p === 4 ? " ex./an (" + nomA + ")" : "");
+          svg.appendChild(lblX);
+          var xvB = xMax - xv;
+          var lblXB = el("text", { x: xx, y: pad.top + plotH + 27, class: "simulator__axis-label", "text-anchor": p === 4 ? "end" : (p === 0 ? "start" : "middle"), fill: "#eb6834" });
+          lblXB.textContent = milliersFmt.format(xvB) + (p === 0 ? " ex./an (" + nomB + ")" : "");
+          svg.appendChild(lblXB);
+        }
+
+        var seuilsListe = [];
+        function collecterSeuils(tranches, calcXDepuisFin, couleur, nomCourt) {
+          tranches.forEach(function (t, i) {
+            if (i === tranches.length - 1 || t.fin == null) return;
+            var xv2 = calcXDepuisFin(t.fin);
+            if (xv2 < 0 || xv2 > xMax) return;
+            var x = px(xv2);
+            svg.appendChild(el("line", { x1: x, x2: x, y1: pad.top, y2: pad.top + plotH, stroke: couleur, "stroke-width": 1.2, "stroke-dasharray": "4,3", opacity: 0.55 }));
+            seuilsListe.push({ x: x, texte: nomCourt + " : " + milliersFmt.format(t.fin), couleur: couleur });
+          });
+        }
+        if (afficherSeuils && (afficherA || afficherReelA)) collecterSeuils(trA, function (fin) { return fin; }, "#2a78d6", nomA);
+        if (afficherSeuils && (afficherB || afficherReelB)) collecterSeuils(trB, function (fin) { return volumeTotal - fin; }, "#eb6834", nomB);
+        seuilsListe.sort(function (a, b) { return a.x - b.x; });
+        seuilsListe.forEach(function (s, i) {
+          var label = el("text", { x: s.x, y: pad.top + (i % 2 === 0 ? 24 : 36), "font-size": 8, "font-weight": 700, fill: s.couleur, "text-anchor": "middle" });
+          label.textContent = s.texte;
+          svg.appendChild(label);
+        });
+
+        function courbe(tranches, calcVolumeDepuisX, couleur) {
+          var N = 80, pts = [];
+          for (var i = 0; i <= N; i++) { var x = (xMax * i) / N; pts.push(px(x) + "," + py(unTarifMoyenPourVolume(tranches, calcVolumeDepuisX(x)))); }
+          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 2.5 }));
+        }
+        if (afficherA) courbe(trA, function (x) { return x; }, "#2a78d6");
+        if (afficherB) courbe(trB, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        function courbeMarches(tranches, calcVolumeDepuisX, couleur) {
+          var N = 400, pts = [], yPrec = null;
+          for (var i = 0; i <= N; i++) {
+            var x = (xMax * i) / N, tarif = unTarifReelPourVolume(tranches, calcVolumeDepuisX(x));
+            var xp = px(x), yp = py(tarif);
+            if (yPrec !== null && yp !== yPrec) pts.push(xp + "," + yPrec);
+            pts.push(xp + "," + yp);
+            yPrec = yp;
+          }
+          svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: couleur, "stroke-width": 1.6, opacity: 0.9 }));
+        }
+        if (afficherReelA) courbeMarches(trA, function (x) { return x; }, "#2a78d6");
+        if (afficherReelB) courbeMarches(trB, function (x) { return volumeTotal - x; }, "#eb6834");
+
+        function seChevauchent(a, b) { return !(a.x + a.width < b.x || b.x + b.width < a.x || a.y + a.height < b.y || b.y + b.height < a.y); }
+        function placerTexteSansChevauchement(texte, candidats, couleur) {
+          var textesExistants = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
+          for (var ci = 0; ci < candidats.length; ci++) {
+            var c = candidats[ci];
+            var essai = el("text", { x: c.x, y: c.y, "font-size": 11, "font-weight": 800, fill: couleur, "text-anchor": c.anchor || "middle" });
+            essai.textContent = texte;
+            svg.appendChild(essai);
+            var bb = essai.getBBox();
+            var libre = !textesExistants.some(function (b) { return seChevauchent(bb, b); });
+            if (libre) return;
+            svg.removeChild(essai);
+          }
+          var c0 = candidats[0];
+          var fallback = el("text", { x: c0.x, y: c0.y, "font-size": 11, "font-weight": 800, fill: couleur, "text-anchor": c0.anchor || "middle" });
+          fallback.textContent = texte;
+          svg.appendChild(fallback);
+        }
+        function candidatsLeLongDe(calcVolumeDepuisX, fnTarif, tranches) {
+          var fractions = [0.9, 0.75, 0.5, 0.25, 0.6, 0.4], candidats = [];
+          fractions.forEach(function (f) {
+            var xv2 = xMax * f, y = py(fnTarif(tranches, calcVolumeDepuisX(xv2)));
+            candidats.push({ x: px(xv2), y: y - 8, anchor: "middle" });
+            candidats.push({ x: px(xv2), y: y + 15, anchor: "middle" });
+          });
+          return candidats;
+        }
+        if (afficherReelA) placerTexteSansChevauchement(nomA + " (réel)", candidatsLeLongDe(function (x) { return x; }, unTarifReelPourVolume, trA), "#2a78d6");
+        if (afficherReelB) placerTexteSansChevauchement(nomB + " (réel)", candidatsLeLongDe(function (x) { return volumeTotal - x; }, unTarifReelPourVolume, trB), "#eb6834");
+
+        var xDebut = px(0) + 4;
+        if (afficherA) {
+          var yDebutA = py(unTarifMoyenPourVolume(trA, 0));
+          var lblNomA = el("text", { x: xDebut, y: yDebutA - 8, "font-size": 12, "font-weight": 800, fill: "#2a78d6", "text-anchor": "start" });
+          lblNomA.textContent = nomA;
+          svg.appendChild(lblNomA);
+        }
+        if (afficherB) {
+          var yDebutB = py(unTarifMoyenPourVolume(trB, volumeTotal));
+          var lblNomB = el("text", { x: xDebut, y: yDebutB + 16, "font-size": 12, "font-weight": 800, fill: "#eb6834", "text-anchor": "start" });
+          lblNomB.textContent = nomB;
+          svg.appendChild(lblNomB);
+        }
+
+        function tarifPondere(x) {
+          var vB = volumeTotal - x;
+          if (volumeTotal <= 0) return trA[0].montant;
+          return (unTarifMoyenPourVolume(trA, x) * x + unTarifMoyenPourVolume(trB, vB) * vB) / volumeTotal;
+        }
+        if (afficherMoyenne) {
+          var Np = 80, ptsPond = [];
+          for (var ip = 0; ip <= Np; ip++) { var xp2 = (xMax * ip) / Np; ptsPond.push(px(xp2) + "," + py(tarifPondere(xp2))); }
+          svg.appendChild(el("path", { d: "M" + ptsPond.join(" L"), fill: "none", stroke: "#6b5a45", "stroke-width": 2.2, "stroke-dasharray": "7,4" }));
+        }
+
+        var volAr = Math.max(0, Math.min(volumeTotal, volA));
+        var xr = px(volAr);
+        svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
+
+        if (afficherMoyenne) {
+          var yPondActuel = py(tarifPondere(volAr));
+          svg.appendChild(el("circle", { cx: xr, cy: yPondActuel, r: 4, fill: "#6b5a45" }));
+          var texteAnchor = xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle");
+          var texteBulle = "Moyenne : " + unEur(tarifPondere(volAr), 2);
+          var textesExistants2 = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
+          var candidatsY = [yPondActuel - 10, yPondActuel + 16, yPondActuel - 22, yPondActuel + 28, yPondActuel - 34, yPondActuel + 40];
+          var bulle = null;
+          for (var ci2 = 0; ci2 < candidatsY.length; ci2++) {
+            var yCandidat = candidatsY[ci2];
+            if (yCandidat < pad.top + 6 || yCandidat > pad.top + plotH - 2) continue;
+            var essai2 = el("text", { x: xr, y: yCandidat, "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
+            essai2.textContent = texteBulle;
+            svg.appendChild(essai2);
+            var bbEssai = essai2.getBBox();
+            var libre2 = !textesExistants2.some(function (b) { return seChevauchent(bbEssai, b); });
+            if (libre2) { bulle = essai2; break; }
+            svg.removeChild(essai2);
+          }
+          if (!bulle) {
+            bulle = el("text", { x: xr, y: candidatsY[0], "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
+            bulle.textContent = texteBulle;
+            svg.appendChild(bulle);
+          }
+        }
+      }
+
+      // Boîte à outils 🧰 : wireInfoBtn() suffit pour ouvrir/fermer, mais le
+      // mécanisme de fermeture "au clic à l'extérieur" (unInfoPopsOuverts,
+      // écouteur sur document) refermerait aussi le popover au clic sur une case
+      // À L'INTÉRIEUR — stopPropagation() supplémentaire sur le popover lui-même
+      // (motif wireOutilsBtn() du skill). Redessine le graphe à chaque coche.
+      function wireOutilsBtn(btnId, popId) {
+        wireInfoBtn(btnId, popId);
+        document.getElementById(popId).addEventListener("click", function (e) { e.stopPropagation(); });
+      }
+      wireInfoBtn("unFtMoyInfoBtn", "unFtMoyInfoPop");
+      wireOutilsBtn("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
+      ["unFtMoyAfficheA", "unFtMoyAfficheB", "unFtMoyAfficheReelA", "unFtMoyAfficheReelB", "unFtMoyAfficheMoyenne", "unFtMoyAfficheSeuils"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () { unRecalculerBascule(); });
+      });
+
+      // ---------------------------------------------------------------------
+      // Orchestration : unBasculeRedessinerTout() relit les configs/tranches et
+      // redessine tout (appelée à l'ouverture des résultats, et quand le champ
+      // "Activité totale actuelle" de cette carte est modifié à la main) ;
+      // unRecalculerBascule() ne fait que repositionner le curseur/repère (appelée
+      // en direct au glisser du curseur ou au clic d'une case 🧰) — la courbe de
+      // fond ne dépend que de N/des machines, jamais de la position du curseur.
+      // ---------------------------------------------------------------------
+      var unBasculeN = 0, unBasculeConfigA = null, unBasculeConfigB = null, unBasculeParams = null;
+      var unBasculeTrA = [], unBasculeTrB = [];
+      var unVolActuelA = 0, unVolActuelB = 0;
+
+      function unBasculeRedessinerTout() {
+        if (projetActuel !== 2) { unBasculeWrap.hidden = true; return; }
+        var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
+        if (!configA.machine || !configB.machine) { unBasculeWrap.hidden = true; return; }
+        unBasculeWrap.hidden = false;
+        unBasculeParams = unConstruireParamsPointMort();
+        unBasculeConfigA = configA; unBasculeConfigB = configB;
+        unBasculeTrA = unTranchesAvecMontant(configA.machine, unBasculeParams.dateIso, unBasculeParams.zone, unBasculeParams.amortiKey);
+        unBasculeTrB = unTranchesAvecMontant(configB.machine, unBasculeParams.dateIso, unBasculeParams.zone, unBasculeParams.amortiKey);
+
+        var curseur = document.getElementById("unBasculeCurseur");
+        var champN = document.getElementById("unBasculeVolumeTotal");
+        var N = Math.max(0, parseInt(champN.value, 10) || 0);
+        unBasculeN = N;
+        var voulu = Math.min(N, parseInt(curseur.value, 10) || N);
+        curseur.max = N; curseur.value = voulu;
+        document.getElementById("unBasculeEndMax").textContent = milliersFmt.format(N);
+
+        unDessinerCourbeBascule(N, configA, configB, unBasculeParams, unBasculeTrA, unBasculeTrB);
+        unRecalculerBascule();
+      }
+
+      // Appelé à l'ouverture des résultats (bouton "Voir les résultats
+      // possibles") : resynchronise le volume total sur "Votre activité" (écran
+      // 2) — même principe que unMixSyncTous() pour le Point mort ci-dessus.
+      // Ensuite, le champ reste modifiable indépendamment (voir son listener
+      // "input" plus bas, qui appelle unBasculeRedessinerTout() SANS resynchroniser).
+      function unRenderBascule() {
+        if (projetActuel === 2) document.getElementById("unBasculeVolumeTotal").value = Math.round(unActiviteAnnuelle());
+        unBasculeRedessinerTout();
+      }
+
+      function unRecalculerBascule() {
+        if (!unBasculeConfigA || !unBasculeConfigB) return;
+        var curseur = document.getElementById("unBasculeCurseur");
+        var N = unBasculeN;
+        var volA = Math.max(0, Math.min(N, parseInt(curseur.value, 10) || 0));
+        var volB = N - volA;
+        unVolActuelA = volA; unVolActuelB = volB;
+
+        document.getElementById("unLblA").textContent = unBasculeConfigA.machine.nomCourt + " : " + milliersFmt.format(volA) + " FT/an";
+        document.getElementById("unLblB").textContent = unBasculeConfigB.machine.nomCourt + " : " + milliersFmt.format(volB) + " FT/an";
+        document.getElementById("unFillB").style.width = (N > 0 ? (volB / N) * 100 : 0) + "%";
+
+        var t = unTotalPour(volA, N, unBasculeConfigA, unBasculeConfigB, unBasculeParams, unBasculeTrA, unBasculeTrB);
+        document.getElementById("unBasculeResultat").textContent = unEur(t.net, 0);
+        document.getElementById("unBasculeResultatA").textContent = unEur(t.netA, 0);
+        document.getElementById("unBasculeResultatB").textContent = unEur(t.netB, 0);
+        document.getElementById("unBasculeCA").textContent = unEur(t.caA + t.caB, 0);
+        document.getElementById("unBasculeCAA").textContent = unEur(t.caA, 0);
+        document.getElementById("unBasculeCAB").textContent = unEur(t.caB, 0);
+
+        if (unBasculeCourbeEchelle) {
+          document.getElementById("unCurseurPointHalo").setAttribute("cx", unBasculeCourbeEchelle.px(volA));
+          document.getElementById("unCurseurPointHalo").setAttribute("cy", unBasculeCourbeEchelle.py(t.net));
+          document.getElementById("unCurseurPoint").setAttribute("cx", unBasculeCourbeEchelle.px(volA));
+          document.getElementById("unCurseurPoint").setAttribute("cy", unBasculeCourbeEchelle.py(t.net));
+        }
+
+        unDessinerBaremeMini(unBasculeTrA, unBasculeConfigA.machine.nomCourt, unBasculeTrB, unBasculeConfigB.machine.nomCourt);
+        unDessinerFtMoyChart(N, volA, unBasculeTrA, unBasculeTrB, unBasculeConfigA.machine.nomCourt, unBasculeConfigB.machine.nomCourt);
+      }
+
+      document.getElementById("unBasculeCurseur").addEventListener("input", unRecalculerBascule);
+      document.getElementById("unBasculeVolumeTotal").addEventListener("input", unBasculeRedessinerTout);
 
       // ---------------------------------------------------------------------
       // Initialisation
