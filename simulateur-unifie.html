@@ -289,6 +289,16 @@
     .un-outils-check { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; margin: 0 0 .5rem; white-space: nowrap; }
     .un-outils-check input { width: 15px; height: 15px; flex: none; margin: 0; }
     .un-outils-titre { font-weight: 800; font-size: .8rem; margin-bottom: .5rem; }
+
+    /* Étape 4 — Comparatif CT vs IRM. Cadre d'écart repris tel quel de
+       .cv-ecart-frame (simulateur-ct-vs-irm.html) sous un nom local "un-". */
+    .un-ecart-frame {
+      border: 2px solid var(--line-2); border-radius: var(--radius); padding: .7rem 1rem;
+      margin-bottom: .9rem; text-align: center; font-size: .92rem; font-weight: 700;
+      color: var(--ink); background: var(--wash-2); transition: border-color .15s ease, background .15s ease;
+    }
+    .un-ecart-frame strong { font-size: 1.25rem; }
+    .un-ct-btn-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -663,6 +673,45 @@
               <span>%</span>
             </div>
           </div>
+          <!-- Étape 4 (Comparatif CT vs IRM, projet 03 uniquement) : recette de l'acte
+               intellectuel du radiologue pour un SCANNER — mono-région (25,27 €) vs
+               multi-région (50,54 €, ex. TAP), motif "acteIntellectuelPatient()" de
+               simulateur-ct-vs-irm.html. N'a de sens que pour le scanner, jamais l'IRM
+               (qui utilise « Part des examens membre » ci-dessus) — visibilité pilotée
+               par choisirProjet(), opposée à #unMembreFieldA. -->
+          <div class="field" id="unMultiRegionFieldA" hidden>
+            <label for="unMultiRegionA">Part des examens multi-régions (TAP, corps entier…)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unMultiRegionA" value="16" min="0" max="100" step="5" />
+              <span>%</span>
+            </div>
+          </div>
+          <!-- RSE : coupure d'alimentation nocturne — motif du skill "seulement pour une
+               machine qui PEUT être coupée" (scanner, jamais l'IRM à aimant permanent).
+               Repris tel quel de simulateur-ct-vs-irm.html (#cvScannerCoupureNuit) —
+               visible uniquement pour le projet 03 (Machine A = scanner). -->
+          <div class="field" id="unRseWrapA" hidden>
+            <label style="display:flex;align-items:center;gap:.5rem;margin-bottom:0">
+              <input type="checkbox" id="unRseCoupureNuitA" style="width:16px;height:16px;margin:0" checked />
+              <span>Coupez-vous l'alimentation du scanner la nuit ?</span>
+            </label>
+            <div id="unRseDelaisWrapA" style="margin-top:.6rem">
+              <div class="field">
+                <label for="unRseDelaiAllumageA">Délai d'allumage avant le 1ᵉʳ patient</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unRseDelaiAllumageA" value="15" min="0" max="180" step="5" />
+                  <span>min</span>
+                </div>
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label for="unRseDelaiExtinctionA">Délai avant extinction après le dernier patient</label>
+                <div class="simulator__field-suffix">
+                  <input type="number" id="unRseDelaiExtinctionA" value="15" min="0" max="180" step="5" />
+                  <span>min</span>
+                </div>
+              </div>
+            </div>
+          </div>
           <details class="un-autre-rh">
             <summary>Autre charge</summary>
             <div class="field">
@@ -1027,6 +1076,64 @@
           </div>
         </details>
       </div>
+
+      <!-- ================= Étape 4 — Comparatif CT vs IRM (projet 03 uniquement) =========
+           Porté de simulateur-ct-vs-irm.html, lu intégralement le 20/09/2026 avant de
+           construire — motifs du skill ced4scale-simulateur-web "Barre verticale recette
+           → charges → résultat net" (dessinerBarresCote) et "Multiplicateur d'échelle de
+           temps sur un montant par patient" (HORIZONS/choisirHorizon/appliquerHorizonCompos).
+
+           Correctif du bug documenté à l'étape 2 (Point mort) et dans la mémoire du
+           chantier : le Point mort ci-dessus lit recettePatient()/classKeyFromChampT(),
+           qui retombe par erreur sur la classe IRM "≤0,5 T" pour un scanner (champT vaut
+           `null` dans assets/machines-energie-data.js pour les machines type:"ct", et
+           `null < 0.5` est vrai en JavaScript) — CET écran utilise à la place
+           unRecetteFTMachine()/unClasseFTDepuisMachine(), qui redirige explicitement vers
+           FT_CLASSES.ct (classKeyFromMachine() de ct-vs-irm.html), et
+           unActeIntellectuelMachine() (acteIntellectuelPatient() de ct-vs-irm.html : 55 €
+           membre / 69 € autres régions pour l'IRM, 25,27 € mono-région / 50,54 € multi-
+           région pour le scanner — valeurs réelles du fichier, pas les ~33 € de mémoire
+           approximative). Le Point mort ci-dessus N'EST PAS corrigé (reste hors périmètre
+           de cette tâche, avertissement toujours valable) — ce nouvel écran est un AJOUT,
+           pas un remplacement.
+
+           Réutilise le modèle de charges déjà construit pour le Point mort
+           (unConfigMachinePointMort/unConstruireParamsPointMort/
+           electriciteMensuellePointMort, loyer/personnel/électricité identiques) — seule
+           la RECETTE change ici. Case RSE "Coupez-vous l'alimentation du scanner la nuit ?"
+           (écran 2, colonne Machine A, motif du skill "seulement pour une machine qui PEUT
+           être coupée" — jamais l'IRM à aimant permanent) prise en compte via
+           unSocleHeuresJoursScanner(), passée en 5ᵉ paramètre optionnel de
+           electriciteMensuellePointMort() (comportement 24h/24 inchangé pour tous les
+           autres appels, qui omettent ce paramètre).
+
+           SIMPLIFIÉ délibérément par rapport à ct-vs-irm.html (hors périmètre de cette
+           tâche, cf. consigne) :
+             - PAS de mode "chacune à sa capacité" — activité toujours partagée (celle de
+               "Votre activité", écran 2), comme le Point mort ci-dessus.
+             - PAS de bascule Avec/Sans AI — l'acte intellectuel est toujours inclus dans
+               la recette.
+             - PAS de bascule barres <-> camembert, PAS de mode Comparer/mémoires 1-2-3.
+             - PAS de bouton plein écran réel ni de disposition libre en plein écran (mode
+               présentation) — aucun des écrans précédents de ce fichier ne les a encore,
+               pas la première introduction ici (voir consigne). -->
+      <div id="unCtIrmWrap" hidden>
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCtIrmCard">
+          <summary>Comparatif CT vs IRM — recette, charges, résultat net</summary>
+          <div class="un-ecart-frame" id="unCtIrmEcart"></div>
+          <div class="simulator__chart-wrap">
+            <svg id="unCtIrmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Répartition de la recette entre charges et résultat net, scanner vs IRM Esaote"></svg>
+          </div>
+          <div class="un-ct-btn-row">
+            <button type="button" class="btn btn--sm btn--ghost" id="unCtBtnHorizonPatient" aria-pressed="false">1 patient</button>
+            <button type="button" class="btn btn--sm" id="unCtBtnHorizonJour" aria-pressed="true">Par jour</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="unCtBtnHorizon1An" aria-pressed="false">1 an</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="unCtBtnHorizon5Ans" aria-pressed="false">5 ans</button>
+            <button type="button" class="btn btn--sm btn--ghost" id="unCtBtnHorizon7Ans" aria-pressed="false">7 ans</button>
+          </div>
+          <p class="simulator__hint" style="margin-top:.6rem">Case RSE et « Part des examens multi-régions » du scanner : réglables dans la colonne Machine A du formulaire (écran précédent).</p>
+        </details>
+      </div>
     </section>
 
   </main>
@@ -1063,7 +1170,7 @@
       });
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); unRenderBascule(); afficherEcran("resultats"); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); afficherEcran("resultats"); });
 
       function choisirProjet(n) {
         projetActuel = n;
@@ -1085,6 +1192,8 @@
           document.getElementById("unColB").hidden = false;
           document.getElementById("unMembreFieldA").hidden = true; // pas de tarif "membre" pour un scanner
           document.getElementById("unMembreFieldB").hidden = false;
+          document.getElementById("unMultiRegionFieldA").hidden = false;
+          document.getElementById("unRseWrapA").hidden = false;
           peuplerMachineSelect(selectA, MACHINES_SCANNER, "siemens-goall");
           peuplerMachineSelect(selectB, MACHINES_ESAOTE, "esaote-o-scan");
         } else {
@@ -1096,6 +1205,8 @@
           document.getElementById("unLoyerBLabel").textContent = "Loyer de l'IRM, SAV inclus";
           document.getElementById("unMembreFieldA").hidden = false;
           document.getElementById("unMembreFieldB").hidden = false;
+          document.getElementById("unMultiRegionFieldA").hidden = true;
+          document.getElementById("unRseWrapA").hidden = true;
           peuplerMachineSelect(selectA, MACHINES_IRM, "esaote-g-scan");
           peuplerMachineSelect(selectB, MACHINES_IRM, "siemens-altea");
           appliquerNbMachines();
@@ -1461,10 +1572,18 @@
         var p = Math.max(0, parseFloat(patientsHeure) || 0);
         return p > 0 ? 60 / p : Infinity;
       }
-      function electriciteMensuellePointMort(machine, heuresParJour, joursParMois, prixKwh) {
+      // `socleHeuresJours` optionnel : { heuresParJour, joursParMois } sous tension RÉELLE
+      // — ajouté pour l'étape 4 (Comparatif CT vs IRM, scanner réellement coupé la nuit,
+      // voir unSocleHeuresJoursScanner() plus bas) sans changer le comportement pour tous
+      // les appels existants (Point mort, Bascule progressive), qui n'omettent ce 5ᵉ
+      // paramètre et gardent donc le socle 24h/24, 365j/an — même motif que
+      // electriciteMensuelle() de simulateur-ct-vs-irm.html.
+      function electriciteMensuellePointMort(machine, heuresParJour, joursParMois, prixKwh, socleHeuresJours) {
         var coeffLT = machine.coeffRefroidissementLT;
         var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
-        var socleMensuel = puissanceSocle * 24 * 30 * prixKwh;
+        var socleMensuel = socleHeuresJours
+          ? puissanceSocle * socleHeuresJours.heuresParJour * socleHeuresJours.joursParMois * prixKwh
+          : puissanceSocle * 24 * 30 * prixKwh;
         var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
         var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
         var deltaMesure = (machine.mesure - machine.eteint) * (1 + coeffLT);
@@ -2415,6 +2534,275 @@
 
       document.getElementById("unBasculeCurseur").addEventListener("input", unRecalculerBascule);
       document.getElementById("unBasculeVolumeTotal").addEventListener("input", unBasculeRedessinerTout);
+
+      // =======================================================================
+      // Étape 4 — Comparatif CT vs IRM (projet 03 "Remplacement d'un scanner"
+      // uniquement). Voir le commentaire HTML au-dessus de #unCtIrmWrap pour le
+      // détail du correctif de recette (vrai tarif CT) et ce qui a été laissé de
+      // côté (mode "chacune sa capacité", Avec/Sans AI, camembert, Comparer/
+      // mémoires, plein écran réel).
+      // =======================================================================
+      var TARIF_IRM_MEMBRE = 55, TARIF_IRM_AUTRES_REGIONS = 69;
+      var TARIF_CT_MONO_REGION = 25.27, TARIF_CT_MULTI_REGION = 50.54;
+
+      // ---- Classe de forfait technique dérivée de la machine — CORRIGE le bug du Point
+      // mort ci-dessus : classKeyFromChampT(null) (scanner, champT vaut null) retombe par
+      // erreur sur "le05" (≤0,5 T IRM) car `null < 0.5` est vrai en JavaScript. Ici, un
+      // scanner (m.type === "ct") est explicitement redirigé vers FT_CLASSES.ct — même
+      // logique que classKeyFromMachine() de simulateur-ct-vs-irm.html. ----
+      function unClasseFTDepuisMachine(machine) {
+        return machine.type === "ct" ? "ct" : classKeyFromChampT(machine.champT);
+      }
+      function unRecetteFTMachine(machine, dateIso, zone, amortiKey) {
+        var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === dateIso; })[0];
+        var plein = ligne.plein[zone];
+        return plein[amortiKey] != null ? plein[amortiKey] : plein.nonAmorti;
+      }
+      // ---- Acte intellectuel du radiologue — porté d'acteIntellectuelPatient() de
+      // simulateur-ct-vs-irm.html : tarif IRM (membre/autres régions) ou tarif scanner
+      // (mono/multi-région) selon le type de machine, moyenné par la part saisie. ----
+      function unActeIntellectuelMachine(machine, pctAutre) {
+        var p = Math.max(0, Math.min(100, pctAutre || 0)) / 100;
+        if (machine.type !== "ct") return (1 - p) * TARIF_IRM_MEMBRE + p * TARIF_IRM_AUTRES_REGIONS;
+        return (1 - p) * TARIF_CT_MONO_REGION + p * TARIF_CT_MULTI_REGION;
+      }
+
+      // ---- RSE : coupure d'alimentation nocturne du scanner (motif du skill "seulement
+      // pour une machine qui PEUT être coupée") — porté tel quel de
+      // simulateur-ct-vs-irm.html (#cvScannerCoupureNuit/#cvScannerDelaiAllumage/
+      // #cvScannerDelaiExtinction), ids préfixés "unRse...A" (Machine A = scanner sur le
+      // projet 03). Retourne `null` (comportement 24h/24 inchangé) si la case n'est pas
+      // cochée. ----
+      document.getElementById("unRseCoupureNuitA").addEventListener("change", function () {
+        document.getElementById("unRseDelaisWrapA").hidden = !this.checked;
+      });
+      function unSocleHeuresJoursScanner(params) {
+        if (!document.getElementById("unRseCoupureNuitA").checked) return null;
+        var delaiAllumageH = Math.max(0, parseFloat(document.getElementById("unRseDelaiAllumageA").value) || 0) / 60;
+        var delaiExtinctionH = Math.max(0, parseFloat(document.getElementById("unRseDelaiExtinctionA").value) || 0) / 60;
+        return {
+          heuresParJour: Math.min(24, params.heuresParJour + delaiAllumageH + delaiExtinctionH),
+          joursParMois: params.joursParMois
+        };
+      }
+
+      // ---- Couleurs pastel (aplats du graphe à barres) — reprises de PASTEL_MACHINE/
+      // PASTEL_PERTE de simulateur-ct-vs-irm.html, jamais utilisées pour le nom des
+      // machines (qui garde UN_SLOT_COLORS, cohérent avec le reste du fichier). ----
+      var UN_PASTEL_MACHINE = [{ fill: "#bcd4f2", text: "#274a75" }, { fill: "#f7cda6", text: "#8a4a1f" }];
+      var UN_PASTEL_PERTE = { fill: "#f5c6c2", text: "#9c2b34" };
+      var UN_NICE_STEPS = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10];
+      function unNiceCeil(value) {
+        if (value <= 0) return 1000;
+        var pow = Math.pow(10, Math.floor(Math.log10(value)));
+        var n = value / pow;
+        var niceN = UN_NICE_STEPS.filter(function (s) { return s >= n; })[0] || 10;
+        return niceN * pow;
+      }
+
+      // ---- Multiplicateur d'échelle de temps (motif du skill) — 5 boutons exclusifs,
+      // portés tels quels de HORIZONS/choisirHorizon() de simulateur-ct-vs-irm.html. ----
+      var UN_CT_HORIZONS = {
+        patient: { btnId: "unCtBtnHorizonPatient", annees: "patient" },
+        jour: { btnId: "unCtBtnHorizonJour", annees: null },
+        an: { btnId: "unCtBtnHorizon1An", annees: 1 },
+        "5ans": { btnId: "unCtBtnHorizon5Ans", annees: 5 },
+        "7ans": { btnId: "unCtBtnHorizon7Ans", annees: 7 }
+      };
+      var unCtHorizon = "jour";
+      function unCtChoisirHorizon(cle) {
+        unCtHorizon = cle;
+        Object.keys(UN_CT_HORIZONS).forEach(function (k) {
+          var btn = document.getElementById(UN_CT_HORIZONS[k].btnId);
+          btn.classList.toggle("btn--ghost", k !== cle);
+          btn.setAttribute("aria-pressed", String(k === cle));
+        });
+        unRenderCtIrm();
+      }
+      Object.keys(UN_CT_HORIZONS).forEach(function (k) {
+        document.getElementById(UN_CT_HORIZONS[k].btnId).addEventListener("click", function () { unCtChoisirHorizon(k); });
+      });
+
+      // ---- Composition brute (recette/charges/résultat PAR PATIENT), à l'activité
+      // PARTAGÉE ("Votre activité", écran 2 — pas de mode "chacune sa capacité", hors
+      // périmètre) — réutilise unConfigMachinePointMort()/unConstruireParamsPointMort()
+      // pour le modèle de charges (loyer/personnel/électricité), seule la recette
+      // (unRecetteFTMachine/unActeIntellectuelMachine) et l'électricité du scanner
+      // (unSocleHeuresJoursScanner) diffèrent du Point mort ci-dessus. ----
+      function unCalculerComposCtIrm(params) {
+        var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
+        if (!configA.machine || !configB.machine) return null;
+        var socleA = unSocleHeuresJoursScanner(params);
+        var pctAutreA = Math.max(0, Math.min(100, parseFloat(document.getElementById("unMultiRegionA").value) || 0));
+        // Machine B (IRM Esaote) : « Part des examens membre » est déjà saisie côté Point
+        // mort (config.pctMembre) — l'acte intellectuel de ct-vs-irm.html attend la part
+        // HORS membre (pctActeAutre), donc 100 - pctMembre.
+        var pctAutreB = 100 - configB.pctMembre;
+
+        function ligne(config, socleHeuresJours, pctAutre) {
+          var recette = unRecetteFTMachine(config.machine, params.dateIso, params.zone, params.amortiKey);
+          var acte = unActeIntellectuelMachine(config.machine, pctAutre);
+          var elec = electriciteMensuellePointMort(config.machine, params.heuresParJour, params.joursParMois, params.prixKwh, socleHeuresJours);
+          var rh = config.nombreCadreSante * params.coutCadreSanteMensuel;
+          var autresChargesFixes = config.salle + config.assurance + config.entretien + config.injecteur + config.fractionRis * params.coutRisMensuel;
+          var rhVariable = (config.nombreMerm * params.coutMermHoraire
+            + config.nombreSecretaire * params.coutSecretaireHoraire
+            + config.nombreAideManip * params.coutAideManipHoraire
+            + config.nombreInfirmiere * params.coutInfirmiereHoraire
+            + config.nombreManipAlternance * params.coutManipAlternanceHoraire) * (config.tempsInstallation / 60);
+          var coutContraste = config.contrasteCout * (config.contrastePct / 100);
+          return {
+            recette: recette, acte: acte, elecFixe: elec.fixeMensuel, elecVariable: elec.variablePatient,
+            rh: rh, autresChargesFixes: autresChargesFixes, rhVariable: rhVariable, coutContraste: coutContraste
+          };
+        }
+        var rA = ligne(configA, socleA, pctAutreA);
+        var rB = ligne(configB, null, pctAutreB);
+
+        var patientsAnnuels = Math.max(unActiviteAnnuelle(), 0.0001);
+        var patientsJour = patientsAnnuels / (params.joursParMois * 12);
+
+        function compos(r, config, color) {
+          var loyerParPatient = (config.loyer * 12) / patientsAnnuels;
+          var elecParPatient = (r.elecFixe * 12) / patientsAnnuels + r.elecVariable;
+          var rhParPatient = (r.rh * 12) / patientsAnnuels;
+          var autresFixesParPatient = (r.autresChargesFixes * 12) / patientsAnnuels;
+          var charges = loyerParPatient + elecParPatient + rhParPatient + autresFixesParPatient + r.rhVariable + r.coutContraste;
+          var recetteTotale = r.recette + r.acte;
+          return {
+            recetteTotale: recetteTotale, charges: charges, resultat: recetteTotale - charges,
+            color: color, nom: config.machine.nomCourt, patientsJour: patientsJour
+          };
+        }
+        return [compos(rA, configA, UN_SLOT_COLORS[0]), compos(rB, configB, UN_SLOT_COLORS[1])];
+      }
+
+      // ---- Applique le multiplicateur d'une échelle de temps à une composition déjà
+      // calculée — renvoie une COPIE (motif du skill, appliquerHorizonCompos()). ----
+      function unCtAppliquerHorizon(compos, params, cle) {
+        var horizon = UN_CT_HORIZONS[cle];
+        return compos.map(function (c) {
+          var mult = horizon.annees === "patient" ? 1
+            : horizon.annees == null ? c.patientsJour
+            : c.patientsJour * params.joursParMois * 12 * horizon.annees;
+          return {
+            recetteTotale: c.recetteTotale * mult, charges: c.charges * mult, resultat: c.resultat * mult,
+            color: c.color, nom: c.nom, patientsJour: c.patientsJour
+          };
+        });
+      }
+
+      // ---- Barre verticale "recette → charges → résultat net" (motif du skill) — portée
+      // de dessinerBarresCote()/dessinerRepartition() de simulateur-ct-vs-irm.html : bloc
+      // gris (charges) empilé sur bloc coloré (résultat net), résultat négatif qui descend
+      // sous la ligne 0 en couleur d'alerte. Taille de police commune calculée sur les 5
+      // échelles de temps (pas 20 combinaisons ici, ce graphe n'a pas les modes capacité/AI
+      // du fichier source — motif "balayer TOUTES les combinaisons" simplifié en
+      // conséquence). ----
+      function unDessinerBarresCtIrm(composBase, params) {
+        var svg = document.getElementById("unCtIrmChart");
+        svg.innerHTML = "";
+        var ns = "http://www.w3.org/2000/svg";
+        function el(tag, attrs) { var e = document.createElementNS(ns, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+
+        var compos = unCtAppliquerHorizon(composBase, params, unCtHorizon);
+        var top = Math.max.apply(null, compos.map(function (c) { return c.recetteTotale; }).concat([1]));
+        var bottomBrut = Math.min.apply(null, compos.map(function (c) { return c.resultat; }).concat([0]));
+        var yMax = unNiceCeil(top * 1.2);
+        var yMin = bottomBrut < 0 ? -unNiceCeil(Math.abs(bottomBrut) * 1.2) : 0;
+        var PADCT = { left: 70, right: 20, top: 34, bottom: 46 }, VBH = 320, VBW = 640;
+        var PLOT_W_CT = VBW - PADCT.left - PADCT.right, PLOT_H_CT = VBH - PADCT.top - PADCT.bottom;
+        function yAt(v) { return PADCT.top + PLOT_H_CT - (PLOT_H_CT * (v - yMin)) / (yMax - yMin); }
+
+        for (var g = 0; g <= 4; g++) {
+          var val = yMin + ((yMax - yMin) * g) / 4, y = yAt(val);
+          svg.appendChild(el("line", { x1: PADCT.left, x2: VBW - PADCT.right, y1: y, y2: y, class: "simulator__gridline" }));
+          var labelY = el("text", { x: PADCT.left - 8, y: y + 3, class: "simulator__axis-label", "text-anchor": "end" });
+          labelY.textContent = unEur(val, 0);
+          svg.appendChild(labelY);
+        }
+        svg.appendChild(el("line", { x1: PADCT.left, x2: VBW - PADCT.right, y1: yAt(0), y2: yAt(0), stroke: "#8a8578", "stroke-width": "1.4" }));
+
+        var barWidth = 150, centers = [PADCT.left + PLOT_W_CT * 0.27, PADCT.left + PLOT_W_CT * 0.73];
+
+        var mesure = el("text", { x: -1000, y: -1000, "text-anchor": "middle", "font-weight": "800" });
+        svg.appendChild(mesure);
+        function tientDansLaBarre(taille, texte) {
+          mesure.textContent = texte;
+          mesure.setAttribute("font-size", taille);
+          return mesure.getBBox().width <= barWidth - 10;
+        }
+        var tailleCommune = 16;
+        Object.keys(UN_CT_HORIZONS).forEach(function (cle) {
+          unCtAppliquerHorizon(composBase, params, cle).forEach(function (c) {
+            var textes = ["Résultat : " + unEur(c.resultat, 0), "Charges : " + unEur(c.charges, 0)];
+            while (tailleCommune > 7 && !textes.every(function (t) { return tientDansLaBarre(tailleCommune, t); })) {
+              tailleCommune -= 0.5;
+            }
+          });
+        });
+        svg.removeChild(mesure);
+
+        compos.forEach(function (c, i) {
+          var x0 = centers[i] - barWidth / 2, x1 = centers[i] + barWidth / 2;
+          var yZero = yAt(0), yTop = yAt(c.recetteTotale), yResultat = yAt(c.resultat);
+
+          svg.appendChild(el("rect", { x: x0, y: yTop, width: barWidth, height: Math.max(0, yResultat - yTop), fill: "#e2ddd0" }));
+          var couleurRes = c.resultat >= 0 ? UN_PASTEL_MACHINE[i] : UN_PASTEL_PERTE;
+          svg.appendChild(el("rect", { x: x0, y: Math.min(yZero, yResultat), width: barWidth, height: Math.max(0, Math.abs(yResultat - yZero)), fill: couleurRes.fill }));
+          svg.appendChild(el("line", { x1: x0, x2: x1, y1: yTop, y2: yTop, stroke: "#8a8578", "stroke-width": "1" }));
+
+          var labelResultat = el("text", { x: centers[i], y: (yZero + yResultat) / 2 + 4, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "800", fill: couleurRes.text });
+          labelResultat.textContent = "Résultat : " + unEur(c.resultat, 0);
+          svg.appendChild(labelResultat);
+
+          var yPile = yTop - 10;
+          var labelRecette = el("text", { x: centers[i], y: yPile, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#7a776c" });
+          labelRecette.textContent = "Recette : " + unEur(c.recetteTotale, 0);
+          svg.appendChild(labelRecette);
+
+          if (c.charges > 0) {
+            var texteCharges = "Charges : " + unEur(c.charges, 0);
+            if ((yResultat - yTop) > tailleCommune * 1.6) {
+              var labelCharges = el("text", { x: centers[i], y: (yTop + yResultat) / 2 + 3, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
+              labelCharges.textContent = texteCharges;
+              svg.appendChild(labelCharges);
+            } else {
+              yPile -= (tailleCommune + 6);
+              var labelCharges2 = el("text", { x: centers[i], y: yPile, "text-anchor": "middle", "font-size": tailleCommune, "font-weight": "700", fill: "#5c5a52" });
+              labelCharges2.textContent = texteCharges;
+              svg.appendChild(labelCharges2);
+            }
+          }
+
+          var labelNom = el("text", { x: centers[i], y: VBH - 14, "text-anchor": "middle", "font-weight": "700", fill: c.color, "font-size": "12" });
+          labelNom.textContent = c.nom;
+          svg.appendChild(labelNom);
+        });
+
+        var ECART_LABELS_HORIZON = { patient: "pour ce patient", jour: "par jour", an: "par an", "5ans": "sur 5 ans", "7ans": "sur 7 ans" };
+        var ecartResultat = compos[0].resultat - compos[1].resultat;
+        var enTete = ecartResultat >= 0 ? compos[0] : compos[1];
+        var frame = document.getElementById("unCtIrmEcart");
+        if (Math.abs(ecartResultat) < 0.5) {
+          frame.innerHTML = "Résultat quasiment identique entre les 2 machines " + ECART_LABELS_HORIZON[unCtHorizon] + ".";
+          frame.style.borderColor = "var(--line-2)"; frame.style.background = "var(--wash-2)"; frame.style.color = "var(--ink)";
+        } else {
+          frame.innerHTML = "Écart de résultat : <strong style=\"color:" + enTete.color + "\">" + unEur(Math.abs(ecartResultat), 0) + "</strong> de plus pour " + enTete.nom + " " + ECART_LABELS_HORIZON[unCtHorizon] + ".";
+          frame.style.borderColor = enTete.color; frame.style.background = enTete.color + "1a"; frame.style.color = "var(--ink)";
+        }
+      }
+
+      function unRenderCtIrm() {
+        var wrap = document.getElementById("unCtIrmWrap");
+        if (projetActuel !== 3) { wrap.hidden = true; return; }
+        var params = unConstruireParamsPointMort();
+        var compos = unCalculerComposCtIrm(params);
+        if (!compos) { wrap.hidden = true; return; }
+        wrap.hidden = false;
+        unDessinerBarresCtIrm(compos, params);
+      }
 
       // ---------------------------------------------------------------------
       // Initialisation
