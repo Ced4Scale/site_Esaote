@@ -1901,68 +1901,48 @@
           // Même garde-fou que le point mort en examens/jour : marge nulle ou
           // négative => "jamais atteint", jamais une division par zéro/NaN.
           if (!(margeParJour > 0)) return null;
-          var totalJours = Math.max(0, chargeAnnuelle / margeParJour);
-          var joursParMoisVal = params.joursParMois;
-          var moisEntiers = Math.floor(totalJours / joursParMoisVal);
-          var resteJours = totalJours - moisEntiers * joursParMoisVal;
-          var joursEntiers = Math.floor(resteJours);
-          var fractionJour = resteJours - joursEntiers;
-          return { mois: moisEntiers, jours: joursEntiers, heures: fractionJour * params.heuresParJour, totalJours: totalJours };
+          return { totalJours: Math.max(0, chargeAnnuelle / margeParJour) };
         }
 
         return { loyer: convertir(chargeLoyerAnnuelle), manip: convertir(chargeManipAnnuelle) };
       }
 
-      function unFormatDuree(d) {
-        if (!d) return "jamais atteint";
-        var heures = Math.round(d.heures);
-        return milliersFmt.format(d.mois) + " mois, " + milliersFmt.format(d.jours) + " jour" + (d.jours === 1 ? "" : "s") +
-          ", " + milliersFmt.format(heures) + " heure" + (heures === 1 ? "" : "s");
-      }
-
       // ---- Barres horizontales "Loyer annuel remboursé après" — même motif que
       // unDessinerBarresPointMort() ci-dessus (nom de machine en blanc dans la
       // barre si la place le permet, sinon au-dessus ; barre à opacité réduite +
-      // "jamais atteint" si la marge ne couvre jamais le loyer). La phrase de
-      // valeur ("Loyer annuel remboursé après : X mois, Y jours, Z heures") est
-      // mesurée réellement via getBBox() (jamais une estimation par nombre de
-      // caractères, règle du skill) : si elle tient à droite de la barre elle y
-      // reste, sinon elle repasse EN DESSOUS (motif "un libellé qui peut manquer
-      // de place", déjà utilisé plus haut sur ce fichier pour le nom de machine)
-      // plutôt que de compresser la barre à presque rien. ----
+      // "jamais atteint" si la marge ne couvre jamais le loyer). Valeur en bout de
+      // barre = nombre de jours (demande de Cédric du 21/09/2026, remplace la
+      // phrase complète "X mois, Y jours, Z heures" — trop longue pour tenir à
+      // côté de la barre, voir [[pieges]]/skill pour l'ancien correctif "sous la
+      // barre", devenu inutile avec un texte aussi court). ----
       function unDessinerBarresPointMortAnnuel(entries) {
         var svg = document.getElementById("unPointMortAnnuelChart");
         while (svg.firstChild) svg.removeChild(svg.firstChild);
 
         var svgWidth = 640;
         var leftPad = 6;
+        var rightPad = 90; // réservé pour "12 jours" affiché après la barre
+        var barAreaWidth = svgWidth - leftPad - rightPad;
         var barHeight = 36;
         var espacement = 18;
         var topPad = 18;
-        var valeurSousHauteur = 20;
         var ns = "http://www.w3.org/2000/svg";
         var labelPadInterieur = 10;
 
-        var PREFIXE_VALEUR = "Loyer annuel remboursé après : ";
-        var textesValeur = entries.map(function (e) { return PREFIXE_VALEUR + unFormatDuree(e.annuel.loyer); });
+        function texteJours(loyer) {
+          if (!loyer) return "jamais atteint";
+          var j = Math.round(loyer.totalJours);
+          return milliersFmt.format(j) + " jour" + (j === 1 ? "" : "s");
+        }
+
+        var valeursFinies = entries.map(function (e) { return e.annuel.loyer ? e.annuel.loyer.totalJours : NaN; }).filter(function (v) { return isFinite(v) && v > 0; });
+        var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
 
         var mesure = document.createElementNS(ns, "text");
         mesure.setAttribute("font-size", "14");
         mesure.setAttribute("font-weight", "700");
         svg.appendChild(mesure);
         function largeurTexteFn(t) { mesure.textContent = t; return mesure.getBBox().width; }
-        var largeurMaxValeur = textesValeur.reduce(function (max, t) { return Math.max(max, largeurTexteFn(t)); }, 0);
-
-        // Plafond : passée une largeur de valeur trop grande par rapport au
-        // graphique (durées à 2 chiffres sur les 3 unités), la réserver à droite
-        // écraserait la barre à presque rien — la valeur repasse alors sous la
-        // barre, sur toute la largeur disponible.
-        var valeurSousLaBarre = largeurMaxValeur > svgWidth * 0.42;
-        var rightPad = valeurSousLaBarre ? 16 : (largeurMaxValeur + 20);
-        var barAreaWidth = svgWidth - leftPad - rightPad;
-
-        var valeursFinies = entries.map(function (e) { return e.annuel.loyer ? e.annuel.loyer.totalJours : NaN; }).filter(function (v) { return isFinite(v) && v > 0; });
-        var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
 
         var largeurs = [];
         var libelleDansBarre = [];
@@ -1975,11 +1955,7 @@
         });
         svg.removeChild(mesure);
 
-        // Hauteur de chaque ligne : barre seule, + place pour le nom au-dessus si
-        // besoin, + place pour la valeur en dessous si elle ne tient pas à côté.
-        var ligneHauteurs = libelleDansBarre.map(function (dedans) {
-          return (dedans ? 0 : 26 + 6) + barHeight + (valeurSousLaBarre ? valeurSousHauteur : 0);
-        });
+        var ligneHauteurs = libelleDansBarre.map(function (dedans) { return dedans ? barHeight : (26 + 6 + barHeight); });
         var svgHeight = topPad * 2 + ligneHauteurs.reduce(function (a, b) { return a + b; }, 0) + Math.max(0, entries.length - 1) * espacement;
         svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
 
@@ -2024,17 +2000,12 @@
           }
 
           var valeur = document.createElementNS(ns, "text");
+          valeur.setAttribute("x", leftPad + largeur + 10);
+          valeur.setAttribute("y", barY + barHeight / 2 + 5);
           valeur.setAttribute("font-size", "14");
           valeur.setAttribute("font-weight", estFini ? "700" : "600");
           valeur.setAttribute("fill", estFini ? "#1c1c1c" : "#8a8a8a");
-          valeur.textContent = textesValeur[i];
-          if (valeurSousLaBarre) {
-            valeur.setAttribute("x", leftPad);
-            valeur.setAttribute("y", barY + barHeight + valeurSousHauteur - 4);
-          } else {
-            valeur.setAttribute("x", leftPad + largeur + 10);
-            valeur.setAttribute("y", barY + barHeight / 2 + 5);
-          }
+          valeur.textContent = texteJours(e.annuel.loyer);
           svg.appendChild(valeur);
 
           rowTop += ligneHauteurs[i] + espacement;
