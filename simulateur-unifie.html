@@ -1355,34 +1355,63 @@
 
         var svgWidth = 640;
         var leftPad = 6;
-        var rightPad = 150; // réservé pour "12,4 examens/jour" affiché après la barre
+        var rightPad = 110; // réservé pour la valeur ("12,4") affichée après la barre
         var barAreaWidth = svgWidth - leftPad - rightPad;
         var barHeight = 36;
-        var ligneHauteur = 26 + 6 + barHeight; // libellé + espace + barre
         var espacement = 18;
         var topPad = 18;
-        var svgHeight = topPad * 2 + entries.length * ligneHauteur + Math.max(0, entries.length - 1) * espacement;
-        svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
+        var ns = "http://www.w3.org/2000/svg";
+        var labelPadInterieur = 10; // marge du nom de machine à l'intérieur de la barre
 
         var valeursFinies = entries.map(function (e) { return e.value; }).filter(function (v) { return isFinite(v) && v > 0; });
         var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
 
-        var ns = "http://www.w3.org/2000/svg";
-        entries.forEach(function (e, i) {
-          var rowTop = topPad + i * (ligneHauteur + espacement);
-          var labelY = rowTop + 16;
-          var barY = rowTop + 26 + 6;
+        // Passe 1 (mesure) : le nom de machine se lit normalement EN BLANC À
+        // L'INTÉRIEUR de la barre — mais un libellé qui ne rentre pas ne doit
+        // jamais disparaître, il retombe au-dessus de la barre (motif "un
+        // libellé qui peut manquer de place" du skill). Mesure réelle via
+        // getBBox(), jamais une estimation par nombre de caractères.
+        var largeurs = [];
+        var libelleDansBarre = [];
+        entries.forEach(function (e) {
           var estFini = isFinite(e.value) && e.value > 0;
           var largeur = estFini ? Math.max(4, (e.value / maxVal) * barAreaWidth) : barAreaWidth * 0.55;
+          largeurs.push(largeur);
 
-          var label = document.createElementNS(ns, "text");
-          label.setAttribute("x", leftPad);
-          label.setAttribute("y", labelY);
-          label.setAttribute("font-size", "15");
-          label.setAttribute("font-weight", "700");
-          label.setAttribute("fill", e.color);
-          label.textContent = e.label;
-          svg.appendChild(label);
+          var essai = document.createElementNS(ns, "text");
+          essai.setAttribute("font-size", "14");
+          essai.setAttribute("font-weight", "700");
+          essai.textContent = e.label;
+          svg.appendChild(essai);
+          var largeurTexte = essai.getBBox().width;
+          svg.removeChild(essai);
+          libelleDansBarre.push(largeurTexte + labelPadInterieur * 2 <= largeur);
+        });
+
+        // Passe 2 (mise en page) : chaque ligne a sa propre hauteur — juste la
+        // barre si le libellé tient dedans, barre + place pour le libellé
+        // au-dessus sinon.
+        var ligneHauteurs = libelleDansBarre.map(function (dedans) { return dedans ? barHeight : (26 + 6 + barHeight); });
+        var svgHeight = topPad * 2 + ligneHauteurs.reduce(function (a, b) { return a + b; }, 0) + Math.max(0, entries.length - 1) * espacement;
+        svg.setAttribute("viewBox", "0 0 " + svgWidth + " " + svgHeight);
+
+        var rowTop = topPad;
+        entries.forEach(function (e, i) {
+          var estFini = isFinite(e.value) && e.value > 0;
+          var largeur = largeurs[i];
+          var dedans = libelleDansBarre[i];
+          var barY = dedans ? rowTop : rowTop + 26 + 6;
+
+          if (!dedans) {
+            var labelAuDessus = document.createElementNS(ns, "text");
+            labelAuDessus.setAttribute("x", leftPad);
+            labelAuDessus.setAttribute("y", rowTop + 16);
+            labelAuDessus.setAttribute("font-size", "15");
+            labelAuDessus.setAttribute("font-weight", "700");
+            labelAuDessus.setAttribute("fill", e.color);
+            labelAuDessus.textContent = e.label;
+            svg.appendChild(labelAuDessus);
+          }
 
           var rect = document.createElementNS(ns, "rect");
           rect.setAttribute("x", leftPad);
@@ -1394,14 +1423,27 @@
           if (!estFini) rect.setAttribute("opacity", "0.35");
           svg.appendChild(rect);
 
+          if (dedans) {
+            var labelDedans = document.createElementNS(ns, "text");
+            labelDedans.setAttribute("x", leftPad + labelPadInterieur);
+            labelDedans.setAttribute("y", barY + barHeight / 2 + 5);
+            labelDedans.setAttribute("font-size", "14");
+            labelDedans.setAttribute("font-weight", "700");
+            labelDedans.setAttribute("fill", "#fff");
+            labelDedans.textContent = e.label;
+            svg.appendChild(labelDedans);
+          }
+
           var valeur = document.createElementNS(ns, "text");
           valeur.setAttribute("x", leftPad + largeur + 10);
           valeur.setAttribute("y", barY + barHeight / 2 + 5);
           valeur.setAttribute("font-size", "14");
           valeur.setAttribute("font-weight", estFini ? "700" : "600");
           valeur.setAttribute("fill", estFini ? "#1c1c1c" : "#8a8a8a");
-          valeur.textContent = estFini ? patientsFmt.format(e.value) + " examens/jour" : "jamais atteint";
+          valeur.textContent = estFini ? patientsFmt.format(e.value) : "jamais atteint";
           svg.appendChild(valeur);
+
+          rowTop += ligneHauteurs[i] + espacement;
         });
       }
 
