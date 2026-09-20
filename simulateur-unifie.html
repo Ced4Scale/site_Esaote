@@ -619,11 +619,24 @@
             </div>
           </div>
 
-          <!-- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
-               pour le motif d'origine. Concerne uniquement les listes IRM des projets 01/02
-               (MACHINES_IRM) ; masqué pour le projet 03 (scanner/Esaote uniquement, pas de
-               marque concurrente d'IRM affichée). Esaote et les 2 IRM génériques restent
-               toujours visibles, verrou ou pas. -->
+        </div>
+
+        <!-- ---- Colonne 2 : Machine A ---- -->
+        <div class="un-col-machine" id="unColA">
+          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" id="unTitreA">Machine A</h4>
+          <div class="field">
+            <label for="unMachineA" id="unMachineALabel">Choix IRM</label>
+            <select id="unMachineA"></select>
+          </div>
+
+          <!-- Verrou "marques concurrentes" (21/09/2026, déplacé le 21/09/2026 depuis la
+               colonne Paramètres à la demande de Cédric : le bouton vit dans la bande
+               Machine A, mais débloque les 2 listes A ET B (fonction partagée
+               machinesIrmVisibles()) — voir simulateur-point-mort.html pour le motif
+               d'origine. Concerne uniquement les listes IRM des projets 01/02
+               (MACHINES_IRM) ; masqué pour le projet 03 (scanner/Esaote uniquement, pas
+               de marque concurrente d'IRM affichée). Esaote et les 2 IRM génériques
+               restent toujours visibles, verrou ou pas. -->
           <div class="field" id="unGateConcurrenceWrap">
             <p class="simulator__hint" style="margin:0">
               Les marques concurrentes ne sont pas affichées dans les listes ci-dessous.
@@ -634,15 +647,6 @@
               <button type="button" class="btn btn--sm" id="unGateConcurrenceValider">Valider</button>
               <span id="unGateConcurrenceErreur" style="color:var(--red);display:none">Code incorrect.</span>
             </div>
-          </div>
-        </div>
-
-        <!-- ---- Colonne 2 : Machine A ---- -->
-        <div class="un-col-machine" id="unColA">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" id="unTitreA">Machine A</h4>
-          <div class="field">
-            <label for="unMachineA" id="unMachineALabel">Choix IRM</label>
-            <select id="unMachineA"></select>
           </div>
           <div class="field">
             <label for="unLoyerA" id="unLoyerALabel">Loyer de l'IRM, SAV inclus</label>
@@ -1232,7 +1236,7 @@
           document.getElementById("unMembreFieldB").hidden = false;
           document.getElementById("unMultiRegionFieldA").hidden = true;
           document.getElementById("unRseWrapA").hidden = true;
-          peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-g-scan");
+          peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-o-scan");
           peuplerMachineSelect(selectB, machinesIrmVisibles(), "generique-15t");
           appliquerNbMachines();
         }
