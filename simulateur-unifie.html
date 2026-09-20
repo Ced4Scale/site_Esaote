@@ -911,6 +911,18 @@
           </span>
         </div>
 
+        <!-- Coût du kWh — miroir de #unKwh (écran 2, "Charges partagées"), un
+             seul fader (pas de paire A/B, valeur commune aux 2 machines). ----->
+        <div class="un-mixer__group">
+          <span class="un-mixer__group-title">Coût du kWh</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+              <input type="range" id="unMixKwhFader" min="0" max="1" step="0.01" value="0.20" aria-label="Coût du kWh" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixKwhVal" value="0,20" aria-label="Coût du kWh, valeur" />
+            </div>
+          </div>
+        </div>
+
         <div class="un-mixer__group">
           <span class="un-mixer__group-title">Examens par heure</span>
           <div class="un-mixer__faders">
@@ -2213,7 +2225,9 @@
       // le skill).
       // ---------------------------------------------------------------------
       var unMixEcritureProg = false;
+      var kwhFmt = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       var UN_MIX_FIELDS = [
+        { faderId: "unMixKwhFader", valId: "unMixKwhVal", sourceId: "unKwh", fmt: kwhFmt },
         { faderId: "unMixInstallAFader", valId: "unMixInstallAVal", sourceId: "unInstallA" },
         { faderId: "unMixInstallBFader", valId: "unMixInstallBVal", sourceId: "unInstallB" },
         { faderId: "unMixMermAFader", valId: "unMixMermAVal", sourceId: "unMermA" },
@@ -2243,7 +2257,7 @@
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
         fader.value = v;
-        val.value = patientsFmt.format(v);
+        val.value = (champ.fmt || patientsFmt).format(v);
         unMixEcritureProg = false;
       }
 
@@ -2259,7 +2273,7 @@
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
         fader.value = v;
-        document.getElementById(champ.valId).value = patientsFmt.format(v);
+        document.getElementById(champ.valId).value = (champ.fmt || patientsFmt).format(v);
         document.getElementById(champ.sourceId).value = v;
         unMixEcritureProg = false;
         unRenderPointMort();
