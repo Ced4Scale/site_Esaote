@@ -222,10 +222,6 @@
        structure, juste le contexte visuel autour). */
     .un-mixer .un-info-btn { background: rgba(255,255,255,.85); }
 
-    /* Bascule Point mort en examens/jour <-> Point mort annuel (19/09/2026) */
-    #unPointMortSummary { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem; }
-    .un-pm-toggle-btn { margin-left: auto; }
-
     /* ================= Étape 3 : Bascule progressive A↔B ==================
        Motif "Curseur de répartition entre deux machines" du skill, repris de
        simulateur-bascule-oscan.html (#boCurseur/#boCurseur2 — piste
@@ -872,23 +868,9 @@
            n'est pas une conversion inventée ici. Bascule progressive et CT vs IRM
            restent hors périmètre (voir consigne). -->
       <details class="simulator__chart-card simulator__chart-card--collapsible" id="unPointMortCard">
-        <summary id="unPointMortSummary">Point mort — nombre d'examens par jour
-          <button type="button" class="btn btn--sm btn--ghost un-pm-toggle-btn" id="unBtnTogglePointMortVue">Voir le point mort annuel</button>
-        </summary>
+        <summary id="unPointMortSummary">Point mort — nombre d'examens par jour</summary>
         <div class="simulator__chart-wrap" id="unPointMortJourVue">
           <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
-        </div>
-
-        <!-- Point mort ANNUEL — bascule ajoutée le 19/09/2026 (demande de Cédric) :
-             pour chaque machine, temps nécessaire pour rembourser le loyer annuel
-             (charge fixe, indépendante du volume), en réutilisant margeParPatient
-             telle que calculerPointMortMachine() la calcule en interne — jamais
-             une 2ᵉ formule de marge séparée. Affiché en barres horizontales (même
-             motif que le point mort en examens/jour ci-dessus), demande de Cédric
-             du 21/09/2026 ("en forme de bâton allongé") — seule la durée du loyer
-             est affichée, plus celle des manip (retirée du même geste). -->
-        <div class="simulator__chart-wrap" id="unPointMortAnnuelVue" hidden>
-          <svg id="unPointMortAnnuelChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Loyer annuel remboursé après, par machine"></svg>
         </div>
 
         <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
@@ -950,6 +932,26 @@
               <div class="un-info-pop" id="unInfoActePop" hidden>Ajoute la valeur de l'acte intellectuel du radiologue (55&nbsp;€ à 69&nbsp;€ selon la répartition « membre »/« autre région » réglée pour chaque machine à l'écran précédent) à la recette par patient utilisée pour le point mort — à cocher seulement si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple). Réglage propre à cet outil unifié : simulateur-point-mort.html (fichier réel) ajoute toujours cette recette, sans case à cocher.</div>
             </span>
           </div>
+        </div>
+      </details>
+
+      <!-- Point mort ANNUEL — carte séparée depuis le 21/09/2026 (demande de
+           Cédric : plus de bouton bascule, un titre pliable indépendant), pour
+           chaque machine le temps nécessaire pour rembourser le loyer annuel
+           (charge fixe, indépendante du volume), en réutilisant margeParPatient
+           telle que calculerPointMortMachine() la calcule en interne — jamais
+           une 2ᵉ formule de marge séparée. Barres horizontales (même motif que
+           le point mort en examens/jour ci-dessus), nombre de jours en bout de
+           barre. Fermée par défaut comme toutes les cartes de résultat du site
+           — redessinée à chaque ouverture (voir unRenderPointMort()/l'écouteur
+           "toggle" plus bas), jamais une seule fois au chargement : un texte
+           SVG mesuré via getBBox() pendant que la carte est encore fermée
+           renverrait une largeur de 0 (piège déjà rencontré sur ce graphique,
+           voir mémoire). -->
+      <details class="simulator__chart-card simulator__chart-card--collapsible" id="unPointMortAnnuelCard">
+        <summary>Point mort annuel en nombre de jours</summary>
+        <div class="simulator__chart-wrap" id="unPointMortAnnuelVue">
+          <svg id="unPointMortAnnuelChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Loyer annuel remboursé après, en jours, par machine"></svg>
         </div>
       </details>
 
@@ -2013,31 +2015,16 @@
       }
 
       // ---------------------------------------------------------------------
-      // Bouton bascule Point mort en examens/jour <-> Point mort annuel — clic
-      // à l'intérieur du <summary>, preventDefault+stopPropagation pour ne pas
-      // aussi (re)fermer le cadre repliable (motif du skill).
+      // Point mort annuel — carte pliable séparée depuis le 21/09/2026 (plus de
+      // bouton bascule dans le résumé du Point mort journalier). Redessinée à
+      // CHAQUE ouverture de la carte, jamais une seule fois au calcul global :
+      // un <text> SVG mesuré via getBBox() pendant que la carte est encore
+      // fermée (`<details>` sans `open`) renvoie une largeur de 0 — piège déjà
+      // rencontré sur ce même graphique (voir mémoire/skill).
       // ---------------------------------------------------------------------
-      var unPointMortVueAnnuelle = false;
       var unDernieresEntreesPointMort = null;
-      function unAppliquerVuePointMort() {
-        document.getElementById("unPointMortJourVue").hidden = unPointMortVueAnnuelle;
-        document.getElementById("unPointMortAnnuelVue").hidden = !unPointMortVueAnnuelle;
-        document.getElementById("unBtnTogglePointMortVue").textContent = unPointMortVueAnnuelle
-          ? "Voir le point mort en examens/jour"
-          : "Voir le point mort annuel";
-        // Redessine le graphique annuel SEULEMENT en le révélant — jamais pendant
-        // qu'il est encore `hidden` (un <text> dans un conteneur caché a une
-        // getBBox() à 0, la mesure de largeur de la phrase "Loyer annuel..."
-        // donnerait alors une réserve nulle, piège vécu le 21/09/2026).
-        if (unPointMortVueAnnuelle && unDernieresEntreesPointMort) {
-          unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
-        }
-      }
-      document.getElementById("unBtnTogglePointMortVue").addEventListener("click", function (e) {
-        e.preventDefault();
-        e.stopPropagation();
-        unPointMortVueAnnuelle = !unPointMortVueAnnuelle;
-        unAppliquerVuePointMort();
+      document.getElementById("unPointMortAnnuelCard").addEventListener("toggle", function () {
+        if (this.open && unDernieresEntreesPointMort) unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
       });
 
       function unRenderPointMort() {
@@ -2066,7 +2053,7 @@
         });
         unDessinerBarresPointMort(entries);
         unDernieresEntreesPointMort = entries;
-        if (unPointMortVueAnnuelle) unDessinerBarresPointMortAnnuel(entries);
+        if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
       }
 
       // ---------------------------------------------------------------------
@@ -2969,7 +2956,6 @@
       // Initialisation
       // ---------------------------------------------------------------------
       majActiviteLabel();
-      unAppliquerVuePointMort();
     })();
   </script>
 </body>
