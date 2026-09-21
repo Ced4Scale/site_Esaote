@@ -226,6 +226,11 @@
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
     .un-compo-source { display: block; margin-top: .35rem; font-size: .74rem; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
     #unCompoDate { font: inherit; font-size: .82rem; font-weight: 700; padding: .25rem .4rem; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; max-width: 100%; }
+    /* Tableau du barème (composition) : tout sur UNE seule ligne par cellule, même avec tous les CA. */
+    #unCompoTableWrap td, #unCompoTableWrap th { white-space: nowrap; }
+    #unCompoTableWrap .un-bareme-ligne1, #unCompoTableWrap .un-bareme-ca { display: inline; }
+    #unCompoTableWrap .un-bareme-ligne1 + .un-bareme-ca { margin-left: .5rem; }
+    #unCompoTableWrap td { padding-top: .4rem; padding-bottom: .4rem; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -2708,7 +2713,7 @@
             td.appendChild(l1);
             var caSp = document.createElement("span");
             caSp.className = "un-bareme-ca"; caSp.style.color = e.couleur;
-            caSp.style.visibility = tous ? "visible" : "hidden"; caSp.textContent = unEur(ca, 2);
+            caSp.style.display = tous ? "" : "none"; caSp.textContent = unEur(ca, 2);
             td.appendChild(caSp); tr.appendChild(td);
           });
           body.appendChild(tr);
