@@ -134,7 +134,6 @@
        même sous le seuil de la media query (piège déjà documenté dans le skill). */
     .un-layout3 { display: grid; grid-template-columns: minmax(260px, 300px) 1fr 1fr; gap: 1.4rem; align-items: start; }
     @media (max-width: 1000px) { .un-layout3 { grid-template-columns: minmax(0, 1fr); } }
-    .un-layout3.un-panel-hidden .un-col-params { display: none; }
     .un-col-params { position: relative; }
     .un-col-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
     .un-col-head label { margin: 0; }
@@ -142,14 +141,6 @@
     .un-col-toggle:hover, .un-col-toggle:focus-visible { opacity: .7; }
     .un-mixer__group[hidden] { display: none; }
     .un-col-machine { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow-sm); }
-
-    .un-gear-btn {
-      background: none; border: 0; padding: .1rem .2rem; margin: 0 0 1.2rem; cursor: pointer;
-      font-size: 1.6rem; line-height: 1; color: inherit; opacity: .85;
-    }
-    .un-gear-btn:hover, .un-gear-btn:focus-visible { opacity: 1; }
-    .un-panel-toggle-btn { position: absolute; top: .6rem; right: .6rem; z-index: 2; }
-    #unBtnShowPanel[hidden] { display: none; }
 
     /* Bulle d'aide 💡 (motif "Phrase explicative fixe repliée derrière une icône
        ampoule" du skill, repris tel quel — aucun ancêtre en position:sticky ici). */
@@ -362,8 +353,6 @@
       <div class="un-layout3" id="unLayout3">
         <!-- ---- Colonne 1 : Paramètres (commun) ---- -->
         <div class="un-col-params">
-          <button type="button" class="un-gear-btn un-panel-toggle-btn" id="unBtnTogglePanel" aria-pressed="false" aria-label="Masquer les paramètres" title="Masquer les paramètres">⏴</button>
-
           <details class="simulator__field-group bascule-hyp-section" name="unMainAccordion" style="border-left-color:#6b5b95">
             <summary>Paramètres
               <span class="un-info-wrap">
@@ -868,8 +857,6 @@
           </div>
         </div>
       </div>
-
-      <button type="button" class="btn btn--sm" id="unBtnShowPanel" hidden style="margin-top:1rem" aria-label="Afficher les paramètres" title="Afficher les paramètres">⏵ Paramètres</button>
 
       <div style="margin-top:1.6rem; text-align:right">
         <button type="button" class="btn" id="unBtnVoirResultats">Voir les résultats possibles ▸</button>
@@ -1796,21 +1783,6 @@
       wireInfoBtn("unInfoRisBtn", "unInfoRisPop");
       document.addEventListener("click", function () { unInfoPopsOuverts.forEach(function (f) { f(); }); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") unInfoPopsOuverts.forEach(function (f) { f(); }); });
-
-      // ---------------------------------------------------------------------
-      // ⏴/⏵ masquer/réafficher la colonne Paramètres
-      // ---------------------------------------------------------------------
-      function appliquerVisibilitePanel(masque) {
-        document.getElementById("unLayout3").classList.toggle("un-panel-hidden", masque);
-        document.getElementById("unBtnTogglePanel").setAttribute("aria-pressed", String(masque));
-        document.getElementById("unBtnShowPanel").hidden = !masque;
-      }
-      document.getElementById("unBtnTogglePanel").addEventListener("click", function () {
-        appliquerVisibilitePanel(!document.getElementById("unLayout3").classList.contains("un-panel-hidden"));
-      });
-      document.getElementById("unBtnShowPanel").addEventListener("click", function () {
-        appliquerVisibilitePanel(false);
-      });
 
       // ---------------------------------------------------------------------
       // Forfait technique — liste des dates (assets/forfaits-techniques-data.js)
