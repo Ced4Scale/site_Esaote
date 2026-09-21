@@ -914,6 +914,19 @@
       </details>
       </div>
 
+      <!-- Composition des recettes de l'année 1 (demande de Cédric, 21/09/2026) — même
+           camembert + petit graphe en barres que simulateur-recettes.html (#simChart2),
+           mais UN camembert par MACHINE (A/B) au lieu d'un par date de forfait technique :
+           la date, la zone et « amortie / non amortie » viennent du formulaire. Volume =
+           « Votre activité » (donc pas de curseur d'activité ici, déjà saisie). -->
+      <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCompoCard" open>
+        <summary>Composition des recettes de l'année 1</summary>
+        <div class="simulator__legend" id="unCompoLegende"></div>
+        <div class="simulator__chart-wrap">
+          <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres de la composition des recettes de l'année 1, un par machine"></svg>
+        </div>
+      </details>
+
       <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
            Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
            en poste) + une case à cocher NOUVELLE (Acte intellectuel, absente de
@@ -2319,8 +2332,110 @@
           };
         });
         unDessinerBarresPointMort(entries);
+        unDessinerCompo(slots, params);
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
+      }
+
+      // ---------------------------------------------------------------------
+      // Composition des recettes de l'année 1 — porté de simulateur-recettes.html
+      // (calculerDetailCA / dessinerUnCamembert / dessinerBarresSeuils), un camembert
+      // par machine. Barème = classe FT de la machine (unClasseFTDepuisMachine), date /
+      // zone / amortie lues dans params ; volume = « Votre activité » annuelle.
+      // ---------------------------------------------------------------------
+      var UN_PALIERS = [
+        { key: "plein", label: "Forfait plein", shortLabel: "Plein", color: "#2a78d6" },
+        { key: "seuil1", label: "Seuil 1", shortLabel: "S1", color: "#eb6834" },
+        { key: "seuil2", label: "Seuil 2", shortLabel: "S2", color: "#1baf7a" },
+        { key: "plafond", label: "Plafond", shortLabel: "Plaf.", color: "#eda100" }
+      ];
+      var unEurosFmt = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
+      var UN_SVG_NS = "http://www.w3.org/2000/svg";
+      function unSvgEl(tag, attrs) {
+        var el = document.createElementNS(UN_SVG_NS, tag);
+        Object.keys(attrs || {}).forEach(function (k) { el.setAttribute(k, attrs[k]); });
+        return el;
+      }
+      function unDetailCA(volume, machine, params) {
+        var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === params.dateIso; })[0];
+        var plein = ligne.plein[params.zone];
+        var tarifPlein = plein[params.amortiKey] != null ? plein[params.amortiKey] : plein.nonAmorti;
+        var d = { plein: Math.min(volume, classe.REF) * tarifPlein, seuil1: 0, seuil2: 0, plafond: 0 };
+        if (volume > classe.REF) d.seuil1 = (Math.min(volume, classe.SEUIL1) - classe.REF) * ligne.reduits.seuil1;
+        if (volume > classe.SEUIL1) d.seuil2 = (Math.min(volume, classe.SEUIL2) - classe.SEUIL1) * ligne.reduits.seuil2;
+        if (volume > classe.SEUIL2) d.plafond = (volume - classe.SEUIL2) * ligne.reduits.plafond;
+        return d;
+      }
+      function unPiePath(cx, cy, r, a0, a1) {
+        var large = (a1 - a0) > Math.PI ? 1 : 0;
+        return "M" + cx + "," + cy + " L" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
+          " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) + " Z";
+      }
+      function unDessinerCompo(slots, params) {
+        var svgC = document.getElementById("unCompoChart");
+        svgC.innerHTML = "";
+        var leg = document.getElementById("unCompoLegende");
+        leg.innerHTML = "";
+        UN_PALIERS.forEach(function (p) {
+          var item = document.createElement("span"); item.className = "simulator__legend-item";
+          var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = p.color;
+          var t = document.createElement("span"); t.textContent = p.label;
+          item.appendChild(key); item.appendChild(t); leg.appendChild(item);
+        });
+        var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
+        var camemberts = [];
+        slots.forEach(function (slot) {
+          var config = unConfigMachinePointMort(slot);
+          if (!config.machine) return;
+          var detail = unDetailCA(volume, config.machine, params);
+          camemberts.push({ label: config.machine.nomCourt, volume: volume, detail: detail,
+            total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
+        });
+        if (!camemberts.length) return;
+
+        var maxR = 50, centerY = 108, n = camemberts.length;
+        var centers = n === 1 ? [320] : [170, 470], halfWidth = n === 1 ? 140 : 85;
+        var maxTotal = Math.max.apply(null, camemberts.map(function (b) { return b.total; }));
+        var maxPalier = 0;
+        camemberts.forEach(function (b) { UN_PALIERS.forEach(function (p) { if (b.detail[p.key] > maxPalier) maxPalier = b.detail[p.key]; }); });
+        var yMax = maxPalier > 0 ? maxPalier * 1.06 : 1;
+        var BAR_TOP = 208, BAR_BOTTOM = 300, BAR_LABEL_Y = 318;
+
+        camemberts.forEach(function (b, i) {
+          var cx = centers[i];
+          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
+          var start = -Math.PI / 2;
+          UN_PALIERS.forEach(function (p) {
+            var part = b.detail[p.key];
+            if (!part) return;
+            var fraction = part / b.total, end = start + fraction * 2 * Math.PI;
+            svgC.appendChild(unSvgEl("path", { d: unPiePath(cx, centerY, r, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            var mid = (start + end) / 2, cosA = Math.cos(mid);
+            svgC.appendChild(unSvgEl("line", { x1: cx + r * 1.02 * cosA, y1: centerY + r * 1.02 * Math.sin(mid), x2: cx + r * 1.18 * cosA, y2: centerY + r * 1.18 * Math.sin(mid), stroke: p.color, "stroke-width": "1.5" }));
+            var lx = cx + r * 1.24 * cosA, ly = centerY + r * 1.24 * Math.sin(mid);
+            var lab = unSvgEl("text", { x: lx, y: ly, class: "simulator__pie-outlabel", "text-anchor": cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle" });
+            var l1 = unSvgEl("tspan", { x: lx, dy: "0" }); l1.textContent = unEurosFmt.format(part); lab.appendChild(l1);
+            var l2 = unSvgEl("tspan", { x: lx, dy: "10", class: "simulator__axis-label" }); l2.textContent = Math.round(fraction * 100) + " %"; lab.appendChild(l2);
+            svgC.appendChild(lab);
+            start = end;
+          });
+          var cap = unSvgEl("text", { x: cx, y: 17, class: "simulator__pie-caption", "text-anchor": "middle" });
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
+          svgC.appendChild(cap);
+
+          var barGap = 16, barW = (halfWidth * 2 - barGap * (UN_PALIERS.length + 1)) / UN_PALIERS.length;
+          UN_PALIERS.forEach(function (p, k) {
+            var val = b.detail[p.key] || 0, bx = cx - halfWidth + barGap * (k + 1) + barW * k;
+            var bh = (val / yMax) * (BAR_BOTTOM - BAR_TOP);
+            if (val > 0) svgC.appendChild(unSvgEl("rect", { x: bx, y: BAR_BOTTOM - bh, width: barW, height: bh, fill: p.color, rx: 2, ry: 2 }));
+            var nl = unSvgEl("text", { x: bx + barW / 2, y: BAR_LABEL_Y, class: "simulator__bar-label", "text-anchor": "middle" });
+            nl.textContent = p.shortLabel; svgC.appendChild(nl);
+          });
+          svgC.appendChild(unSvgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
+        });
       }
 
       // ---------------------------------------------------------------------
