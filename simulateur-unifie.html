@@ -2564,6 +2564,15 @@
         document.getElementById("unMixHeuresBCol").hidden = unSlotsActifs().length < 2;
         document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable());
       }
+      // Demi-anneau (style « jauge » : moitié haute, trou au centre) — remplace le camembert
+      // plein depuis le 21/09/2026 (demande de Cédric, modèle GetApp).
+      function unDonutPath(cx, cy, r, ri, a0, a1) {
+        var large = (a1 - a0) > Math.PI ? 1 : 0;
+        return "M" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
+          " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) +
+          " L" + (cx + ri * Math.cos(a1)) + "," + (cy + ri * Math.sin(a1)) +
+          " A" + ri + "," + ri + " 0 " + large + " 0 " + (cx + ri * Math.cos(a0)) + "," + (cy + ri * Math.sin(a0)) + " Z";
+      }
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
@@ -2587,7 +2596,7 @@
         });
         if (!camemberts.length) return;
 
-        var maxR = 50, centerY = 108, n = camemberts.length;
+        var maxR = 72, centerY = 136, n = camemberts.length;
         var centers = n === 1 ? [320] : [170, 470], halfWidth = n === 1 ? 140 : 85;
         var maxTotal = Math.max.apply(null, camemberts.map(function (b) { return b.total; }));
         var maxPalier = 0;
@@ -2598,12 +2607,12 @@
         camemberts.forEach(function (b, i) {
           var cx = centers[i];
           var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
-          var start = -Math.PI / 2;
+          var start = -Math.PI;
           UN_PALIERS.forEach(function (p) {
             var part = b.detail[p.key];
             if (!part) return;
-            var fraction = part / b.total, end = start + fraction * 2 * Math.PI;
-            svgC.appendChild(unSvgEl("path", { d: unPiePath(cx, centerY, r, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            var fraction = part / b.total, end = start + fraction * Math.PI;
+            svgC.appendChild(unSvgEl("path", { d: unDonutPath(cx, centerY, r, r * 0.55, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
             var mid = (start + end) / 2, cosA = Math.cos(mid);
             svgC.appendChild(unSvgEl("line", { x1: cx + r * 1.02 * cosA, y1: centerY + r * 1.02 * Math.sin(mid), x2: cx + r * 1.18 * cosA, y2: centerY + r * 1.18 * Math.sin(mid), stroke: p.color, "stroke-width": "1.5" }));
             var lx = cx + r * 1.24 * cosA, ly = centerY + r * 1.24 * Math.sin(mid);
