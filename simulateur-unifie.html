@@ -1023,6 +1023,10 @@
             <input type="checkbox" id="unCompoShowAllCa">
             Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
           </label>
+          <label class="un-bareme-showall">
+            <input type="checkbox" id="unCompoTableCharges">
+            Afficher les charges en dessous (charges annuelles, total et résultat)
+          </label>
           <div class="un-ca-tranche-info" id="unCompoCaInfo" hidden></div>
         </div>
       </details>
@@ -2782,16 +2786,44 @@
           td.appendChild(sp); trT.appendChild(td);
         });
         body.appendChild(trT);
+        var charges = document.getElementById("unCompoTableCharges").checked;
+        var basePour2 = totaux.slice();
+        if (charges) {
+          function ligneMontants(label, valeurs, gras) {
+            var tr = document.createElement("tr"), tdL = document.createElement("td");
+            tdL.innerHTML = "<strong>" + label + "</strong>"; tr.appendChild(tdL);
+            entrees.forEach(function (e, k) {
+              var td = document.createElement("td"), sp = document.createElement("span");
+              sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#d33" : e.couleur; if (!gras) sp.style.fontWeight = "400";
+              sp.textContent = unEur(valeurs[k], 2); td.appendChild(sp); tr.appendChild(td);
+            });
+            body.appendChild(tr);
+          }
+          if (entrees.some(function (e) { return e.acte > 0; })) {
+            ligneMontants("Acte intellectuel", entrees.map(function (e) { return e.acte; }), false);
+            ligneMontants("Total des recettes", entrees.map(function (e, k) { return totaux[k] + e.acte; }), true);
+          }
+          [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c) {
+            ligneMontants(c[0], entrees.map(function (e) { return e.cout[c[1]]; }), false);
+          });
+          var totCharges = entrees.map(function (e) { return e.cout.loyer + e.cout.personnel + e.cout.elec + e.cout.autres; });
+          ligneMontants("Total des charges", totCharges, true);
+          var resultats = entrees.map(function (e, k) { return totaux[k] + e.acte - totCharges[k]; });
+          ligneMontants("Résultat", resultats, true);
+          basePour2 = resultats;
+        }
         if (entrees.length === 2) {
           var tr2 = document.createElement("tr"), td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
-          td2L.innerHTML = projetActuel === 1 ? "<strong>Différence 2 machines</strong>" : "<strong>Total 2 machines</strong>"; tr2.appendChild(td2L);
+          td2L.innerHTML = projetActuel === 1
+            ? "<strong>" + (charges ? "Différence résultats" : "Différence 2 machines") + "</strong>"
+            : "<strong>" + (charges ? "Total résultats" : "Total 2 machines") + "</strong>"; tr2.appendChild(td2L);
           td2.colSpan = 2; sp2.className = "un-bareme-ca";
           if (projetActuel === 1) {
-            // Projet 1 uniquement : l'écart de recette entre les 2 machines, en faveur de la plus élevée.
-            var ecart = totaux[1] - totaux[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
+            // Projet 1 uniquement : l'écart entre les 2 machines (de recette, ou de résultat si les charges sont affichées), en faveur de la plus élevée.
+            var ecart = basePour2[1] - basePour2[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
             sp2.textContent = unEur(Math.abs(ecart), 2) + " en faveur de " + gagnante.nom;
             sp2.style.color = gagnante.couleur;
-          } else sp2.textContent = unEur(totaux[0] + totaux[1], 2);
+          } else sp2.textContent = unEur(basePour2[0] + basePour2[1], 2);
           td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
         }
       }
@@ -2808,6 +2840,7 @@
         clearTimeout(unCompoInfoTimer);
         unCompoInfoTimer = setTimeout(function () { info.hidden = true; }, 6000);
       });
+      document.getElementById("unCompoTableCharges").addEventListener("change", unDessinerTableCompo);
       document.getElementById("unCompoShowAllCa").addEventListener("change", function () {
         document.getElementById("unCompoCaInfo").hidden = true;
         unDessinerTableCompo();
@@ -3035,11 +3068,11 @@
           if (!config.machine) return;
           var detail = unDetailCA(volume, config.machine, params);
           if (params.acteIntellectuelActif) detail.acte = acteIntellectuelMoyen(config.pctMembre) * volume;
-          camemberts.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
+          camemberts.push({ cout: unCoutsDetail(config, unParamsPourSlot(slot, params), volume), label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + (detail.acte || 0) });
         });
         var histo = unCompoVueHisto();
-        unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
+        unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume, cout: b.cout, acte: b.detail.acte || 0 }; });
         if (unCompoVueTable()) unDessinerTableCompo();
         if (!camemberts.length) return;
 
