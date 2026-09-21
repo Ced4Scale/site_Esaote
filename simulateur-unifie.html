@@ -250,7 +250,9 @@
     .ene-fact-row--strong .ene-fact-row-label { font-size: .98rem; }
     .ene-fact-bar-line { margin-bottom: .3rem; }
     .ene-fact-bar-line:last-child { margin-bottom: 0; }
-    .ene-fact-bar-track2 { position: relative; height: clamp(16px, 2.6vw, 26px); }
+    /* Même épaisseur que les barres du graphe SVG (barH = 11 unités sur un viewBox de 640 de large) : 11/640 de la largeur de la carte. */
+    #unRseCard { container-type: inline-size; }
+    .ene-fact-bar-track2 { position: relative; height: calc(100cqw * 11 / 640); }
     .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; }
     .ene-fact-value { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { width: 24rem; }
@@ -2598,7 +2600,7 @@
       ];
       function unRsePaires(res, categories, onClic) {
         var svg = document.getElementById("unRseChart"); svg.innerHTML = "";
-        var plotX0 = 4, plotW = 586, barH = 30, barGap = 5, groupGap = 36, top = 22, groupH = barH * res.length + barGap * (res.length - 1);
+        var plotX0 = 4, plotW = 586, barH = 11, barGap = 4, groupGap = 34, top = 22, groupH = barH * res.length + barGap * (res.length - 1);
         var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 20;
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap), barX0 = plotX0 + (c.indent || 0), barPlotW = plotW - (c.indent || 0);
