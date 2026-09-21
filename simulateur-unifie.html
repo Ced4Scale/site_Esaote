@@ -224,13 +224,21 @@
     .un-bloc-point-mort:fullscreen { justify-content: flex-start; }
     .un-bloc-point-mort:fullscreen > .un-sous-carte, .un-bloc-point-mort:fullscreen > .un-mixer { width: 100%; box-sizing: border-box; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
-    .un-compo-source { display: block; margin-top: .35rem; font-size: .74rem; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
+    .un-compo-source { display: block; margin-top: .35rem; font-size: .5rem; line-height: 1.25; white-space: nowrap; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
     #unCompoDate { font: inherit; font-size: .82rem; font-weight: 700; padding: .25rem .4rem; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; max-width: 100%; }
     /* Tableau du barème (composition) : tout sur UNE seule ligne par cellule, même avec tous les CA. */
     #unCompoTableWrap td, #unCompoTableWrap th { white-space: nowrap; }
     #unCompoTableWrap .un-bareme-ligne1, #unCompoTableWrap .un-bareme-ca { display: inline; }
     #unCompoTableWrap .un-bareme-ligne1 + .un-bareme-ca { margin-left: .5rem; }
     #unCompoTableWrap td { padding-top: .4rem; padding-bottom: .4rem; }
+    /* Montants en couleur alignés à gauche d'une ligne à l'autre : plage et tarif ont une largeur fixe. */
+    #unCompoTableWrap .un-compo-plage { display: inline-block; min-width: 20ch; }
+    #unCompoTableWrap .un-bareme-tarif, #unCompoTableWrap .un-ca-tranche-btn { display: inline-block; min-width: 7ch; text-align: left; }
+    /* 1re colonne étroite : la date + un lien très petit vers la décision officielle. */
+    #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { white-space: normal; width: 9.5rem; box-sizing: border-box; }
+    #unCompoTableWrap .simulator__table.simulator__table--compare2 th:not(:first-child), #unCompoTableWrap .simulator__table.simulator__table--compare2 td:not(:first-child) { width: auto; }
+    #unCompoTableWrap th:first-child select { width: 100%; }
+    #unCompoTableWrap table { table-layout: fixed; width: 100%; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -2696,6 +2704,7 @@
             var t = e.tranches[i], td = document.createElement("td"), l1 = document.createElement("span");
             l1.className = "un-bareme-ligne1";
             var plage = document.createElement("span");
+            plage.className = "un-compo-plage";
             plage.textContent = (t.fin != null ? "de " + milliersFmt.format(t.debut) + " à " + milliersFmt.format(t.fin) : "au-delà de " + milliersFmt.format(t.debut - 1)) + " ex./an";
             l1.appendChild(plage); l1.appendChild(document.createTextNode(" "));
             var examens = Math.max(0, Math.min(e.volume, t.fin != null ? t.fin : e.volume) - (t.debut - 1));
@@ -2728,7 +2737,7 @@
         body.appendChild(trT);
         if (entrees.length === 2) {
           var tr2 = document.createElement("tr"), td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
-          td2L.innerHTML = "<strong>Total des 2 machines</strong>"; tr2.appendChild(td2L);
+          td2L.innerHTML = "<strong>Total 2 machines</strong>"; tr2.appendChild(td2L);
           td2.colSpan = 2; sp2.className = "un-bareme-ca"; sp2.textContent = unEur(totaux[0] + totaux[1], 2);
           td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
         }
