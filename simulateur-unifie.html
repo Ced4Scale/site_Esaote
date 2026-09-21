@@ -2924,8 +2924,8 @@
         if (!(maxVal > 0)) maxVal = 1;
         items.forEach(function (b, i) {
           var cellX = i * cellW;
-          var rMax = cote ? 100 : 62, cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
-          var baseY = cote ? 176 : 96;
+          var rMax = cote ? 100 : 84, cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
+          var baseY = cote ? 176 : 110;
           var r = maxTotal > 0 ? Math.max(rMax * 0.5, rMax * Math.sqrt(b.total / maxTotal)) : rMax;
           var ri = r * 0.55, start = -Math.PI;
           cats.forEach(function (p) {
@@ -2956,7 +2956,7 @@
               if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
             });
           } else {
-            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 108, rowS = Math.min(19, (186 - yS) / cats.length);
+            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 121, rowS = Math.min(19, (198 - yS) / cats.length);
             cats.forEach(function (p, k) {
               var y = yS + k * rowS, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
@@ -3105,10 +3105,13 @@
         if (unCompoVueTable()) unDessinerTableCompo();
         if (!camemberts.length) return;
 
+        // Vue Histogramme : la liste verticale (nom + barre + montant) fait office de légende — la ligne
+        // de légende est masquée pour gagner de la hauteur (redonnée aux demi-anneaux).
+        leg.style.display = histo ? "none" : "";
         var affRec = document.getElementById("unCompoAffRec"), affDep = document.getElementById("unCompoCouts"), affRes = document.getElementById("unCompoAffRes");
         if (!affRec.checked && !affDep.checked && !affRes.checked) affRec.checked = true; // au moins un affichage
         var nPan = (affRec.checked ? 1 : 0) + (affDep.checked ? 1 : 0) + (affRes.checked ? 1 : 0);
-        var W = nPan === 1 ? 640 : 420, vbH = histo ? " 188" : " 93";
+        var W = nPan === 1 ? 640 : 420, vbH = histo ? (W < 500 ? " 200" : " 188") : " 93";
         document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
         document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
         document.getElementById("unCompoResWrap").hidden = !affRes.checked;
