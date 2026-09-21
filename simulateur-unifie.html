@@ -2474,6 +2474,9 @@
         { key: "seuil2", label: "Seuil 2", shortLabel: "S2", color: "#1baf7a" },
         { key: "plafond", label: "Plafond", shortLabel: "Plaf.", color: "#eda100" }
       ];
+      // Palier « Acte intellectuel » : ajouté aux recettes (donc au résultat) seulement quand la case
+      // « Intégrer l'acte intellectuel » de la table de mixage est cochée — comme le point mort.
+      var UN_PALIER_ACTE = { key: "acte", label: "Acte intellectuel", sideLabel: "Acte", shortLabel: "Acte", color: "#7b61c9" };
       var unEurosFmt = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var UN_SVG_NS = "http://www.w3.org/2000/svg";
       function unSvgEl(tag, attrs) {
@@ -2855,13 +2858,13 @@
             start = end;
           });
           var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
-          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
-          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
-          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s3 = unSvgEl("tspan", {}); s3.textContent = b.captionSuffix || " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
           // Barres horizontales
           if (cote) {
-            var x0 = cx + rMax + 14, bw = cellX + cellW - 8 - x0, rowH = 36, y0 = 34;
+            var x0 = cx + rMax + 14, bw = cellX + cellW - 8 - x0, y0 = 34, rowH = Math.min(36, (178 - y0) / cats.length);
             cats.forEach(function (p, k) {
               var y = y0 + k * rowH, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: x0, y: y + 8, "font-size": 8, "font-weight": 700, fill: "#555" }); nm.textContent = p.sideLabel || p.label; svgC.appendChild(nm);
@@ -2870,7 +2873,7 @@
               if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
             });
           } else {
-            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, rowS = 19, yS = 110;
+            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 108, rowS = Math.min(19, (186 - yS) / cats.length);
             cats.forEach(function (p, k) {
               var y = yS + k * rowS, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
@@ -2910,9 +2913,9 @@
             start = end;
           });
           var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
-          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
-          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
-          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s3 = unSvgEl("tspan", {}); s3.textContent = b.captionSuffix || " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
 
           if (!histo) return;
@@ -2939,8 +2942,9 @@
           var config = unConfigMachinePointMort(slot);
           if (!config.machine) return;
           var detail = unDetailCA(volume, config.machine, params);
+          if (params.acteIntellectuelActif) detail.acte = acteIntellectuelMoyen(config.pctMembre) * volume;
           camemberts.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
-            total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
+            total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + (detail.acte || 0) });
         });
         var histo = unCompoVueHisto();
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
@@ -2969,10 +2973,11 @@
             item.appendChild(key); item.appendChild(t); leg.appendChild(item);
           });
         }
+        var catsRec = params.acteIntellectuelActif ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS;
         if (affRec.checked) {
           svgC.setAttribute("viewBox", "0 0 " + W + vbH);
-          unDessinerPanneauCompo(svgC, camemberts, UN_PALIERS, W, histo);
-          pastilles(nPan > 1 ? "Recettes :" : "", UN_PALIERS);
+          unDessinerPanneauCompo(svgC, camemberts, catsRec, W, histo);
+          pastilles(nPan > 1 ? "Recettes :" : "", catsRec);
         }
         var itemsK = [], itemsR = [];
         slots.forEach(function (slot, idx) {
@@ -2985,7 +2990,9 @@
           itemsK.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume, detail: d, total: dep });
           itemsR.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume,
             detail: { loyer: d.loyer, personnel: d.personnel, elec: d.elec, autres: d.autres, resultat: Math.max(0, res) },
-            total: Math.max(rec, dep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(volume > 0 ? res / volume : 0) });
+            total: Math.max(rec, dep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(volume > 0 ? res / volume : 0),
+            captionColor: res >= 0 ? "#1baf7a" : "#d33",
+            captionSuffix: (W >= 500 ? " / examen" : " / ex.") + (rec > 0 ? " · marge " + Math.round(res / rec * 100) + " %" : "") });
         });
         if (affDep.checked) {
           svgK.setAttribute("viewBox", "0 0 " + W + vbH);
