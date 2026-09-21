@@ -1393,13 +1393,16 @@
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
       // Triangle ▾/▸ : replie/déplie les réglages sous le titre de chaque machine.
-      ["A", "B"].forEach(function (s) {
+      // Triangle ▾/▸ : replie/déplie les réglages sous le choix de chaque machine.
+      function unColReplier(s, ferme) {
         var btn = document.getElementById("unColToggle" + s), body = document.getElementById("unColBody" + s);
-        btn.addEventListener("click", function () {
-          var ferme = !body.hidden;
-          body.hidden = ferme;
-          btn.textContent = ferme ? "▸" : "▾";
-          btn.setAttribute("aria-expanded", String(!ferme));
+        body.hidden = ferme;
+        btn.textContent = ferme ? "▸" : "▾";
+        btn.setAttribute("aria-expanded", String(!ferme));
+      }
+      ["A", "B"].forEach(function (s) {
+        document.getElementById("unColToggle" + s).addEventListener("click", function () {
+          unColReplier(s, !document.getElementById("unColBody" + s).hidden);
         });
       });
 
@@ -1459,6 +1462,7 @@
         reinitialiserLoyer(selectA, document.getElementById("unLoyerA"), loyerHintA);
         reinitialiserLoyer(selectB, document.getElementById("unLoyerB"), loyerHintB);
 
+        unColReplier("A", true); unColReplier("B", true);
         afficherEcran("form");
       }
 
