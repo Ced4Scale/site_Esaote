@@ -247,6 +247,9 @@
     .un-compo-duo { display: flex; gap: .8rem; align-items: flex-start; }
     .un-compo-duo > .simulator__chart-wrap { flex: 1 1 0; min-width: 0; }
     .un-compo-duo > .simulator__chart-wrap[hidden] { display: none; }
+    .un-compo-aff { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; font-size: .86rem; font-weight: 700; }
+    .un-compo-aff label { display: flex; align-items: center; gap: .4rem; font-weight: 600; cursor: pointer; }
+    .un-compo-aff input { width: 16px; height: 16px; margin: 0; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -970,14 +973,21 @@
         <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
           <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
           <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
-          <label><input type="checkbox" id="unCompoCouts" /> Afficher aussi les coûts (à droite)</label>
+          <span class="un-compo-aff">Afficher :
+            <label><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
+            <label><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
+            <label><input type="checkbox" id="unCompoAffRes" /> Résultat</label>
+          </span>
         </div>
         <div class="un-compo-duo">
-        <div class="simulator__chart-wrap">
+        <div class="simulator__chart-wrap" id="unCompoRecWrap">
           <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
         </div>
         <div class="simulator__chart-wrap" id="unCompoCoutsWrap" hidden>
           <svg id="unCompoCoutsChart" class="simulator__chart" viewBox="0 0 420 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des coûts annuels, un par machine"></svg>
+        </div>
+        <div class="simulator__chart-wrap" id="unCompoResWrap" hidden>
+          <svg id="unCompoResChart" class="simulator__chart" viewBox="0 0 420 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rentabilité annuelle : répartition de la recette entre dépenses et résultat, un par machine"></svg>
         </div>
         </div>
         <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
@@ -2778,7 +2788,9 @@
         document.getElementById("unCompoCaInfo").hidden = true;
         unDessinerTableCompo();
       });
-      document.getElementById("unCompoCouts").addEventListener("change", function () { unRenderPointMort(); });
+      ["unCompoAffRec", "unCompoCouts", "unCompoAffRes"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () { unRenderPointMort(); });
+      });
       document.querySelectorAll('input[name="unCompoVue"]').forEach(function (r) {
         r.addEventListener("change", function () { unRenderPointMort(); });
       });
@@ -2789,6 +2801,9 @@
         { key: "elec", label: "Électricité", shortLabel: "Élec.", color: "#3aa0b5" },
         { key: "autres", label: "Autres charges", sideLabel: "Autres", shortLabel: "Autres", color: "#8a8f98" }
       ];
+      // « Rentabilité » : la recette se répartit entre les postes de dépenses et le RÉSULTAT
+      // (recette − dépenses, hors acte intellectuel comme le panneau Recettes).
+      var UN_RENTA_CATS = UN_COUTS_CATS.concat([{ key: "resultat", label: "Résultat", sideLabel: "Résultat", shortLabel: "Rés.", color: "#1baf7a" }]);
       function unParamsPourSlot(slot, params) {
         return (slot === 1 && unHeuresB != null)
           ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB)) }) : params;
@@ -2840,8 +2855,8 @@
             start = end;
           });
           var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
-          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
-          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
           var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
           // Barres horizontales
@@ -2895,8 +2910,8 @@
             start = end;
           });
           var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
-          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
-          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
           var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
 
@@ -2918,12 +2933,6 @@
         svgC.innerHTML = "";
         var leg = document.getElementById("unCompoLegende");
         leg.innerHTML = "";
-        UN_PALIERS.forEach(function (p) {
-          var item = document.createElement("span"); item.className = "simulator__legend-item";
-          var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = p.color;
-          var t = document.createElement("span"); t.textContent = p.label;
-          item.appendChild(key); item.appendChild(t); leg.appendChild(item);
-        });
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var camemberts = [];
         slots.forEach(function (slot) {
@@ -2934,37 +2943,57 @@
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
         });
         var histo = unCompoVueHisto();
-        document.getElementById("unCompoTableWrap").hidden = histo;
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
         if (!histo) unDessinerTableCompo();
         if (!camemberts.length) return;
 
-        var couts = document.getElementById("unCompoCouts").checked;
-        var W = couts ? 420 : 640;
-        svgC.setAttribute("viewBox", "0 0 " + W + (histo ? " 188" : " 120"));
-        unDessinerPanneauCompo(svgC, camemberts, UN_PALIERS, W, histo);
-        var wrapC = document.getElementById("unCompoCoutsWrap");
-        wrapC.hidden = !couts;
-        var svgK = document.getElementById("unCompoCoutsChart");
-        svgK.innerHTML = "";
-        if (couts) {
-          svgK.setAttribute("viewBox", "0 0 " + W + (histo ? " 188" : " 120"));
-          var items = [];
-          slots.forEach(function (slot) {
-            var config = unConfigMachinePointMort(slot);
-            if (!config.machine) return;
-            var d = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
-            items.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume, detail: d, total: d.loyer + d.personnel + d.elec + d.autres });
-          });
-          unDessinerPanneauCompo(svgK, items, UN_COUTS_CATS, W, histo);
-          var sep = document.createElement("span"); sep.className = "simulator__legend-item"; sep.style.fontWeight = "800"; sep.textContent = "Coûts :";
+        var affRec = document.getElementById("unCompoAffRec"), affDep = document.getElementById("unCompoCouts"), affRes = document.getElementById("unCompoAffRes");
+        if (!affRec.checked && !affDep.checked && !affRes.checked) affRec.checked = true; // au moins un affichage
+        var nPan = (affRec.checked ? 1 : 0) + (affDep.checked ? 1 : 0) + (affRes.checked ? 1 : 0);
+        var W = nPan === 1 ? 640 : 420, vbH = histo ? " 188" : " 120";
+        document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
+        document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
+        document.getElementById("unCompoResWrap").hidden = !affRes.checked;
+        document.getElementById("unCompoTableWrap").hidden = histo || !affRec.checked;
+        var svgK = document.getElementById("unCompoCoutsChart"), svgR = document.getElementById("unCompoResChart");
+        svgK.innerHTML = ""; svgR.innerHTML = "";
+        function pastilles(titre, cats) {
+          var sep = document.createElement("span"); sep.className = "simulator__legend-item"; sep.style.fontWeight = "800"; sep.textContent = titre;
           leg.appendChild(sep);
-          UN_COUTS_CATS.forEach(function (p) {
+          cats.forEach(function (p) {
             var item = document.createElement("span"); item.className = "simulator__legend-item";
             var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = p.color;
             var t = document.createElement("span"); t.textContent = p.label;
             item.appendChild(key); item.appendChild(t); leg.appendChild(item);
           });
+        }
+        if (affRec.checked) {
+          svgC.setAttribute("viewBox", "0 0 " + W + vbH);
+          unDessinerPanneauCompo(svgC, camemberts, UN_PALIERS, W, histo);
+          pastilles(nPan > 1 ? "Recettes :" : "", UN_PALIERS);
+        }
+        var itemsK = [], itemsR = [];
+        slots.forEach(function (slot, idx) {
+          var config = unConfigMachinePointMort(slot);
+          if (!config.machine) return;
+          var d = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
+          var dep = d.loyer + d.personnel + d.elec + d.autres;
+          var cam = camemberts.filter(function (c) { return c.label === config.machine.nomCourt; })[0];
+          var rec = cam ? cam.total : 0, res = rec - dep;
+          itemsK.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume, detail: d, total: dep });
+          itemsR.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume,
+            detail: { loyer: d.loyer, personnel: d.personnel, elec: d.elec, autres: d.autres, resultat: Math.max(0, res) },
+            total: Math.max(rec, dep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(volume > 0 ? res / volume : 0) });
+        });
+        if (affDep.checked) {
+          svgK.setAttribute("viewBox", "0 0 " + W + vbH);
+          unDessinerPanneauCompo(svgK, itemsK, UN_COUTS_CATS, W, histo);
+          if (!affRes.checked) pastilles("Dépenses :", UN_COUTS_CATS);
+        }
+        if (affRes.checked) {
+          svgR.setAttribute("viewBox", "0 0 " + W + vbH);
+          unDessinerPanneauCompo(svgR, itemsR, UN_RENTA_CATS, W, histo);
+          pastilles("Dépenses et résultat :", UN_RENTA_CATS);
         }
       }
 
