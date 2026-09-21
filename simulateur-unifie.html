@@ -250,6 +250,7 @@
     .un-compo-aff { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .3rem 1rem; font-size: .86rem; font-weight: 700; }
     .un-compo-aff label { display: flex; align-items: center; gap: .4rem; font-weight: 600; cursor: pointer; }
     .un-compo-aff input { width: 16px; height: 16px; margin: 0; }
+    .un-compo-moyen-tete { display: flex; align-items: center; gap: .5rem; margin: .3rem 0 .2rem; font-size: .9rem; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -973,6 +974,7 @@
         <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
           <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
           <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
+          <label><input type="radio" name="unCompoVue" value="moyen" /> Tarif moyen du F.T. selon le volume</label>
           <span class="un-compo-aff">Afficher :
             <label><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
             <label><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
@@ -992,6 +994,24 @@
         </div>
         <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
              Bascule), au volume de « Votre activité », avec la case « Afficher tous les CA ». -->
+        <div id="unCompoMoyenWrap" hidden>
+          <div class="un-compo-moyen-tete">
+            <strong>Tarif moyen du forfait technique selon le volume</strong>
+            <span class="un-info-wrap">
+              <button type="button" class="un-info-btn" id="unCompoMoyenOutilsBtn" aria-expanded="false" aria-controls="unCompoMoyenOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
+              <div class="un-info-pop" id="unCompoMoyenOutilsPop" hidden>
+                <div class="un-outils-titre">Afficher sur le graphe</div>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoMoyMoy" checked /> Courbes du tarif moyen (trait plein)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoMoyReel" checked /> Tarif réel de la tranche (marches)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoMoySeuils" /> Seuils du barème</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoMoyRepere" checked /> Repère « Votre activité »</label>
+              </div>
+            </span>
+          </div>
+          <div class="simulator__chart-wrap">
+            <svg id="unCompoMoyenChart" class="simulator__chart" viewBox="0 0 640 210" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel d'examens, une courbe par machine"></svg>
+          </div>
+        </div>
         <div id="unCompoTableWrap" hidden>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2">
@@ -2693,6 +2713,7 @@
         ];
       }
       var unCompoEntrees = [];
+      function unCompoVueTable() { return document.querySelector('input[name="unCompoVue"]:checked').value === "table"; }
       function unCompoVueHisto() { return document.querySelector('input[name="unCompoVue"]:checked').value === "histo"; }
       function unDessinerTableCompo() {
         var entrees = unCompoEntrees, tous = document.getElementById("unCompoShowAllCa").checked;
@@ -2930,6 +2951,77 @@
           svgC.appendChild(unSvgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
         });
       }
+      // Vue « Tarif moyen du forfait technique selon le volume » : une courbe par machine (tarif MOYEN
+      // obtenu avec le barème dégressif, trait plein) + tarif réel de la tranche (marches) + seuils +
+      // repère « Votre activité » ; 4 cases dans la boîte à outils 🧰. Mêmes fonctions de calcul que
+      // l'écran Bascule (unTarifMoyenPourVolume / unTarifReelPourVolume).
+      wireOutilsBtn("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
+      ["unCompoMoyMoy", "unCompoMoyReel", "unCompoMoySeuils", "unCompoMoyRepere"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () { unRenderPointMort(); });
+      });
+      function unDessinerCompoMoyen(entrees) {
+        var svg = document.getElementById("unCompoMoyenChart");
+        svg.innerHTML = "";
+        if (!entrees.length) return;
+        var NS = "http://www.w3.org/2000/svg";
+        function el(tag, a) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
+        var pad = { left: 62, right: 16, top: 16, bottom: 30 }, W = 640, H = 210;
+        var plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+        var volume = entrees[0].volume;
+        var xMax = Math.max(15000, Math.ceil(volume * 1.15 / 1000) * 1000);
+        var yMax = Math.max.apply(null, entrees.map(function (e) { return e.tranches[0].montant; })) * 1.05;
+        function px(x) { return pad.left + x / xMax * plotW; }
+        function py(y) { return pad.top + plotH - y / yMax * plotH; }
+        var voirMoy = document.getElementById("unCompoMoyMoy").checked, voirReel = document.getElementById("unCompoMoyReel").checked,
+            voirSeuils = document.getElementById("unCompoMoySeuils").checked, voirRepere = document.getElementById("unCompoMoyRepere").checked;
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
+        svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
+        for (var g = 0; g <= 4; g++) {
+          var vy = yMax * g / 4, yy = py(vy);
+          if (g > 0) svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: yy, y2: yy, class: "simulator__gridline" }));
+          var ly = el("text", { x: pad.left - 8, y: yy + 3, class: "simulator__axis-label", "text-anchor": "end" }); ly.textContent = unEur(vy, 0); svg.appendChild(ly);
+          var vx = xMax * g / 4;
+          var lx = el("text", { x: px(vx), y: pad.top + plotH + 15, class: "simulator__axis-label", "text-anchor": g === 4 ? "end" : (g === 0 ? "start" : "middle") });
+          lx.textContent = milliersFmt.format(vx) + (g === 4 ? " ex./an" : ""); svg.appendChild(lx);
+        }
+        if (voirSeuils) entrees.forEach(function (e) {
+          e.tranches.forEach(function (t, i) {
+            if (t.fin == null || i === e.tranches.length - 1 || t.fin > xMax) return;
+            svg.appendChild(el("line", { x1: px(t.fin), x2: px(t.fin), y1: pad.top, y2: pad.top + plotH, stroke: e.couleur, "stroke-width": 1.2, "stroke-dasharray": "4,3", opacity: 0.55 }));
+          });
+        });
+        entrees.forEach(function (e) {
+          if (voirMoy) {
+            var pts = [];
+            for (var i = 0; i <= 80; i++) { var x = xMax * i / 80; pts.push(px(x) + "," + py(unTarifMoyenPourVolume(e.tranches, x))); }
+            svg.appendChild(el("path", { d: "M" + pts.join(" L"), fill: "none", stroke: e.couleur, "stroke-width": 2.5 }));
+          }
+          if (voirReel) {
+            var pm = [], yPrec = null;
+            for (var j = 0; j <= 400; j++) {
+              var x2 = xMax * j / 400, yp = py(unTarifReelPourVolume(e.tranches, x2)), xp = px(x2);
+              if (yPrec !== null && yp !== yPrec) pm.push(xp + "," + yPrec);
+              pm.push(xp + "," + yp); yPrec = yp;
+            }
+            svg.appendChild(el("path", { d: "M" + pm.join(" L"), fill: "none", stroke: e.couleur, "stroke-width": 1.6, "stroke-dasharray": "2,2", opacity: 0.9 }));
+          }
+        });
+        if (voirRepere) {
+          var xr = px(Math.min(volume, xMax));
+          svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
+          entrees.forEach(function (e, k) {
+            var tm = unTarifMoyenPourVolume(e.tranches, volume);
+            svg.appendChild(el("circle", { cx: xr, cy: py(tm), r: 4, fill: e.couleur }));
+            var anchor = xr > pad.left + plotW * 0.45 ? "end" : "start";
+            var t = el("text", { x: xr + (anchor === "end" ? -8 : 8), y: py(tm) - 8 - k * 14, "font-size": 11, "font-weight": 800, fill: e.couleur, "text-anchor": anchor, stroke: "#fff", "stroke-width": 3, "paint-order": "stroke" });
+            t.textContent = e.nom + " : " + unEur(tm, 2) + " en moyenne"; svg.appendChild(t);
+          });
+        }
+        var yLeg = pad.top + 8;
+        entrees.forEach(function (e, k) {
+          var t = el("text", { x: pad.left + 10, y: yLeg + k * 14, "font-size": 11, "font-weight": 800, fill: e.couleur }); t.textContent = e.nom; svg.appendChild(t);
+        });
+      }
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
@@ -2948,7 +3040,7 @@
         });
         var histo = unCompoVueHisto();
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
-        if (!histo) unDessinerTableCompo();
+        if (unCompoVueTable()) unDessinerTableCompo();
         if (!camemberts.length) return;
 
         var affRec = document.getElementById("unCompoAffRec"), affDep = document.getElementById("unCompoCouts"), affRes = document.getElementById("unCompoAffRes");
@@ -2958,7 +3050,10 @@
         document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
         document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
         document.getElementById("unCompoResWrap").hidden = !affRes.checked;
-        document.getElementById("unCompoTableWrap").hidden = histo || !affRec.checked;
+        var vueCompo = document.querySelector('input[name="unCompoVue"]:checked').value;
+        document.getElementById("unCompoTableWrap").hidden = vueCompo !== "table" || !affRec.checked;
+        document.getElementById("unCompoMoyenWrap").hidden = vueCompo !== "moyen";
+        if (vueCompo === "moyen") unDessinerCompoMoyen(unCompoEntrees);
         var svgK = document.getElementById("unCompoCoutsChart"), svgR = document.getElementById("unCompoResChart");
         svgK.innerHTML = ""; svgR.innerHTML = "";
         function pastilles(titre, cats) {
