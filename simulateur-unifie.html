@@ -2459,7 +2459,7 @@
       // zone / amortie lues dans params ; volume = « Votre activité » annuelle.
       // ---------------------------------------------------------------------
       var UN_PALIERS = [
-        { key: "plein", label: "Forfait plein", shortLabel: "Plein", color: "#2a78d6" },
+        { key: "plein", label: "Forfait plein", sideLabel: "Plein", shortLabel: "Plein", color: "#2a78d6" },
         { key: "seuil1", label: "Seuil 1", shortLabel: "S1", color: "#eb6834" },
         { key: "seuil2", label: "Seuil 2", shortLabel: "S2", color: "#1baf7a" },
         { key: "plafond", label: "Plafond", shortLabel: "Plaf.", color: "#eda100" }
@@ -2787,7 +2787,7 @@
         { key: "loyer", label: "Loyer", shortLabel: "Loyer", color: "#6b5b95" },
         { key: "personnel", label: "Personnel", shortLabel: "Pers.", color: "#d1477a" },
         { key: "elec", label: "Électricité", shortLabel: "Élec.", color: "#3aa0b5" },
-        { key: "autres", label: "Autres charges", shortLabel: "Autres", color: "#8a8f98" }
+        { key: "autres", label: "Autres charges", sideLabel: "Autres", shortLabel: "Autres", color: "#8a8f98" }
       ];
       function unParamsPourSlot(slot, params) {
         return (slot === 1 && unHeuresB != null)
@@ -2812,8 +2812,63 @@
         };
       }
       // Dessin générique d'un panneau : un demi-anneau par machine (+ petit histogramme des catégories).
+      // Vue « Histogramme » : GRAND demi-anneau (le pourcentage est écrit dans l'anneau) + histogramme
+      // en barres HORIZONTALES (nom, barre, montant) — à droite du demi-anneau en pleine largeur,
+      // sous le demi-anneau en mode double affichage (recettes | coûts). Même hauteur de bloc qu'avant.
+      function unDessinerPanneauHisto(svgC, items, cats, W) {
+        var n = items.length, cellW = W / n, cote = W >= 500;
+        var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
+        var maxVal = 0;
+        items.forEach(function (b) { cats.forEach(function (p) { if ((b.detail[p.key] || 0) > maxVal) maxVal = b.detail[p.key]; }); });
+        if (!(maxVal > 0)) maxVal = 1;
+        items.forEach(function (b, i) {
+          var cellX = i * cellW;
+          var rMax = cote ? 100 : 62, cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
+          var baseY = cote ? 176 : 96;
+          var r = maxTotal > 0 ? Math.max(rMax * 0.5, rMax * Math.sqrt(b.total / maxTotal)) : rMax;
+          var ri = r * 0.55, start = -Math.PI;
+          cats.forEach(function (p) {
+            var part = b.detail[p.key];
+            if (!part) return;
+            var fraction = part / b.total, end = start + fraction * Math.PI;
+            svgC.appendChild(unSvgEl("path", { d: unDonutPath(cx, baseY, r, ri, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            if (fraction >= 0.07) {
+              var mid = (start + end) / 2, rm = (r + ri) / 2;
+              var t = unSvgEl("text", { x: cx + rm * Math.cos(mid), y: baseY + rm * Math.sin(mid) + 3, "text-anchor": "middle", fill: "#fff", "font-size": cote ? 9 : 7.5, "font-weight": 800 });
+              t.textContent = Math.round(fraction * 100) + " %"; svgC.appendChild(t);
+            }
+            start = end;
+          });
+          var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
+          svgC.appendChild(cap);
+          // Barres horizontales
+          if (cote) {
+            var x0 = cx + rMax + 14, bw = cellX + cellW - 8 - x0, rowH = 36, y0 = 34;
+            cats.forEach(function (p, k) {
+              var y = y0 + k * rowH, val = b.detail[p.key] || 0;
+              var nm = unSvgEl("text", { x: x0, y: y + 8, "font-size": 8, "font-weight": 700, fill: "#555" }); nm.textContent = p.sideLabel || p.label; svgC.appendChild(nm);
+              var vt = unSvgEl("text", { x: x0 + bw, y: y + 8, "text-anchor": "end", "font-size": 8.5, "font-weight": 800, fill: p.color }); vt.textContent = unEurosFmt.format(val); svgC.appendChild(vt);
+              svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: bw, height: 11, fill: "#eef1f5", rx: 3, ry: 3 }));
+              if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
+            });
+          } else {
+            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, rowS = 19, yS = 110;
+            cats.forEach(function (p, k) {
+              var y = yS + k * rowS, val = b.detail[p.key] || 0;
+              var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
+              svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: bwS, height: 9, fill: "#eef1f5", rx: 3, ry: 3 }));
+              if (val > 0) svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: Math.max(3, val / maxVal * bwS), height: 9, fill: p.color, rx: 3, ry: 3 }));
+              var vt = unSvgEl("text", { x: xv, y: y + 9.5, "text-anchor": "end", "font-size": 7.5, "font-weight": 800, fill: p.color }); vt.textContent = unEurosFmt.format(val); svgC.appendChild(vt);
+            });
+          }
+        });
+      }
       function unDessinerPanneauCompo(svgC, items, cats, W, histo) {
         if (!items.length) return;
+        if (histo) { unDessinerPanneauHisto(svgC, items, cats, W); return; }
         var maxR = W < 500 ? 42 : 56, centerY = 90, n = items.length;
         var centers = n === 1 ? [W / 2] : [W * 0.27, W * 0.73], halfWidth = n === 1 ? W * 0.22 : W * 0.133;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
