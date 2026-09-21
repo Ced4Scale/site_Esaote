@@ -2416,9 +2416,15 @@
       function unDebitMaxMachine(slot) {
         var config = unConfigMachinePointMort(slot);
         if (!config.machine) return Infinity;
-        var DEBIT_DEFAUT = { "esaote-o-scan": 3, "generique-15t": 4, "generique-3t": 4 };
-        if (DEBIT_DEFAUT[config.machine.key] != null) return DEBIT_DEFAUT[config.machine.key];
-        var minutes = config.machine.dureeChangementMinutes + config.machine.dureeAcquisitionMinutes;
+        // Limites hautes imposées par Cédric (21/09/2026) : IRM Esaote 4,2 FT/h, IRM 1,5 T
+        // 5,5 FT/h, IRM 3 T 6 FT/h (marques concurrentes classées d'après leur champ).
+        var m = config.machine;
+        if (m.type !== "ct") {
+          if (String(m.key).indexOf("esaote-") === 0) return 4.2;
+          if (m.champT >= 3) return 6;
+          if (m.champT >= 1.5) return 5.5;
+        }
+        var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
         return minutes > 0 ? 60 / minutes : Infinity;
       }
       function unSlotsActifs() { return document.getElementById("unColB").hidden ? [0] : [0, 1]; }
@@ -2440,8 +2446,28 @@
           unSlotsActifs().forEach(function (slot) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = d; });
         }
       }
+      // Le simulateur baisse (ou monte) raisonnablement les examens par heure : le nombre
+      // d'examens par an ne bouge PAS, ce sont les heures d'ouverture qui s'ajustent
+      // (heures = examens par an / (examens par heure x jours ouverts par an)). Plafonné à
+      // la limite haute des machines ; si 24 h ne suffisent pas, le débit remonte.
+      function unDebitModifie(d) {
+        var annuel = unActiviteAnnuelle();
+        if (!(annuel > 0) || !(d > 0)) return;
+        d = Math.min(d, unDebitMaxCommun());
+        var champHeures = document.getElementById("unHeuresSemaine");
+        var jours = unJoursOuvertsParSemaine();
+        if (jours <= 0) return;
+        var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
+        var h = (parseFloat(champHeures.value) || 0) + (cible - unHeuresParJourMoyen()) * jours / 5;
+        h = Math.max(1, Math.min(24, Math.round(h * 100) / 100));
+        champHeures.value = h;
+        unHeuresGroupeForce = true;
+        var dFinal = Math.round(annuel / unHeuresAnnuelles() * 100) / 100;
+        unSlotsActifs().forEach(function (slot) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = dFinal; });
+        unMixSyncTous();
+      }
       function unMixAppliquerActivite(annuel) {
-        annuel = Math.max(0, Math.min(15000, Math.round(annuel)));
+        annuel = Math.max(0, Math.min(100000, Math.round(annuel)));
         var mode = document.getElementById("unActiviteMode").value;
         document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (5 * (52 / 12) * 12) * 1000) / 1000 : annuel;
         majActiviteLabel();
@@ -2629,6 +2655,7 @@
         document.getElementById(champ.valId).value = (champ.fmt || patientsFmt).format(v);
         document.getElementById(champ.sourceId).value = v;
         unMixEcritureProg = false;
+        if (champ.sourceId === "unInstallA" || champ.sourceId === "unInstallB") unDebitModifie(v);
         unRenderPointMort();
       }
 
