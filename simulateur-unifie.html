@@ -136,6 +136,11 @@
     @media (max-width: 1000px) { .un-layout3 { grid-template-columns: minmax(0, 1fr); } }
     .un-layout3.un-panel-hidden .un-col-params { display: none; }
     .un-col-params { position: relative; }
+    .un-col-head { display: flex; align-items: center; gap: .5rem; margin-bottom: .6rem; }
+    .un-col-head .simulator__machine-box-title { margin: 0; }
+    .un-col-toggle { background: none; border: 0; padding: .1rem .3rem; cursor: pointer; font-size: 1.1rem; line-height: 1; color: inherit; }
+    .un-col-toggle:hover, .un-col-toggle:focus-visible { opacity: .7; }
+    .un-mixer__group[hidden] { display: none; }
     .un-col-machine { background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.6rem; box-shadow: var(--shadow-sm); }
 
     .un-gear-btn {
@@ -614,7 +619,11 @@
 
         <!-- ---- Colonne 2 : Machine A ---- -->
         <div class="un-col-machine" id="unColA">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" id="unTitreA">Machine A</h4>
+          <div class="un-col-head">
+            <button type="button" class="un-col-toggle" id="unColToggleA" aria-expanded="true" aria-controls="unColBodyA" aria-label="Replier ou déplier les réglages de la Machine A">▾</button>
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="0" id="unTitreA">Machine A</h4>
+          </div>
+          <div id="unColBodyA">
           <div class="field">
             <label for="unMachineA" id="unMachineALabel">Choix IRM</label>
             <select id="unMachineA"></select>
@@ -755,11 +764,16 @@
               <div class="simulator__field-suffix"><input type="number" id="unRisA" value="0" min="0" step="0.1" /><span>fraction</span></div>
             </div>
           </details>
+          </div>
         </div>
 
         <!-- ---- Colonne 3 : Machine B ---- -->
         <div class="un-col-machine" id="unColB">
-          <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" id="unTitreB">Machine B</h4>
+          <div class="un-col-head">
+            <button type="button" class="un-col-toggle" id="unColToggleB" aria-expanded="true" aria-controls="unColBodyB" aria-label="Replier ou déplier les réglages de la Machine B">▾</button>
+            <h4 class="simulator__machine-box-title simulator__swatch-text" data-slot="1" id="unTitreB">Machine B</h4>
+          </div>
+          <div id="unColBodyB">
           <div class="field">
             <label for="unMachineB" id="unMachineBLabel">Choix IRM</label>
             <select id="unMachineB"></select>
@@ -841,6 +855,7 @@
               <div class="simulator__field-suffix"><input type="number" id="unRisB" value="0" min="0" step="0.1" /><span>fraction</span></div>
             </div>
           </details>
+          </div>
         </div>
       </div>
 
@@ -1331,6 +1346,17 @@
       });
       document.getElementById("unBtnRetourProjet").addEventListener("click", function () { afficherEcran("projet"); });
       document.getElementById("unBtnRetourForm").addEventListener("click", function () { afficherEcran("form"); });
+      // Triangle ▾/▸ : replie/déplie les réglages sous le titre de chaque machine.
+      ["A", "B"].forEach(function (s) {
+        var btn = document.getElementById("unColToggle" + s), body = document.getElementById("unColBody" + s);
+        btn.addEventListener("click", function () {
+          var ferme = !body.hidden;
+          body.hidden = ferme;
+          btn.textContent = ferme ? "▸" : "▾";
+          btn.setAttribute("aria-expanded", String(!ferme));
+        });
+      });
+
       // Révéler l'écran Résultats AVANT de calculer/dessiner les graphiques (pas
       // après) — sinon toute mesure SVG (getBBox()) faite pendant que l'écran est
       // encore `hidden` renvoie 0 (un élément cache/un ancêtre caché n'a pas de
@@ -1934,7 +1960,7 @@
         var leftPad = 6;
         var rightPad = 110; // réservé pour la valeur ("12,4") affichée après la barre
         var barAreaWidth = svgWidth - leftPad - rightPad;
-        var barHeight = 36;
+        var barHeight = 18;
         var espacement = 18;
         var topPad = 18;
         var ns = "http://www.w3.org/2000/svg";
@@ -1956,7 +1982,7 @@
           largeurs.push(largeur);
 
           var essai = document.createElementNS(ns, "text");
-          essai.setAttribute("font-size", "14");
+          essai.setAttribute("font-size", "12");
           essai.setAttribute("font-weight", "700");
           essai.textContent = e.label;
           svg.appendChild(essai);
@@ -2003,8 +2029,8 @@
           if (dedans) {
             var labelDedans = document.createElementNS(ns, "text");
             labelDedans.setAttribute("x", leftPad + labelPadInterieur);
-            labelDedans.setAttribute("y", barY + barHeight / 2 + 5);
-            labelDedans.setAttribute("font-size", "14");
+            labelDedans.setAttribute("y", barY + barHeight / 2 + 4);
+            labelDedans.setAttribute("font-size", "12");
             labelDedans.setAttribute("font-weight", "700");
             labelDedans.setAttribute("fill", "#fff");
             labelDedans.textContent = e.label;
@@ -2065,7 +2091,7 @@
         var leftPad = 6;
         var rightPad = 90; // réservé pour "12 jours" affiché après la barre
         var barAreaWidth = svgWidth - leftPad - rightPad;
-        var barHeight = 36;
+        var barHeight = 18;
         var espacement = 18;
         var topPad = 18;
         var ns = "http://www.w3.org/2000/svg";
@@ -2081,7 +2107,7 @@
         var maxVal = valeursFinies.length ? Math.max.apply(null, valeursFinies) : 1;
 
         var mesure = document.createElementNS(ns, "text");
-        mesure.setAttribute("font-size", "14");
+        mesure.setAttribute("font-size", "12");
         mesure.setAttribute("font-weight", "700");
         svg.appendChild(mesure);
         function largeurTexteFn(t) { mesure.textContent = t; return mesure.getBBox().width; }
@@ -2133,8 +2159,8 @@
           if (dedans) {
             var labelDedans = document.createElementNS(ns, "text");
             labelDedans.setAttribute("x", leftPad + labelPadInterieur);
-            labelDedans.setAttribute("y", barY + barHeight / 2 + 5);
-            labelDedans.setAttribute("font-size", "14");
+            labelDedans.setAttribute("y", barY + barHeight / 2 + 4);
+            labelDedans.setAttribute("font-size", "12");
             labelDedans.setAttribute("font-weight", "700");
             labelDedans.setAttribute("fill", "#fff");
             labelDedans.textContent = e.label;
