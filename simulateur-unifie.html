@@ -1535,6 +1535,9 @@
       function reinitialiserInstall(select, input) {
         var m = machineParKey(select.value);
         if (!m) return;
+        // Débits par défaut imposés par Cédric (21/09/2026), avant le calcul générique.
+        var DEBIT_DEFAUT = { "esaote-o-scan": 3, "generique-15t": 4, "generique-3t": 4 };
+        if (DEBIT_DEFAUT[m.key] != null) { input.value = DEBIT_DEFAUT[m.key]; return; }
         var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
         input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
       }
