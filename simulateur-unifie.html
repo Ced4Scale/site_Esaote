@@ -931,7 +931,7 @@
                 <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
               </svg>
             </button>
-      <details class="simulator__chart-card simulator__chart-card--collapsible un-sous-carte" id="unPointMortCard" open>
+      <details class="simulator__chart-card simulator__chart-card--collapsible un-sous-carte" id="unPointMortCard">
         <summary id="unPointMortSummary">Point mort — nombre d'examens par jour</summary>
         <div class="simulator__chart-wrap" id="unPointMortJourVue">
           <svg id="unPointMortChart" class="simulator__chart" viewBox="0 0 640 200" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Point mort de chaque machine, en nombre d'examens par jour"></svg>
@@ -1604,7 +1604,7 @@
       // graphique "Point mort annuel" tant que ce n'était pas encore corrigé le
       // 21/09/2026 — un seul tick JS synchrone entre les deux, rien de visible
       // pour le visiteur.
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = true; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; unHeuresB = null; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = false; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; unHeuresB = null; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
       function appliquerNbMachines() {
         var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
@@ -2430,6 +2430,10 @@
       // rencontré sur ce même graphique (voir mémoire/skill).
       // ---------------------------------------------------------------------
       var unDernieresEntreesPointMort = null;
+      // Carte « jour » fermée à l'arrivée : redessinée à chaque ouverture (mesure getBBox() = 0 tant qu'elle est fermée).
+      document.getElementById("unPointMortCard").addEventListener("toggle", function () {
+        if (this.open && unDernieresEntreesPointMort) unDessinerBarresPointMort(unDernieresEntreesPointMort);
+      });
       document.getElementById("unPointMortAnnuelCard").addEventListener("toggle", function () {
         if (this.open && unDernieresEntreesPointMort) unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
       });
