@@ -258,6 +258,7 @@
     .un-compo-aff label { display: flex; align-items: center; gap: .4rem; font-weight: 600; cursor: pointer; }
     .un-compo-aff input { width: 16px; height: 16px; margin: 0; }
     .un-compo-moyen-tete { display: flex; align-items: center; gap: .5rem; margin: .3rem 0 .2rem; font-size: .9rem; }
+    #unCompoOutilsPop { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -978,16 +979,6 @@
             Composition des recettes de l'année 1
           </summary>
         <div class="simulator__legend" id="unCompoLegende"></div>
-        <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
-          <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
-          <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
-          <label><input type="radio" name="unCompoVue" value="moyen" /> Tarif moyen du F.T. selon le volume</label>
-          <span class="un-compo-aff">Afficher :
-            <label><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
-            <label><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
-            <label><input type="checkbox" id="unCompoAffRes" /> Résultat</label>
-          </span>
-        </div>
         <div class="un-compo-duo">
         <div class="simulator__chart-wrap" id="unCompoRecWrap">
           <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
@@ -1321,15 +1312,26 @@
           </div>
         </div>
 
+        <!-- Boîte à outils 🧰 de la carte « Composition des recettes » : choix d'affichage (histogramme /
+             tableau du barème / tarif moyen), panneaux à afficher (recettes / dépenses / résultat) et
+             « Intégrer l'acte intellectuel » (même case que l'ancien groupe « Recette » : id et
+             comportement inchangés, seul son emplacement change). -->
         <div class="un-mixer__check-group">
-          <span class="un-mixer__group-title">Recette</span>
-          <label>
-            <input type="checkbox" id="unActeIntellectuelActif" checked />
-            <span>Intégrer l'acte intellectuel</span>
-          </label>
+          <span class="un-mixer__group-title">Boîte à outils</span>
           <span class="un-info-wrap">
-            <button type="button" class="un-info-btn" id="unInfoActeBtn" aria-expanded="false" aria-controls="unInfoActePop" aria-label="À propos de l'acte intellectuel">💡</button>
-            <div class="un-info-pop" id="unInfoActePop" hidden>Ajoute la valeur de l'acte intellectuel du radiologue (55&nbsp;€ à 69&nbsp;€ selon la répartition « membre »/« autre région » réglée pour chaque machine à l'écran précédent) à la recette par patient utilisée pour le point mort — à cocher seulement si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple). Réglage propre à cet outil unifié : simulateur-point-mort.html (fichier réel) ajoute toujours cette recette, sans case à cocher.</div>
+            <button type="button" class="un-info-btn" id="unCompoOutilsBtn" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes">🧰</button>
+            <div class="un-info-pop" id="unCompoOutilsPop" hidden>
+              <div class="un-outils-titre">Affichage</div>
+              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
+              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
+              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="moyen" /> Tarif moyen du F.T. selon le volume</label>
+              <div class="un-outils-titre" style="margin-top:.6rem">Afficher</div>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRes" /> Résultat</label>
+              <div class="un-outils-titre" style="margin-top:.6rem">Recette</div>
+              <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unActeIntellectuelActif" checked /> Intégrer l'acte intellectuel</label>
+            </div>
           </span>
         </div>
       </div>
@@ -3284,7 +3286,7 @@
         unRenderPointMort();
       });
 
-      wireInfoBtn("unInfoActeBtn", "unInfoActePop");
+      wireOutilsBtn("unCompoOutilsBtn", "unCompoOutilsPop");
 
       // =======================================================================
       // Étape 3 — Bascule progressive A↔B (projet 02 "IRM supplémentaire"
