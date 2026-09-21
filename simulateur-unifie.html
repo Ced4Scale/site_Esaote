@@ -2778,38 +2778,49 @@
           });
           body.appendChild(tr);
         });
+        // Sous les tranches : montants alignés sous la colonne « CA » (espaceurs vides de même largeur que
+        // plage + tarif) et couleur PAR PARTIE (recettes / charges / résultat) au lieu de celle de la machine.
+        var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
+        function espaceur(td) {
+          var l1 = document.createElement("span"); l1.className = "un-bareme-ligne1";
+          var a = document.createElement("span"); a.className = "un-compo-plage";
+          var b = document.createElement("span"); b.className = "un-bareme-tarif";
+          l1.appendChild(a); l1.appendChild(document.createTextNode(" ")); l1.appendChild(b); td.appendChild(l1);
+        }
         var trT = document.createElement("tr"), tdT = document.createElement("td");
         tdT.innerHTML = "<strong>Total</strong>"; trT.appendChild(tdT);
         entrees.forEach(function (e, k) {
           var td = document.createElement("td"), sp = document.createElement("span");
-          sp.className = "un-bareme-ca"; sp.style.color = e.couleur; sp.textContent = unEur(totaux[k], 2);
+          espaceur(td);
+          sp.className = "un-bareme-ca"; sp.style.color = COUL_RECETTES; sp.textContent = unEur(totaux[k], 2);
           td.appendChild(sp); trT.appendChild(td);
         });
         body.appendChild(trT);
         var charges = document.getElementById("unCompoTableCharges").checked;
         var basePour2 = totaux.slice();
         if (charges) {
-          function ligneMontants(label, valeurs, gras) {
+          function ligneMontants(label, valeurs, gras, couleur) {
             var tr = document.createElement("tr"), tdL = document.createElement("td");
             tdL.innerHTML = "<strong>" + label + "</strong>"; tr.appendChild(tdL);
             entrees.forEach(function (e, k) {
               var td = document.createElement("td"), sp = document.createElement("span");
-              sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#d33" : e.couleur; if (!gras) sp.style.fontWeight = "400";
+              espaceur(td);
+              sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#d33" : couleur; if (!gras) sp.style.fontWeight = "400";
               sp.textContent = unEur(valeurs[k], 2); td.appendChild(sp); tr.appendChild(td);
             });
             body.appendChild(tr);
           }
           if (entrees.some(function (e) { return e.acte > 0; })) {
-            ligneMontants("Acte intellectuel", entrees.map(function (e) { return e.acte; }), false);
-            ligneMontants("Total des recettes", entrees.map(function (e, k) { return totaux[k] + e.acte; }), true);
+            ligneMontants("Acte intellectuel", entrees.map(function (e) { return e.acte; }), false, COUL_RECETTES);
+            ligneMontants("Total des recettes", entrees.map(function (e, k) { return totaux[k] + e.acte; }), true, COUL_RECETTES);
           }
           [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c) {
-            ligneMontants(c[0], entrees.map(function (e) { return e.cout[c[1]]; }), false);
+            ligneMontants(c[0], entrees.map(function (e) { return e.cout[c[1]]; }), false, COUL_CHARGES);
           });
           var totCharges = entrees.map(function (e) { return e.cout.loyer + e.cout.personnel + e.cout.elec + e.cout.autres; });
-          ligneMontants("Total des charges", totCharges, true);
+          ligneMontants("Total des charges", totCharges, true, COUL_CHARGES);
           var resultats = entrees.map(function (e, k) { return totaux[k] + e.acte - totCharges[k]; });
-          ligneMontants("Résultat", resultats, true);
+          ligneMontants("Résultat", resultats, true, COUL_RESULTAT);
           basePour2 = resultats;
         }
         if (entrees.length === 2) {
@@ -2817,7 +2828,7 @@
           td2L.innerHTML = projetActuel === 1
             ? "<strong>" + (charges ? "Différence résultats" : "Différence 2 machines") + "</strong>"
             : "<strong>" + (charges ? "Total résultats" : "Total 2 machines") + "</strong>"; tr2.appendChild(td2L);
-          td2.colSpan = 2; sp2.className = "un-bareme-ca";
+          td2.colSpan = 2; espaceur(td2); sp2.className = "un-bareme-ca"; sp2.style.color = charges ? COUL_RESULTAT : COUL_RECETTES;
           if (projetActuel === 1) {
             // Projet 1 uniquement : l'écart entre les 2 machines (de recette, ou de résultat si les charges sont affichées), en faveur de la plus élevée.
             var ecart = basePour2[1] - basePour2[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
