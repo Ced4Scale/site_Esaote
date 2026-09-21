@@ -1753,6 +1753,7 @@
       // ---------------------------------------------------------------------
       // "Votre activité" — libellé + équivalent jour/an
       // ---------------------------------------------------------------------
+      var deuxDecFmt = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 }); // point mort / jour
       var patientsFmt = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 });
       // Conversion en activité ANNUELLE, quel que soit le mode d'affichage du champ
       // "Votre activité" (jour/an) — extraite en fonction dédiée le 20/09/2026 pour
@@ -2122,7 +2123,7 @@
           valeur.setAttribute("font-size", "14");
           valeur.setAttribute("font-weight", estFini ? "700" : "600");
           valeur.setAttribute("fill", estFini ? "#1c1c1c" : "#8a8a8a");
-          valeur.textContent = estFini ? patientsFmt.format(e.value) : "jamais atteint";
+          valeur.textContent = estFini ? deuxDecFmt.format(e.value) : "jamais atteint";
           svg.appendChild(valeur);
 
           rowTop += ligneHauteurs[i] + espacement;
