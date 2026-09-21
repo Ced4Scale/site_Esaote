@@ -2737,8 +2737,14 @@
         body.appendChild(trT);
         if (entrees.length === 2) {
           var tr2 = document.createElement("tr"), td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
-          td2L.innerHTML = "<strong>Total 2 machines</strong>"; tr2.appendChild(td2L);
-          td2.colSpan = 2; sp2.className = "un-bareme-ca"; sp2.textContent = unEur(totaux[0] + totaux[1], 2);
+          td2L.innerHTML = projetActuel === 1 ? "<strong>Différence 2 machines</strong>" : "<strong>Total 2 machines</strong>"; tr2.appendChild(td2L);
+          td2.colSpan = 2; sp2.className = "un-bareme-ca";
+          if (projetActuel === 1) {
+            // Projet 1 uniquement : l'écart de recette entre les 2 machines, en faveur de la plus élevée.
+            var ecart = totaux[1] - totaux[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
+            sp2.textContent = unEur(Math.abs(ecart), 2) + " en faveur de " + gagnante.nom;
+            sp2.style.color = gagnante.couleur;
+          } else sp2.textContent = unEur(totaux[0] + totaux[1], 2);
           td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
         }
       }
