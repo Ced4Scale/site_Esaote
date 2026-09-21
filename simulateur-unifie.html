@@ -606,14 +606,6 @@
             </details>
           </details>
 
-          <div class="field" id="unNbMachinesField" style="margin-top:1.2rem">
-            <label><mark class="simulator__highlight">Comparer à une 2ᵉ IRM ?</mark></label>
-            <div class="simulator__toggle">
-              <label><input type="radio" name="unNbMachines" value="2" checked /> Comparer deux IRM</label>
-              <label><input type="radio" name="unNbMachines" value="1" /> Une seule IRM</label>
-            </div>
-          </div>
-
         </div>
 
         <!-- ---- Colonne 2 : Machine A ---- -->
@@ -1388,9 +1380,9 @@
       }
 
       var PROJET_INFOS = {
-        1: { kicker: "Projet 01", titre: "Première installation d'IRM", nbMachinesVisible: true },
-        2: { kicker: "Projet 02", titre: "IRM supplémentaire", nbMachinesVisible: true },
-        3: { kicker: "Projet 03", titre: "Remplacement d'un scanner", nbMachinesVisible: false }
+        1: { kicker: "Projet 01", titre: "Première installation d'IRM" },
+        2: { kicker: "Projet 02", titre: "IRM supplémentaire" },
+        3: { kicker: "Projet 03", titre: "Remplacement d'un scanner" }
       };
 
       document.querySelectorAll(".un-projet-card").forEach(function (card) {
@@ -1425,7 +1417,6 @@
         var infos = PROJET_INFOS[n];
         document.getElementById("unProjetKicker").textContent = infos.kicker;
         document.getElementById("unProjetTitre").textContent = infos.titre;
-        document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
         // Verrou "marques concurrentes" : concerne uniquement MACHINES_IRM (projets 01/02),
         // masqué pour le projet 03 (scanner/Esaote uniquement, pas de marque concurrente
         // d'IRM affichée dans ces 2 listes-là).
@@ -1461,7 +1452,7 @@
           document.getElementById("unRseWrapA").hidden = true;
           peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-o-scan");
           peuplerMachineSelect(selectB, machinesIrmVisibles(), "generique-15t");
-          appliquerNbMachines();
+          document.getElementById("unColB").hidden = false;
         }
         reinitialiserMerm(selectA, mermA); reinitialiserMerm(selectB, mermB);
         reinitialiserInstall(selectA, installA); reinitialiserInstall(selectB, installB);
@@ -1705,13 +1696,6 @@
       // masque la colonne Machine B, ne bloque jamais rien derrière une
       // validation (voir choix documenté n°4 en tête de fichier).
       // ---------------------------------------------------------------------
-      function appliquerNbMachines() {
-        var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
-        document.getElementById("unColB").hidden = !deux;
-      }
-      document.querySelectorAll('input[name="unNbMachines"]').forEach(function (r) {
-        r.addEventListener("change", appliquerNbMachines);
-      });
 
       // ---------------------------------------------------------------------
       // "Votre activité" — libellé + équivalent jour/an
@@ -2099,22 +2083,18 @@
       // (res.margeParPatient) — jamais une 2ᵉ formule de marge séparée.
       // ---------------------------------------------------------------------
       function unCalculerAnnuel(config, res, params) {
-        // examensParJour : débit horaire (Examens par heure) × heures
-        // d'ouverture réelles par jour (params.heuresParJour, déjà calculé par
-        // unHeuresParJourMoyen() pour le point mort en examens/jour).
-        var examensParJour = config.debitHoraire * params.heuresParJour;
-        var margeParJour = res.margeParPatient * examensParJour;
-        var chargeLoyerAnnuelle = config.loyer * 12;
-        var chargeManipAnnuelle = config.nombreMerm * params.coutMermMensuel * 12;
-
-        function convertir(chargeAnnuelle) {
-          // Même garde-fou que le point mort en examens/jour : marge nulle ou
-          // négative => "jamais atteint", jamais une division par zéro/NaN.
-          if (!(margeParJour > 0)) return null;
-          return { totalJours: Math.max(0, chargeAnnuelle / margeParJour) };
-        }
-
-        return { loyer: convertir(chargeLoyerAnnuelle), manip: convertir(chargeManipAnnuelle) };
+        // Décision de Cédric (21/09/2026) : le point mort annuel couvre TOUTES les
+        // charges fixes (loyer, cadre de santé, électricité fixe, salle, assurance,
+        // entretien, injecteur, RIS — res.chargesFixesMensuelles × 12) et part de
+        // "Votre activité" (patients par jour), plus du débit maximum de la machine.
+        var mode = document.getElementById("unActiviteMode").value;
+        var v = parseFloat(document.getElementById("unActivite").value) || 0;
+        var patientsParJour = mode === "jour" ? v : v / (params.joursParMois * 12);
+        var margeParJour = res.margeParPatient * patientsParJour;
+        // Même garde-fou que le point mort en examens/jour : marge nulle ou
+        // négative => "jamais atteint", jamais une division par zéro/NaN.
+        if (!(margeParJour > 0)) return { loyer: null };
+        return { loyer: { totalJours: Math.max(0, res.chargesFixesMensuelles * 12 / margeParJour) } };
       }
 
       // ---- Barres horizontales "Loyer annuel remboursé après" — même motif que
