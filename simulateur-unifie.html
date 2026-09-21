@@ -244,6 +244,9 @@
     #unCompoTableWrap .simulator__table.simulator__table--compare2 th:not(:first-child), #unCompoTableWrap .simulator__table.simulator__table--compare2 td:not(:first-child) { width: auto; }
     #unCompoTableWrap th:first-child select { width: 100%; }
     #unCompoTableWrap table { table-layout: fixed; width: 100%; }
+    .un-compo-duo { display: flex; gap: .8rem; align-items: flex-start; }
+    .un-compo-duo > .simulator__chart-wrap { flex: 1 1 0; min-width: 0; }
+    .un-compo-duo > .simulator__chart-wrap[hidden] { display: none; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -967,9 +970,15 @@
         <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
           <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
           <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
+          <label><input type="checkbox" id="unCompoCouts" /> Afficher aussi les coûts (à droite)</label>
         </div>
+        <div class="un-compo-duo">
         <div class="simulator__chart-wrap">
           <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
+        </div>
+        <div class="simulator__chart-wrap" id="unCompoCoutsWrap" hidden>
+          <svg id="unCompoCoutsChart" class="simulator__chart" viewBox="0 0 420 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des coûts annuels, un par machine"></svg>
+        </div>
         </div>
         <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
              Bascule), au volume de « Votre activité », avec la case « Afficher tous les CA ». -->
@@ -2428,8 +2437,7 @@
         var entries = slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
           // Heures d'ouverture propres à la Machine B quand le curseur est dédoublé (unHeuresB).
-          var paramsSlot = (slot === 1 && unHeuresB != null)
-            ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB)) }) : params;
+          var paramsSlot = unParamsPourSlot(slot, params);
           var res = calculerPointMortMachine(config, paramsSlot);
           return {
             label: config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"),
@@ -2770,9 +2778,85 @@
         document.getElementById("unCompoCaInfo").hidden = true;
         unDessinerTableCompo();
       });
+      document.getElementById("unCompoCouts").addEventListener("change", function () { unRenderPointMort(); });
       document.querySelectorAll('input[name="unCompoVue"]').forEach(function (r) {
         r.addEventListener("change", function () { unRenderPointMort(); });
       });
+      // Catégories de COÛTS annuels (panneau de droite de la carte Composition).
+      var UN_COUTS_CATS = [
+        { key: "loyer", label: "Loyer", shortLabel: "Loyer", color: "#6b5b95" },
+        { key: "personnel", label: "Personnel", shortLabel: "Pers.", color: "#d1477a" },
+        { key: "elec", label: "Électricité", shortLabel: "Élec.", color: "#3aa0b5" },
+        { key: "autres", label: "Autres charges", shortLabel: "Autres", color: "#8a8f98" }
+      ];
+      function unParamsPourSlot(slot, params) {
+        return (slot === 1 && unHeuresB != null)
+          ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB)) }) : params;
+      }
+      // Coûts ANNUELS d'une machine au volume donné — mêmes éléments que calculerPointMortMachine().
+      function unCoutsDetail(m, params, volume) {
+        var elec = electriciteMensuellePointMort(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
+        var rhFixe = m.nombreCadreSante * params.coutCadreSanteMensuel;
+        var autresFixes = m.salle + m.assurance + m.entretien + m.injecteur + m.fractionRis * params.coutRisMensuel;
+        var rhVariable = (m.nombreMerm * params.coutMermHoraire
+          + m.nombreSecretaire * params.coutSecretaireHoraire
+          + m.nombreAideManip * params.coutAideManipHoraire
+          + m.nombreInfirmiere * params.coutInfirmiereHoraire
+          + m.nombreManipAlternance * params.coutManipAlternanceHoraire) * (m.tempsInstallation / 60);
+        var contraste = m.contrasteCout * (m.contrastePct / 100);
+        return {
+          loyer: m.loyer * 12,
+          personnel: rhFixe * 12 + rhVariable * volume,
+          elec: elec.fixeMensuel * 12 + elec.variablePatient * volume,
+          autres: autresFixes * 12 + contraste * volume
+        };
+      }
+      // Dessin générique d'un panneau : un demi-anneau par machine (+ petit histogramme des catégories).
+      function unDessinerPanneauCompo(svgC, items, cats, W, histo) {
+        if (!items.length) return;
+        var maxR = W < 500 ? 42 : 56, centerY = 90, n = items.length;
+        var centers = n === 1 ? [W / 2] : [W * 0.27, W * 0.73], halfWidth = n === 1 ? W * 0.22 : W * 0.133;
+        var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
+        var maxPalier = 0;
+        items.forEach(function (b) { cats.forEach(function (p) { if (b.detail[p.key] > maxPalier) maxPalier = b.detail[p.key]; }); });
+        var yMax = maxPalier > 0 ? maxPalier * 1.06 : 1;
+        var BAR_TOP = 104, BAR_BOTTOM = 168, BAR_LABEL_Y = 181;
+        items.forEach(function (b, i) {
+          var cx = centers[i];
+          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
+          var start = -Math.PI;
+          cats.forEach(function (p) {
+            var part = b.detail[p.key];
+            if (!part) return;
+            var fraction = part / b.total, end = start + fraction * Math.PI;
+            svgC.appendChild(unSvgEl("path", { d: unDonutPath(cx, centerY, r, r * 0.55, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+            var mid = (start + end) / 2, cosA = Math.cos(mid);
+            svgC.appendChild(unSvgEl("line", { x1: cx + r * 1.02 * cosA, y1: centerY + r * 1.02 * Math.sin(mid), x2: cx + r * 1.18 * cosA, y2: centerY + r * 1.18 * Math.sin(mid), stroke: p.color, "stroke-width": "1.5" }));
+            var lx = cx + r * 1.24 * cosA, ly = centerY + r * 1.24 * Math.sin(mid);
+            var lab = unSvgEl("text", { x: lx, y: ly, class: "simulator__pie-outlabel", "text-anchor": cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle" });
+            var l1 = unSvgEl("tspan", { x: lx, dy: "0" }); l1.textContent = unEurosFmt.format(part); lab.appendChild(l1);
+            var l2 = unSvgEl("tspan", { x: lx, dy: "10", class: "simulator__axis-label" }); l2.textContent = Math.round(fraction * 100) + " %"; lab.appendChild(l2);
+            svgC.appendChild(lab);
+            start = end;
+          });
+          var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
+          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
+          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
+          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
+          svgC.appendChild(cap);
+
+          if (!histo) return;
+          var barGap = 12, barW = (halfWidth * 2 - barGap * (cats.length + 1)) / cats.length;
+          cats.forEach(function (p, k) {
+            var val = b.detail[p.key] || 0, bx = cx - halfWidth + barGap * (k + 1) + barW * k;
+            var bh = (val / yMax) * (BAR_BOTTOM - BAR_TOP);
+            if (val > 0) svgC.appendChild(unSvgEl("rect", { x: bx, y: BAR_BOTTOM - bh, width: barW, height: bh, fill: p.color, rx: 2, ry: 2 }));
+            var nl = unSvgEl("text", { x: bx + barW / 2, y: BAR_LABEL_Y, class: "simulator__bar-label", "text-anchor": "middle" });
+            nl.textContent = p.shortLabel; svgC.appendChild(nl);
+          });
+          svgC.appendChild(unSvgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
+        });
+      }
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
@@ -2795,55 +2879,38 @@
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
         });
         var histo = unCompoVueHisto();
-        svgC.setAttribute("viewBox", histo ? "0 0 640 188" : "0 0 640 120");
         document.getElementById("unCompoTableWrap").hidden = histo;
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
         if (!histo) unDessinerTableCompo();
         if (!camemberts.length) return;
 
-        var maxR = 56, centerY = 90, n = camemberts.length;
-        var centers = n === 1 ? [320] : [170, 470], halfWidth = n === 1 ? 140 : 85;
-        var maxTotal = Math.max.apply(null, camemberts.map(function (b) { return b.total; }));
-        var maxPalier = 0;
-        camemberts.forEach(function (b) { UN_PALIERS.forEach(function (p) { if (b.detail[p.key] > maxPalier) maxPalier = b.detail[p.key]; }); });
-        var yMax = maxPalier > 0 ? maxPalier * 1.06 : 1;
-        var BAR_TOP = 104, BAR_BOTTOM = 168, BAR_LABEL_Y = 181;
-
-        camemberts.forEach(function (b, i) {
-          var cx = centers[i];
-          var r = maxTotal > 0 ? Math.max(maxR * 0.4, maxR * Math.sqrt(b.total / maxTotal)) : maxR;
-          var start = -Math.PI;
-          UN_PALIERS.forEach(function (p) {
-            var part = b.detail[p.key];
-            if (!part) return;
-            var fraction = part / b.total, end = start + fraction * Math.PI;
-            svgC.appendChild(unSvgEl("path", { d: unDonutPath(cx, centerY, r, r * 0.55, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
-            var mid = (start + end) / 2, cosA = Math.cos(mid);
-            svgC.appendChild(unSvgEl("line", { x1: cx + r * 1.02 * cosA, y1: centerY + r * 1.02 * Math.sin(mid), x2: cx + r * 1.18 * cosA, y2: centerY + r * 1.18 * Math.sin(mid), stroke: p.color, "stroke-width": "1.5" }));
-            var lx = cx + r * 1.24 * cosA, ly = centerY + r * 1.24 * Math.sin(mid);
-            var lab = unSvgEl("text", { x: lx, y: ly, class: "simulator__pie-outlabel", "text-anchor": cosA > 0.25 ? "start" : cosA < -0.25 ? "end" : "middle" });
-            var l1 = unSvgEl("tspan", { x: lx, dy: "0" }); l1.textContent = unEurosFmt.format(part); lab.appendChild(l1);
-            var l2 = unSvgEl("tspan", { x: lx, dy: "10", class: "simulator__axis-label" }); l2.textContent = Math.round(fraction * 100) + " %"; lab.appendChild(l2);
-            svgC.appendChild(lab);
-            start = end;
+        var couts = document.getElementById("unCompoCouts").checked;
+        var W = couts ? 420 : 640;
+        svgC.setAttribute("viewBox", "0 0 " + W + (histo ? " 188" : " 120"));
+        unDessinerPanneauCompo(svgC, camemberts, UN_PALIERS, W, histo);
+        var wrapC = document.getElementById("unCompoCoutsWrap");
+        wrapC.hidden = !couts;
+        var svgK = document.getElementById("unCompoCoutsChart");
+        svgK.innerHTML = "";
+        if (couts) {
+          svgK.setAttribute("viewBox", "0 0 " + W + (histo ? " 188" : " 120"));
+          var items = [];
+          slots.forEach(function (slot) {
+            var config = unConfigMachinePointMort(slot);
+            if (!config.machine) return;
+            var d = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
+            items.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume, detail: d, total: d.loyer + d.personnel + d.elec + d.autres });
           });
-          var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
-          var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
-          var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
-          var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
-          svgC.appendChild(cap);
-
-          if (!histo) return;
-          var barGap = 16, barW = (halfWidth * 2 - barGap * (UN_PALIERS.length + 1)) / UN_PALIERS.length;
-          UN_PALIERS.forEach(function (p, k) {
-            var val = b.detail[p.key] || 0, bx = cx - halfWidth + barGap * (k + 1) + barW * k;
-            var bh = (val / yMax) * (BAR_BOTTOM - BAR_TOP);
-            if (val > 0) svgC.appendChild(unSvgEl("rect", { x: bx, y: BAR_BOTTOM - bh, width: barW, height: bh, fill: p.color, rx: 2, ry: 2 }));
-            var nl = unSvgEl("text", { x: bx + barW / 2, y: BAR_LABEL_Y, class: "simulator__bar-label", "text-anchor": "middle" });
-            nl.textContent = p.shortLabel; svgC.appendChild(nl);
+          unDessinerPanneauCompo(svgK, items, UN_COUTS_CATS, W, histo);
+          var sep = document.createElement("span"); sep.className = "simulator__legend-item"; sep.style.fontWeight = "800"; sep.textContent = "Coûts :";
+          leg.appendChild(sep);
+          UN_COUTS_CATS.forEach(function (p) {
+            var item = document.createElement("span"); item.className = "simulator__legend-item";
+            var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = p.color;
+            var t = document.createElement("span"); t.textContent = p.label;
+            item.appendChild(key); item.appendChild(t); leg.appendChild(item);
           });
-          svgC.appendChild(unSvgEl("line", { x1: cx - halfWidth, x2: cx + halfWidth, y1: BAR_BOTTOM, y2: BAR_BOTTOM, class: "simulator__gridline" }));
-        });
+        }
       }
 
       // ---------------------------------------------------------------------
