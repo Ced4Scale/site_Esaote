@@ -208,11 +208,21 @@
     .un-mixer__faders { display: flex; gap: 1.1rem; }
     .un-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
     .un-mixer__fader-col[hidden] { display: none; }
-    .un-mixer__fader-col-slot { font-size: .72rem; font-weight: 800; color: #fff; white-space: nowrap; text-align: center; }
-    .un-mixer__fader-col input[type="range"] {
-      writing-mode: vertical-lr; direction: rtl; width: 20px; height: 118px;
-      accent-color: var(--fader-color); background: transparent; cursor: pointer;
+    .un-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: rgba(255,255,255,.2); overflow: hidden; }
+    .un-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); opacity: .85; }
+    .un-mixer__fader-col-slot {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
+      writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap;
+      font-size: .74rem; font-weight: 800; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,.55);
     }
+    .un-mixer__bar input[type="range"] {
+      position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
+      writing-mode: vertical-lr; direction: rtl; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
+    }
+    .un-mixer__bar input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+    .un-mixer__bar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .un-mixer__bar input[type="range"]::-moz-range-track { background: transparent; }
+    .un-mixer__bar input[type="range"]::-moz-range-thumb { width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); }
     .un-mixer__fader-value {
       width: 3.7rem; text-align: center; font-size: .8rem; font-weight: 600;
       border-radius: .4rem; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14);
@@ -932,7 +942,10 @@
           <span class="un-mixer__group-title">Coût du kWh</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
-              <input type="range" id="unMixKwhFader" min="0" max="1" step="0.01" value="0.20" aria-label="Coût du kWh" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <input type="range" id="unMixKwhFader" min="0" max="1" step="0.01" value="0.20" aria-label="Coût du kWh" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixKwhVal" value="0,20" aria-label="Coût du kWh, valeur" />
             </div>
           </div>
@@ -942,13 +955,19 @@
           <span class="un-mixer__group-title">Examens par heure</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixInstallBFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixInstallBFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallBVal" value="4" aria-label="Examens par heure — Machine B, valeur" />
             </div>
           </div>
@@ -958,13 +977,19 @@
           <span class="un-mixer__group-title">Manip en poste</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixMermAFader" min="0" max="3" step="0.1" value="1" aria-label="Manip en poste — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixMermAFader" min="0" max="3" step="0.1" value="1" aria-label="Manip en poste — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermAVal" value="1" aria-label="Manip en poste — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixMermBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixMermBFader" min="0" max="3" step="0.1" value="2" aria-label="Manip en poste — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixMermBFader" min="0" max="3" step="0.1" value="2" aria-label="Manip en poste — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMermBVal" value="2" aria-label="Manip en poste — Machine B, valeur" />
             </div>
           </div>
@@ -978,13 +1003,19 @@
           <span class="un-mixer__group-title">% examens membre (MSK)</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" id="unMixMembreACol" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixMembreAFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixMembreAFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreAVal" value="25" aria-label="Part des examens membre (MSK) — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixMembreBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixMembreBFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixMembreBFader" min="0" max="100" step="5" value="25" aria-label="Part des examens membre (MSK) — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixMembreBVal" value="25" aria-label="Part des examens membre (MSK) — Machine B, valeur" />
             </div>
           </div>
@@ -999,13 +1030,19 @@
           <span class="un-mixer__group-title">Secrétaire médicale</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixSecretaireAFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixSecretaireAFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireAVal" value="0" aria-label="Secrétaire médicale, ETP — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixSecretaireBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixSecretaireBFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixSecretaireBFader" min="0" max="3" step="0.1" value="0" aria-label="Secrétaire médicale, ETP — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixSecretaireBVal" value="0" aria-label="Secrétaire médicale, ETP — Machine B, valeur" />
             </div>
           </div>
@@ -1014,13 +1051,19 @@
           <span class="un-mixer__group-title">Cadre de santé</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixCadreSanteAFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixCadreSanteAFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteAVal" value="0" aria-label="Cadre de santé, ETP — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixCadreSanteBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixCadreSanteBFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixCadreSanteBFader" min="0" max="3" step="0.1" value="0" aria-label="Cadre de santé, ETP — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixCadreSanteBVal" value="0" aria-label="Cadre de santé, ETP — Machine B, valeur" />
             </div>
           </div>
@@ -1029,13 +1072,19 @@
           <span class="un-mixer__group-title">Aide-manip</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixAideManipAFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixAideManipAFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipAVal" value="0" aria-label="Aide-manip, ETP — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixAideManipBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixAideManipBFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixAideManipBFader" min="0" max="3" step="0.1" value="0" aria-label="Aide-manip, ETP — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixAideManipBVal" value="0" aria-label="Aide-manip, ETP — Machine B, valeur" />
             </div>
           </div>
@@ -1044,13 +1093,19 @@
           <span class="un-mixer__group-title">Infirmière</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixInfirmiereAFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixInfirmiereAFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereAVal" value="0" aria-label="Infirmière, ETP — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixInfirmiereBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixInfirmiereBFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixInfirmiereBFader" min="0" max="3" step="0.1" value="0" aria-label="Infirmière, ETP — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInfirmiereBVal" value="0" aria-label="Infirmière, ETP — Machine B, valeur" />
             </div>
           </div>
@@ -1059,13 +1114,19 @@
           <span class="un-mixer__group-title">Manip en alternance</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixManipAlternanceAFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixManipAlternanceAFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceAVal" value="0" aria-label="Manip en alternance, ETP — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixManipAlternanceBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixManipAlternanceBFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixManipAlternanceBFader" min="0" max="3" step="0.1" value="0" aria-label="Manip en alternance, ETP — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixManipAlternanceBVal" value="0" aria-label="Manip en alternance, ETP — Machine B, valeur" />
             </div>
           </div>
@@ -1081,13 +1142,19 @@
           <span class="un-mixer__group-title">% examens injectés</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" id="unMixContrasteACol" style="--fader-color:#2a78d6">
-              <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
-              <input type="range" id="unMixContrasteAFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine A" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixContrasteAFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine A" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixContrasteAVal" value="0" aria-label="Part des examens injectés — Machine A, valeur" />
             </div>
             <div class="un-mixer__fader-col" id="unMixContrasteBCol" style="--fader-color:#eb6834">
-              <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
-              <input type="range" id="unMixContrasteBFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine B" />
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixContrasteBFader" min="0" max="100" step="5" value="0" aria-label="Part des examens injectés — Machine B" />
+              </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixContrasteBVal" value="0" aria-label="Part des examens injectés — Machine B, valeur" />
             </div>
           </div>
@@ -2291,10 +2358,16 @@
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
         fader.value = v;
+        unMixMajFill(fader);
         val.value = (champ.fmt || patientsFmt).format(v);
         unMixEcritureProg = false;
       }
 
+      function unMixMajFill(fader) {
+        var min = parseFloat(fader.min), max = parseFloat(fader.max), v = parseFloat(fader.value);
+        var pct = max > min ? Math.max(0, Math.min(100, (v - min) / (max - min) * 100)) : 0;
+        fader.parentNode.style.setProperty("--pct", pct);
+      }
       function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); }
 
       // Écrit une nouvelle valeur (venant du fader ou de son champ texte) vers
@@ -2307,6 +2380,7 @@
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
         fader.value = v;
+        unMixMajFill(fader);
         document.getElementById(champ.valId).value = (champ.fmt || patientsFmt).format(v);
         document.getElementById(champ.sourceId).value = v;
         unMixEcritureProg = false;
@@ -2319,6 +2393,7 @@
         var source = document.getElementById(champ.sourceId);
 
         fader.addEventListener("input", function () {
+          unMixMajFill(fader);
           if (unMixEcritureProg) return;
           unMixEcrireVersSource(champ, parseFloat(fader.value) || 0);
         });
