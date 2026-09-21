@@ -1652,8 +1652,10 @@
           peuplerMachineSelect(selectA, MACHINES_SCANNER, "siemens-goall");
           peuplerMachineSelect(selectB, MACHINES_ESAOTE, "esaote-o-scan");
         } else {
-          document.getElementById("unTitreA").textContent = "Machine A";
-          document.getElementById("unTitreB").textContent = "Machine B";
+          // Projet 2 : A = machine déjà en place (IRM 1,5 T générique), B = machine complémentaire (O-scan).
+          // Projet 1 : A = O-scan, B = IRM 1,5 T générique.
+          document.getElementById("unTitreA").textContent = n === 2 ? "Machine A — machine déjà en place" : "Machine A";
+          document.getElementById("unTitreB").textContent = n === 2 ? "Machine B — machine complémentaire" : "Machine B";
           document.getElementById("unMachineALabel").textContent = "Choix IRM";
           document.getElementById("unMachineBLabel").textContent = "Choix IRM";
           document.getElementById("unLoyerALabel").textContent = "Loyer de l'IRM, SAV inclus";
@@ -1662,8 +1664,8 @@
           document.getElementById("unMembreFieldB").hidden = false;
           document.getElementById("unMultiRegionFieldA").hidden = true;
           document.getElementById("unRseWrapA").hidden = true;
-          peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-o-scan");
-          peuplerMachineSelect(selectB, machinesIrmVisibles(), "generique-15t");
+          peuplerMachineSelect(selectA, machinesIrmVisibles(), n === 2 ? "generique-15t" : "esaote-o-scan");
+          peuplerMachineSelect(selectB, machinesIrmVisibles(), n === 2 ? "esaote-o-scan" : "generique-15t");
           appliquerNbMachines();
         }
         reinitialiserMerm(selectA, mermA); reinitialiserMerm(selectB, mermB);
