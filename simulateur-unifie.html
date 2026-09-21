@@ -222,6 +222,8 @@
     /* Point mort : un seul bloc, les 2 cartes (jour / annuel) y restent pliables. */
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
+    .un-compo-corps { display: flex; gap: 1rem; align-items: flex-start; }
+    .un-compo-curseur { flex: 0 0 auto; padding-top: .4rem; }
     .un-mixer__pm { display: flex; gap: .3rem; }
     .un-mixer__pm button { width: 1.7rem; height: 1.5rem; padding: 0; border: 0; background: transparent; color: #000; font-weight: 800; font-size: 1.2rem; line-height: 1; cursor: pointer; }
     .un-mixer__pm button:hover { color: #0f8f92; }
@@ -922,8 +924,24 @@
       <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCompoCard">
         <summary>Composition des recettes de l'année 1</summary>
         <div class="simulator__legend" id="unCompoLegende"></div>
-        <div class="simulator__chart-wrap">
+        <div class="un-compo-corps">
+        <div class="simulator__chart-wrap" style="flex:1 1 0;min-width:0">
           <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres de la composition des recettes de l'année 1, un par machine"></svg>
+        </div>
+        <!-- Curseur « Examens par an » : miroir de « Votre activité » (Paramètres), quel que
+             soit son mode jour/an — même mécanique que le curseur Activité de simulateur-recettes. -->
+        <div class="un-mixer__fader-col un-compo-curseur" style="--fader-color:#21c7c1">
+          <span class="un-mixer__group-title">Examens par an</span>
+          <div class="un-mixer__bar">
+            <div class="un-mixer__bar-fill"></div>
+            <input type="range" id="unCompoActiviteFader" min="0" max="15000" step="50" value="0" aria-label="Nombre d'examens par an" />
+          </div>
+          <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unCompoActiviteVal" aria-label="Nombre d'examens par an, valeur" />
+          <div class="un-mixer__pm">
+            <button type="button" id="unCompoActiviteMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
+            <button type="button" id="unCompoActivitePlus" aria-label="Augmenter le nombre d'examens par an">+</button>
+          </div>
+        </div>
         </div>
       </details>
 
@@ -2372,7 +2390,39 @@
         return "M" + cx + "," + cy + " L" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
           " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) + " Z";
       }
+      // Curseur « Examens par an » → écrit dans « Votre activité » (converti en patients/jour
+      // si le mode est « jour »), puis relance le calcul complet.
+      var unCompoSaisie = false;
+      function unCompoEcrireActivite(annuel) {
+        annuel = Math.max(0, Math.min(15000, Math.round(annuel)));
+        var mode = document.getElementById("unActiviteMode").value;
+        document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (5 * (52 / 12) * 12) * 1000) / 1000 : annuel;
+        majActiviteLabel();
+        unRenderPointMort();
+      }
+      (function () {
+        var fader = document.getElementById("unCompoActiviteFader"), val = document.getElementById("unCompoActiviteVal");
+        fader.addEventListener("input", function () { unCompoEcrireActivite(parseFloat(fader.value) || 0); });
+        val.addEventListener("input", function () {
+          var v = parseFloat(String(val.value).replace(/\./g, "").replace(",", "."));
+          if (!isFinite(v)) return;
+          unCompoSaisie = true; unCompoEcrireActivite(v); unCompoSaisie = false;
+        });
+        [["unCompoActiviteMoins", -1], ["unCompoActivitePlus", 1]].forEach(function (d) {
+          document.getElementById(d[0]).addEventListener("click", function (e) {
+            unCompoEcrireActivite(unActiviteAnnuelle() + d[1] * 50 * (e.shiftKey ? 10 : 1));
+          });
+        });
+      })();
+      function unCompoSyncCurseur() {
+        var annuel = Math.round(unActiviteAnnuelle());
+        var fader = document.getElementById("unCompoActiviteFader");
+        fader.value = Math.min(15000, annuel);
+        fader.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
+        if (!unCompoSaisie) document.getElementById("unCompoActiviteVal").value = milliersFmt.format(annuel);
+      }
       function unDessinerCompo(slots, params) {
+        unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
         svgC.innerHTML = "";
         var leg = document.getElementById("unCompoLegende");
