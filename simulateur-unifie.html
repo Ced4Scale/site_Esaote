@@ -243,6 +243,16 @@
     #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { white-space: normal; width: 13.5rem; box-sizing: border-box; }
     #unCompoTableWrap td:first-child, #unCompoTableWrap td:first-child strong { white-space: nowrap !important; }
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
+    /* Carte RSE (projet 1) — lignes de faits à barres, portées de simulateur-energie.html (.ene-fact-*). */
+    #unRseCard[hidden] { display: none; }
+    .ene-fact-list { display: flex; flex-direction: column; gap: 1.1rem; }
+    .ene-fact-row-label { font-weight: 700; font-size: clamp(.78rem, 3vw, .92rem); white-space: nowrap; margin-bottom: .35rem; }
+    .ene-fact-row--strong .ene-fact-row-label { font-size: .98rem; }
+    .ene-fact-bar-line { margin-bottom: .3rem; }
+    .ene-fact-bar-line:last-child { margin-bottom: 0; }
+    .ene-fact-bar-track2 { position: relative; height: clamp(16px, 2.6vw, 26px); }
+    .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; }
+    .ene-fact-value { position: absolute; top: 50%; transform: translateY(-50%); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
     #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { width: 24rem; }
     #unCompoCard:fullscreen .un-compo-source { font-size: .8rem; }
     #unCompoCard:fullscreen #unCompoDate { font-size: 1rem; }
@@ -1029,6 +1039,28 @@
         </div>
       </details>
 
+      <!-- Carte RSE — impact énergétique (projet 1 seulement) : bloc « Coûts » de
+           simulateur-energie.html (légende, graphe Total/Socle/Entre deux patients/Examens,
+           lignes de faits : coût par patient, consommation + empreinte carbone, ventilation
+           horaire), SANS la table de mixage de cette page (celle d'ici, dessous, pilote déjà
+           activité, prix du kWh, débits et heures). Fermée à l'arrivée. -->
+      <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRseCard" hidden>
+        <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="unRseFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            RSE — impact énergétique : coûts
+        </summary>
+        <div class="simulator__legend" id="unRseLegende"></div>
+        <div class="simulator__chart-wrap" id="unRseChartWrap">
+          <svg id="unRseChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des machines choisies"></svg>
+        </div>
+        <div class="ene-fact-list" id="unRseFaits" style="margin-top:.8rem"></div>
+      </details>
+
       <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
            Miroir de 2 champs déjà saisis à l'écran 2 (Examens par heure, Manip
            en poste) + une case à cocher NOUVELLE (Acte intellectuel, absente de
@@ -1613,7 +1645,7 @@
       // graphique "Point mort annuel" tant que ce n'était pas encore corrigé le
       // 21/09/2026 — un seul tick JS synchrone entre les deux, rien de visible
       // pour le visiteur.
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = false; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; unHeuresB = null; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = false; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; document.getElementById("unRseCard").open = false; unHeuresGroupeForce = false; unHeuresB = null; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
       function appliquerNbMachines() {
         var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
@@ -2449,6 +2481,171 @@
         if (this.open && unDernieresEntreesPointMort) unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
       });
 
+      // ---------------------------------------------------------------------
+      // Carte RSE — impact énergétique (projet 1). Porté de simulateur-energie.html
+      // (profilAnnuel / decompositionAnnuelle / dessinerPairesBarres / remplirTableau),
+      // alimenté par les réglages de CE simulateur : prix du kWh, « Votre activité »,
+      // horaires (Machine B : ses heures propres si elles sont figées), débit en FT/h de
+      // chaque machine (temps de changement = 60 / débit − durée d'acquisition de la fiche).
+      // ---------------------------------------------------------------------
+      var UN_RSE_HEURES_AN = 8736; // 52 semaines x 168 h, comme simulateur-energie.html
+      var unRseVentil = false, unRseSocle = false, unRseConso = false, unRseVentilH = false;
+      var unRseEurosCent = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 2 });
+      function unRseProfil(pr) {
+        var totalHeuresSemaine = 5 * pr.semNet + pr.samNet + pr.dimNet;
+        var patientsParSemaine = pr.patientsAn / 52;
+        var tAcqH = pr.acqMin / 60, tInstallH = (pr.changementMin + pr.acqMin) / 60;
+        var acc = { heuresEteint: 0, heuresPret: 0, heuresMesure: 0 };
+        [{ nb: 5, net: pr.semNet, brut: pr.semBrut }, { nb: 1, net: pr.samNet, brut: pr.samBrut }, { nb: 1, net: pr.dimNet, brut: pr.dimBrut }].forEach(function (t) {
+          if (t.brut <= 0) { acc.heuresEteint += 24 * t.nb * 52; return; }
+          var part = totalHeuresSemaine > 0 ? t.net / totalHeuresSemaine : 0;
+          var parJour = patientsParSemaine * part / t.nb;
+          var mesure = Math.min(t.net, parJour * tAcqH);
+          var necessaires = Math.min(t.brut, Math.max(mesure, parJour * tInstallH));
+          acc.heuresEteint += (24 - necessaires) * t.nb * 52;
+          acc.heuresPret += (necessaires - mesure) * t.nb * 52;
+          acc.heuresMesure += mesure * t.nb * 52;
+        });
+        return acc;
+      }
+      function unRseDecomposition(m, profil) {
+        var lt = m.coeffRefroidissementLT;
+        var socleIRM = UN_RSE_HEURES_AN * m.eteint, socleLT = socleIRM * lt, socleClim = UN_RSE_HEURES_AN * m.climSalleKw;
+        var epIRM = profil.heuresPret * (m.pret - m.eteint), exIRM = profil.heuresMesure * (m.mesure - m.eteint);
+        return {
+          socle: { irm: socleIRM, lt: socleLT, clim: socleClim, total: socleIRM + socleLT + socleClim },
+          entrePatients: { total: epIRM * (1 + lt) },
+          examens: { total: exIRM * (1 + lt) }
+        };
+      }
+      function unRseResultats() {
+        var prix = Math.max(0, parseFloat(document.getElementById("unKwh").value) || 0);
+        var patientsAn = unActiviteAnnuelle();
+        var samCoche = document.getElementById("unOuvertSamedi").checked, dimCoche = document.getElementById("unOuvertDimanche").checked;
+        return unSlotsActifs().map(function (slot) {
+          var c = unConfigMachinePointMort(slot), m = c.machine;
+          var ampl = unHeuresAmpl(slot);
+          var coupure = document.getElementById("unCoupureSemaine").checked ? Math.max(0, parseFloat(document.getElementById("unCoupureDureeSemaine").value) || 0) : 0;
+          var acq = m.dureeAcquisitionMinutes || 0;
+          var total = c.debitHoraire > 0 ? 60 / c.debitHoraire : acq + 1;
+          var profil = unRseProfil({
+            semBrut: Math.min(24, ampl), semNet: Math.max(0, ampl - coupure),
+            samBrut: samCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresSamedi").value) || 0) : 0, samNet: samCoche ? unHeuresEffectives("Samedi") : 0,
+            dimBrut: dimCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresDimanche").value) || 0) : 0, dimNet: dimCoche ? unHeuresEffectives("Dimanche") : 0,
+            patientsAn: patientsAn, acqMin: acq, changementMin: Math.max(1, total - acq)
+          });
+          var decomp = unRseDecomposition(m, profil);
+          var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
+          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsAn > 0 ? kwh * prix / patientsAn : 0, profil: profil, prix: prix };
+        });
+      }
+      function unRseLigneBarre(container, label, valeurs, formateur, opts) {
+        var row = document.createElement("div");
+        row.className = "ene-fact-row" + (opts && opts.strong ? " ene-fact-row--strong" : "");
+        if (opts && opts.indent) row.style.marginLeft = "1cm";
+        var lbl = document.createElement("div");
+        lbl.className = "ene-fact-row-label";
+        lbl.textContent = (opts && opts.triangle !== undefined ? (opts.triangle ? "▾ " : "▸ ") : "") + label;
+        if (opts && opts.onClicLabel) { lbl.style.cursor = "pointer"; lbl.addEventListener("click", opts.onClicLabel); }
+        if (opts && opts.wrap) lbl.style.whiteSpace = "normal";
+        row.appendChild(lbl);
+        var RESERVE_PX = 118, maxV = Math.max.apply(null, valeurs.concat([0.0001]));
+        valeurs.forEach(function (v, i) {
+          var line = document.createElement("div");
+          line.className = "ene-fact-bar-line";
+          var ratio = maxV > 0 ? Math.max(v > 0 ? 0.01 : 0, v / maxV) : 0;
+          var largeur = "calc((100% - " + RESERVE_PX + "px) * " + ratio + ")";
+          var track = document.createElement("div");
+          track.className = "ene-fact-bar-track2";
+          track.innerHTML = '<div class="ene-fact-bar-fill2" style="width:' + largeur + ';background:' + UN_SLOT_COLORS[opts && opts.slots ? opts.slots[i] : i] + '"></div><span class="ene-fact-value" style="left:calc(' + largeur + ' + 8px)">' + formateur(v) + '</span>';
+          line.appendChild(track); row.appendChild(line);
+        });
+        container.appendChild(row);
+      }
+      function unRseFaits(res) {
+        var box = document.getElementById("unRseFaits"); box.innerHTML = "";
+        var slots = res.map(function (x) { return x.slot; });
+        function ligne(label, fn, fmt, opts) { unRseLigneBarre(box, label, res.map(fn), fmt, Object.assign({ slots: slots }, opts || {})); }
+        ligne("Coût par patient", function (x) { return x.coutParPatient; }, function (v) { return unRseEurosCent.format(v); });
+        ligne("Consommation annuelle (Empreinte carbone)", function (x) { return x.kwh; }, function (v) { return milliersFmt.format(v) + " kWh"; }, {
+          triangle: unRseConso, wrap: true, onClicLabel: function () { unRseConso = !unRseConso; unRseFaits(res); }
+        });
+        if (unRseConso) {
+          ligne("Émissions de CO₂ (par an)", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }, function (v) { return milliersFmt.format(v) + " kg"; }, { strong: true, indent: true });
+          ligne("Absorption annuelle équivalente", function (x) { return Math.round(x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }, function (v) { return milliersFmt.format(v) + " arbres"; }, { indent: true });
+          ligne("Sur 7 ans", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }, function (v) { return milliersFmt.format(v) + " kg CO₂"; }, { indent: true });
+        }
+        var titre = document.createElement("div"); titre.className = "ene-fact-row ene-fact-row--titre";
+        var tl = document.createElement("div"); tl.className = "ene-fact-row-label"; tl.style.cursor = "pointer";
+        tl.textContent = (unRseVentilH ? "▾ " : "▸ ") + "Ventilation horaire";
+        tl.addEventListener("click", function () { unRseVentilH = !unRseVentilH; unRseFaits(res); });
+        titre.appendChild(tl); box.appendChild(titre);
+        if (unRseVentilH) {
+          ligne("Heures à l'arrêt / an", function (x) { return x.profil.heuresEteint; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
+          ligne("Heures prêt / an", function (x) { return x.profil.heuresPret; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
+          ligne("Heures en acquisition / an", function (x) { return x.profil.heuresMesure; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
+        }
+      }
+      var UN_RSE_CAT3 = [
+        { key: "socle", label: "Socle (arrêt)", indent: 38, valeur: function (r) { return r.decomp.socle.total * r.prix; } },
+        { key: "entrePatients", label: "Entre deux patients", indent: 38, valeur: function (r) { return r.decomp.entrePatients.total * r.prix; } },
+        { key: "examens", label: "Examens", indent: 38, valeur: function (r) { return r.decomp.examens.total * r.prix; } }
+      ];
+      var UN_RSE_CAT_SOCLE = [
+        { key: "irm", label: "IRM (talon de consommation)", indent: 76, valeur: function (r) { return r.decomp.socle.irm * r.prix; } },
+        { key: "lt", label: "Local technique", indent: 76, valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
+        { key: "clim", label: "Climatisation salle", indent: 76, valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
+      ];
+      function unRsePaires(res, categories, onClic) {
+        var svg = document.getElementById("unRseChart"); svg.innerHTML = "";
+        var plotX0 = 4, plotW = 586, barH = 30, barGap = 5, groupGap = 36, top = 22, groupH = barH * res.length + barGap * (res.length - 1);
+        var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 20;
+        categories.forEach(function (c, gi) {
+          var groupY = top + gi * (groupH + groupGap), barX0 = plotX0 + (c.indent || 0), barPlotW = plotW - (c.indent || 0);
+          var t = unSvgEl("text", { x: barX0, y: groupY - 8, class: "simulator__axis-label", "text-anchor": "start" });
+          t.style.fontSize = "16px"; t.style.fontWeight = "700"; t.style.fill = "var(--ink)"; t.textContent = c.label;
+          if (onClic) { t.style.cursor = "pointer"; t.addEventListener("click", function () { onClic(c); }); }
+          svg.appendChild(t);
+          var xMax = Math.max.apply(null, res.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
+          res.forEach(function (r, i) {
+            var val = c.valeur(r), barW = xMax > 0 ? val / xMax * barPlotW : 0, barY = groupY + i * (barH + barGap);
+            var rect = unSvgEl("rect", { x: barX0, y: barY, width: Math.max(0, barW), height: barH, rx: 4, fill: r.color });
+            if (onClic) { rect.style.cursor = "pointer"; rect.addEventListener("click", function () { onClic(c); }); }
+            svg.appendChild(rect);
+            if (c.masquerValeurs) return;
+            var v = unSvgEl("text", { x: barX0 + barW + 8, y: barY + barH / 2 + 5, class: "simulator__axis-label", "text-anchor": "start" });
+            v.style.fontSize = "16px"; v.style.fontWeight = "700"; v.style.fill = "var(--ink)"; v.textContent = unEurosFmt.format(val);
+            svg.appendChild(v);
+          });
+        });
+        svg.setAttribute("viewBox", "0 0 640 " + bottomY);
+      }
+      function unRseGraphe(res) {
+        var total = { key: "total", label: (unRseVentil ? "▾ " : "▸ ") + "Total coût énergétique annuel",
+          valeur: function (r) { return UN_RSE_CAT3.reduce(function (s, c) { return s + c.valeur(r); }, 0); } };
+        var socle = { key: "socle", label: (unRseSocle ? "▾ " : "▸ ") + "Socle (arrêt)", indent: 38, valeur: UN_RSE_CAT3[0].valeur, masquerValeurs: unRseSocle };
+        var detail = [socle].concat(unRseSocle ? UN_RSE_CAT_SOCLE : []).concat(UN_RSE_CAT3.slice(1));
+        unRsePaires(res, unRseVentil ? [total].concat(detail) : [total], function (c) {
+          if (c.key === "total") { unRseVentil = !unRseVentil; unRseGraphe(res); }
+          else if (c.key === "socle") { unRseSocle = !unRseSocle; unRseGraphe(res); }
+        });
+      }
+      function unRseRendre() {
+        var card = document.getElementById("unRseCard");
+        card.hidden = projetActuel !== 1;
+        if (card.hidden) return;
+        var res = unRseResultats();
+        var leg = document.getElementById("unRseLegende"); leg.innerHTML = "";
+        res.forEach(function (r) {
+          var item = document.createElement("span"); item.className = "simulator__legend-item";
+          var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = r.color; item.appendChild(key);
+          var tx = document.createElement("span"); tx.textContent = (r.slot === 0 ? "A — " : "B — ") + r.machine.nomCourt; item.appendChild(tx);
+          leg.appendChild(item);
+        });
+        unRseGraphe(res);
+        unRseFaits(res);
+      }
+
       function unRenderPointMort() {
         // Resynchronise la table de mixage sur l'état réel des champs de
         // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
@@ -2502,6 +2699,7 @@
         });
         unDessinerBarresPointMort(entries);
         unDessinerCompo(slots, params);
+        unRseRendre();
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
       }
@@ -2724,6 +2922,7 @@
         }
         cabler("unCompoFsBtn", "unCompoCard");
         cabler("unBlocFsBtn", "unBlocPointMort");
+        cabler("unRseFsBtn", "unRseCard");
       })();
       function unTranchesCompo(machine, params) {
         var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
