@@ -964,15 +964,29 @@
         <div class="un-mixer__group" id="unMixHeuresGroup" hidden>
           <span class="un-mixer__group-title">Heures d'ouverture</span>
           <div class="un-mixer__faders">
-            <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
               <div class="un-mixer__bar">
                 <div class="un-mixer__bar-fill"></div>
-                <input type="range" id="unMixHeuresFader" min="1" max="24" step="0.5" value="8" aria-label="Heures d'ouverture par jour, du lundi au vendredi" />
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixHeuresFader" min="1" max="24" step="0.5" value="8" aria-label="Heures d'ouverture par jour, du lundi au vendredi — Machine A" />
               </div>
-              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresVal" aria-label="Heures d'ouverture par jour, valeur" />
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresVal" aria-label="Heures d'ouverture par jour — Machine A, valeur" />
               <div class="un-mixer__pm">
-                <button type="button" id="unMixHeuresMoins" aria-label="Diminuer les heures d'ouverture">−</button>
-                <button type="button" id="unMixHeuresPlus" aria-label="Augmenter les heures d'ouverture">+</button>
+                <button type="button" id="unMixHeuresMoins" aria-label="Diminuer les heures d'ouverture — Machine A">−</button>
+                <button type="button" id="unMixHeuresPlus" aria-label="Augmenter les heures d'ouverture — Machine A">+</button>
+              </div>
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
+            <div class="un-mixer__fader-col" id="unMixHeuresBCol" style="--fader-color:#eb6834">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixHeuresBFader" min="1" max="24" step="0.5" value="8" aria-label="Heures d'ouverture par jour, du lundi au vendredi — Machine B" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresBVal" aria-label="Heures d'ouverture par jour — Machine B, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixHeuresBMoins" aria-label="Diminuer les heures d'ouverture — Machine B">−</button>
+                <button type="button" id="unMixHeuresBPlus" aria-label="Augmenter les heures d'ouverture — Machine B">+</button>
               </div>
               <div class="un-mixer__fader-unit">h / jour</div>
             </div>
@@ -1487,7 +1501,7 @@
       // graphique "Point mort annuel" tant que ce n'était pas encore corrigé le
       // 21/09/2026 — un seul tick JS synchrone entre les deux, rien de visible
       // pour le visiteur.
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = true; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = true; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; unHeuresB = null; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
       function appliquerNbMachines() {
         var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
@@ -2358,12 +2372,15 @@
         if (!uneSeuleMachine) slots.push(1);
         var entries = slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
-          var res = calculerPointMortMachine(config, params);
+          // Heures d'ouverture propres à la Machine B quand le curseur est dédoublé (unHeuresB).
+          var paramsSlot = (slot === 1 && unHeuresB != null)
+            ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB)) }) : params;
+          var res = calculerPointMortMachine(config, paramsSlot);
           return {
             label: config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"),
             color: UN_SLOT_COLORS[slot],
             value: res.pointMortJour,
-            annuel: unCalculerAnnuel(config, res, params)
+            annuel: unCalculerAnnuel(config, res, paramsSlot)
           };
         });
         unDessinerBarresPointMort(entries);
@@ -2408,11 +2425,15 @@
           " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) + " Z";
       }
       // Curseur « Examens par an » (table de mixage) → écrit dans « Votre activité » (converti
-      // en patients/jour si le mode est « jour »), recale les examens par heure de A et B
-      // (= examens par an / heures d'ouverture par an) et, si les horaires ne suffisent pas
-      // au débit maximal d'une machine, monte les heures d'ouverture par pas de 0,5 h
-      // (le curseur « Heures d'ouverture » apparaît alors, et reste réglable à la main).
-      var unMixSaisie = false, unHeuresGroupeForce = false;
+      // en patients/jour si le mode est « jour »), recale les examens par heure de chaque
+      // machine (= examens par an / heures d'ouverture par an de CETTE machine) et, si les
+      // horaires ne suffisent pas au débit maximal d'une machine, monte ses heures
+      // d'ouverture par pas de 0,5 h. Dès que ce cas se présente, le curseur « Heures
+      // d'ouverture » apparaît DÉDOUBLÉ (un pour la Machine A, un pour la Machine B) : chaque
+      // machine a alors ses propres heures (unHeuresB ; la Machine A reste sur le champ
+      // « Amplitude d'ouverture » de Paramètres). Tant que unHeuresB vaut null, la Machine B
+      // suit la Machine A (horaires communs de Paramètres).
+      var unMixSaisie = null, unHeuresGroupeForce = false, unHeuresB = null;
       function unDebitMaxMachine(slot) {
         var config = unConfigMachinePointMort(slot);
         if (!config.machine) return Infinity;
@@ -2428,42 +2449,58 @@
         return minutes > 0 ? 60 / minutes : Infinity;
       }
       function unSlotsActifs() { return document.getElementById("unColB").hidden ? [0] : [0, 1]; }
-      function unDebitMaxCommun() {
-        return Math.min.apply(null, unSlotsActifs().map(unDebitMaxMachine));
+      function unHeuresAmpl(slot) {
+        var a = parseFloat(document.getElementById("unHeuresSemaine").value) || 0;
+        return slot === 1 && unHeuresB != null ? unHeuresB : a;
       }
-      function unHeuresAnnuelles() { return unHeuresParJourMoyen() * unJoursParMois() * 12; }
-      function unActiviteRealisable() { return unActiviteAnnuelle() <= unDebitMaxCommun() * unHeuresAnnuelles() + 0.0001; }
-      function unRecalerDebitsEtHeures() {
-        var annuel = unActiviteAnnuelle();
-        var champHeures = document.getElementById("unHeuresSemaine");
-        var h = parseFloat(champHeures.value) || 0;
-        while (!unActiviteRealisable() && h < 24) {
-          h += 0.5; champHeures.value = h; unHeuresGroupeForce = true;
-        }
-        var heuresAn = unHeuresAnnuelles();
-        if (annuel > 0 && heuresAn > 0) {
-          var d = Math.round(annuel / heuresAn * 100) / 100;
-          unSlotsActifs().forEach(function (slot) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = d; });
-        }
-      }
-      // Le simulateur baisse (ou monte) raisonnablement les examens par heure : le nombre
-      // d'examens par an ne bouge PAS, ce sont les heures d'ouverture qui s'ajustent
-      // (heures = examens par an / (examens par heure x jours ouverts par an)). Plafonné à
-      // la limite haute des machines ; si 24 h ne suffisent pas, le débit remonte.
-      function unDebitModifie(d) {
-        var annuel = unActiviteAnnuelle();
-        if (!(annuel > 0) || !(d > 0)) return;
-        d = Math.min(d, unDebitMaxCommun());
-        var champHeures = document.getElementById("unHeuresSemaine");
+      // Heures moyennes par jour ouvert quand l'amplitude lundi-vendredi vaut `ampl`
+      // (samedi/dimanche/coupures inchangés).
+      function unMoyenPourAmpl(ampl) {
         var jours = unJoursOuvertsParSemaine();
-        if (jours <= 0) return;
+        var a0 = parseFloat(document.getElementById("unHeuresSemaine").value) || 0;
+        return jours > 0 ? unHeuresParJourMoyen() + (ampl - a0) * 5 / jours : 0;
+      }
+      function unHeuresAnPour(slot) { return unMoyenPourAmpl(unHeuresAmpl(slot)) * unJoursParMois() * 12; }
+      function unRealisableSlot(slot) { return unActiviteAnnuelle() <= unDebitMaxMachine(slot) * unHeuresAnPour(slot) + 0.0001; }
+      function unActiviteRealisable() { return unSlotsActifs().every(unRealisableSlot); }
+      function unActiverSplit() { // fige les heures de la Machine B (elle ne suit plus la A)
+        if (unSlotsActifs().length === 2 && unHeuresB == null) unHeuresB = unHeuresAmpl(0);
+      }
+      function unEcrireAmpl(slot, v) {
+        if (slot === 1 && unHeuresB != null) unHeuresB = v;
+        else document.getElementById("unHeuresSemaine").value = v;
+      }
+      function unMajDebitsDepuisHeures() {
+        var annuel = unActiviteAnnuelle();
+        if (!(annuel > 0)) return;
+        unSlotsActifs().forEach(function (slot) {
+          var heuresAn = unHeuresAnPour(slot);
+          if (heuresAn > 0) document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = Math.round(annuel / heuresAn * 100) / 100;
+        });
+      }
+      function unRecalerDebitsEtHeures() {
+        if (!unActiviteRealisable()) unActiverSplit();
+        unSlotsActifs().forEach(function (slot) {
+          var h = unHeuresAmpl(slot);
+          while (!unRealisableSlot(slot) && h < 24) { h += 0.5; unEcrireAmpl(slot, h); unHeuresGroupeForce = true; }
+        });
+        unMajDebitsDepuisHeures();
+      }
+      // Le simulateur baisse (ou monte) raisonnablement les examens par heure d'UNE machine :
+      // le nombre d'examens par an ne bouge PAS, ce sont ses heures d'ouverture qui
+      // s'ajustent. Plafonné à la limite haute de la machine ; si 24 h ne suffisent pas, le
+      // débit remonte.
+      function unDebitModifie(d, sourceId) {
+        var annuel = unActiviteAnnuelle();
+        var slot = sourceId === "unInstallB" ? 1 : 0;
+        if (!(annuel > 0) || !(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
+        unActiverSplit();
+        d = Math.min(d, unDebitMaxMachine(slot));
         var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
-        var h = (parseFloat(champHeures.value) || 0) + (cible - unHeuresParJourMoyen()) * jours / 5;
-        h = Math.max(1, Math.min(24, Math.round(h * 100) / 100));
-        champHeures.value = h;
+        var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
+        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
         unHeuresGroupeForce = true;
-        var dFinal = Math.round(annuel / unHeuresAnnuelles() * 100) / 100;
-        unSlotsActifs().forEach(function (slot) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = dFinal; });
+        unMajDebitsDepuisHeures();
         unMixSyncTous();
       }
       function unMixAppliquerActivite(annuel) {
@@ -2475,35 +2512,39 @@
         unMixSyncTous();
         unRenderPointMort();
       }
-      function unMixAppliquerHeures(h) {
-        h = Math.max(1, Math.min(24, Math.round(h * 2) / 2));
-        document.getElementById("unHeuresSemaine").value = h;
+      function unMixAppliquerHeures(slot, h) {
+        unActiverSplit();
+        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(h * 2) / 2)));
         unRecalerDebitsEtHeures(); // remonte les heures si le volume n'est plus réalisable
         unMixSyncTous();
         unRenderPointMort();
       }
       (function () {
         var fA = document.getElementById("unMixActiviteFader"), vA = document.getElementById("unMixActiviteVal");
-        var fH = document.getElementById("unMixHeuresFader"), vH = document.getElementById("unMixHeuresVal");
         fA.addEventListener("input", function () { unMixAppliquerActivite(parseFloat(fA.value) || 0); });
         vA.addEventListener("input", function () {
           var v = parseFloat(String(vA.value).replace(/\./g, "").replace(",", "."));
           if (!isFinite(v)) return;
-          unMixSaisie = true; unMixAppliquerActivite(v); unMixSaisie = false;
+          unMixSaisie = "unMixActiviteVal"; unMixAppliquerActivite(v); unMixSaisie = null;
         });
-        fH.addEventListener("input", function () { unMixAppliquerHeures(parseFloat(fH.value) || 0); });
-        vH.addEventListener("input", function () {
-          var v = parseFloat(String(vH.value).replace(",", "."));
-          if (!isFinite(v)) return;
-          unMixSaisie = true; unMixAppliquerHeures(v); unMixSaisie = false;
+        [["", 0], ["B", 1]].forEach(function (c) {
+          var suf = c[0], slot = c[1];
+          var fH = document.getElementById("unMixHeures" + suf + "Fader"), vH = document.getElementById("unMixHeures" + suf + "Val");
+          fH.addEventListener("input", function () { unMixAppliquerHeures(slot, parseFloat(fH.value) || 0); });
+          vH.addEventListener("input", function () {
+            var v = parseFloat(String(vH.value).replace(",", "."));
+            if (!isFinite(v)) return;
+            unMixSaisie = vH.id; unMixAppliquerHeures(slot, v); unMixSaisie = null;
+          });
+          [["Moins", -1], ["Plus", 1]].forEach(function (d) {
+            document.getElementById("unMixHeures" + suf + d[0]).addEventListener("click", function (e) {
+              unMixAppliquerHeures(slot, unHeuresAmpl(slot) + d[1] * 0.5 * (e.shiftKey ? 10 : 1));
+            });
+          });
         });
-        [["unMixActiviteMoins", -1, 50, unMixAppliquerActivite, unActiviteAnnuelle],
-         ["unMixActivitePlus", 1, 50, unMixAppliquerActivite, unActiviteAnnuelle],
-         ["unMixHeuresMoins", -1, 0.5, unMixAppliquerHeures, function () { return parseFloat(document.getElementById("unHeuresSemaine").value) || 0; }],
-         ["unMixHeuresPlus", 1, 0.5, unMixAppliquerHeures, function () { return parseFloat(document.getElementById("unHeuresSemaine").value) || 0; }]
-        ].forEach(function (d) {
+        [["unMixActiviteMoins", -1], ["unMixActivitePlus", 1]].forEach(function (d) {
           document.getElementById(d[0]).addEventListener("click", function (e) {
-            d[3](d[4]() + d[1] * d[2] * (e.shiftKey ? 10 : 1));
+            unMixAppliquerActivite(unActiviteAnnuelle() + d[1] * 50 * (e.shiftKey ? 10 : 1));
           });
         });
       })();
@@ -2512,12 +2553,15 @@
         var fader = document.getElementById("unMixActiviteFader");
         fader.value = Math.min(15000, annuel);
         fader.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
-        if (!unMixSaisie) document.getElementById("unMixActiviteVal").value = milliersFmt.format(annuel);
-        var h = parseFloat(document.getElementById("unHeuresSemaine").value) || 0;
-        var fH = document.getElementById("unMixHeuresFader");
-        fH.value = h;
-        fH.parentNode.style.setProperty("--pct", Math.max(0, Math.min(100, (h - 1) / 23 * 100)));
-        if (!unMixSaisie) document.getElementById("unMixHeuresVal").value = patientsFmt.format(h);
+        if (unMixSaisie !== "unMixActiviteVal") document.getElementById("unMixActiviteVal").value = milliersFmt.format(annuel);
+        [["", 0], ["B", 1]].forEach(function (c) {
+          var h = unHeuresAmpl(c[1]);
+          var fH = document.getElementById("unMixHeures" + c[0] + "Fader");
+          fH.value = h;
+          fH.parentNode.style.setProperty("--pct", Math.max(0, Math.min(100, (h - 1) / 23 * 100)));
+          if (unMixSaisie !== "unMixHeures" + c[0] + "Val") document.getElementById("unMixHeures" + c[0] + "Val").value = patientsFmt.format(h);
+        });
+        document.getElementById("unMixHeuresBCol").hidden = unSlotsActifs().length < 2;
         document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable());
       }
       function unDessinerCompo(slots, params) {
@@ -2655,7 +2699,7 @@
         document.getElementById(champ.valId).value = (champ.fmt || patientsFmt).format(v);
         document.getElementById(champ.sourceId).value = v;
         unMixEcritureProg = false;
-        if (champ.sourceId === "unInstallA" || champ.sourceId === "unInstallB") unDebitModifie(v);
+        if (champ.sourceId === "unInstallA" || champ.sourceId === "unInstallB") unDebitModifie(v, champ.sourceId);
         unRenderPointMort();
       }
 
