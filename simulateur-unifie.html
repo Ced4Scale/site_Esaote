@@ -222,6 +222,8 @@
     /* Point mort : un seul bloc, les 2 cartes (jour / annuel) y restent pliables. */
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
+    .un-compo-source { display: block; margin-top: .35rem; font-size: .74rem; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
+    #unCompoDate { font: inherit; font-size: .82rem; font-weight: 700; padding: .25rem .4rem; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; max-width: 100%; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; margin: .4rem 0 .2rem; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
@@ -2608,7 +2610,26 @@
       function unDessinerTableCompo() {
         var entrees = unCompoEntrees, tous = document.getElementById("unCompoShowAllCa").checked;
         var head = document.getElementById("unCompoTableHead"), body = document.getElementById("unCompoTableBody");
-        head.innerHTML = "<th></th>"; body.innerHTML = "";
+        head.innerHTML = ""; body.innerHTML = "";
+        // Coin haut-gauche : choix de la date d'application des forfaits techniques (même
+        // réglage que « Forfait technique » de Paramètres) + lien vers le texte officiel.
+        var thDate = document.createElement("th");
+        var selDate = document.createElement("select");
+        selDate.id = "unCompoDate"; selDate.setAttribute("aria-label", "Date d'application des forfaits techniques");
+        FT_CLASSES.le05.dates.forEach(function (d) {
+          var o = document.createElement("option"); o.value = d.iso; o.textContent = d.label; selDate.appendChild(o);
+        });
+        selDate.value = document.getElementById("unDate").value;
+        selDate.addEventListener("change", function () {
+          document.getElementById("unDate").value = selDate.value;
+          unRenderPointMort();
+        });
+        var infoDate = FT_DATES.filter(function (d) { return d.iso === selDate.value; })[0];
+        var lien = document.createElement("a");
+        lien.className = "un-compo-source"; lien.target = "_blank"; lien.rel = "noopener";
+        lien.href = infoDate ? infoDate.source : "sources-forfaits-techniques.html";
+        lien.textContent = "📄 " + (infoDate ? infoDate.sourceLabel : "Texte officiel") + " — texte officiel";
+        thDate.appendChild(selDate); thDate.appendChild(lien); head.appendChild(thDate);
         entrees.forEach(function (e) {
           var th = document.createElement("th"), sp = document.createElement("span");
           sp.className = "simulator__swatch-text"; sp.style.color = e.couleur; sp.textContent = e.nom;
