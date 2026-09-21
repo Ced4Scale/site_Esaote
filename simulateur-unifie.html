@@ -245,10 +245,12 @@
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
     /* Carte RSE (projet 1) — lignes de faits à barres, portées de simulateur-energie.html (.ene-fact-*). */
     #unRseCard[hidden] { display: none; }
-    .ene-fact-list { display: flex; flex-direction: column; gap: 1.1rem; }
+    .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
+    #unRseCard .simulator__legend { margin-bottom: 0; }
+    #unRseCard .simulator__chart-wrap { margin-bottom: 0; }
     /* Tous les titres de la carte RSE à la taille de la légende (« B — IRM générique 1,5 T »). */
-    .ene-fact-row-label { font-weight: 700; font-size: .82rem; white-space: nowrap; margin-bottom: .2rem; }
-    .ene-fact-bar-line { margin-bottom: .3rem; }
+    .ene-fact-row-label { font-weight: 700; font-size: .82rem; white-space: nowrap; margin-bottom: 0; line-height: 1.1; }
+    .ene-fact-bar-line { margin-bottom: .12rem; }
     .ene-fact-bar-line:last-child { margin-bottom: 0; }
     /* Même épaisseur que les barres du graphe SVG (barH = 11 unités sur un viewBox de 640 de large) : 11/640 de la largeur de la carte. */
     #unRseCard { container-type: inline-size; }
@@ -1060,7 +1062,7 @@
         <div class="simulator__chart-wrap" id="unRseChartWrap">
           <svg id="unRseChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des machines choisies"></svg>
         </div>
-        <div class="ene-fact-list" id="unRseFaits" style="margin-top:.8rem"></div>
+        <div class="ene-fact-list" id="unRseFaits" style="margin-top:0"></div>
       </details>
 
       <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
@@ -2603,8 +2605,8 @@
         // Titres du graphe : même taille À L'ÉCRAN que la légende (le SVG est mis à l'échelle : px ÷ échelle).
         var echelle = (svg.getBoundingClientRect().width / 640) || 1.5;
         var tailleTitre = (parseFloat(getComputedStyle(document.querySelector("#unRseLegende .simulator__legend-item") || svg).fontSize) || 13) / echelle;
-        var plotX0 = 4, plotW = 586, barH = 11, barGap = 4, groupGap = 26, top = 16, groupH = barH * res.length + barGap * (res.length - 1);
-        var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 20;
+        var plotX0 = 4, plotW = 586, barH = 11, barGap = 2, groupGap = 11, top = 12, groupH = barH * res.length + barGap * (res.length - 1);
+        var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 0;
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap), barX0 = plotX0 + (c.indent || 0), barPlotW = plotW - (c.indent || 0);
           var t = unSvgEl("text", { x: barX0, y: groupY - 5, class: "simulator__axis-label", "text-anchor": "start" });
