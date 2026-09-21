@@ -222,6 +222,7 @@
     /* Point mort : un seul bloc, les 2 cartes (jour / annuel) y restent pliables. */
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
+    .un-mixer__fader-unit { font-size: .7rem; font-weight: 600; }
     .un-compo-corps { display: flex; gap: 1rem; align-items: flex-start; }
     .un-compo-curseur { flex: 0 0 auto; padding-top: .4rem; }
     .un-mixer__pm { display: flex; gap: .3rem; }
@@ -928,19 +929,6 @@
         <div class="simulator__chart-wrap" style="flex:1 1 0;min-width:0">
           <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres de la composition des recettes de l'année 1, un par machine"></svg>
         </div>
-        <!-- Curseur « Examens par an » : miroir de « Votre activité » (Paramètres), quel que
-             soit son mode jour/an — même mécanique que le curseur Activité de simulateur-recettes. -->
-        <div class="un-mixer__fader-col un-compo-curseur" style="--fader-color:#21c7c1">
-          <span class="un-mixer__group-title">Examens par an</span>
-          <div class="un-mixer__bar">
-            <div class="un-mixer__bar-fill"></div>
-            <input type="range" id="unCompoActiviteFader" min="0" max="15000" step="50" value="0" aria-label="Nombre d'examens par an" />
-          </div>
-          <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unCompoActiviteVal" aria-label="Nombre d'examens par an, valeur" />
-          <div class="un-mixer__pm">
-            <button type="button" id="unCompoActiviteMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
-            <button type="button" id="unCompoActivitePlus" aria-label="Augmenter le nombre d'examens par an">+</button>
-          </div>
         </div>
         </div>
       </details>
@@ -953,6 +941,43 @@
            contrairement au reste du formulaire (lu seulement au clic "Voir les
            résultats possibles" sur l'écran 2). -->
       <div class="un-mixer" id="unMixerPointMort">
+        <!-- Examens par an : miroir de « Votre activité » (Paramètres, quel que soit son mode
+             jour/an). Le bouger recalcule aussi « Examens par heure » (= examens par an /
+             heures d'ouverture par an) ; si ce n'est pas réalisable avec les horaires, les
+             heures d'ouverture montent toutes seules et le groupe suivant apparaît. -->
+        <div class="un-mixer__group">
+          <span class="un-mixer__group-title">Examens par an</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <input type="range" id="unMixActiviteFader" min="0" max="15000" step="50" value="0" aria-label="Nombre d'examens par an" />
+              </div>
+              <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixActiviteVal" aria-label="Nombre d'examens par an, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixActiviteMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
+                <button type="button" id="unMixActivitePlus" aria-label="Augmenter le nombre d'examens par an">+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="un-mixer__group" id="unMixHeuresGroup" hidden>
+          <span class="un-mixer__group-title">Heures d'ouverture</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <input type="range" id="unMixHeuresFader" min="1" max="24" step="0.5" value="8" aria-label="Heures d'ouverture par jour, du lundi au vendredi" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresVal" aria-label="Heures d'ouverture par jour, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixHeuresMoins" aria-label="Diminuer les heures d'ouverture">−</button>
+                <button type="button" id="unMixHeuresPlus" aria-label="Augmenter les heures d'ouverture">+</button>
+              </div>
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
+          </div>
+        </div>
         <!-- Coût du kWh — miroir de #unKwh (écran 2, "Charges partagées"), un
              seul fader (pas de paire A/B, valeur commune aux 2 machines). ----->
         <div class="un-mixer__group">
@@ -1462,7 +1487,7 @@
       // graphique "Point mort annuel" tant que ce n'était pas encore corrigé le
       // 21/09/2026 — un seul tick JS synchrone entre les deux, rien de visible
       // pour le visiteur.
-      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = true; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
+      document.getElementById("unBtnVoirResultats").addEventListener("click", function () { document.getElementById("unPointMortCard").open = true; document.getElementById("unPointMortAnnuelCard").open = false; document.getElementById("unCompoCard").open = false; unHeuresGroupeForce = false; afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
       function appliquerNbMachines() {
         var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
@@ -2382,36 +2407,92 @@
         return "M" + cx + "," + cy + " L" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
           " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) + " Z";
       }
-      // Curseur « Examens par an » → écrit dans « Votre activité » (converti en patients/jour
-      // si le mode est « jour »), puis relance le calcul complet.
-      var unCompoSaisie = false;
-      function unCompoEcrireActivite(annuel) {
+      // Curseur « Examens par an » (table de mixage) → écrit dans « Votre activité » (converti
+      // en patients/jour si le mode est « jour »), recale les examens par heure de A et B
+      // (= examens par an / heures d'ouverture par an) et, si les horaires ne suffisent pas
+      // au débit maximal d'une machine, monte les heures d'ouverture par pas de 0,5 h
+      // (le curseur « Heures d'ouverture » apparaît alors, et reste réglable à la main).
+      var unMixSaisie = false, unHeuresGroupeForce = false;
+      function unDebitMaxMachine(slot) {
+        var config = unConfigMachinePointMort(slot);
+        if (!config.machine) return Infinity;
+        var DEBIT_DEFAUT = { "esaote-o-scan": 3, "generique-15t": 4, "generique-3t": 4 };
+        if (DEBIT_DEFAUT[config.machine.key] != null) return DEBIT_DEFAUT[config.machine.key];
+        var minutes = config.machine.dureeChangementMinutes + config.machine.dureeAcquisitionMinutes;
+        return minutes > 0 ? 60 / minutes : Infinity;
+      }
+      function unSlotsActifs() { return document.getElementById("unColB").hidden ? [0] : [0, 1]; }
+      function unDebitMaxCommun() {
+        return Math.min.apply(null, unSlotsActifs().map(unDebitMaxMachine));
+      }
+      function unHeuresAnnuelles() { return unHeuresParJourMoyen() * unJoursParMois() * 12; }
+      function unActiviteRealisable() { return unActiviteAnnuelle() <= unDebitMaxCommun() * unHeuresAnnuelles() + 0.0001; }
+      function unRecalerDebitsEtHeures() {
+        var annuel = unActiviteAnnuelle();
+        var champHeures = document.getElementById("unHeuresSemaine");
+        var h = parseFloat(champHeures.value) || 0;
+        while (!unActiviteRealisable() && h < 24) {
+          h += 0.5; champHeures.value = h; unHeuresGroupeForce = true;
+        }
+        var heuresAn = unHeuresAnnuelles();
+        if (annuel > 0 && heuresAn > 0) {
+          var d = Math.round(annuel / heuresAn * 100) / 100;
+          unSlotsActifs().forEach(function (slot) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = d; });
+        }
+      }
+      function unMixAppliquerActivite(annuel) {
         annuel = Math.max(0, Math.min(15000, Math.round(annuel)));
         var mode = document.getElementById("unActiviteMode").value;
         document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (5 * (52 / 12) * 12) * 1000) / 1000 : annuel;
         majActiviteLabel();
+        unRecalerDebitsEtHeures();
+        unMixSyncTous();
+        unRenderPointMort();
+      }
+      function unMixAppliquerHeures(h) {
+        h = Math.max(1, Math.min(24, Math.round(h * 2) / 2));
+        document.getElementById("unHeuresSemaine").value = h;
+        unRecalerDebitsEtHeures(); // remonte les heures si le volume n'est plus réalisable
+        unMixSyncTous();
         unRenderPointMort();
       }
       (function () {
-        var fader = document.getElementById("unCompoActiviteFader"), val = document.getElementById("unCompoActiviteVal");
-        fader.addEventListener("input", function () { unCompoEcrireActivite(parseFloat(fader.value) || 0); });
-        val.addEventListener("input", function () {
-          var v = parseFloat(String(val.value).replace(/\./g, "").replace(",", "."));
+        var fA = document.getElementById("unMixActiviteFader"), vA = document.getElementById("unMixActiviteVal");
+        var fH = document.getElementById("unMixHeuresFader"), vH = document.getElementById("unMixHeuresVal");
+        fA.addEventListener("input", function () { unMixAppliquerActivite(parseFloat(fA.value) || 0); });
+        vA.addEventListener("input", function () {
+          var v = parseFloat(String(vA.value).replace(/\./g, "").replace(",", "."));
           if (!isFinite(v)) return;
-          unCompoSaisie = true; unCompoEcrireActivite(v); unCompoSaisie = false;
+          unMixSaisie = true; unMixAppliquerActivite(v); unMixSaisie = false;
         });
-        [["unCompoActiviteMoins", -1], ["unCompoActivitePlus", 1]].forEach(function (d) {
+        fH.addEventListener("input", function () { unMixAppliquerHeures(parseFloat(fH.value) || 0); });
+        vH.addEventListener("input", function () {
+          var v = parseFloat(String(vH.value).replace(",", "."));
+          if (!isFinite(v)) return;
+          unMixSaisie = true; unMixAppliquerHeures(v); unMixSaisie = false;
+        });
+        [["unMixActiviteMoins", -1, 50, unMixAppliquerActivite, unActiviteAnnuelle],
+         ["unMixActivitePlus", 1, 50, unMixAppliquerActivite, unActiviteAnnuelle],
+         ["unMixHeuresMoins", -1, 0.5, unMixAppliquerHeures, function () { return parseFloat(document.getElementById("unHeuresSemaine").value) || 0; }],
+         ["unMixHeuresPlus", 1, 0.5, unMixAppliquerHeures, function () { return parseFloat(document.getElementById("unHeuresSemaine").value) || 0; }]
+        ].forEach(function (d) {
           document.getElementById(d[0]).addEventListener("click", function (e) {
-            unCompoEcrireActivite(unActiviteAnnuelle() + d[1] * 50 * (e.shiftKey ? 10 : 1));
+            d[3](d[4]() + d[1] * d[2] * (e.shiftKey ? 10 : 1));
           });
         });
       })();
       function unCompoSyncCurseur() {
         var annuel = Math.round(unActiviteAnnuelle());
-        var fader = document.getElementById("unCompoActiviteFader");
+        var fader = document.getElementById("unMixActiviteFader");
         fader.value = Math.min(15000, annuel);
         fader.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
-        if (!unCompoSaisie) document.getElementById("unCompoActiviteVal").value = milliersFmt.format(annuel);
+        if (!unMixSaisie) document.getElementById("unMixActiviteVal").value = milliersFmt.format(annuel);
+        var h = parseFloat(document.getElementById("unHeuresSemaine").value) || 0;
+        var fH = document.getElementById("unMixHeuresFader");
+        fH.value = h;
+        fH.parentNode.style.setProperty("--pct", Math.max(0, Math.min(100, (h - 1) / 23 * 100)));
+        if (!unMixSaisie) document.getElementById("unMixHeuresVal").value = patientsFmt.format(h);
+        document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable());
       }
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
