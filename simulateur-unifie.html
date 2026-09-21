@@ -222,6 +222,9 @@
     /* Point mort : un seul bloc, les 2 cartes (jour / annuel) y restent pliables. */
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
+    .un-compo-vue { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; margin: .4rem 0 .2rem; }
+    .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
+    .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
     .un-mixer__fader-unit { font-size: .7rem; font-weight: 600; }
     .un-compo-corps { display: flex; gap: 1rem; align-items: flex-start; }
     .un-compo-curseur { flex: 0 0 auto; padding-top: .4rem; }
@@ -925,11 +928,27 @@
       <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCompoCard">
         <summary>Composition des recettes de l'année 1</summary>
         <div class="simulator__legend" id="unCompoLegende"></div>
-        <div class="un-compo-corps">
-        <div class="simulator__chart-wrap" style="flex:1 1 0;min-width:0">
-          <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres de la composition des recettes de l'année 1, un par machine"></svg>
+        <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
+          <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
+          <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
         </div>
+        <div class="simulator__chart-wrap">
+          <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
         </div>
+        <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
+             Bascule), au volume de « Votre activité », avec la case « Afficher tous les CA ». -->
+        <div id="unCompoTableWrap" hidden>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table simulator__table--compare2">
+              <thead><tr id="unCompoTableHead"></tr></thead>
+              <tbody id="unCompoTableBody"></tbody>
+            </table>
+          </div>
+          <label class="un-bareme-showall">
+            <input type="checkbox" id="unCompoShowAllCa">
+            Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
+          </label>
+          <div class="un-ca-tranche-info" id="unCompoCaInfo" hidden></div>
         </div>
       </details>
 
@@ -2573,6 +2592,93 @@
           " L" + (cx + ri * Math.cos(a1)) + "," + (cy + ri * Math.sin(a1)) +
           " A" + ri + "," + ri + " 0 " + large + " 0 " + (cx + ri * Math.cos(a0)) + "," + (cy + ri * Math.sin(a0)) + " Z";
       }
+      function unTranchesCompo(machine, params) {
+        var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
+        var ligne = classe.dates.filter(function (d) { return d.iso === params.dateIso; })[0];
+        var plein = ligne.plein[params.zone];
+        return [
+          { debut: 1, fin: classe.REF, montant: plein[params.amortiKey] != null ? plein[params.amortiKey] : plein.nonAmorti },
+          { debut: classe.REF + 1, fin: classe.SEUIL1, montant: ligne.reduits.seuil1 },
+          { debut: classe.SEUIL1 + 1, fin: classe.SEUIL2, montant: ligne.reduits.seuil2 },
+          { debut: classe.SEUIL2 + 1, fin: null, montant: ligne.reduits.plafond }
+        ];
+      }
+      var unCompoEntrees = [];
+      function unCompoVueHisto() { return document.querySelector('input[name="unCompoVue"]:checked').value === "histo"; }
+      function unDessinerTableCompo() {
+        var entrees = unCompoEntrees, tous = document.getElementById("unCompoShowAllCa").checked;
+        var head = document.getElementById("unCompoTableHead"), body = document.getElementById("unCompoTableBody");
+        head.innerHTML = "<th></th>"; body.innerHTML = "";
+        entrees.forEach(function (e) {
+          var th = document.createElement("th"), sp = document.createElement("span");
+          sp.className = "simulator__swatch-text"; sp.style.color = e.couleur; sp.textContent = e.nom;
+          th.appendChild(sp); head.appendChild(th);
+        });
+        var totaux = entrees.map(function () { return 0; });
+        ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"].forEach(function (label, i) {
+          var tr = document.createElement("tr"), tdL = document.createElement("td");
+          tdL.innerHTML = "<strong>" + label + "</strong>"; tr.appendChild(tdL);
+          entrees.forEach(function (e, k) {
+            var t = e.tranches[i], td = document.createElement("td"), l1 = document.createElement("span");
+            l1.className = "un-bareme-ligne1";
+            var plage = document.createElement("span");
+            plage.textContent = (t.fin != null ? "de " + milliersFmt.format(t.debut) + " à " + milliersFmt.format(t.fin) : "au-delà de " + milliersFmt.format(t.debut - 1)) + " ex./an";
+            l1.appendChild(plage); l1.appendChild(document.createTextNode(" "));
+            var examens = Math.max(0, Math.min(e.volume, t.fin != null ? t.fin : e.volume) - (t.debut - 1));
+            var ca = examens * t.montant; totaux[k] += ca;
+            if (tous) {
+              var tarif = document.createElement("span");
+              tarif.className = "un-bareme-tarif"; tarif.style.color = e.couleur; tarif.textContent = unEur(t.montant, 2);
+              l1.appendChild(tarif);
+            } else {
+              var btn = document.createElement("button");
+              btn.type = "button"; btn.className = "un-ca-tranche-btn"; btn.style.color = e.couleur; btn.textContent = unEur(t.montant, 2);
+              btn.dataset.examens = examens; btn.dataset.montant = t.montant; btn.dataset.label = label; btn.dataset.machine = e.nom;
+              l1.appendChild(btn);
+            }
+            td.appendChild(l1);
+            var caSp = document.createElement("span");
+            caSp.className = "un-bareme-ca"; caSp.style.color = e.couleur;
+            caSp.style.visibility = tous ? "visible" : "hidden"; caSp.textContent = unEur(ca, 2);
+            td.appendChild(caSp); tr.appendChild(td);
+          });
+          body.appendChild(tr);
+        });
+        var trT = document.createElement("tr"), tdT = document.createElement("td");
+        tdT.innerHTML = "<strong>Total</strong>"; trT.appendChild(tdT);
+        entrees.forEach(function (e, k) {
+          var td = document.createElement("td"), sp = document.createElement("span");
+          sp.className = "un-bareme-ca"; sp.style.color = e.couleur; sp.textContent = unEur(totaux[k], 2);
+          td.appendChild(sp); trT.appendChild(td);
+        });
+        body.appendChild(trT);
+        if (entrees.length === 2) {
+          var tr2 = document.createElement("tr"), td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
+          td2L.innerHTML = "<strong>Total des 2 machines</strong>"; tr2.appendChild(td2L);
+          td2.colSpan = 2; sp2.className = "un-bareme-ca"; sp2.textContent = unEur(totaux[0] + totaux[1], 2);
+          td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
+        }
+      }
+      var unCompoInfoTimer = null;
+      document.getElementById("unCompoTableWrap").addEventListener("click", function (e) {
+        var btn = e.target.closest(".un-ca-tranche-btn");
+        if (!btn) return;
+        var examens = parseFloat(btn.dataset.examens), montant = parseFloat(btn.dataset.montant);
+        var info = document.getElementById("unCompoCaInfo");
+        info.hidden = false;
+        info.innerHTML = "<strong>" + btn.dataset.machine + " — " + btn.dataset.label + "</strong><br>" +
+          milliersFmt.format(examens) + " examen" + (examens === 1 ? "" : "s") + " × " + unEur(montant, 2) +
+          " = <strong>" + unEur(examens * montant, 2) + "</strong>";
+        clearTimeout(unCompoInfoTimer);
+        unCompoInfoTimer = setTimeout(function () { info.hidden = true; }, 6000);
+      });
+      document.getElementById("unCompoShowAllCa").addEventListener("change", function () {
+        document.getElementById("unCompoCaInfo").hidden = true;
+        unDessinerTableCompo();
+      });
+      document.querySelectorAll('input[name="unCompoVue"]').forEach(function (r) {
+        r.addEventListener("change", function () { unRenderPointMort(); });
+      });
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
@@ -2591,9 +2697,14 @@
           var config = unConfigMachinePointMort(slot);
           if (!config.machine) return;
           var detail = unDetailCA(volume, config.machine, params);
-          camemberts.push({ label: config.machine.nomCourt, volume: volume, detail: detail,
+          camemberts.push({ label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
         });
+        var histo = unCompoVueHisto();
+        svgC.setAttribute("viewBox", histo ? "0 0 640 330" : "0 0 640 175");
+        document.getElementById("unCompoTableWrap").hidden = histo;
+        unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
+        if (!histo) unDessinerTableCompo();
         if (!camemberts.length) return;
 
         var maxR = 72, centerY = 136, n = camemberts.length;
@@ -2628,6 +2739,7 @@
           var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
 
+          if (!histo) return;
           var barGap = 16, barW = (halfWidth * 2 - barGap * (UN_PALIERS.length + 1)) / UN_PALIERS.length;
           UN_PALIERS.forEach(function (p, k) {
             var val = b.detail[p.key] || 0, bx = cx - halfWidth + barGap * (k + 1) + barW * k;
