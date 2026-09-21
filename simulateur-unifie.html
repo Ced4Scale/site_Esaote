@@ -189,8 +189,8 @@
        writing-mode vertical, accent-color posé explicitement par piste. */
     .un-mixer {
       margin-top: 1.2rem; border-radius: var(--radius); padding: 1.3rem 1.2rem 1.1rem;
-      background: linear-gradient(180deg, #5cfff2 0%, #0f8f92 55%, #072e2c 100%);
-      color: #eafffd; display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start;
+      background: #fff; border: 1px solid #d9dee5;
+      color: #000; display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start;
     }
     .un-mixer__header { flex: 1 1 100%; display: flex; align-items: center; gap: .5rem; margin-bottom: .2rem; }
     .un-mixer__title { font-weight: 700; font-size: .88rem; }
@@ -199,34 +199,34 @@
     .un-mixer__faders { display: flex; gap: 1.1rem; }
     .un-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
     .un-mixer__fader-col[hidden] { display: none; }
-    .un-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: rgba(255,255,255,.2); overflow: hidden; }
-    .un-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); opacity: .85; }
+    .un-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: #e5e7eb; overflow: hidden; }
+    .un-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); opacity: .55; }
     .un-mixer__fader-col-slot {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
       writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap;
-      font-size: .74rem; font-weight: 800; color: #fff; text-shadow: 0 0 3px rgba(0,0,0,.55);
+      font-size: .74rem; font-weight: 800; color: #000;
     }
     .un-mixer__bar input[type="range"] {
       position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0;
       writing-mode: vertical-lr; direction: rtl; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer;
     }
     .un-mixer__bar input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
-    .un-mixer__bar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .un-mixer__bar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); box-shadow: 0 1px 3px rgba(0,0,0,.4); outline: 1px solid #9aa3b0; }
     .un-mixer__bar input[type="range"]::-moz-range-track { background: transparent; }
     .un-mixer__bar input[type="range"]::-moz-range-thumb { width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); }
     .un-mixer__fader-value {
       width: 3.7rem; text-align: center; font-size: .8rem; font-weight: 600;
-      border-radius: .4rem; border: 1px solid rgba(255,255,255,.45); background: rgba(255,255,255,.14);
-      color: #fff; padding: .18rem .2rem;
+      border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff;
+      color: #000; padding: .18rem .2rem;
     }
-    .un-mixer__fader-value:focus-visible { outline: 2px solid #fff; }
+    .un-mixer__fader-value:focus-visible { outline: 2px solid #000; }
     .un-mixer__check-group { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; justify-content: center; min-width: 12rem; }
     .un-mixer__check-group label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; }
     .un-mixer__check-group input[type="checkbox"] { width: 17px; height: 17px; margin: 0; }
     /* Bulle d'aide 💡 sur fond sombre : reprendre les mêmes variables .un-info-wrap
        mais le bouton doit rester lisible sur le dégradé (pas de changement de
        structure, juste le contexte visuel autour). */
-    .un-mixer .un-info-btn { background: rgba(255,255,255,.85); }
+    .un-mixer .un-info-btn { background: #eef1f5; }
 
     /* ================= Étape 3 : Bascule progressive A↔B ==================
        Motif "Curseur de répartition entre deux machines" du skill, repris de
@@ -605,6 +605,13 @@
               </div>
             </details>
           </details>
+
+          <div class="field" id="unNbMachinesField" style="margin-top:1.2rem">
+            <div class="simulator__toggle">
+              <label><input type="radio" name="unNbMachines" value="2" checked /> Comparer deux IRM</label>
+              <label><input type="radio" name="unNbMachines" value="1" /> Une seule IRM</label>
+            </div>
+          </div>
 
         </div>
 
@@ -1380,9 +1387,9 @@
       }
 
       var PROJET_INFOS = {
-        1: { kicker: "Projet 01", titre: "Première installation d'IRM" },
-        2: { kicker: "Projet 02", titre: "IRM supplémentaire" },
-        3: { kicker: "Projet 03", titre: "Remplacement d'un scanner" }
+        1: { kicker: "Projet 01", titre: "Première installation d'IRM", nbMachinesVisible: true },
+        2: { kicker: "Projet 02", titre: "IRM supplémentaire", nbMachinesVisible: true },
+        3: { kicker: "Projet 03", titre: "Remplacement d'un scanner", nbMachinesVisible: false }
       };
 
       document.querySelectorAll(".un-projet-card").forEach(function (card) {
@@ -1406,6 +1413,17 @@
         });
       });
 
+      // Ouvrir « Autre charge » (Machine A ou B) referme toutes les autres fenêtres à
+      // triangle du formulaire : Paramètres et ses sous-sections, « Autre charge » de
+      // l'autre machine, réglages sous « Choix IRM » de l'autre machine.
+      document.querySelectorAll("#unColA details.un-autre-rh, #unColB details.un-autre-rh").forEach(function (d) {
+        d.addEventListener("toggle", function () {
+          if (!d.open) return;
+          document.querySelectorAll("#unLayout3 details").forEach(function (o) { if (o !== d) o.open = false; });
+          unColReplier(d.closest("#unColA") ? "B" : "A", true);
+        });
+      });
+
       // Révéler l'écran Résultats AVANT de calculer/dessiner les graphiques (pas
       // après) — sinon toute mesure SVG (getBBox()) faite pendant que l'écran est
       // encore `hidden` renvoie 0 (un élément cache/un ancêtre caché n'a pas de
@@ -1415,11 +1433,20 @@
       // pour le visiteur.
       document.getElementById("unBtnVoirResultats").addEventListener("click", function () { afficherEcran("resultats"); unRenderPointMort(); unRenderBascule(); unRenderCtIrm(); });
 
+      function appliquerNbMachines() {
+        var deux = document.querySelector('input[name="unNbMachines"]:checked').value === "2";
+        document.getElementById("unColB").hidden = !deux;
+      }
+      document.querySelectorAll('input[name="unNbMachines"]').forEach(function (r) {
+        r.addEventListener("change", appliquerNbMachines);
+      });
+
       function choisirProjet(n) {
         projetActuel = n;
         var infos = PROJET_INFOS[n];
         document.getElementById("unProjetKicker").textContent = infos.kicker;
         document.getElementById("unProjetTitre").textContent = infos.titre;
+        document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
         // Verrou "marques concurrentes" : concerne uniquement MACHINES_IRM (projets 01/02),
         // masqué pour le projet 03 (scanner/Esaote uniquement, pas de marque concurrente
         // d'IRM affichée dans ces 2 listes-là).
@@ -1455,12 +1482,13 @@
           document.getElementById("unRseWrapA").hidden = true;
           peuplerMachineSelect(selectA, machinesIrmVisibles(), "esaote-o-scan");
           peuplerMachineSelect(selectB, machinesIrmVisibles(), "generique-15t");
-          document.getElementById("unColB").hidden = false;
+          appliquerNbMachines();
         }
         reinitialiserMerm(selectA, mermA); reinitialiserMerm(selectB, mermB);
         reinitialiserInstall(selectA, installA); reinitialiserInstall(selectB, installB);
         reinitialiserLoyer(selectA, document.getElementById("unLoyerA"), loyerHintA);
         reinitialiserLoyer(selectB, document.getElementById("unLoyerB"), loyerHintB);
+        appliquerMembreOscan(selectA, "A"); appliquerMembreOscan(selectB, "B");
 
         unColReplier("A", true); unColReplier("B", true);
         afficherEcran("form");
@@ -1561,6 +1589,8 @@
         "ge-optima-mr450w": 25000,
         "philips-ambition-s": 23000,
         "philips-ambition-x": 24500,
+        "generique-15t": 25000,
+        "generique-3t": 25000,
         "siemens-goall": 10500,
         "siemens-gotop": 12000
       };
@@ -1572,6 +1602,15 @@
         var connu = LOYERS_BASE[machine.key] != null;
         input.value = milliersFmt.format(loyerParDefaut(machine));
         hintEl.textContent = connu ? "" : "Pas de loyer de référence connu pour cette machine — valeur de repli, à ajuster.";
+      }
+      // O-scan : 100 % des examens sont des examens « membre » (décision Cédric 21/09/2026) —
+      // valeur imposée et champ verrouillé ; ailleurs le champ est libre (25 % par défaut).
+      function appliquerMembreOscan(select, suffix) {
+        var input = document.getElementById("unMembre" + suffix);
+        var oscan = select.value === "esaote-o-scan";
+        if (oscan) input.value = 100;
+        else if (input.readOnly) input.value = 25;
+        input.readOnly = oscan;
       }
       var loyerHintA = document.getElementById("unLoyerHintA"), loyerHintB = document.getElementById("unLoyerHintB");
 
@@ -1595,10 +1634,12 @@
       selectA.addEventListener("change", function () {
         reinitialiserMerm(selectA, mermA); reinitialiserInstall(selectA, installA);
         reinitialiserLoyer(selectA, document.getElementById("unLoyerA"), loyerHintA);
+        appliquerMembreOscan(selectA, "A");
       });
       selectB.addEventListener("change", function () {
         reinitialiserMerm(selectB, mermB); reinitialiserInstall(selectB, installB);
         reinitialiserLoyer(selectB, document.getElementById("unLoyerB"), loyerHintB);
+        appliquerMembreOscan(selectB, "B");
       });
 
       // ---------------------------------------------------------------------
@@ -2313,6 +2354,7 @@
         if (!isFinite(v)) v = min;
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
+        fader.disabled = val.readOnly = source.readOnly;
         fader.value = v;
         unMixMajFill(fader);
         val.value = (champ.fmt || patientsFmt).format(v);
