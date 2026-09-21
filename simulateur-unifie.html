@@ -246,8 +246,8 @@
     /* Carte RSE (projet 1) — lignes de faits à barres, portées de simulateur-energie.html (.ene-fact-*). */
     #unRseCard[hidden] { display: none; }
     .ene-fact-list { display: flex; flex-direction: column; gap: 1.1rem; }
-    .ene-fact-row-label { font-weight: 700; font-size: clamp(.78rem, 3vw, .92rem); white-space: nowrap; margin-bottom: .35rem; }
-    .ene-fact-row--strong .ene-fact-row-label { font-size: .98rem; }
+    /* Tous les titres de la carte RSE à la taille de la légende (« B — IRM générique 1,5 T »). */
+    .ene-fact-row-label { font-weight: 700; font-size: .82rem; white-space: nowrap; margin-bottom: .2rem; }
     .ene-fact-bar-line { margin-bottom: .3rem; }
     .ene-fact-bar-line:last-child { margin-bottom: 0; }
     /* Même épaisseur que les barres du graphe SVG (barH = 11 unités sur un viewBox de 640 de large) : 11/640 de la largeur de la carte. */
@@ -2600,12 +2600,15 @@
       ];
       function unRsePaires(res, categories, onClic) {
         var svg = document.getElementById("unRseChart"); svg.innerHTML = "";
-        var plotX0 = 4, plotW = 586, barH = 11, barGap = 4, groupGap = 34, top = 22, groupH = barH * res.length + barGap * (res.length - 1);
+        // Titres du graphe : même taille À L'ÉCRAN que la légende (le SVG est mis à l'échelle : px ÷ échelle).
+        var echelle = (svg.getBoundingClientRect().width / 640) || 1.5;
+        var tailleTitre = (parseFloat(getComputedStyle(document.querySelector("#unRseLegende .simulator__legend-item") || svg).fontSize) || 13) / echelle;
+        var plotX0 = 4, plotW = 586, barH = 11, barGap = 4, groupGap = 26, top = 16, groupH = barH * res.length + barGap * (res.length - 1);
         var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 20;
         categories.forEach(function (c, gi) {
           var groupY = top + gi * (groupH + groupGap), barX0 = plotX0 + (c.indent || 0), barPlotW = plotW - (c.indent || 0);
-          var t = unSvgEl("text", { x: barX0, y: groupY - 8, class: "simulator__axis-label", "text-anchor": "start" });
-          t.style.fontSize = "16px"; t.style.fontWeight = "700"; t.style.fill = "var(--ink)"; t.textContent = c.label;
+          var t = unSvgEl("text", { x: barX0, y: groupY - 5, class: "simulator__axis-label", "text-anchor": "start" });
+          t.style.fontSize = tailleTitre + "px"; t.style.fontWeight = "700"; t.style.fill = "var(--ink)"; t.textContent = c.label;
           if (onClic) { t.style.cursor = "pointer"; t.addEventListener("click", function () { onClic(c); }); }
           svg.appendChild(t);
           var xMax = Math.max.apply(null, res.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
@@ -2632,6 +2635,8 @@
           else if (c.key === "socle") { unRseSocle = !unRseSocle; unRseGraphe(res); }
         });
       }
+      document.getElementById("unRseCard").addEventListener("toggle", function () { if (this.open) unRseRendre(); });
+      window.addEventListener("resize", function () { if (document.getElementById("unRseCard").open) unRseRendre(); });
       function unRseRendre() {
         var card = document.getElementById("unRseCard");
         card.hidden = projetActuel !== 1;
