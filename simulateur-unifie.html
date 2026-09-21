@@ -260,6 +260,9 @@
     .un-compo-moyen-tete { display: flex; align-items: center; gap: .5rem; margin: .3rem 0 .2rem; font-size: .9rem; }
     .un-outils-sous { margin: .1rem 0 .3rem 1.6rem; }
     .un-outils-sous[hidden] { display: none; }
+    #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
+    .un-outils-poignee { cursor: grab; touch-action: none; user-select: none; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-align: center; padding: .15rem 0 .35rem; margin: -.25rem -.4rem .3rem; border-bottom: 1px dashed var(--un-info-bd); color: var(--muted); }
+    .un-outils-poignee:active { cursor: grabbing; }
     #unCompoOutilsPop { width: min(calc(100vw - 4.5rem), 400px); max-width: none; overflow-x: hidden; }
     #unCompoOutilsPop .un-outils-check { white-space: normal; align-items: flex-start; }
     #unCompoOutilsPop .un-outils-check input { margin-top: .2rem; flex: none; }
@@ -1318,6 +1321,7 @@
           <span class="un-info-wrap">
             <button type="button" class="un-info-btn" id="unCompoOutilsBtn" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes">🧰</button>
             <div class="un-info-pop" id="unCompoOutilsPop" hidden>
+              <div class="un-outils-poignee" id="unCompoOutilsPoignee" title="Glisser pour déplacer la boîte à outils (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="un-outils-titre">Affichage</div>
               <label class="un-outils-check"><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
               <label class="un-outils-check"><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
@@ -3289,6 +3293,31 @@
       });
 
       wireOutilsBtn("unCompoOutilsBtn", "unCompoOutilsPop");
+      // Boîte à outils déplaçable : glisser la poignée ; la position est mémorisée (localStorage) et
+      // reste la même à la réouverture ; double-clic sur la poignée = position d'origine.
+      (function () {
+        var pop = document.getElementById("unCompoOutilsPop"), poignee = document.getElementById("unCompoOutilsPoignee");
+        var dx = 0, dy = 0, dep = null, CLE = "ced4scale-unifie-boite-outils-pos";
+        function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
+        try { var m = JSON.parse(localStorage.getItem(CLE) || "null"); if (m) { dx = m.dx || 0; dy = m.dy || 0; appliquer(); } } catch (e) {}
+        poignee.addEventListener("pointerdown", function (e) {
+          dep = { x: e.clientX - dx, y: e.clientY - dy };
+          poignee.setPointerCapture(e.pointerId); e.preventDefault();
+        });
+        poignee.addEventListener("pointermove", function (e) {
+          if (!dep) return;
+          dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer();
+        });
+        function fin() {
+          if (!dep) return; dep = null;
+          try { localStorage.setItem(CLE, JSON.stringify({ dx: dx, dy: dy })); } catch (e) {}
+        }
+        poignee.addEventListener("pointerup", fin); poignee.addEventListener("pointercancel", fin);
+        poignee.addEventListener("dblclick", function () {
+          dx = 0; dy = 0; appliquer();
+          try { localStorage.removeItem(CLE); } catch (e) {}
+        });
+      })();
 
       // =======================================================================
       // Étape 3 — Bascule progressive A↔B (projet 02 "IRM supplémentaire"
