@@ -221,10 +221,12 @@
     }
     /* Point mort : un seul bloc, les 2 cartes (jour / annuel) y restent pliables. */
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
+    .un-bloc-point-mort:fullscreen { justify-content: flex-start; }
+    .un-bloc-point-mort:fullscreen > .un-sous-carte, .un-bloc-point-mort:fullscreen > .un-mixer { width: 100%; box-sizing: border-box; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
     .un-compo-source { display: block; margin-top: .35rem; font-size: .74rem; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
     #unCompoDate { font: inherit; font-size: .82rem; font-weight: 700; padding: .25rem .4rem; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; max-width: 100%; }
-    .un-compo-vue { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; margin: .4rem 0 .2rem; }
+    .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
     .un-compo-vue input { width: 16px; height: 16px; margin: 0; }
     .un-mixer__fader-unit { font-size: .7rem; font-weight: 600; }
@@ -892,7 +894,13 @@
            existe déjà dans le fichier source (pointMortMois / joursParMois), ce
            n'est pas une conversion inventée ici. Bascule progressive et CT vs IRM
            restent hors périmètre (voir consigne). -->
-      <div class="simulator__chart-card un-bloc-point-mort">
+      <div class="simulator__chart-card un-bloc-point-mort" id="unBlocPointMort">
+      <button type="button" class="chart-card-fullscreen-btn" id="unBlocFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
       <details class="simulator__chart-card simulator__chart-card--collapsible un-sous-carte" id="unPointMortCard" open>
         <summary id="unPointMortSummary">Point mort — nombre d'examens par jour</summary>
         <div class="simulator__chart-wrap" id="unPointMortJourVue">
@@ -928,14 +936,22 @@
            la date, la zone et « amortie / non amortie » viennent du formulaire. Volume =
            « Votre activité » (donc pas de curseur d'activité ici, déjà saisie). -->
       <details class="simulator__chart-card simulator__chart-card--collapsible" id="unCompoCard">
-        <summary>Composition des recettes de l'année 1</summary>
+        <summary>
+            <button type="button" class="chart-card-fullscreen-btn" id="unCompoFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran">
+              <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+                <g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+                <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
+              </svg>
+            </button>
+            Composition des recettes de l'année 1
+          </summary>
         <div class="simulator__legend" id="unCompoLegende"></div>
         <div class="un-compo-vue" role="radiogroup" aria-label="Affichage sous les demi-anneaux">
           <label><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
           <label><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
         </div>
         <div class="simulator__chart-wrap">
-          <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
+          <svg id="unCompoChart" class="simulator__chart" viewBox="0 0 640 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Demi-anneaux de la composition des recettes de l'année 1, un par machine, avec l'histogramme des paliers"></svg>
         </div>
         <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
              Bascule), au volume de « Votre activité », avec la case « Afficher tous les CA ». -->
@@ -2594,6 +2610,38 @@
           " L" + (cx + ri * Math.cos(a1)) + "," + (cy + ri * Math.sin(a1)) +
           " A" + ri + "," + ri + " 0 " + large + " 0 " + (cx + ri * Math.cos(a0)) + "," + (cy + ri * Math.sin(a0)) + " Z";
       }
+      // Plein écran (icône en haut à droite) — pour le bloc des 2 points morts et pour la carte
+      // « Composition des recettes » : la table de mixage (un seul élément, partagé) est
+      // déplacée DANS le cadre en plein écran puis remise à sa place à la sortie, pour rester
+      // présente et pilotable.
+      (function () {
+        var mixer = document.getElementById("unMixerPointMort");
+        var homeParent = mixer.parentNode, homeNext = mixer.nextSibling;
+        function remettreMixer() {
+          if (mixer.parentNode === homeParent) return;
+          if (homeNext && homeNext.parentNode === homeParent) homeParent.insertBefore(mixer, homeNext);
+          else homeParent.appendChild(mixer);
+        }
+        function cabler(btnId, cardId) {
+          var btn = document.getElementById(btnId), card = document.getElementById(cardId);
+          btn.addEventListener("click", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            if (document.fullscreenElement === card) { document.exitFullscreen(); return; }
+            if (card.tagName === "DETAILS") card.open = true;
+            Array.prototype.forEach.call(card.querySelectorAll("details"), function (d) { d.open = true; });
+            card.appendChild(mixer);
+            card.requestFullscreen();
+          });
+          document.addEventListener("fullscreenchange", function () {
+            var actif = document.fullscreenElement === card;
+            btn.classList.toggle("is-fullscreen", actif);
+            btn.setAttribute("aria-pressed", String(actif));
+            if (!actif && document.fullscreenElement == null) remettreMixer();
+          });
+        }
+        cabler("unCompoFsBtn", "unCompoCard");
+        cabler("unBlocFsBtn", "unBlocPointMort");
+      })();
       function unTranchesCompo(machine, params) {
         var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
         var ligne = classe.dates.filter(function (d) { return d.iso === params.dateIso; })[0];
@@ -2722,19 +2770,19 @@
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond });
         });
         var histo = unCompoVueHisto();
-        svgC.setAttribute("viewBox", histo ? "0 0 640 330" : "0 0 640 175");
+        svgC.setAttribute("viewBox", histo ? "0 0 640 188" : "0 0 640 120");
         document.getElementById("unCompoTableWrap").hidden = histo;
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume }; });
         if (!histo) unDessinerTableCompo();
         if (!camemberts.length) return;
 
-        var maxR = 72, centerY = 136, n = camemberts.length;
+        var maxR = 56, centerY = 90, n = camemberts.length;
         var centers = n === 1 ? [320] : [170, 470], halfWidth = n === 1 ? 140 : 85;
         var maxTotal = Math.max.apply(null, camemberts.map(function (b) { return b.total; }));
         var maxPalier = 0;
         camemberts.forEach(function (b) { UN_PALIERS.forEach(function (p) { if (b.detail[p.key] > maxPalier) maxPalier = b.detail[p.key]; }); });
         var yMax = maxPalier > 0 ? maxPalier * 1.06 : 1;
-        var BAR_TOP = 208, BAR_BOTTOM = 300, BAR_LABEL_Y = 318;
+        var BAR_TOP = 104, BAR_BOTTOM = 168, BAR_LABEL_Y = 181;
 
         camemberts.forEach(function (b, i) {
           var cx = centers[i];
@@ -2754,7 +2802,7 @@
             svgC.appendChild(lab);
             start = end;
           });
-          var cap = unSvgEl("text", { x: cx, y: 17, class: "simulator__pie-caption", "text-anchor": "middle" });
+          var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
           var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + " : "; cap.appendChild(s1);
           var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); s2.textContent = unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
           var s3 = unSvgEl("tspan", {}); s3.textContent = " / examen"; cap.appendChild(s3);
