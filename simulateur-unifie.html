@@ -219,6 +219,9 @@
       border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff;
       color: #000; padding: .18rem .2rem;
     }
+    .un-mixer__pm { display: flex; gap: .3rem; }
+    .un-mixer__pm button { width: 1.7rem; height: 1.5rem; padding: 0; border: 1px solid #b8c0cc; border-radius: .4rem; background: #fff; color: #000; font-weight: 800; font-size: .95rem; line-height: 1; cursor: pointer; }
+    .un-mixer__pm button:hover { background: #eef1f5; }
     .un-mixer__fader-value:focus-visible { outline: 2px solid #000; }
     .un-mixer__check-group { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; justify-content: center; min-width: 12rem; }
     .un-mixer__check-group label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; }
@@ -1590,7 +1593,7 @@
         "philips-ambition-s": 23000,
         "philips-ambition-x": 24500,
         "generique-15t": 25000,
-        "generique-3t": 25000,
+        "generique-3t": 30000,
         "siemens-goall": 10500,
         "siemens-gotop": 12000
       };
@@ -2405,6 +2408,22 @@
           var nouveau = Math.round((courant + (e.key === "ArrowUp" ? pas : -pas)) * 1000) / 1000;
           unMixEcrireVersSource(champ, nouveau);
         });
+        // Boutons − / + sous la case : même pas que les flèches et que le curseur (Maj = ×10).
+        var pave = document.createElement("div");
+        pave.className = "un-mixer__pm";
+        [["−", -1, "Diminuer"], ["+", 1, "Augmenter"]].forEach(function (d) {
+          var b = document.createElement("button");
+          b.type = "button"; b.textContent = d[0]; b.setAttribute("aria-label", d[2] + " — " + (val.getAttribute("aria-label") || ""));
+          b.addEventListener("click", function (e) {
+            if (val.readOnly) return;
+            var pas = (parseFloat(fader.step) || 1) * (e.shiftKey ? 10 : 1);
+            var courant = parseFloat(String(val.value).replace(",", "."));
+            if (!isFinite(courant)) courant = parseFloat(fader.value) || 0;
+            unMixEcrireVersSource(champ, Math.round((courant + d[1] * pas) * 1000) / 1000);
+          });
+          pave.appendChild(b);
+        });
+        val.parentNode.insertBefore(pave, val.nextSibling);
         val.addEventListener("input", function () {
           if (unMixEcritureProg) return;
           var v = parseFloat(String(val.value).replace(",", "."));
