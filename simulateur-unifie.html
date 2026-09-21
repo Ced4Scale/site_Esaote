@@ -243,20 +243,23 @@
     #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { white-space: normal; width: 13.5rem; box-sizing: border-box; }
     #unCompoTableWrap td:first-child, #unCompoTableWrap td:first-child strong { white-space: nowrap !important; }
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
-    /* Carte RSE (projet 1) — lignes de faits à barres, portées de simulateur-energie.html (.ene-fact-*). */
+    /* Carte RSE (projet 1) — lignes à barres : titre à GAUCHE des deux barres, valeurs en blanc DANS les barres
+       (valeur trop grande pour une barre très courte : à droite de la barre, en noir). Graphe et lignes de faits = même composant. */
     #unRseCard[hidden] { display: none; }
     .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
     #unRseCard .simulator__legend { margin-bottom: 0; }
     #unRseCard .simulator__chart-wrap { margin-bottom: 0; }
-    /* Tous les titres de la carte RSE à la taille de la légende (« B — IRM générique 1,5 T »). */
-    .ene-fact-row-label { font-weight: 700; font-size: .82rem; white-space: nowrap; margin-bottom: 0; line-height: 1.1; }
+    .ene-fact-row { display: grid; grid-template-columns: minmax(6.5rem, 12rem) 1fr; column-gap: .6rem; align-items: center; }
+    .ene-fact-row { margin-left: calc(var(--niv, 0) * 1cm); }
+    .ene-fact-row--titre { display: block; }
+    @media (max-width: 600px) { .ene-fact-row { grid-template-columns: 6.3rem 1fr; column-gap: .4rem; margin-left: calc(var(--niv, 0) * .3cm); } }
+    .ene-fact-row-label { font-weight: 700; font-size: .82rem; line-height: 1.15; margin: 0; }
     .ene-fact-bar-line { margin-bottom: .12rem; }
     .ene-fact-bar-line:last-child { margin-bottom: 0; }
-    /* Même épaisseur que les barres du graphe SVG (barH = 11 unités sur un viewBox de 640 de large) : 11/640 de la largeur de la carte. */
-    #unRseCard { container-type: inline-size; }
-    .ene-fact-bar-track2 { position: relative; height: calc(100cqw * 11 / 640); }
-    .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; }
-    .ene-fact-value { font-size: .82rem; position: absolute; top: 50%; transform: translateY(-50%); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .ene-fact-bar-track2 { position: relative; height: 18px; }
+    .ene-fact-bar-fill2 { position: absolute; left: 0; top: 0; height: 100%; border-radius: 4px; display: flex; align-items: center; justify-content: flex-end; padding: 0 6px; box-sizing: border-box; }
+    .ene-fact-value { font-size: .82rem; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; color: #fff; }
+    .ene-fact-value--dehors { position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); color: var(--ink); }
     #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { width: 24rem; }
     #unCompoCard:fullscreen .un-compo-source { font-size: .8rem; }
     #unCompoCard:fullscreen #unCompoDate { font-size: 1rem; }
@@ -1060,7 +1063,7 @@
         </summary>
         <div class="simulator__legend" id="unRseLegende"></div>
         <div class="simulator__chart-wrap" id="unRseChartWrap">
-          <svg id="unRseChart" class="simulator__chart" viewBox="0 0 640 440" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des machines choisies"></svg>
+          <div class="ene-fact-list" id="unRseChart" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des machines choisies"></div>
         </div>
         <div class="ene-fact-list" id="unRseFaits" style="margin-top:0"></div>
       </details>
@@ -2544,27 +2547,36 @@
         });
       }
       function unRseLigneBarre(container, label, valeurs, formateur, opts) {
+        opts = opts || {};
         var row = document.createElement("div");
-        row.className = "ene-fact-row" + (opts && opts.strong ? " ene-fact-row--strong" : "");
-        if (opts && opts.indent) row.style.marginLeft = "1cm";
+        row.className = "ene-fact-row";
+        if (opts.indent) row.style.setProperty("--niv", opts.indent);
         var lbl = document.createElement("div");
         lbl.className = "ene-fact-row-label";
-        lbl.textContent = (opts && opts.triangle !== undefined ? (opts.triangle ? "▾ " : "▸ ") : "") + label;
-        if (opts && opts.onClicLabel) { lbl.style.cursor = "pointer"; lbl.addEventListener("click", opts.onClicLabel); }
-        if (opts && opts.wrap) lbl.style.whiteSpace = "normal";
+        lbl.textContent = (opts.triangle !== undefined ? (opts.triangle ? "▾ " : "▸ ") : "") + label;
+        if (opts.onClicLabel) { lbl.style.cursor = "pointer"; lbl.addEventListener("click", opts.onClicLabel); }
         row.appendChild(lbl);
-        var RESERVE_PX = 118, maxV = Math.max.apply(null, valeurs.concat([0.0001]));
+        var bars = document.createElement("div");
+        var maxV = Math.max.apply(null, valeurs.concat([0.0001]));
         valeurs.forEach(function (v, i) {
-          var line = document.createElement("div");
-          line.className = "ene-fact-bar-line";
+          var line = document.createElement("div"); line.className = "ene-fact-bar-line";
+          var track = document.createElement("div"); track.className = "ene-fact-bar-track2";
+          var fill = document.createElement("div"); fill.className = "ene-fact-bar-fill2";
           var ratio = maxV > 0 ? Math.max(v > 0 ? 0.01 : 0, v / maxV) : 0;
-          var largeur = "calc((100% - " + RESERVE_PX + "px) * " + ratio + ")";
-          var track = document.createElement("div");
-          track.className = "ene-fact-bar-track2";
-          track.innerHTML = '<div class="ene-fact-bar-fill2" style="width:' + largeur + ';background:' + UN_SLOT_COLORS[opts && opts.slots ? opts.slots[i] : i] + '"></div><span class="ene-fact-value" style="left:calc(' + largeur + ' + 8px)">' + formateur(v) + '</span>';
-          line.appendChild(track); row.appendChild(line);
+          fill.style.width = (ratio * 100) + "%"; fill.style.background = UN_SLOT_COLORS[opts.slots ? opts.slots[i] : i];
+          if (!opts.masquer) {
+            var val = document.createElement("span"); val.className = "ene-fact-value"; val.textContent = formateur(v);
+            fill.appendChild(val);
+          }
+          track.appendChild(fill); line.appendChild(track); bars.appendChild(line);
         });
+        row.appendChild(bars);
         container.appendChild(row);
+        // Valeur trop large pour sa barre (mesure réelle, carte ouverte) : à droite de la barre, en noir.
+        Array.prototype.forEach.call(row.querySelectorAll(".ene-fact-bar-fill2"), function (fill) {
+          var val = fill.firstChild;
+          if (val && fill.getBoundingClientRect().width > 0 && fill.getBoundingClientRect().width < val.getBoundingClientRect().width + 12) val.classList.add("ene-fact-value--dehors");
+        });
       }
       function unRseFaits(res) {
         var box = document.getElementById("unRseFaits"); box.innerHTML = "";
@@ -2575,9 +2587,9 @@
           triangle: unRseConso, wrap: true, onClicLabel: function () { unRseConso = !unRseConso; unRseFaits(res); }
         });
         if (unRseConso) {
-          ligne("Émissions de CO₂ (par an)", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }, function (v) { return milliersFmt.format(v) + " kg"; }, { strong: true, indent: true });
-          ligne("Absorption annuelle équivalente", function (x) { return Math.round(x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }, function (v) { return milliersFmt.format(v) + " arbres"; }, { indent: true });
-          ligne("Sur 7 ans", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }, function (v) { return milliersFmt.format(v) + " kg CO₂"; }, { indent: true });
+          ligne("Émissions de CO₂ (par an)", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000; }, function (v) { return milliersFmt.format(v) + " kg"; }, { indent: 1 });
+          ligne("Absorption annuelle équivalente", function (x) { return Math.round(x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 / ARBRE_KG_CO2_PAR_AN); }, function (v) { return milliersFmt.format(v) + " arbres"; }, { indent: 1 });
+          ligne("Sur 7 ans", function (x) { return x.kwh * CO2_G_PAR_KWH_FRANCE / 1000 * 7; }, function (v) { return milliersFmt.format(v) + " kg CO₂"; }, { indent: 1 });
         }
         var titre = document.createElement("div"); titre.className = "ene-fact-row ene-fact-row--titre";
         var tl = document.createElement("div"); tl.className = "ene-fact-row-label"; tl.style.cursor = "pointer";
@@ -2585,9 +2597,9 @@
         tl.addEventListener("click", function () { unRseVentilH = !unRseVentilH; unRseFaits(res); });
         titre.appendChild(tl); box.appendChild(titre);
         if (unRseVentilH) {
-          ligne("Heures à l'arrêt / an", function (x) { return x.profil.heuresEteint; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
-          ligne("Heures prêt / an", function (x) { return x.profil.heuresPret; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
-          ligne("Heures en acquisition / an", function (x) { return x.profil.heuresMesure; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: true });
+          ligne("Heures à l'arrêt / an", function (x) { return x.profil.heuresEteint; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
+          ligne("Heures prêt / an", function (x) { return x.profil.heuresPret; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
+          ligne("Heures en acquisition / an", function (x) { return x.profil.heuresMesure; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
         }
       }
       var UN_RSE_CAT3 = [
@@ -2600,42 +2612,20 @@
         { key: "lt", label: "Local technique", indent: 76, valeur: function (r) { return r.decomp.socle.lt * r.prix; } },
         { key: "clim", label: "Climatisation salle", indent: 76, valeur: function (r) { return r.decomp.socle.clim * r.prix; } }
       ];
-      function unRsePaires(res, categories, onClic) {
-        var svg = document.getElementById("unRseChart"); svg.innerHTML = "";
-        // Titres du graphe : même taille À L'ÉCRAN que la légende (le SVG est mis à l'échelle : px ÷ échelle).
-        var echelle = (svg.getBoundingClientRect().width / 640) || 1.5;
-        var tailleTitre = (parseFloat(getComputedStyle(document.querySelector("#unRseLegende .simulator__legend-item") || svg).fontSize) || 13) / echelle;
-        var plotX0 = 4, plotW = 586, barH = 11, barGap = 2, groupGap = 11, top = 12, groupH = barH * res.length + barGap * (res.length - 1);
-        var bottomY = top + categories.length * (groupH + groupGap) - groupGap + 0;
-        categories.forEach(function (c, gi) {
-          var groupY = top + gi * (groupH + groupGap), barX0 = plotX0 + (c.indent || 0), barPlotW = plotW - (c.indent || 0);
-          var t = unSvgEl("text", { x: barX0, y: groupY - 5, class: "simulator__axis-label", "text-anchor": "start" });
-          t.style.fontSize = tailleTitre + "px"; t.style.fontWeight = "700"; t.style.fill = "var(--ink)"; t.textContent = c.label;
-          if (onClic) { t.style.cursor = "pointer"; t.addEventListener("click", function () { onClic(c); }); }
-          svg.appendChild(t);
-          var xMax = Math.max.apply(null, res.map(function (r) { return c.valeur(r); }).concat([0.0001])) * 1.28;
-          res.forEach(function (r, i) {
-            var val = c.valeur(r), barW = xMax > 0 ? val / xMax * barPlotW : 0, barY = groupY + i * (barH + barGap);
-            var rect = unSvgEl("rect", { x: barX0, y: barY, width: Math.max(0, barW), height: barH, rx: 4, fill: r.color });
-            if (onClic) { rect.style.cursor = "pointer"; rect.addEventListener("click", function () { onClic(c); }); }
-            svg.appendChild(rect);
-            if (c.masquerValeurs) return;
-            var v = unSvgEl("text", { x: barX0 + barW + 8, y: barY + barH / 2 + tailleTitre * 0.35, class: "simulator__axis-label", "text-anchor": "start" });
-            v.style.fontSize = tailleTitre + "px"; v.style.fontWeight = "700"; v.style.fill = "var(--ink)"; v.textContent = unEurosFmt.format(val);
-            svg.appendChild(v);
-          });
-        });
-        svg.setAttribute("viewBox", "0 0 640 " + bottomY);
-      }
       function unRseGraphe(res) {
-        var total = { key: "total", label: (unRseVentil ? "▾ " : "▸ ") + "Total coût énergétique annuel",
-          valeur: function (r) { return UN_RSE_CAT3.reduce(function (s, c) { return s + c.valeur(r); }, 0); } };
-        var socle = { key: "socle", label: (unRseSocle ? "▾ " : "▸ ") + "Socle (arrêt)", indent: 38, valeur: UN_RSE_CAT3[0].valeur, masquerValeurs: unRseSocle };
-        var detail = [socle].concat(unRseSocle ? UN_RSE_CAT_SOCLE : []).concat(UN_RSE_CAT3.slice(1));
-        unRsePaires(res, unRseVentil ? [total].concat(detail) : [total], function (c) {
-          if (c.key === "total") { unRseVentil = !unRseVentil; unRseGraphe(res); }
-          else if (c.key === "socle") { unRseSocle = !unRseSocle; unRseGraphe(res); }
+        var box = document.getElementById("unRseChart"); box.innerHTML = "";
+        var slots = res.map(function (x) { return x.slot; });
+        function ligne(c, opts) {
+          unRseLigneBarre(box, c.label, res.map(c.valeur), function (v) { return unEurosFmt.format(v); }, Object.assign({ slots: slots }, opts));
+        }
+        ligne({ label: "Total coût énergétique annuel", valeur: function (r) { return UN_RSE_CAT3.reduce(function (t, c) { return t + c.valeur(r); }, 0); } }, {
+          triangle: unRseVentil, onClicLabel: function () { unRseVentil = !unRseVentil; unRseGraphe(res); }
         });
+        if (!unRseVentil) return;
+        ligne(UN_RSE_CAT3[0], { indent: 1, triangle: unRseSocle, masquer: unRseSocle, onClicLabel: function () { unRseSocle = !unRseSocle; unRseGraphe(res); } });
+        if (unRseSocle) UN_RSE_CAT_SOCLE.forEach(function (c) { ligne(c, { indent: 2 }); });
+        ligne(UN_RSE_CAT3[1], { indent: 1 });
+        ligne(UN_RSE_CAT3[2], { indent: 1 });
       }
       document.getElementById("unRseCard").addEventListener("toggle", function () { if (this.open) unRseRendre(); });
       window.addEventListener("resize", function () { if (document.getElementById("unRseCard").open) unRseRendre(); });
