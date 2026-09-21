@@ -717,11 +717,11 @@ var ENERGIE_MACHINES = [
   // Cédric : présenter un comparatif générique 1,5 T/3 T sans citer de marque, en
   // accès libre comme les modèles Esaote (contrairement aux marques concurrentes
   // ci-dessus, verrouillées par mot de passe dans les simulateurs qui les affichent —
-  // voir GATE_CONCURRENCE_HASH plus bas). Puissances électriques calibrées sur une
-  // machine de référence déjà présente dans ce fichier (même méthode que le "1,5 T
-  // générique"/"3 T générique" déjà utilisés sur simulateur-bascule-oscan.html) :
-  // Siemens Altea pour le 1,5 T, Siemens Prisma pour le 3 T — jamais citées comme
-  // source dans l'interface, seulement en interne pour calibrer. ----------
+  // voir GATE_CONCURRENCE_HASH plus bas). Puissances électriques = MOYENNE simple des IRM
+  // tunnel supraconductrices du même champ listées dans ce fichier (16 en 1,5 T, 8 en
+  // 3 T, toutes marques) — recalculée le 21/09/2026 à la demande de Cédric, Siemens
+  // seul étant moins énergivore que beaucoup de concurrents. À recalculer si la liste
+  // des machines change. ----------
   {
     key: "generique-15t",
     nomCourt: "IRM générique 1,5 T",
@@ -729,15 +729,15 @@ var ENERGIE_MACHINES = [
     marque: "Générique",
     modele: "IRM tunnel générique, 1,5 T",
     aimant: "supraconducteur",
-    eteint: 4.3,
-    pret: 8.2,
-    mesure: 20.2,
+    eteint: 6.5,
+    pret: 10.7,
+    mesure: 20.5,
     dureeAcquisitionMinutes: 10,
     dureeChangementMinutes: 3,
-    coeffRefroidissementLT: 0.33,
+    coeffRefroidissementLT: 0.35,
     climSalleKw: 2.5,
     refroidissement: "eau glacée + climatisation de la salle d'examen (valeur générique, non liée à un modèle commercial précis).",
-    confiance: "Valeur générique — puissances calibrées sur la Déclaration Environnementale de Produit d'un modèle 1,5 T de référence du marché (non citée à l'écran), pour représenter une IRM tunnel 1,5 T \"moyenne\" sans engager de marque précise."
+    confiance: "Valeur générique — moyenne simple des 16 IRM tunnel 1,5 T supraconductrices listées dans ce fichier (toutes marques confondues, décision de Cédric du 21/09/2026 : un modèle Siemens seul était trop économe par rapport à la concurrence). Estimation Ced4Scale, jamais présentée à l'écran comme provenant d'une marque."
   },
   {
     key: "generique-3t",
@@ -746,15 +746,15 @@ var ENERGIE_MACHINES = [
     marque: "Générique",
     modele: "IRM tunnel générique, 3 T",
     aimant: "supraconducteur",
-    eteint: 4.8,
-    pret: 10.8,
-    mesure: 22.4,
+    eteint: 6.8,
+    pret: 13.0,
+    mesure: 25.6,
     dureeAcquisitionMinutes: 8,
     dureeChangementMinutes: 3,
-    coeffRefroidissementLT: 0.33,
+    coeffRefroidissementLT: 0.36,
     climSalleKw: 3.2,
     refroidissement: "eau glacée + climatisation de la salle d'examen (valeur générique, non liée à un modèle commercial précis).",
-    confiance: "Valeur générique — puissances calibrées sur la Déclaration Environnementale de Produit d'un modèle 3 T de référence du marché (non citée à l'écran), pour représenter une IRM tunnel 3 T \"moyenne\" sans engager de marque précise."
+    confiance: "Valeur générique — moyenne simple des 8 IRM tunnel 3 T supraconductrices listées dans ce fichier (toutes marques confondues, décision de Cédric du 21/09/2026 : un modèle Siemens seul était trop économe par rapport à la concurrence). Estimation Ced4Scale, jamais présentée à l'écran comme provenant d'une marque."
   }
 ];
 
