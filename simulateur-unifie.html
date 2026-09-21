@@ -258,6 +258,11 @@
     .un-compo-aff label { display: flex; align-items: center; gap: .4rem; font-weight: 600; cursor: pointer; }
     .un-compo-aff input { width: 16px; height: 16px; margin: 0; }
     .un-compo-moyen-tete { display: flex; align-items: center; gap: .5rem; margin: .3rem 0 .2rem; font-size: .9rem; }
+    .un-outils-sous { margin: .1rem 0 .3rem 1.6rem; }
+    .un-outils-sous[hidden] { display: none; }
+    #unCompoOutilsPop { width: min(calc(100vw - 4.5rem), 400px); max-width: none; overflow-x: hidden; }
+    #unCompoOutilsPop .un-outils-check { white-space: normal; align-items: flex-start; }
+    #unCompoOutilsPop .un-outils-check input { margin-top: .2rem; flex: none; }
     #unCompoOutilsPop { top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     .un-compo-vue { display: flex; flex-wrap: wrap; gap: .3rem 1.4rem; margin: .1rem 0 0; }
     .un-compo-vue label { display: flex; align-items: center; gap: .45rem; font-size: .86rem; font-weight: 600; cursor: pointer; }
@@ -1017,14 +1022,6 @@
               <tbody id="unCompoTableBody"></tbody>
             </table>
           </div>
-          <label class="un-bareme-showall">
-            <input type="checkbox" id="unCompoShowAllCa">
-            Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)
-          </label>
-          <label class="un-bareme-showall">
-            <input type="checkbox" id="unCompoTableCharges">
-            Afficher les charges en dessous (charges annuelles, total et résultat)
-          </label>
           <div class="un-ca-tranche-info" id="unCompoCaInfo" hidden></div>
         </div>
       </details>
@@ -1324,6 +1321,10 @@
               <div class="un-outils-titre">Affichage</div>
               <label class="un-outils-check"><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
               <label class="un-outils-check"><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
+              <div id="unCompoSousTable" class="un-outils-sous" hidden>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoShowAllCa" /> Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoTableCharges" /> Afficher les charges en dessous (charges annuelles, total et résultat)</label>
+              </div>
               <label class="un-outils-check"><input type="radio" name="unCompoVue" value="moyen" /> Tarif moyen du F.T. selon le volume</label>
               <div class="un-outils-titre" style="margin-top:.6rem">Afficher</div>
               <label class="un-outils-check"><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
@@ -3110,6 +3111,7 @@
         var vueCompo = document.querySelector('input[name="unCompoVue"]:checked').value;
         document.getElementById("unCompoTableWrap").hidden = vueCompo !== "table" || !affRec.checked;
         document.getElementById("unCompoMoyenWrap").hidden = vueCompo !== "moyen";
+        document.getElementById("unCompoSousTable").hidden = vueCompo !== "table";
         if (vueCompo === "moyen") unDessinerCompoMoyen(unCompoEntrees);
         var svgK = document.getElementById("unCompoCoutsChart"), svgR = document.getElementById("unCompoResChart");
         svgK.innerHTML = ""; svgR.innerHTML = "";
