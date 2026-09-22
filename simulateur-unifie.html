@@ -248,6 +248,12 @@
     #unRseCard[hidden] { display: none; }
     .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
     #unRseCard .simulator__legend { margin-bottom: 0; }
+    /* En plein écran, .simulator__chart-wrap devient un conteneur flex (règle générale du
+       site, pensée pour un <svg class="simulator__chart">) — #unRseChart n'a pas cette
+       classe (c'est un <div> de lignes HTML, pas un SVG) et se réduisait donc à la largeur
+       de son contenu au lieu de remplir la carte, rendant les barres non proportionnelles
+       (signalé par Cédric le 22/09/2026). */
+    :fullscreen #unRseChart { flex: 1 1 auto; width: 100%; min-width: 0; }
     #unRseCard .simulator__chart-wrap { margin-bottom: 0; }
     .ene-fact-row { display: grid; grid-template-columns: minmax(6.5rem, 12rem) 1fr; column-gap: .6rem; align-items: center; }
     .ene-fact-row { margin-left: calc(var(--niv, 0) * 1cm); }
