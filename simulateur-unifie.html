@@ -378,18 +378,15 @@
        skill "boîte à outils déplaçable" mais en position:fixed (pas ancrée à un bouton),
        pour pouvoir être posée n'importe où sur l'écran, y compris en dehors de la carte
        qui a servi à l'ouvrir. */
-    .un-patient-launcher { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 600; width: 3rem; height: 3rem; border-radius: 999px; border: none; background: var(--ink); color: #fff; font-size: 1.3rem; box-shadow: 0 6px 18px rgba(0,0,0,.25); cursor: pointer; }
-    .un-patient-launcher[hidden] { display: none; }
-    .un-patient-bulle { position: fixed; right: 1.2rem; bottom: 5rem; translate: var(--dx, 0px) var(--dy, 0px); z-index: 601; width: min(calc(100vw - 2.4rem), 320px); background: #fcfcfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); }
+    .un-patient-bulle { position: fixed; top: 6rem; right: 1.2rem; translate: var(--dx, 0px) var(--dy, 0px); z-index: 601; width: min(calc(100vw - 2.4rem), 340px); background: #fcfcfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); }
     .un-patient-bulle[hidden] { display: none; }
     .un-patient-bulle__tete { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .6rem; border-bottom: 1px dashed var(--line); font-weight: 800; font-size: .8rem; cursor: grab; touch-action: none; user-select: none; }
     .un-patient-bulle__tete:active { cursor: grabbing; }
     .un-patient-bulle__pin { border: none; background: none; cursor: pointer; font-size: .95rem; padding: .1rem .3rem; border-radius: 6px; opacity: .45; line-height: 1; }
     .un-patient-bulle__pin[aria-pressed="true"] { opacity: 1; background: #eef1f5; }
-    .un-patient-bulle__corps { padding: .7rem .8rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
-    .un-patient-ligne { display: grid; grid-template-columns: 1fr auto auto; gap: .4rem .7rem; align-items: baseline; font-size: .82rem; }
-    .un-patient-ligne__label { font-weight: 700; grid-column: 1 / -1; }
-    .un-patient-ligne__val { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
+    .un-patient-bulle__corps { padding: .6rem .7rem .7rem; }
+    .un-patient-bulle__corps table { margin-bottom: 0; font-size: .78rem; }
+    .un-patient-bulle__corps th, .un-patient-bulle__corps td { padding: .3rem .4rem; }
   </style>
 </head>
 <body class="tool-page">
@@ -1373,6 +1370,7 @@
              comportement inchangés, seul son emplacement change). -->
         <div class="un-mixer__check-group">
           <span class="un-mixer__group-title">Boîte à outils</span>
+          <div style="display:flex;align-items:center;gap:.5rem">
           <span class="un-info-wrap">
             <button type="button" class="un-info-btn" id="unCompoOutilsBtn" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes">🧰</button>
             <div class="un-info-pop" id="unCompoOutilsPop" hidden>
@@ -1393,6 +1391,18 @@
               <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unActeIntellectuelActif" checked /> Intégrer l'acte intellectuel</label>
             </div>
           </span>
+          <!-- Bulle « Par patient » (22/09/2026) — icône posée à côté de la boîte à outils
+               ci-dessus (demande de Cédric). La bulle elle-même (#unPatientBulle) vit hors des
+               3 écrans, plus bas dans le fichier, pour rester affichée si elle est fixée et
+               qu'on change d'écran. -->
+          <button type="button" id="unPatientLauncherBtn" class="un-info-btn" aria-label="Comparer le revenu et le coût par patient" title="Comparer le revenu et le coût par patient">
+            <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+              <circle cx="12" cy="7" r="2.6" fill="currentColor" />
+              <path d="M8 14a4 4 0 0 1 8 0v1.2H8Z" fill="currentColor" />
+              <path d="M5.5 16.5h13L14 21h-4Z" fill="currentColor" opacity=".55" />
+            </svg>
+          </button>
+          </div>
         </div>
       </div>
 
@@ -1605,19 +1615,10 @@
   </main>
 
   <!-- Bulle « Par patient » — compare Machine A/B (revenu FT moyen, acte intellectuel, coûts
-       variables) au patient. Bouton flottant visible seulement sur l'écran Résultats (afficherEcran()) ;
-       la bulle elle-même vit hors des 3 écrans pour rester affichée si elle est fixée et qu'on change
-       d'écran. Glisser-déposer : même motif que la boîte à outils 🧰 (--dx/--dy, position mémorisée). -->
-  <button type="button" id="unPatientLauncherBtn" class="un-patient-launcher" hidden aria-label="Comparer le revenu et le coût par patient" title="Comparer le revenu et le coût par patient">
-    <!-- Icône maison (silhouette + entonnoir), même principe qu'une icône vue par Cédric le
-         22/09/2026 (funnel + personnage, VectorStock) — dessinée nous-mêmes, pas récupérée
-         (icône sous licence, pas libre de droits). -->
-    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
-      <circle cx="12" cy="7" r="2.6" fill="currentColor" />
-      <path d="M8 14a4 4 0 0 1 8 0v1.2H8Z" fill="currentColor" />
-      <path d="M5.5 16.5h13L14 21h-4Z" fill="currentColor" opacity=".55" />
-    </svg>
-  </button>
+       variables) au patient. Le bouton qui l'ouvre est à côté de la boîte à outils 🧰 de la
+       carte Composition (voir #unPatientLauncherBtn plus haut) ; la bulle elle-même vit hors
+       des 3 écrans pour rester affichée si elle est fixée et qu'on change d'écran.
+       Glisser-déposer : même motif que la boîte à outils 🧰 (--dx/--dy, position mémorisée). -->
   <div id="unPatientBulle" class="un-patient-bulle" hidden role="dialog" aria-label="Revenu et coût par patient">
     <div class="un-patient-bulle__tete" id="unPatientPoignee" title="Glisser pour déplacer">
       <span>Par patient</span>
@@ -1643,7 +1644,6 @@
         screenProjet.hidden = nom !== "projet";
         screenForm.hidden = nom !== "form";
         screenResultats.hidden = nom !== "resultats";
-        document.getElementById("unPatientLauncherBtn").hidden = nom !== "resultats";
         window.scrollTo(0, 0);
       }
 
@@ -3415,6 +3415,18 @@
       // que la carte Composition (« Votre activité », partagé entre A et B, pas la
       // répartition du curseur de bascule — écran différent).
       // ---------------------------------------------------------------------
+      // Postes de personnel présents pendant l'examen (coût variable, par opposition au cadre
+      // de santé qui est une charge FIXE, hors de cette bulle). MERM toujours affiché (pas de
+      // case « Intégré au simulateur », toujours compté) ; les 4 autres seulement si activés
+      // dans « Autre RH » (unPosteAnnexeIntegre), et seulement si au moins une des 2 machines
+      // a un effectif non nul.
+      var UN_PATIENT_POSTES = [
+        { role: null, label: "MERM", nombre: "nombreMerm", cout: "coutMermHoraire" },
+        { role: "Secretaire", label: "Secrétaire médicale", nombre: "nombreSecretaire", cout: "coutSecretaireHoraire" },
+        { role: "AideManip", label: "Aide-manip", nombre: "nombreAideManip", cout: "coutAideManipHoraire" },
+        { role: "Infirmiere", label: "Infirmière", nombre: "nombreInfirmiere", cout: "coutInfirmiereHoraire" },
+        { role: "ManipAlternance", label: "Manip en alternance", nombre: "nombreManipAlternance", cout: "coutManipAlternanceHoraire" }
+      ];
       function unPatientDetailMachine(slot, params) {
         var config = unConfigMachinePointMort(slot);
         if (!config.machine) return null;
@@ -3424,16 +3436,14 @@
         var totalFt = d.plein + d.seuil1 + d.seuil2 + d.plafond;
         var acte = params.acteIntellectuelActif ? acteIntellectuelMoyen(config.pctMembre) : 0;
         var elec = electriciteMensuellePointMort(config.machine, paramsSlot.heuresParJour, paramsSlot.joursParMois, paramsSlot.prixKwh);
-        var rhVariable = (config.nombreMerm * params.coutMermHoraire
-          + config.nombreSecretaire * params.coutSecretaireHoraire
-          + config.nombreAideManip * params.coutAideManipHoraire
-          + config.nombreInfirmiere * params.coutInfirmiereHoraire
-          + config.nombreManipAlternance * params.coutManipAlternanceHoraire) * (config.tempsInstallation / 60);
+        var heures = config.tempsInstallation / 60;
+        var personnel = {};
+        UN_PATIENT_POSTES.forEach(function (p) { personnel[p.label] = config[p.nombre] * params[p.cout] * heures; });
         var contraste = config.contrasteCout * (config.contrastePct / 100);
         return {
           label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
           ftMoyen: volume > 0 ? totalFt / volume : 0, acte: acte,
-          elec: elec.variablePatient, manip: rhVariable, contraste: contraste
+          elec: elec.variablePatient, personnel: personnel, contraste: contraste
         };
       }
       function unPatientRendre() {
@@ -3445,26 +3455,29 @@
         box.innerHTML = "";
         if (!entrees.length) { box.textContent = "Choisissez une machine pour voir le détail."; return; }
         var avecContraste = entrees.some(function (e) { return e.contraste > 0; });
+        var postesActifs = UN_PATIENT_POSTES.filter(function (p) { return p.role === null || unPosteAnnexeIntegre(p.role); });
+        var table = document.createElement("table");
+        table.className = "simulator__table " + (entrees.length === 1 ? "simulator__table--compare1" : "simulator__table--compare2");
+        var thead = document.createElement("thead"), trh = document.createElement("tr");
+        trh.appendChild(document.createElement("th"));
+        entrees.forEach(function (e) { var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; trh.appendChild(th); });
+        thead.appendChild(trh); table.appendChild(thead);
+        var tbody = document.createElement("tbody"); table.appendChild(tbody);
         function ligne(label, fn) {
-          var row = document.createElement("div"); row.className = "un-patient-ligne";
-          var lbl = document.createElement("div"); lbl.className = "un-patient-ligne__label"; lbl.textContent = label; row.appendChild(lbl);
+          var tr = document.createElement("tr");
+          var td0 = document.createElement("td"); td0.textContent = label; tr.appendChild(td0);
           entrees.forEach(function (e) {
-            var v = document.createElement("div"); v.className = "un-patient-ligne__val"; v.style.color = e.color; v.textContent = unEur(fn(e), 2);
-            row.appendChild(v);
+            var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(fn(e), 2);
+            tr.appendChild(td);
           });
-          box.appendChild(row);
+          tbody.appendChild(tr);
         }
-        var noms = document.createElement("div"); noms.className = "un-patient-ligne";
-        var vide = document.createElement("div"); noms.appendChild(vide);
-        entrees.forEach(function (e) {
-          var n = document.createElement("div"); n.className = "un-patient-ligne__val"; n.style.color = e.color; n.textContent = e.label; noms.appendChild(n);
-        });
-        box.appendChild(noms);
-        ligne("Revenu FT moyen / patient", function (e) { return e.ftMoyen; });
-        if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen / patient", function (e) { return e.acte; });
-        ligne("Coût électricité / patient", function (e) { return e.elec; });
-        ligne("Coût personnel pendant l'examen / patient", function (e) { return e.manip; });
-        if (avecContraste) ligne("Coût produit de contraste / patient", function (e) { return e.contraste; });
+        ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
+        if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen", function (e) { return e.acte; });
+        ligne("Coût électricité", function (e) { return e.elec; });
+        postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }); });
+        if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; });
+        box.appendChild(table);
       }
       // Bouton flottant : ouvre/ferme la bulle, calcule son contenu à l'ouverture.
       // Tant qu'elle n'est pas fixée (📌), elle se referme seule après 3 secondes —
