@@ -374,6 +374,22 @@
     }
     .un-ecart-frame strong { font-size: 1.25rem; }
     .un-ct-btn-row { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: .8rem; }
+    /* Bulle « Par patient » (22/09/2026) — bouton flottant + bulle déplaçable, motif du
+       skill "boîte à outils déplaçable" mais en position:fixed (pas ancrée à un bouton),
+       pour pouvoir être posée n'importe où sur l'écran, y compris en dehors de la carte
+       qui a servi à l'ouvrir. */
+    .un-patient-launcher { position: fixed; right: 1.2rem; bottom: 1.2rem; z-index: 600; width: 3rem; height: 3rem; border-radius: 999px; border: none; background: var(--ink); color: #fff; font-size: 1.3rem; box-shadow: 0 6px 18px rgba(0,0,0,.25); cursor: pointer; }
+    .un-patient-launcher[hidden] { display: none; }
+    .un-patient-bulle { position: fixed; right: 1.2rem; bottom: 5rem; translate: var(--dx, 0px) var(--dy, 0px); z-index: 601; width: min(calc(100vw - 2.4rem), 320px); background: #fcfcfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); }
+    .un-patient-bulle[hidden] { display: none; }
+    .un-patient-bulle__tete { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .6rem; border-bottom: 1px dashed var(--line); font-weight: 800; font-size: .8rem; cursor: grab; touch-action: none; user-select: none; }
+    .un-patient-bulle__tete:active { cursor: grabbing; }
+    .un-patient-bulle__pin { border: none; background: none; cursor: pointer; font-size: .95rem; padding: .1rem .3rem; border-radius: 6px; opacity: .45; line-height: 1; }
+    .un-patient-bulle__pin[aria-pressed="true"] { opacity: 1; background: #eef1f5; }
+    .un-patient-bulle__corps { padding: .7rem .8rem .8rem; display: flex; flex-direction: column; gap: .5rem; }
+    .un-patient-ligne { display: grid; grid-template-columns: 1fr auto auto; gap: .4rem .7rem; align-items: baseline; font-size: .82rem; }
+    .un-patient-ligne__label { font-weight: 700; grid-column: 1 / -1; }
+    .un-patient-ligne__val { font-weight: 800; font-variant-numeric: tabular-nums; text-align: right; }
   </style>
 </head>
 <body class="tool-page">
@@ -1588,6 +1604,29 @@
 
   </main>
 
+  <!-- Bulle « Par patient » — compare Machine A/B (revenu FT moyen, acte intellectuel, coûts
+       variables) au patient. Bouton flottant visible seulement sur l'écran Résultats (afficherEcran()) ;
+       la bulle elle-même vit hors des 3 écrans pour rester affichée si elle est fixée et qu'on change
+       d'écran. Glisser-déposer : même motif que la boîte à outils 🧰 (--dx/--dy, position mémorisée). -->
+  <button type="button" id="unPatientLauncherBtn" class="un-patient-launcher" hidden aria-label="Comparer le revenu et le coût par patient" title="Comparer le revenu et le coût par patient">
+    <!-- Icône maison (silhouette + entonnoir), même principe qu'une icône vue par Cédric le
+         22/09/2026 (funnel + personnage, VectorStock) — dessinée nous-mêmes, pas récupérée
+         (icône sous licence, pas libre de droits). -->
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <circle cx="12" cy="7" r="2.6" fill="currentColor" />
+      <path d="M8 14a4 4 0 0 1 8 0v1.2H8Z" fill="currentColor" />
+      <path d="M5.5 16.5h13L14 21h-4Z" fill="currentColor" opacity=".55" />
+    </svg>
+  </button>
+  <div id="unPatientBulle" class="un-patient-bulle" hidden role="dialog" aria-label="Revenu et coût par patient">
+    <div class="un-patient-bulle__tete" id="unPatientPoignee" title="Glisser pour déplacer">
+      <span>Par patient</span>
+      <button type="button" id="unPatientPinBtn" class="un-patient-bulle__pin" aria-pressed="false" aria-label="Fixer cette bulle (elle ne disparaîtra plus toute seule)" title="Fixer / défixer">📌</button>
+    </div>
+    <div id="unPatientContenu" class="un-patient-bulle__corps"></div>
+  </div>
+
+
   <script>
     (function () {
       "use strict";
@@ -1604,6 +1643,7 @@
         screenProjet.hidden = nom !== "projet";
         screenForm.hidden = nom !== "form";
         screenResultats.hidden = nom !== "resultats";
+        document.getElementById("unPatientLauncherBtn").hidden = nom !== "resultats";
         window.scrollTo(0, 0);
       }
 
@@ -2698,6 +2738,7 @@
         unDessinerBarresPointMort(entries);
         unDessinerCompo(slots, params);
         unRseRendre();
+        if (window.unPatientRendreDepuisMixage) window.unPatientRendreDepuisMixage();
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
       }
@@ -3365,6 +3406,113 @@
           pastilles("Dépenses et résultat :", UN_RENTA_CATS);
         }
       }
+
+      // ---------------------------------------------------------------------
+      // Bulle « Par patient » (22/09/2026, demande de Cédric) — ramène recettes et
+      // coûts au patient, Machine A/B côte à côte : revenu FT moyen (barème dégressif
+      // réel, pas le tarif plein), revenu acte intellectuel moyen, coûts variables
+      // (électricité, personnel pendant l'examen, produit de contraste). Même volume
+      // que la carte Composition (« Votre activité », partagé entre A et B, pas la
+      // répartition du curseur de bascule — écran différent).
+      // ---------------------------------------------------------------------
+      function unPatientDetailMachine(slot, params) {
+        var config = unConfigMachinePointMort(slot);
+        if (!config.machine) return null;
+        var paramsSlot = unParamsPourSlot(slot, params);
+        var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
+        var d = unDetailCA(volume, config.machine, params);
+        var totalFt = d.plein + d.seuil1 + d.seuil2 + d.plafond;
+        var acte = params.acteIntellectuelActif ? acteIntellectuelMoyen(config.pctMembre) : 0;
+        var elec = electriciteMensuellePointMort(config.machine, paramsSlot.heuresParJour, paramsSlot.joursParMois, paramsSlot.prixKwh);
+        var rhVariable = (config.nombreMerm * params.coutMermHoraire
+          + config.nombreSecretaire * params.coutSecretaireHoraire
+          + config.nombreAideManip * params.coutAideManipHoraire
+          + config.nombreInfirmiere * params.coutInfirmiereHoraire
+          + config.nombreManipAlternance * params.coutManipAlternanceHoraire) * (config.tempsInstallation / 60);
+        var contraste = config.contrasteCout * (config.contrastePct / 100);
+        return {
+          label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
+          ftMoyen: volume > 0 ? totalFt / volume : 0, acte: acte,
+          elec: elec.variablePatient, manip: rhVariable, contraste: contraste
+        };
+      }
+      function unPatientRendre() {
+        var bulle = document.getElementById("unPatientBulle");
+        if (bulle.hidden) return; // pas de calcul inutile quand la bulle n'est pas ouverte
+        var params = unConstruireParamsPointMort();
+        var entrees = unSlotsActifs().map(function (slot) { return unPatientDetailMachine(slot, params); }).filter(Boolean);
+        var box = document.getElementById("unPatientContenu");
+        box.innerHTML = "";
+        if (!entrees.length) { box.textContent = "Choisissez une machine pour voir le détail."; return; }
+        var avecContraste = entrees.some(function (e) { return e.contraste > 0; });
+        function ligne(label, fn) {
+          var row = document.createElement("div"); row.className = "un-patient-ligne";
+          var lbl = document.createElement("div"); lbl.className = "un-patient-ligne__label"; lbl.textContent = label; row.appendChild(lbl);
+          entrees.forEach(function (e) {
+            var v = document.createElement("div"); v.className = "un-patient-ligne__val"; v.style.color = e.color; v.textContent = unEur(fn(e), 2);
+            row.appendChild(v);
+          });
+          box.appendChild(row);
+        }
+        var noms = document.createElement("div"); noms.className = "un-patient-ligne";
+        var vide = document.createElement("div"); noms.appendChild(vide);
+        entrees.forEach(function (e) {
+          var n = document.createElement("div"); n.className = "un-patient-ligne__val"; n.style.color = e.color; n.textContent = e.label; noms.appendChild(n);
+        });
+        box.appendChild(noms);
+        ligne("Revenu FT moyen / patient", function (e) { return e.ftMoyen; });
+        if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen / patient", function (e) { return e.acte; });
+        ligne("Coût électricité / patient", function (e) { return e.elec; });
+        ligne("Coût personnel pendant l'examen / patient", function (e) { return e.manip; });
+        if (avecContraste) ligne("Coût produit de contraste / patient", function (e) { return e.contraste; });
+      }
+      // Bouton flottant : ouvre/ferme la bulle, calcule son contenu à l'ouverture.
+      // Tant qu'elle n'est pas fixée (📌), elle se referme seule après 3 secondes —
+      // le glisser-déposer relance ce délai pour ne jamais la faire disparaître en
+      // pleine manipulation.
+      (function () {
+        var launcher = document.getElementById("unPatientLauncherBtn"), bulle = document.getElementById("unPatientBulle");
+        var poignee = document.getElementById("unPatientPoignee"), pinBtn = document.getElementById("unPatientPinBtn");
+        var CLE_POS = "ced4scale-unifie-bulle-patient-pos", CLE_PIN = "ced4scale-unifie-bulle-patient-fixee";
+        var dx = 0, dy = 0, dep = null, fixee = false, minuteur = null;
+        function appliquerPos() { bulle.style.setProperty("--dx", dx + "px"); bulle.style.setProperty("--dy", dy + "px"); }
+        try { var m = JSON.parse(localStorage.getItem(CLE_POS) || "null"); if (m) { dx = m.dx || 0; dy = m.dy || 0; appliquerPos(); } } catch (e) {}
+        try { fixee = localStorage.getItem(CLE_PIN) === "1"; } catch (e) {}
+        function majPin() { pinBtn.setAttribute("aria-pressed", String(fixee)); }
+        majPin();
+        function annulerMinuteur() { if (minuteur) { clearTimeout(minuteur); minuteur = null; } }
+        function relancerMinuteur() {
+          annulerMinuteur();
+          if (!fixee) minuteur = setTimeout(function () { bulle.hidden = true; }, 3000);
+        }
+        launcher.addEventListener("click", function () {
+          bulle.hidden = false;
+          unPatientRendre();
+          relancerMinuteur();
+        });
+        pinBtn.addEventListener("click", function () {
+          fixee = !fixee; majPin();
+          try { localStorage.setItem(CLE_PIN, fixee ? "1" : "0"); } catch (e) {}
+          if (fixee) annulerMinuteur(); else relancerMinuteur();
+        });
+        poignee.addEventListener("pointerdown", function (e) {
+          if (e.target === pinBtn) return;
+          dep = { x: e.clientX - dx, y: e.clientY - dy };
+          poignee.setPointerCapture(e.pointerId); e.preventDefault();
+          annulerMinuteur();
+        });
+        poignee.addEventListener("pointermove", function (e) {
+          if (!dep) return;
+          dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquerPos();
+        });
+        function finDrag() {
+          if (!dep) return; dep = null;
+          try { localStorage.setItem(CLE_POS, JSON.stringify({ dx: dx, dy: dy })); } catch (e) {}
+          relancerMinuteur();
+        }
+        poignee.addEventListener("pointerup", finDrag); poignee.addEventListener("pointercancel", finDrag);
+        window.unPatientRendreDepuisMixage = function () { if (!bulle.hidden) unPatientRendre(); };
+      })();
 
       // ---------------------------------------------------------------------
       // Table de mixage — synchronisation bidirectionnelle fader <-> champ
