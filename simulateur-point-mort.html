@@ -17,7 +17,7 @@
   </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Simulateur de point mort IRM — Ced4Scale</title>
+  <title>Simulateur de seuil de rentabilité IRM — Ced4Scale</title>
   <meta name="robots" content="noindex" />
   <link rel="icon" href="assets/logo-ced4scale.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -485,7 +485,7 @@
     </a>
     <div class="document-viewer__title">
       <span>Outil de simulation</span>
-      <strong>Point mort IRM</strong>
+      <strong>Seuil de rentabilité IRM</strong>
     </div>
     <button class="document-viewer__close" id="pmClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
   </header>
@@ -493,10 +493,10 @@
   <main class="simulator">
     <div class="simulator__intro">
       <span class="kicker">Seuil de rentabilité — nombre de patients par jour</span>
-      <h1>Simulateur de point mort IRM</h1>
+      <h1>Simulateur de seuil de rentabilité IRM</h1>
       <span class="pm-info-wrap" style="margin-top:.4rem">
         <button type="button" class="pm-info-btn" id="pmInfoIntroBtn" aria-expanded="false" aria-controls="pmInfoIntroPop" aria-label="À propos de ce simulateur">💡</button>
-        <div class="pm-info-pop" id="pmInfoIntroPop" hidden>Le <strong>point mort</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes (forfait technique + acte intellectuel du radiologue) couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.<br><br>Forfait technique : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>. Acte intellectuel du radiologue : tarifs conventionnés secteur 1 (55&nbsp;€ pour un membre, 69&nbsp;€ pour les autres régions), confirmés sur le forum assurés d'ameli.fr — à n'ajouter que si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple).</div>
+        <div class="pm-info-pop" id="pmInfoIntroPop" hidden>Le <strong>seuil de rentabilité</strong>, c'est le nombre de <strong>patients par jour</strong> à partir duquel les recettes (forfait technique + acte intellectuel du radiologue) couvrent les charges fixes propres à la machine : <strong>loyer de l'IRM (SAV inclus)</strong>, <strong>coût réel du personnel MERM</strong> et <strong>électricité</strong> — hors location des m² du local. Compare deux IRM pour voir laquelle atteint son seuil de rentabilité avec le moins de patients.<br><br>Forfait technique : même barème que le <a href="simulateur-recettes.html">simulateur de recettes IRM</a>. Électricité : mêmes valeurs techniques que le <a href="simulateur-energie.html">simulateur d'impact énergétique</a>. Acte intellectuel du radiologue : tarifs conventionnés secteur 1 (55&nbsp;€ pour un membre, 69&nbsp;€ pour les autres régions), confirmés sur le forum assurés d'ameli.fr — à n'ajouter que si l'exploitant de la machine perçoit aussi cet acte (radiologue associé, par exemple).</div>
       </span>
     </div>
 
@@ -751,7 +751,7 @@
 
           <span class="pm-info-wrap">
             <button type="button" class="pm-info-btn" id="pmInfoConstatBtn" aria-expanded="false" aria-controls="pmInfoConstatPop" aria-label="À propos du tarif utilisé">💡</button>
-            <div class="pm-info-pop" id="pmInfoConstatPop" hidden>Le point mort se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</div>
+            <div class="pm-info-pop" id="pmInfoConstatPop" hidden>Le seuil de rentabilité se situe sous l'activité de référence de la classe (pas de barème dégressif à ce niveau de volume) — la recette par patient reste donc le tarif plein.</div>
           </span>
           <span class="pm-info-wrap" style="margin-top:.8rem">
             <button type="button" class="pm-info-btn" id="pmInfoChampsBtn" aria-expanded="false" aria-controls="pmInfoChampsPop" aria-label="À propos de ce panneau">💡</button>
@@ -1130,12 +1130,12 @@
             </button>
             <span class="pm-info-wrap">
               <button type="button" class="pm-info-btn" id="pmInfoLegendeBtn" aria-expanded="false" aria-controls="pmInfoLegendePop" aria-label="Comment lire ce graphe">💡</button>
-              <div class="pm-info-pop" id="pmInfoLegendePop" hidden>Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au point mort — là où l'activité couvre exactement les charges.</div>
+              <div class="pm-info-pop" id="pmInfoLegendePop" hidden>Chaque ligne part en négatif (les charges fixes courent même à 0 patient) et croise 0 € au seuil de rentabilité — là où l'activité couvre exactement les charges.</div>
             </span>
           </summary>
           <div class="simulator__legend" id="pmLegend" style="margin-top:.6rem"></div>
           <div class="simulator__chart-wrap" id="pmGrapheChartWrap">
-            <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel selon le nombre de patients par jour, avec le point mort de chaque machine"></svg>
+            <svg id="pmChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Résultat mensuel selon le nombre de patients par jour, avec le seuil de rentabilité de chaque machine"></svg>
             <div class="simulator__tooltip" id="pmTooltip" hidden></div>
           </div>
         </details>
@@ -2179,7 +2179,7 @@
           }));
         }
         ligne("Marge par patient", resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
-        ligne("Point mort", resultats.map(function (r) {
+        ligne("Seuil de rentabilité", resultats.map(function (r) {
           return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " patients / jour" : "jamais atteint";
         }), true);
         ligne("soit par mois", resultats.map(function (r) {
@@ -2195,17 +2195,17 @@
         if (resultats.length === 1) {
           var seule = resultats[0];
           ecartEl.innerHTML = isFinite(seule.pointMortJour)
-            ? nomColore(seule) + " atteint son point mort à <strong>" + patientsFmt.format(seule.pointMortJour) + " patients/jour</strong> (soit " + patientsFmt.format(seule.pointMortMois) + " patients/mois)."
-            : "Avec ces charges, " + nomColore(seule) + " n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+            ? nomColore(seule) + " atteint son seuil de rentabilité à <strong>" + patientsFmt.format(seule.pointMortJour) + " patients/jour</strong> (soit " + patientsFmt.format(seule.pointMortMois) + " patients/mois)."
+            : "Avec ces charges, " + nomColore(seule) + " n'atteint jamais son seuil de rentabilité (la recette par patient ne couvre pas ses coûts variables).";
         } else if (isFinite(resultats[0].pointMortJour) && isFinite(resultats[1].pointMortJour)) {
           var meilleur = resultats[0].pointMortJour <= resultats[1].pointMortJour ? resultats[0] : resultats[1];
           var pire = meilleur === resultats[0] ? resultats[1] : resultats[0];
           var ecart = pire.pointMortJour - meilleur.pointMortJour;
-          ecartEl.innerHTML = nomColore(meilleur) + " atteint son point mort avec <strong>" +
+          ecartEl.innerHTML = nomColore(meilleur) + " atteint son seuil de rentabilité avec <strong>" +
             patientsFmt.format(ecart) + " patient(s) de moins par jour</strong> que " + nomColore(pire) +
             " (" + patientsFmt.format(meilleur.pointMortJour) + " contre " + patientsFmt.format(pire.pointMortJour) + " patients/jour).";
         } else {
-          ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son point mort (la recette par patient ne couvre pas ses coûts variables).";
+          ecartEl.textContent = "Avec ces charges, au moins une des deux machines n'atteint jamais son seuil de rentabilité (la recette par patient ne couvre pas ses coûts variables).";
         }
 
         dessinerRecap(resultats, configs, params);
@@ -3567,7 +3567,7 @@
           doc.setTextColor(0);
           doc.setFontSize(14);
           doc.setFont(undefined, "bold");
-          doc.text("Simulation de point mort IRM", 15, y);
+          doc.text("Simulation de seuil de rentabilité IRM", 15, y);
           y += 6;
           doc.setFont(undefined, "normal");
           doc.setFontSize(8.5);
@@ -3605,7 +3605,7 @@
           drawRow("Recette totale / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.recette); }), true);
           drawRow("Charges fixes / mois", derniers.resultats.map(function (r) { return euros.format(r.chargesFixesMensuelles); }));
           drawRow("Marge / patient", derniers.resultats.map(function (r) { return eurosCent.format(r.margeParPatient); }));
-          drawRow("Point mort", derniers.resultats.map(function (r) {
+          drawRow("Seuil de rentabilité", derniers.resultats.map(function (r) {
             return isFinite(r.pointMortJour) ? patientsFmt.format(r.pointMortJour) + " pat./jour" : "jamais atteint";
           }), true);
 
