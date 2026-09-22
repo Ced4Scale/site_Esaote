@@ -299,6 +299,11 @@
     .un-mixer__pm { display: flex; gap: .3rem; }
     .un-mixer__pm button { width: 1.7rem; height: 1.5rem; padding: 0; border: 0; background: transparent; color: #000; font-weight: 800; font-size: 1.2rem; line-height: 1; cursor: pointer; }
     .un-mixer__pm button:hover { color: #0f8f92; }
+    /* Cadenas (22/09/2026) — fige un des 3 curseurs Examens par an/Heures d'ouverture/Examens
+       par heure ; un seul peut être fermé à la fois (voir unMajCadenas()). */
+    .un-mixer__cadenas { display: block; margin: .2rem auto 0; border: 0; background: transparent; padding: 0; font-size: .95rem; cursor: pointer; opacity: .6; }
+    .un-mixer__cadenas[aria-pressed="true"] { opacity: 1; }
+    .un-mixer__cadenas:disabled { cursor: not-allowed; opacity: .3; }
     .un-mixer__fader-value:focus-visible { outline: 2px solid #000; }
     .un-mixer__check-group { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; justify-content: center; min-width: 12rem; }
     .un-mixer__check-group label { display: flex; align-items: center; gap: .5rem; font-size: .85rem; font-weight: 600; }
@@ -1116,6 +1121,7 @@
                 <button type="button" id="unMixActiviteMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
                 <button type="button" id="unMixActivitePlus" aria-label="Augmenter le nombre d'examens par an">+</button>
               </div>
+              <button type="button" class="un-mixer__cadenas" id="unCadenasActivite" aria-pressed="false" aria-label="Fixer « Examens par an » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
             </div>
           </div>
         </div>
@@ -1133,6 +1139,7 @@
                 <button type="button" id="unMixHeuresMoins" aria-label="Diminuer les heures d'ouverture — Machine A">−</button>
                 <button type="button" id="unMixHeuresPlus" aria-label="Augmenter les heures d'ouverture — Machine A">+</button>
               </div>
+              <button type="button" class="un-mixer__cadenas" id="unCadenasHeures" aria-pressed="false" aria-label="Fixer « Heures d'ouverture » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
               <div class="un-mixer__fader-unit">h / jour</div>
             </div>
             <div class="un-mixer__fader-col" id="unMixHeuresBCol" style="--fader-color:#eb6834">
@@ -1200,6 +1207,7 @@
                 <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
               </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
+              <button type="button" class="un-mixer__cadenas" id="unCadenasDebit" aria-pressed="false" aria-label="Fixer « Examens par heure » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
             </div>
             <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
               <div class="un-mixer__bar">
@@ -2937,36 +2945,119 @@
         });
         unMajDebitsDepuisHeures();
       }
-      // Le simulateur baisse (ou monte) raisonnablement les examens par heure d'UNE machine :
-      // le nombre d'examens par an ne bouge PAS, ce sont ses heures d'ouverture qui
-      // s'ajustent. Plafonné à la limite haute de la machine ; si 24 h ne suffisent pas, le
-      // débit remonte.
-      function unDebitModifie(d, sourceId) {
-        var annuel = unActiviteAnnuelle();
-        var slot = sourceId === "unInstallB" ? 1 : 0;
-        if (!(annuel > 0) || !(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
-        unActiverSplit();
-        d = Math.min(d, unDebitMaxMachine(slot));
-        var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
-        var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
-        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
-        unHeuresGroupeForce = true;
-        unMajDebitsDepuisHeures();
-        unMixSyncTous();
+      // ---------------------------------------------------------------------
+      // Cadenas (22/09/2026, demande de Cédric) — fige un des 3 curseurs interdépendants
+      // (Examens par an / Heures d'ouverture / Examens par heure) : un seul peut être fermé
+      // à la fois. Curseur fermé = son fader est désactivé (on ne peut plus le toucher) ;
+      // bouger l'un des 2 AUTRES recalcule alors le 3ᵉ (jamais celui qui est fermé). Sans
+      // cadenas fermé (par défaut) : comportement HABITUEL, inchangé (Examens par an reste
+      // le curseur maître). ----
+      var unCadenasActif = null; // null | "activite" | "heures" | "debit"
+      var UN_CADENAS_CHAMPS = {
+        activite: ["unMixActiviteFader", "unMixActiviteVal", "unMixActiviteMoins", "unMixActivitePlus"],
+        heures: ["unMixHeuresFader", "unMixHeuresVal", "unMixHeuresMoins", "unMixHeuresPlus", "unMixHeuresBFader", "unMixHeuresBVal"],
+        debit: ["unMixInstallAFader", "unMixInstallAVal", "unMixInstallBFader", "unMixInstallBVal"]
+      };
+      function unMajCadenasUI() {
+        Object.keys(UN_CADENAS_CHAMPS).forEach(function (cle) {
+          var verrouille = unCadenasActif === cle;
+          UN_CADENAS_CHAMPS[cle].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (el.tagName === "INPUT" && el.type === "range") el.disabled = verrouille;
+            else if (el.tagName === "INPUT") el.readOnly = verrouille;
+            else el.disabled = verrouille; // boutons +/-
+          });
+          var btn = document.getElementById("unCadenas" + cle.charAt(0).toUpperCase() + cle.slice(1));
+          if (btn) { btn.textContent = verrouille ? "🔒" : "🔓"; btn.setAttribute("aria-pressed", String(verrouille)); }
+        });
       }
-      function unMixAppliquerActivite(annuel) {
+      ["Activite", "Heures", "Debit"].forEach(function (label) {
+        var cle = label.toLowerCase();
+        document.getElementById("unCadenas" + label).addEventListener("click", function () {
+          unCadenasActif = unCadenasActif === cle ? null : cle;
+          unMajCadenasUI();
+        });
+      });
+      unMajCadenasUI();
+
+      function unEcrireActivite(annuel) {
         annuel = Math.max(0, Math.min(100000, Math.round(annuel)));
         var mode = document.getElementById("unActiviteMode").value;
         document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (5 * (52 / 12) * 12) * 1000) / 1000 : annuel;
         majActiviteLabel();
-        unRecalerDebitsEtHeures();
+      }
+      function unDebitPourSlot(slot) { return parseFloat(document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value) || 0; }
+      function unEcrireDebitSlot(slot, d) { document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = Math.round(d * 100) / 100; }
+      // Recalcule les HEURES d'un slot pour qu'il absorbe `annuel` à DÉBIT INCHANGÉ (cadenas
+      // "débit" fermé) — même formule que unDebitModifie ci-dessous, mais sans toucher au débit.
+      function unRecalculerHeuresPourDebitFixe(slot, annuel) {
+        var d = unDebitPourSlot(slot);
+        if (!(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
+        var cible = annuel / (d * unJoursParMois() * 12);
+        var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
+        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
+      }
+      // Le simulateur baisse (ou monte) raisonnablement les examens par heure d'UNE machine :
+      // le nombre d'examens par an ne bouge PAS, ce sont ses heures d'ouverture qui
+      // s'ajustent. Plafonné à la limite haute de la machine ; si 24 h ne suffisent pas, le
+      // débit remonte. SAUF cadenas "heures" fermé : c'est alors l'ACTIVITÉ (partagée) qui
+      // s'ajuste à partir de ce débit et des heures inchangées de ce slot, et le débit des
+      // AUTRES machines actives se recalcule à leurs propres heures inchangées.
+      function unDebitModifie(d, sourceId) {
+        var slot = sourceId === "unInstallB" ? 1 : 0;
+        var annuel = unActiviteAnnuelle();
+        if (!(annuel > 0) || !(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
+        unActiverSplit();
+        d = Math.min(d, unDebitMaxMachine(slot));
+        if (unCadenasActif === "heures") {
+          var heuresAnSlot = unHeuresAnPour(slot);
+          if (!(heuresAnSlot > 0)) return;
+          var nouvelleActivite = Math.round(d * heuresAnSlot);
+          unEcrireActivite(nouvelleActivite);
+          unEcrireDebitSlot(slot, d);
+          unSlotsActifs().filter(function (s) { return s !== slot; }).forEach(function (s) {
+            var heuresAnS = unHeuresAnPour(s);
+            if (heuresAnS > 0) unEcrireDebitSlot(s, unActiviteAnnuelle() / heuresAnS);
+          });
+        } else {
+          var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
+          var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
+          unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
+          unHeuresGroupeForce = true;
+          unMajDebitsDepuisHeures();
+        }
+        unMixSyncTous();
+      }
+      function unMixAppliquerActivite(annuel) {
+        unEcrireActivite(annuel);
+        var annuelReel = unActiviteAnnuelle();
+        if (unCadenasActif === "debit") {
+          unSlotsActifs().forEach(function (slot) { unActiverSplit(); unRecalculerHeuresPourDebitFixe(slot, annuelReel); });
+          unHeuresGroupeForce = true;
+        } else if (unCadenasActif === "heures") {
+          unMajDebitsDepuisHeures(); // débit recalculé, heures strictement inchangées (cadenas fermé)
+        } else {
+          unRecalerDebitsEtHeures(); // comportement habituel (aucun cadenas fermé)
+        }
         unMixSyncTous();
         unRenderPointMort();
       }
       function unMixAppliquerHeures(slot, h) {
         unActiverSplit();
         unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(h * 2) / 2)));
-        unRecalerDebitsEtHeures(); // remonte les heures si le volume n'est plus réalisable
+        if (unCadenasActif === "debit") {
+          var d = unDebitPourSlot(slot);
+          if (d > 0) {
+            var nouvelleActivite = Math.round(d * unHeuresAnPour(slot));
+            unEcrireActivite(nouvelleActivite);
+            unSlotsActifs().filter(function (s) { return s !== slot; }).forEach(function (s) {
+              unRecalculerHeuresPourDebitFixe(s, nouvelleActivite);
+            });
+          }
+        } else {
+          unRecalerDebitsEtHeures(); // comportement habituel : débit recalculé, heures montent si besoin
+        }
         unMixSyncTous();
         unRenderPointMort();
       }
