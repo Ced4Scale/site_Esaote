@@ -388,6 +388,9 @@
     .un-patient-bulle__corps table { margin-bottom: 0; font-size: .78rem; }
     .un-patient-bulle__corps th, .un-patient-bulle__corps td { padding: .3rem .4rem; }
     .un-patient-bulle__corps th:not(:first-child), .un-patient-bulle__corps td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+    .un-patient-bulle__ventile { display: flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 600; padding: .4rem .7rem 0; }
+    .un-patient-bulle__ventile input { width: 14px; height: 14px; margin: 0; }
+    .un-patient-bulle__corps th.un-patient-souscol { font-size: .68rem; font-weight: 700; white-space: nowrap; }
   </style>
 </head>
 <body class="tool-page">
@@ -1625,6 +1628,7 @@
       <span>Par patient</span>
       <button type="button" id="unPatientPinBtn" class="un-patient-bulle__pin" aria-pressed="false" aria-label="Fixer cette bulle (elle ne disparaîtra plus toute seule)" title="Fixer / défixer">📌</button>
     </div>
+    <label class="un-patient-bulle__ventile"><input type="checkbox" id="unPatientVentileFT" /> FT ventilé</label>
     <div id="unPatientContenu" class="un-patient-bulle__corps"></div>
   </div>
 
@@ -3447,13 +3451,16 @@
         // dès qu'elles sont activées/renseignées.
         var cadreSante = unPosteAnnexeIntegre("CadreSante") ? (config.nombreCadreSante * params.coutCadreSanteMensuel * 12) : 0;
         var ris = config.fractionRis > 0 ? (config.fractionRis * params.coutRisMensuel * 12) : 0;
+        var loyer = config.loyer * 12;
         return {
           label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
-          ftMoyen: volume > 0 ? totalFt / volume : 0, acte: acte,
+          ftMoyen: volume > 0 ? totalFt / volume : 0, tranches: unTranchesCompo(config.machine, params), acte: acte,
           elec: elec.variablePatient, personnel: personnel, contraste: contraste,
-          cadreSante: volume > 0 ? cadreSante / volume : 0, ris: volume > 0 ? ris / volume : 0
+          cadreSante: volume > 0 ? cadreSante / volume : 0, ris: volume > 0 ? ris / volume : 0,
+          loyer: volume > 0 ? loyer / volume : 0
         };
       }
+      var UN_PATIENT_TRANCHE_LABELS = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
       function unPatientRendre() {
         var bulle = document.getElementById("unPatientBulle");
         if (bulle.hidden) return; // pas de calcul inutile quand la bulle n'est pas ouverte
@@ -3463,16 +3470,38 @@
         box.innerHTML = "";
         if (!entrees.length) { box.textContent = "Choisissez une machine pour voir le détail."; return; }
         var avecContraste = entrees.some(function (e) { return e.contraste > 0; });
-        var postesActifs = UN_PATIENT_POSTES.filter(function (p) { return p.role === null || unPosteAnnexeIntegre(p.role); });
-        var table = document.createElement("table");
-        table.className = "simulator__table " + (entrees.length === 1 ? "simulator__table--compare1" : "simulator__table--compare2");
-        var thead = document.createElement("thead"), trh = document.createElement("tr");
-        trh.appendChild(document.createElement("th"));
-        entrees.forEach(function (e) { var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; trh.appendChild(th); });
-        thead.appendChild(trh); table.appendChild(thead);
-        var tbody = document.createElement("tbody"); table.appendChild(tbody);
         var avecCadreSante = entrees.some(function (e) { return e.cadreSante > 0; });
         var avecRis = entrees.some(function (e) { return e.ris > 0; });
+        var postesActifs = UN_PATIENT_POSTES.filter(function (p) { return p.role === null || unPosteAnnexeIntegre(p.role); });
+        // Case « FT ventilé » : la ligne « Revenu FT moyen » (une seule valeur, moyenne pondérée
+        // sur le barème) est remplacée par AUTANT DE COLONNES que de tranches du barème (4 :
+        // tarif plein, 2ᵉ tranche, 3ᵉ tranche, au-delà), sous chaque machine — mêmes tarifs que
+        // le tableau du barème dégressif de la carte Composition (unTranchesCompo). Les autres
+        // lignes (revenus/coûts non ventilables par tranche) fusionnent ces colonnes (colspan).
+        var ventile = document.getElementById("unPatientVentileFT").checked;
+        var nCols = ventile ? UN_PATIENT_TRANCHE_LABELS.length : 1;
+        var table = document.createElement("table");
+        // Les classes --compare1/--compare2 imposent des largeurs en % pensées pour 2-3
+        // colonnes fixes : incompatibles avec les 8+ colonnes du mode « FT ventilé »
+        // (table-layout:auto à la place, dans un cadre qui défile horizontalement si besoin).
+        table.className = "simulator__table" + (ventile ? "" : (entrees.length === 1 ? " simulator__table--compare1" : " simulator__table--compare2"));
+        var thead = document.createElement("thead"), trh1 = document.createElement("tr");
+        var thBlank = document.createElement("th"); if (ventile) thBlank.rowSpan = 2; trh1.appendChild(thBlank);
+        entrees.forEach(function (e) {
+          var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; th.colSpan = nCols; trh1.appendChild(th);
+        });
+        thead.appendChild(trh1);
+        if (ventile) {
+          var trh2 = document.createElement("tr");
+          entrees.forEach(function (e) {
+            UN_PATIENT_TRANCHE_LABELS.forEach(function (lab) {
+              var th = document.createElement("th"); th.className = "un-patient-souscol"; th.style.color = e.color; th.textContent = lab; trh2.appendChild(th);
+            });
+          });
+          thead.appendChild(trh2);
+        }
+        table.appendChild(thead);
+        var tbody = document.createElement("tbody"); table.appendChild(tbody);
         // Coûts entre parenthèses (convention comptable) pour signaler que ce sont des montants
         // soustraits, pas des revenus. Colonnes alignées sur le signe € : les valeurs sont
         // toutes alignées à droite, donc le dernier caractère (le €, ou la parenthèse fermante
@@ -3485,28 +3514,49 @@
           if (opts.total) td0.style.fontWeight = "800";
           tr.appendChild(td0);
           entrees.forEach(function (e) {
-            var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800";
+            var td = document.createElement("td"); td.colSpan = nCols; td.style.color = e.color; td.style.fontWeight = "800";
             var v = unEur(fn(e), 2);
             td.textContent = opts.cout ? "(" + v + ")" : v;
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         }
-        ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
+        if (ventile) {
+          var trFt = document.createElement("tr");
+          var tdL = document.createElement("td"); tdL.textContent = "Revenu FT"; trFt.appendChild(tdL);
+          entrees.forEach(function (e) {
+            e.tranches.forEach(function (t) {
+              var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(t.montant, 2);
+              trFt.appendChild(td);
+            });
+          });
+          tbody.appendChild(trFt);
+        } else {
+          ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
+        }
         if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen", function (e) { return e.acte; });
+        ligne("Coût loyer", function (e) { return e.loyer; }, { cout: true });
         ligne("Coût électricité", function (e) { return e.elec; }, { cout: true });
         postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }, { cout: true }); });
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; }, { cout: true });
         if (avecCadreSante) ligne("Coût cadre de santé", function (e) { return e.cadreSante; }, { cout: true });
         if (avecRis) ligne("Coût RIS + graveur + imprimante", function (e) { return e.ris; }, { cout: true });
-        // Résultat = revenus moins coûts, au patient (mêmes lignes que ci-dessus, rien d'autre).
+        // Résultat = revenus moins coûts, au patient (mêmes lignes que ci-dessus, rien d'autre) —
+        // toujours calculé avec le revenu FT MOYEN, même en mode « FT ventilé » (affichage
+        // seulement, ce mode ne change aucun calcul).
         ligne("Résultat", function (e) {
           var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
-          var cout = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0)
+          var cout = e.loyer + e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0)
             + (avecContraste ? e.contraste : 0) + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
           return revenu - cout;
         }, { total: true });
-        box.appendChild(table);
+        var wrap = document.createElement("div"); wrap.style.overflowX = "auto"; wrap.appendChild(table);
+        box.appendChild(wrap);
+        // Mode « FT ventilé » : la bulle s'élargit pour loger les colonnes supplémentaires
+        // (sinon confinées à 340px, illisibles) ; revient à sa largeur normale sinon. Recalée
+        // ensuite si elle déborde de l'écran (unPatientReclamp, défini plus bas).
+        bulle.style.width = ventile ? "min(94vw, 640px)" : "";
+        if (window.unPatientReclamp) window.unPatientReclamp();
       }
       // Bouton : ouvre/ferme la bulle, calcule son contenu à l'ouverture. Tant qu'elle n'est
       // pas fixée (📌), elle se referme seule après 3 secondes — le glisser-déposer relance ce
@@ -3531,9 +3581,16 @@
           if (!fixee) minuteur = setTimeout(function () { bulle.hidden = true; }, 3000);
         }
         function clamp(left, top) {
-          var w = Math.min(340, window.innerWidth - 16), h = bulle.offsetHeight || 200;
+          var w = bulle.offsetWidth || 340, h = bulle.offsetHeight || 200;
           return { left: Math.max(8, Math.min(left, window.innerWidth - w - 8)), top: Math.max(8, Math.min(top, window.innerHeight - h - 8)) };
         }
+        // Rappelée par unPatientRendre() quand la largeur change (mode « FT ventilé » plus large)
+        // — recale la bulle si elle déborderait maintenant de l'écran, sans la recentrer.
+        window.unPatientReclamp = function () {
+          if (bulle.hidden) return;
+          var p = clamp(parseFloat(bulle.style.left) || 0, parseFloat(bulle.style.top) || 0);
+          bulle.style.left = p.left + "px"; bulle.style.top = p.top + "px";
+        };
         function positionner() {
           var p = null;
           try { p = JSON.parse(localStorage.getItem(CLE_POS) || "null"); } catch (e) {}
@@ -3574,6 +3631,7 @@
           relancerMinuteur();
         }
         poignee.addEventListener("pointerup", finDrag); poignee.addEventListener("pointercancel", finDrag);
+        document.getElementById("unPatientVentileFT").addEventListener("change", unPatientRendre);
         window.unPatientRendreDepuisMixage = function () { if (!bulle.hidden) unPatientRendre(); };
         // Suivre la carte en plein écran (voir le bloc juste au-dessus qui déplace
         // #unMixerPointMort de la même façon) : sans ce déplacement, la bulle resterait hors de
