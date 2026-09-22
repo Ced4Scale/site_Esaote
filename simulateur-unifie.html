@@ -1165,6 +1165,31 @@
           </div>
         </div>
 
+        <!-- Loyer — miroir de #unLoyerA/#unLoyerB (Paramètres), ajouté le 22/09/2026 (demande
+             de Cédric). Pas de curseur d'0 à 40.000 €, pas assez fin en dessous de 1.000 € :
+             pas de 250 € pour rester utilisable sur toute la plage. -->
+        <div class="un-mixer__group" id="unMixLoyerGroup">
+          <span class="un-mixer__group-title">Loyer</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">A</span>
+                <input type="range" id="unMixLoyerAFader" min="0" max="40000" step="250" value="5700" aria-label="Loyer — Machine A" />
+              </div>
+              <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixLoyerAVal" value="5.700" aria-label="Loyer — Machine A, valeur" />
+            </div>
+            <div class="un-mixer__fader-col" id="unMixLoyerBCol" style="--fader-color:#eb6834">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="1">B</span>
+                <input type="range" id="unMixLoyerBFader" min="0" max="40000" step="250" value="11500" aria-label="Loyer — Machine B" />
+              </div>
+              <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixLoyerBVal" value="11.500" aria-label="Loyer — Machine B, valeur" />
+            </div>
+          </div>
+        </div>
+
         <div class="un-mixer__group" id="unMixGroupDebit">
           <span class="un-mixer__group-title">Examens par heure</span>
           <div class="un-mixer__faders">
@@ -1381,12 +1406,13 @@
         <div class="un-mixer__check-group">
           <span class="un-mixer__group-title">Curseurs affichés</span>
           <span class="un-info-wrap">
-            <button type="button" class="un-info-btn" id="unMixerChoixBtn" aria-expanded="false" aria-controls="unMixerChoixPop" aria-label="Choisir les curseurs affichés dans la table de mixage">🧰</button>
+            <button type="button" class="un-info-btn" id="unMixerChoixBtn" aria-expanded="false" aria-controls="unMixerChoixPop" aria-label="Choisir les curseurs affichés dans la table de mixage">🎚️</button>
             <div class="un-info-pop" id="unMixerChoixPop" hidden>
               <div class="un-outils-titre">Curseurs affichés</div>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupActivite" /> Examens par an</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixHeuresGroup" /> Heures d'ouverture</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupKwh" /> Coût du kWh</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixLoyerGroup" /> Loyer</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupDebit" /> Examens par heure</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupManip" /> Manip en poste</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixMembreGroup" /> % examens membre (MSK)</label>
@@ -2766,12 +2792,13 @@
         var params = unConstruireParamsPointMort();
         // 4 groupes toujours applicables (aucune condition de formulaire) : seule la
         // préférence « Curseurs affichés » peut les masquer.
-        ["unMixGroupActivite", "unMixGroupKwh", "unMixGroupDebit", "unMixGroupManip"].forEach(function (id) {
+        ["unMixGroupActivite", "unMixGroupKwh", "unMixLoyerGroup", "unMixGroupDebit", "unMixGroupManip"].forEach(function (id) {
           document.getElementById(id).hidden = !unMixerGroupeVoulu(id);
         });
         var uneSeuleMachine = document.getElementById("unColB").hidden;
         document.getElementById("unMixInstallBCol").hidden = uneSeuleMachine;
         document.getElementById("unMixMermBCol").hidden = uneSeuleMachine;
+        document.getElementById("unMixLoyerBCol").hidden = uneSeuleMachine;
         UN_POSTES_ANNEXES_ROLES.forEach(function (role) {
           var col = document.getElementById("unMix" + role + "BCol");
           if (col) col.hidden = uneSeuleMachine;
@@ -3771,6 +3798,8 @@
       var kwhFmt = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       var UN_MIX_FIELDS = [
         { faderId: "unMixKwhFader", valId: "unMixKwhVal", sourceId: "unKwh", fmt: kwhFmt },
+        { faderId: "unMixLoyerAFader", valId: "unMixLoyerAVal", sourceId: "unLoyerA", fmt: milliersFmt, milliers: true },
+        { faderId: "unMixLoyerBFader", valId: "unMixLoyerBVal", sourceId: "unLoyerB", fmt: milliersFmt, milliers: true },
         { faderId: "unMixInstallAFader", valId: "unMixInstallAVal", sourceId: "unInstallA" },
         { faderId: "unMixInstallBFader", valId: "unMixInstallBVal", sourceId: "unInstallB" },
         { faderId: "unMixMermAFader", valId: "unMixMermAVal", sourceId: "unMermA" },
@@ -3795,7 +3824,9 @@
         var fader = document.getElementById(champ.faderId);
         var val = document.getElementById(champ.valId);
         var min = parseFloat(fader.min), max = parseFloat(fader.max);
-        var v = parseFloat(source.value);
+        // Champs formatés au point de milliers (ex. "12.000") : parseFloat lirait "12" (point
+        // pris pour une virgule décimale) — valeurMilliers() strippe tout sauf les chiffres.
+        var v = champ.milliers ? valeurMilliers(source) : parseFloat(source.value);
         if (!isFinite(v)) v = min;
         v = Math.max(min, Math.min(max, v));
         unMixEcritureProg = true;
@@ -3825,7 +3856,7 @@
         fader.value = v;
         unMixMajFill(fader);
         document.getElementById(champ.valId).value = (champ.fmt || patientsFmt).format(v);
-        document.getElementById(champ.sourceId).value = v;
+        document.getElementById(champ.sourceId).value = champ.milliers ? milliersFmt.format(v) : v;
         unMixEcritureProg = false;
         if (champ.sourceId === "unInstallA" || champ.sourceId === "unInstallB") unDebitModifie(v, champ.sourceId);
         unRenderPointMort();
