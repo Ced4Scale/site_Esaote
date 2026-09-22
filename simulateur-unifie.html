@@ -3463,9 +3463,12 @@
         entrees.forEach(function (e) { var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; trh.appendChild(th); });
         thead.appendChild(trh); table.appendChild(thead);
         var tbody = document.createElement("tbody"); table.appendChild(tbody);
-        function ligne(label, fn) {
+        function ligne(label, fn, opts) {
           var tr = document.createElement("tr");
-          var td0 = document.createElement("td"); td0.textContent = label; tr.appendChild(td0);
+          if (opts && opts.total) tr.style.borderTop = "2px solid var(--ink)";
+          var td0 = document.createElement("td"); td0.textContent = label;
+          if (opts && opts.total) td0.style.fontWeight = "800";
+          tr.appendChild(td0);
           entrees.forEach(function (e) {
             var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(fn(e), 2);
             tr.appendChild(td);
@@ -3477,6 +3480,12 @@
         ligne("Coût électricité", function (e) { return e.elec; });
         postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }); });
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; });
+        // Résultat = revenus moins coûts, au patient (mêmes lignes que ci-dessus, rien d'autre).
+        ligne("Résultat", function (e) {
+          var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
+          var cout = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + (avecContraste ? e.contraste : 0);
+          return revenu - cout;
+        }, { total: true });
         box.appendChild(table);
       }
       // Bouton : ouvre/ferme la bulle, calcule son contenu à l'ouverture. Tant qu'elle n'est
