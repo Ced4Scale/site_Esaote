@@ -399,6 +399,7 @@
     .un-patient-bulle__corps table { margin-bottom: 0; font-size: .78rem; }
     .un-patient-bulle__corps th, .un-patient-bulle__corps td { padding: .3rem .4rem; }
     .un-patient-bulle__corps th:not(:first-child), .un-patient-bulle__corps td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
+    .un-patient-bulle__corps td:first-child, .un-patient-bulle__corps th:first-child { white-space: nowrap; }
     .un-patient-bulle__ventile { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; font-size: .75rem; font-weight: 600; padding: .4rem .7rem 0; }
     .un-patient-bulle__ventile label { display: flex; align-items: center; gap: .35rem; }
     .un-patient-bulle__ventile input { width: 14px; height: 14px; margin: 0; }
@@ -3690,7 +3691,11 @@
         // colonnes fixes : incompatibles avec le nombre de colonnes variable du mode
         // « FT ventilé » (table-layout:auto à la place, dans un cadre qui défile
         // horizontalement si besoin).
-        table.className = "simulator__table" + (ventile ? "" : (entrees.length === 1 ? " simulator__table--compare1" : " simulator__table--compare2"));
+        // Jamais --compare1/--compare2 (largeurs en % figées, table-layout:fixed) : elles
+        // empêcheraient la bulle de s'élargir pour un contenu plus long (ex. « Résultat total
+        // sur 5 ans », des montants à 6 chiffres) — table-layout:auto par défaut, la bulle se
+        // dimensionne sur la vraie largeur du tableau juste en dessous.
+        table.className = "simulator__table";
         var thead = document.createElement("thead"), trh1 = document.createElement("tr");
         var thBlank = document.createElement("th"); if (ventile) thBlank.rowSpan = 2; trh1.appendChild(thBlank);
         entrees.forEach(function (e) {
@@ -3805,16 +3810,14 @@
         }
         var wrap = document.createElement("div"); wrap.style.overflowX = "auto"; wrap.appendChild(table);
         box.appendChild(wrap);
-        // Mode « FT ventilé » : la bulle s'élargit pour loger TOUTES les colonnes sans
-        // défiler — largeur mesurée sur le tableau réellement construit (nombre de colonnes
-        // variable selon l'activité), plafonnée à la largeur de l'écran. Revient à sa largeur
-        // normale sinon. Recalée ensuite si elle déborde de l'écran (unPatientReclamp).
-        if (ventile) {
-          var largeurTable = table.scrollWidth + 28; // + le padding du corps de la bulle
-          bulle.style.width = Math.min(window.innerWidth - 16, Math.max(340, largeurTable)) + "px";
-        } else {
-          bulle.style.width = "";
-        }
+        // La bulle s'élargit TOUJOURS pour loger le tableau réellement construit (jamais
+        // seulement en mode « FT ventilé » — un « Résultat total sur 5/7 ans » à 6 chiffres
+        // debordait de la largeur figée à 340px, colonne de gauche coupée sur plusieurs
+        // lignes ; voir le skill, règle du 22/09/2026 : une bulle est toujours mesurée sur
+        // son contenu réel, jamais une largeur devinée). Plafonnée à la largeur de l'écran ;
+        // recalée ensuite si elle déborde (unPatientReclamp).
+        var largeurTable = table.scrollWidth + 28; // + le padding du corps de la bulle
+        bulle.style.width = Math.min(window.innerWidth - 16, Math.max(340, largeurTable)) + "px";
         if (window.unPatientReclamp) window.unPatientReclamp();
       }
       // Bouton : ouvre/ferme la bulle, calcule son contenu à l'ouverture. Tant qu'elle n'est
