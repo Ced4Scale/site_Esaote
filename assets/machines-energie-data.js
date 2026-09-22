@@ -713,6 +713,30 @@ var ENERGIE_MACHINES = [
     confiance: "Aucun guide d'implantation officiel Canon Medical trouvé en accès libre. Puissance en fonctionnement estimée à partir d'une fiche technique constructeur citant \"jusqu'à 85 kVA\" pour ce modèle, convertie en kW avec un facteur de puissance de 0,9. Veille et climatisation de salle estimées par extrapolation depuis Siemens. À confirmer avec Canon Medical Systems."
   },
 
+  // ---------- Scanner générique (aucune marque) — ajouté le 22/09/2026, même principe que
+  // les 2 IRM génériques ci-dessous : moyenne simple des 5 scanners réels listés ci-dessus
+  // (toutes marques), en accès libre (contrairement aux 5 scanners nommés, désormais
+  // verrouillés par mot de passe comme les IRM concurrentes — voir estMarqueConcurrenteCT
+  // plus bas). ----------
+  {
+    key: "ct-generique",
+    nomCourt: "Scanner générique",
+    type: "ct",
+    champT: null,
+    marque: "Générique",
+    modele: "Scanner générique (aucune marque)",
+    aimant: "ct",
+    eteint: 3.0,
+    pret: 5.5,
+    mesure: 89.1,
+    dureeAcquisitionMinutes: 4,
+    dureeChangementMinutes: 10,
+    coeffRefroidissementLT: 0,
+    climSalleKw: 3.8,
+    refroidissement: "pas de local technique dédié (pas d'aimant à maintenir au froid) — climatisation de la salle d'examen seule (valeur générique, non liée à un modèle commercial précis).",
+    confiance: "Valeur générique — moyenne simple des 5 scanners listés dans ce fichier (Siemens go.All/go.Top, GE Revolution, Philips Incisive, Canon Aquilion Prime SP). Estimation Ced4Scale, jamais présentée à l'écran comme provenant d'une marque."
+  },
+
   // ---------- IRM génériques (aucune marque) — ajoutées le 21/09/2026, demande de
   // Cédric : présenter un comparatif générique 1,5 T/3 T sans citer de marque, en
   // accès libre comme les modèles Esaote (contrairement aux marques concurrentes
@@ -766,6 +790,16 @@ var ENERGIE_MACHINES = [
 // "Esaote" ni "Générique"). ----
 function estMarqueConcurrenteIRM(m) {
   return m.type !== "ct" && m.type !== "peroperatoire" && m.marque !== "Esaote" && m.marque !== "Générique";
+}
+
+// ---- Marques de SCANNER concurrentes verrouillées par mot de passe (22/09/2026, même
+// mécanisme et même mot de passe que les IRM concurrentes ci-dessus, demande de Cédric :
+// "pour Scanner comme tu l'as fait [pour les IRM], il faut un scanner générique et un mot
+// de passe pour avoir accès aux autres scanners"). Esaote ne fait aucun scanner, donc
+// TOUS les scanners nommés sont verrouillés — seul le scanner générique reste en accès
+// libre. ----
+function estMarqueConcurrenteCT(m) {
+  return m.type === "ct" && m.marque !== "Générique";
 }
 
 // Facteur d'émission de l'électricité française — pour convertir le coût énergétique en

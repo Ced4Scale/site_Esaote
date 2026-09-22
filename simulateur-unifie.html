@@ -108,7 +108,7 @@
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
-  <script src="assets/machines-energie-data.js?v=20260921-moyenne"></script>
+  <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
   <style>
     /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
        inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
@@ -1753,10 +1753,10 @@
         document.getElementById("unProjetKicker").textContent = infos.kicker;
         document.getElementById("unProjetTitre").textContent = infos.titre;
         document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
-        // Verrou "marques concurrentes" : concerne uniquement MACHINES_IRM (projets 01/02),
-        // masqué pour le projet 03 (scanner/Esaote uniquement, pas de marque concurrente
-        // d'IRM affichée dans ces 2 listes-là).
-        document.getElementById("unGateConcurrenceWrap").hidden = (n === 3) || gateConcurrenceDeverrouille();
+        // Verrou "marques concurrentes" : concerne MACHINES_IRM (projets 01/02) ET, depuis
+        // le 22/09/2026, MACHINES_SCANNER (projet 03, tous les scanners nommés — Esaote n'en
+        // fait aucun). Même mot de passe, même déverrouillage, valable pour les 2 listes.
+        document.getElementById("unGateConcurrenceWrap").hidden = gateConcurrenceDeverrouille();
 
         if (n === 3) {
           // Projet 03 : Machine A = le scanner en place, Machine B = l'IRM Esaote
@@ -1773,7 +1773,7 @@
           document.getElementById("unMembreFieldB").hidden = false;
           document.getElementById("unMultiRegionFieldA").hidden = false;
           document.getElementById("unRseWrapA").hidden = false;
-          peuplerMachineSelect(selectA, MACHINES_SCANNER, "siemens-goall");
+          peuplerMachineSelect(selectA, machinesCtVisibles(), "ct-generique");
           peuplerMachineSelect(selectB, MACHINES_ESAOTE, "esaote-o-scan");
         } else {
           // Projet 2 : A = machine déjà en place (IRM 1,5 T générique), B = machine complémentaire (O-scan).
@@ -1809,10 +1809,11 @@
       var MACHINES_SCANNER = ENERGIE_MACHINES.filter(function (m) { return m.type === "ct"; });
       var MACHINES_ESAOTE = ENERGIE_MACHINES.filter(function (m) { return m.marque === "Esaote" && m.type !== "peroperatoire"; });
 
-      // ---- Verrou "marques concurrentes" (21/09/2026) — voir simulateur-point-mort.html
-      // pour le détail du motif (code = numéro de téléphone de Cédric, SHA-256, jamais en
-      // clair). Ne concerne que MACHINES_IRM (projets 01/02) — MACHINES_SCANNER et
-      // MACHINES_ESAOTE (projet 03) ne contiennent aucune marque concurrente d'IRM. ----
+      // ---- Verrou "marques concurrentes" (21/09/2026, étendu aux scanners le 22/09/2026)
+      // — voir simulateur-point-mort.html pour le détail du motif (code = numéro de
+      // téléphone de Cédric, SHA-256, jamais en clair). Concerne MACHINES_IRM (projets
+      // 01/02) ET MACHINES_SCANNER (projet 03) — MACHINES_ESAOTE (IRM candidate du projet
+      // 03) n'a aucune marque concurrente, jamais verrouillée. ----
       var GATE_CONCURRENCE_KEY = "ced4scale-concurrence-access";
       var GATE_CONCURRENCE_HASH = "af64ca7a041078971b1b4993c8c855ba3d1e3a2006a4082decc68d8fb981c6f3";
       var GATE_CONCURRENCE_DAYS = 15;
@@ -1831,6 +1832,9 @@
       function machinesIrmVisibles() {
         return gateConcurrenceDeverrouille() ? MACHINES_IRM : MACHINES_IRM.filter(function (m) { return !estMarqueConcurrenteIRM(m); });
       }
+      function machinesCtVisibles() {
+        return gateConcurrenceDeverrouille() ? MACHINES_SCANNER : MACHINES_SCANNER.filter(function (m) { return !estMarqueConcurrenteCT(m); });
+      }
       (function () {
         var wrap = document.getElementById("unGateConcurrenceWrap");
         var btn = document.getElementById("unGateConcurrenceBtn");
@@ -1846,7 +1850,9 @@
                 window.localStorage.setItem(GATE_CONCURRENCE_KEY, JSON.stringify({ expiresAt: Date.now() + GATE_CONCURRENCE_DAYS * 86400000 }));
               } catch (e) {}
               wrap.hidden = true;
-              if (projetActuel !== 3) {
+              if (projetActuel === 3) {
+                peuplerMachineSelect(selectA, machinesCtVisibles(), selectA.value);
+              } else {
                 peuplerMachineSelect(selectA, machinesIrmVisibles(), selectA.value);
                 peuplerMachineSelect(selectB, machinesIrmVisibles(), selectB.value);
               }
