@@ -3555,31 +3555,48 @@
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; }, { cout: true });
         if (avecCadreSante) ligne("Coût cadre de santé", function (e) { return e.cadreSante; }, { cout: true });
         if (avecRis) ligne("Coût RIS + graveur + imprimante", function (e) { return e.ris; }, { cout: true });
-        // Résultat = revenus moins coûts (loyer/RH fixe compris), au patient MOYEN sur toute
-        // l'activité — toujours calculé avec le revenu FT MOYEN, même en mode « FT ventilé »
-        // (affichage seulement, ce mode ne change aucun calcul).
-        ligne("Résultat", function (e) {
-          var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
-          var cout = e.loyer + e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0)
-            + (avecContraste ? e.contraste : 0) + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
-          return revenu - cout;
-        }, { total: true });
+        var coutsFixesTotal = function (e) {
+          return e.loyer + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
+        };
+        var coutVariableTotal = function (e) {
+          return e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + (avecContraste ? e.contraste : 0);
+        };
+        // Résultat = revenus moins coûts (loyer/RH fixe compris). En mode « FT ventilé », UN
+        // RÉSULTAT PAR COLONNE (par tranche), avec le revenu FT DE CETTE TRANCHE — pas ventilé,
+        // une seule valeur (moyenne sur toute l'activité, revenu FT MOYEN).
+        if (ventile) {
+          ligneParTranche("Résultat", function (e, t) {
+            var revenu = t.montant + (params.acteIntellectuelActif ? e.acte : 0);
+            return revenu - coutsFixesTotal(e) - coutVariableTotal(e);
+          }, { total: true });
+        } else {
+          ligne("Résultat", function (e) {
+            var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
+            return revenu - coutsFixesTotal(e) - coutVariableTotal(e);
+          }, { total: true });
+        }
         // Gain par patient SUPPLÉMENTAIRE, tranche par tranche (mode ventilé seulement) — le
         // vrai gain marginal d'un patient de plus dans cette tranche précise : revenu de CETTE
         // tranche + acte intellectuel, moins les seuls coûts VARIABLES (électricité, personnel
         // pendant l'examen, produit de contraste) — jamais le loyer ni les charges fixes
-        // (cadre de santé, RIS), qui ne changent pas pour un patient de plus.
+        // (cadre de santé, RIS), qui ne changent pas pour un patient de plus. Différent du
+        // « Résultat » ci-dessus, qui lui inclut les charges fixes.
         if (ventile) ligneParTranche("Gain par patient supplémentaire", function (e, t) {
           var revenu = t.montant + (params.acteIntellectuelActif ? e.acte : 0);
-          var coutVariable = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + e.contraste;
-          return revenu - coutVariable;
+          return revenu - coutVariableTotal(e);
         }, { total: true });
         var wrap = document.createElement("div"); wrap.style.overflowX = "auto"; wrap.appendChild(table);
         box.appendChild(wrap);
-        // Mode « FT ventilé » : la bulle s'élargit pour loger les colonnes supplémentaires
-        // (sinon confinées à 340px, illisibles) ; revient à sa largeur normale sinon. Recalée
-        // ensuite si elle déborde de l'écran (unPatientReclamp, défini plus bas).
-        bulle.style.width = ventile ? "min(94vw, 640px)" : "";
+        // Mode « FT ventilé » : la bulle s'élargit pour loger TOUTES les colonnes sans
+        // défiler — largeur mesurée sur le tableau réellement construit (nombre de colonnes
+        // variable selon l'activité), plafonnée à la largeur de l'écran. Revient à sa largeur
+        // normale sinon. Recalée ensuite si elle déborde de l'écran (unPatientReclamp).
+        if (ventile) {
+          var largeurTable = table.scrollWidth + 28; // + le padding du corps de la bulle
+          bulle.style.width = Math.min(window.innerWidth - 16, Math.max(340, largeurTable)) + "px";
+        } else {
+          bulle.style.width = "";
+        }
         if (window.unPatientReclamp) window.unPatientReclamp();
       }
       // Bouton : ouvre/ferme la bulle, calcule son contenu à l'ouverture. Tant qu'elle n'est
