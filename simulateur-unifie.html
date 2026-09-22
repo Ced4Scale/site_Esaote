@@ -3453,7 +3453,7 @@
         var ris = config.fractionRis > 0 ? (config.fractionRis * params.coutRisMensuel * 12) : 0;
         var loyer = config.loyer * 12;
         return {
-          label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
+          label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume,
           ftMoyen: volume > 0 ? totalFt / volume : 0, tranches: unTranchesCompo(config.machine, params), acte: acte,
           elec: elec.variablePatient, personnel: personnel, contraste: contraste,
           cadreSante: volume > 0 ? cadreSante / volume : 0, ris: volume > 0 ? ris / volume : 0,
@@ -3474,28 +3474,36 @@
         var avecRis = entrees.some(function (e) { return e.ris > 0; });
         var postesActifs = UN_PATIENT_POSTES.filter(function (p) { return p.role === null || unPosteAnnexeIntegre(p.role); });
         // Case « FT ventilé » : la ligne « Revenu FT moyen » (une seule valeur, moyenne pondérée
-        // sur le barème) est remplacée par AUTANT DE COLONNES que de tranches du barème (4 :
-        // tarif plein, 2ᵉ tranche, 3ᵉ tranche, au-delà), sous chaque machine — mêmes tarifs que
-        // le tableau du barème dégressif de la carte Composition (unTranchesCompo). Les autres
-        // lignes (revenus/coûts non ventilables par tranche) fusionnent ces colonnes (colspan).
+        // sur le barème) est remplacée par AUTANT DE COLONNES que de tranches RÉELLEMENT
+        // ATTEINTES par le volume actuel (« Votre activité ») — jamais les tranches au-delà,
+        // pas encore concernées. Une tranche est atteinte si le volume dépasse son 1er examen
+        // (t.debut) ; les tranches étant croissantes, les tranches atteintes sont toujours les
+        // premières de la liste (jamais un trou). Chaque machine peut avoir un nombre de
+        // colonnes différent (classes de barème différentes). Les lignes non ventilables par
+        // tranche (coûts, acte intellectuel) fusionnent ces colonnes (colspan = e.nCols).
         var ventile = document.getElementById("unPatientVentileFT").checked;
-        var nCols = ventile ? UN_PATIENT_TRANCHE_LABELS.length : 1;
+        entrees.forEach(function (e) {
+          e.tranchesReached = ventile ? e.tranches.filter(function (t) { return e.volume >= t.debut; }) : [];
+          if (ventile && !e.tranchesReached.length) e.tranchesReached = [e.tranches[0]]; // volume nul : au moins la 1ʳᵉ tranche, pour ne pas afficher une colonne vide
+          e.nCols = ventile ? e.tranchesReached.length : 1;
+        });
         var table = document.createElement("table");
         // Les classes --compare1/--compare2 imposent des largeurs en % pensées pour 2-3
-        // colonnes fixes : incompatibles avec les 8+ colonnes du mode « FT ventilé »
-        // (table-layout:auto à la place, dans un cadre qui défile horizontalement si besoin).
+        // colonnes fixes : incompatibles avec le nombre de colonnes variable du mode
+        // « FT ventilé » (table-layout:auto à la place, dans un cadre qui défile
+        // horizontalement si besoin).
         table.className = "simulator__table" + (ventile ? "" : (entrees.length === 1 ? " simulator__table--compare1" : " simulator__table--compare2"));
         var thead = document.createElement("thead"), trh1 = document.createElement("tr");
         var thBlank = document.createElement("th"); if (ventile) thBlank.rowSpan = 2; trh1.appendChild(thBlank);
         entrees.forEach(function (e) {
-          var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; th.colSpan = nCols; trh1.appendChild(th);
+          var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; th.colSpan = e.nCols; trh1.appendChild(th);
         });
         thead.appendChild(trh1);
         if (ventile) {
           var trh2 = document.createElement("tr");
           entrees.forEach(function (e) {
-            UN_PATIENT_TRANCHE_LABELS.forEach(function (lab) {
-              var th = document.createElement("th"); th.className = "un-patient-souscol"; th.style.color = e.color; th.textContent = lab; trh2.appendChild(th);
+            e.tranchesReached.forEach(function (t, i) {
+              var th = document.createElement("th"); th.className = "un-patient-souscol"; th.style.color = e.color; th.textContent = UN_PATIENT_TRANCHE_LABELS[i]; trh2.appendChild(th);
             });
           });
           thead.appendChild(trh2);
@@ -3514,26 +3522,32 @@
           if (opts.total) td0.style.fontWeight = "800";
           tr.appendChild(td0);
           entrees.forEach(function (e) {
-            var td = document.createElement("td"); td.colSpan = nCols; td.style.color = e.color; td.style.fontWeight = "800";
+            var td = document.createElement("td"); td.colSpan = e.nCols; td.style.color = e.color; td.style.fontWeight = "800";
             var v = unEur(fn(e), 2);
             td.textContent = opts.cout ? "(" + v + ")" : v;
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         }
-        if (ventile) {
-          var trFt = document.createElement("tr");
-          var tdL = document.createElement("td"); tdL.textContent = "Revenu FT"; trFt.appendChild(tdL);
+        // Ligne « par tranche » : une valeur par tranche RÉELLEMENT ATTEINTE (pas les 4
+        // systématiquement), calculée par `fn(e, tranche)`.
+        function ligneParTranche(label, fn, opts) {
+          opts = opts || {};
+          var tr = document.createElement("tr");
+          if (opts.total) tr.style.borderTop = "2px solid var(--ink)";
+          var td0 = document.createElement("td"); td0.textContent = label;
+          if (opts.total) td0.style.fontWeight = "800";
+          tr.appendChild(td0);
           entrees.forEach(function (e) {
-            e.tranches.forEach(function (t) {
-              var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(t.montant, 2);
-              trFt.appendChild(td);
+            e.tranchesReached.forEach(function (t) {
+              var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(fn(e, t), 2);
+              tr.appendChild(td);
             });
           });
-          tbody.appendChild(trFt);
-        } else {
-          ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
+          tbody.appendChild(tr);
         }
+        if (ventile) ligneParTranche("Revenu FT", function (e, t) { return t.montant; });
+        else ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
         if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen", function (e) { return e.acte; });
         ligne("Coût loyer", function (e) { return e.loyer; }, { cout: true });
         ligne("Coût électricité", function (e) { return e.elec; }, { cout: true });
@@ -3541,14 +3555,24 @@
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; }, { cout: true });
         if (avecCadreSante) ligne("Coût cadre de santé", function (e) { return e.cadreSante; }, { cout: true });
         if (avecRis) ligne("Coût RIS + graveur + imprimante", function (e) { return e.ris; }, { cout: true });
-        // Résultat = revenus moins coûts, au patient (mêmes lignes que ci-dessus, rien d'autre) —
-        // toujours calculé avec le revenu FT MOYEN, même en mode « FT ventilé » (affichage
-        // seulement, ce mode ne change aucun calcul).
+        // Résultat = revenus moins coûts (loyer/RH fixe compris), au patient MOYEN sur toute
+        // l'activité — toujours calculé avec le revenu FT MOYEN, même en mode « FT ventilé »
+        // (affichage seulement, ce mode ne change aucun calcul).
         ligne("Résultat", function (e) {
           var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
           var cout = e.loyer + e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0)
             + (avecContraste ? e.contraste : 0) + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
           return revenu - cout;
+        }, { total: true });
+        // Gain par patient SUPPLÉMENTAIRE, tranche par tranche (mode ventilé seulement) — le
+        // vrai gain marginal d'un patient de plus dans cette tranche précise : revenu de CETTE
+        // tranche + acte intellectuel, moins les seuls coûts VARIABLES (électricité, personnel
+        // pendant l'examen, produit de contraste) — jamais le loyer ni les charges fixes
+        // (cadre de santé, RIS), qui ne changent pas pour un patient de plus.
+        if (ventile) ligneParTranche("Gain par patient supplémentaire", function (e, t) {
+          var revenu = t.montant + (params.acteIntellectuelActif ? e.acte : 0);
+          var coutVariable = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + e.contraste;
+          return revenu - coutVariable;
         }, { total: true });
         var wrap = document.createElement("div"); wrap.style.overflowX = "auto"; wrap.appendChild(table);
         box.appendChild(wrap);
