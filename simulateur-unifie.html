@@ -3726,11 +3726,14 @@
             td.textContent = opts.cout ? "(" + v + ")" : v;
             tr.appendChild(td);
           });
-          // Écart = Machine B − Machine A (jamais entre parenthèses : ce n'est pas un coût,
-          // le signe indique lui-même laquelle des 2 machines est devant).
+          // Écart = Machine B − Machine A. Entre parenthèses s'il est NÉGATIF (convention
+          // comptable, demande de Cédric le 22/09/2026) — signale que B est en dessous de A
+          // pour cette ligne, comme les coûts sont déjà entre parenthèses ailleurs.
           if (avecEcart) {
             var td4 = document.createElement("td"); td4.style.fontWeight = "800";
-            td4.textContent = unEur(fn(entrees[1]) - fn(entrees[0]), 2);
+            var ecart = fn(entrees[1]) - fn(entrees[0]);
+            var vEcart = unEur(Math.abs(ecart), 2);
+            td4.textContent = ecart < 0 ? "(" + vEcart + ")" : vEcart;
             tr.appendChild(td4);
           }
           tbody.appendChild(tr);
