@@ -399,7 +399,8 @@
     .un-patient-bulle__corps table { margin-bottom: 0; font-size: .78rem; }
     .un-patient-bulle__corps th, .un-patient-bulle__corps td { padding: .3rem .4rem; }
     .un-patient-bulle__corps th:not(:first-child), .un-patient-bulle__corps td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
-    .un-patient-bulle__ventile { display: flex; align-items: center; gap: .4rem; font-size: .75rem; font-weight: 600; padding: .4rem .7rem 0; }
+    .un-patient-bulle__ventile { display: flex; align-items: center; flex-wrap: wrap; gap: .8rem; font-size: .75rem; font-weight: 600; padding: .4rem .7rem 0; }
+    .un-patient-bulle__ventile label { display: flex; align-items: center; gap: .35rem; }
     .un-patient-bulle__ventile input { width: 14px; height: 14px; margin: 0; }
     .un-patient-bulle__corps th.un-patient-souscol { font-size: .68rem; font-weight: 700; white-space: nowrap; }
   </style>
@@ -1691,7 +1692,11 @@
       <span>Par patient</span>
       <button type="button" id="unPatientPinBtn" class="un-patient-bulle__pin" aria-pressed="false" aria-label="Fixer cette bulle (elle ne disparaîtra plus toute seule)" title="Fixer / défixer">📌</button>
     </div>
-    <label class="un-patient-bulle__ventile"><input type="checkbox" id="unPatientVentileFT" /> FT ventilé</label>
+    <div class="un-patient-bulle__ventile">
+      <label><input type="checkbox" id="unPatientVentileFT" /> FT ventilé</label>
+      <label><input type="checkbox" id="unPatientCheck5Ans" /> 5 ans</label>
+      <label><input type="checkbox" id="unPatientCheck7Ans" /> 7 ans</label>
+    </div>
     <div id="unPatientContenu" class="un-patient-bulle__corps"></div>
   </div>
 
@@ -3671,6 +3676,10 @@
         // colonnes différent (classes de barème différentes). Les lignes non ventilables par
         // tranche (coûts, acte intellectuel) fusionnent ces colonnes (colspan = e.nCols).
         var ventile = document.getElementById("unPatientVentileFT").checked;
+        // 4ᵉ colonne « Écart » (Machine B − Machine A) — seulement avec 2 machines, et
+        // seulement hors mode « FT ventilé » (déjà plusieurs colonnes par machine dans ce
+        // mode, un écart n'aurait pas une seule colonne où s'afficher).
+        var avecEcart = entrees.length === 2 && !ventile;
         entrees.forEach(function (e) {
           e.tranchesReached = ventile ? e.tranches.filter(function (t) { return e.volume >= t.debut; }) : [];
           if (ventile && !e.tranchesReached.length) e.tranchesReached = [e.tranches[0]]; // volume nul : au moins la 1ʳᵉ tranche, pour ne pas afficher une colonne vide
@@ -3687,6 +3696,7 @@
         entrees.forEach(function (e) {
           var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; th.colSpan = e.nCols; trh1.appendChild(th);
         });
+        if (avecEcart) { var thEcart = document.createElement("th"); thEcart.textContent = "Écart"; trh1.appendChild(thEcart); }
         thead.appendChild(trh1);
         if (ventile) {
           var trh2 = document.createElement("tr");
@@ -3716,6 +3726,13 @@
             td.textContent = opts.cout ? "(" + v + ")" : v;
             tr.appendChild(td);
           });
+          // Écart = Machine B − Machine A (jamais entre parenthèses : ce n'est pas un coût,
+          // le signe indique lui-même laquelle des 2 machines est devant).
+          if (avecEcart) {
+            var td4 = document.createElement("td"); td4.style.fontWeight = "800";
+            td4.textContent = unEur(fn(entrees[1]) - fn(entrees[0]), 2);
+            tr.appendChild(td4);
+          }
           tbody.appendChild(tr);
         }
         // Ligne « par tranche » : une valeur par tranche RÉELLEMENT ATTEINTE (pas les 4
@@ -3767,10 +3784,21 @@
             return revenu - coutsFixesTotal(e) - coutVariableTotal(e);
           }, { total: true });
         } else {
-          ligne("Résultat", function (e) {
+          var resultatParPatient = function (e) {
             var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
             return revenu - coutsFixesTotal(e) - coutVariableTotal(e);
-          }, { total: true });
+          };
+          ligne("Résultat", resultatParPatient, { total: true });
+          // « 5 ans »/« 7 ans » (demande de Cédric le 22/09/2026) — résultat TOTAL de la
+          // machine (pas par patient) si l'activité et les tarifs actuels se maintenaient
+          // pendant N années : résultat par patient × volume annuel × N. Uniquement hors
+          // mode « FT ventilé » (demande explicite).
+          [[5, "unPatientCheck5Ans"], [7, "unPatientCheck7Ans"]].forEach(function (c) {
+            var n = c[0];
+            if (document.getElementById(c[1]).checked) {
+              ligne("Résultat total sur " + n + " ans", function (e) { return resultatParPatient(e) * e.volume * n; });
+            }
+          });
         }
         var wrap = document.createElement("div"); wrap.style.overflowX = "auto"; wrap.appendChild(table);
         box.appendChild(wrap);
@@ -3860,6 +3888,8 @@
         }
         poignee.addEventListener("pointerup", finDrag); poignee.addEventListener("pointercancel", finDrag);
         document.getElementById("unPatientVentileFT").addEventListener("change", unPatientRendre);
+        document.getElementById("unPatientCheck5Ans").addEventListener("change", unPatientRendre);
+        document.getElementById("unPatientCheck7Ans").addEventListener("change", unPatientRendre);
         window.unPatientRendreDepuisMixage = function () { if (!bulle.hidden) unPatientRendre(); };
         // Suivre la carte en plein écran (voir le bloc juste au-dessus qui déplace
         // #unMixerPointMort de la même façon) : sans ce déplacement, la bulle resterait hors de
