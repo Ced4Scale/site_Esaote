@@ -387,6 +387,7 @@
     .un-patient-bulle__corps { padding: .6rem .7rem .7rem; }
     .un-patient-bulle__corps table { margin-bottom: 0; font-size: .78rem; }
     .un-patient-bulle__corps th, .un-patient-bulle__corps td { padding: .3rem .4rem; }
+    .un-patient-bulle__corps th:not(:first-child), .un-patient-bulle__corps td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; }
   </style>
 </head>
 <body class="tool-page">
@@ -3440,10 +3441,17 @@
         var personnel = {};
         UN_PATIENT_POSTES.forEach(function (p) { personnel[p.label] = config[p.nombre] * params[p.cout] * heures; });
         var contraste = config.contrasteCout * (config.contrastePct / 100);
+        // Coûts FIXES supplémentaires, choisis dans Paramètres/Autre RH/Autre charge — pas des
+        // coûts par examen comme ci-dessus, mais des charges annuelles ramenées au patient
+        // (charge annuelle ÷ volume annuel), pour qu'elles apparaissent aussi dans cette bulle
+        // dès qu'elles sont activées/renseignées.
+        var cadreSante = unPosteAnnexeIntegre("CadreSante") ? (config.nombreCadreSante * params.coutCadreSanteMensuel * 12) : 0;
+        var ris = config.fractionRis > 0 ? (config.fractionRis * params.coutRisMensuel * 12) : 0;
         return {
           label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
           ftMoyen: volume > 0 ? totalFt / volume : 0, acte: acte,
-          elec: elec.variablePatient, personnel: personnel, contraste: contraste
+          elec: elec.variablePatient, personnel: personnel, contraste: contraste,
+          cadreSante: volume > 0 ? cadreSante / volume : 0, ris: volume > 0 ? ris / volume : 0
         };
       }
       function unPatientRendre() {
@@ -3463,27 +3471,39 @@
         entrees.forEach(function (e) { var th = document.createElement("th"); th.style.color = e.color; th.textContent = e.label; trh.appendChild(th); });
         thead.appendChild(trh); table.appendChild(thead);
         var tbody = document.createElement("tbody"); table.appendChild(tbody);
+        var avecCadreSante = entrees.some(function (e) { return e.cadreSante > 0; });
+        var avecRis = entrees.some(function (e) { return e.ris > 0; });
+        // Coûts entre parenthèses (convention comptable) pour signaler que ce sont des montants
+        // soustraits, pas des revenus. Colonnes alignées sur le signe € : les valeurs sont
+        // toutes alignées à droite, donc le dernier caractère (le €, ou la parenthèse fermante
+        // pour un coût) tombe à la même position d'une ligne à l'autre.
         function ligne(label, fn, opts) {
+          opts = opts || {};
           var tr = document.createElement("tr");
-          if (opts && opts.total) tr.style.borderTop = "2px solid var(--ink)";
+          if (opts.total) tr.style.borderTop = "2px solid var(--ink)";
           var td0 = document.createElement("td"); td0.textContent = label;
-          if (opts && opts.total) td0.style.fontWeight = "800";
+          if (opts.total) td0.style.fontWeight = "800";
           tr.appendChild(td0);
           entrees.forEach(function (e) {
-            var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800"; td.textContent = unEur(fn(e), 2);
+            var td = document.createElement("td"); td.style.color = e.color; td.style.fontWeight = "800";
+            var v = unEur(fn(e), 2);
+            td.textContent = opts.cout ? "(" + v + ")" : v;
             tr.appendChild(td);
           });
           tbody.appendChild(tr);
         }
         ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
         if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen", function (e) { return e.acte; });
-        ligne("Coût électricité", function (e) { return e.elec; });
-        postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }); });
-        if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; });
+        ligne("Coût électricité", function (e) { return e.elec; }, { cout: true });
+        postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }, { cout: true }); });
+        if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; }, { cout: true });
+        if (avecCadreSante) ligne("Coût cadre de santé", function (e) { return e.cadreSante; }, { cout: true });
+        if (avecRis) ligne("Coût RIS + graveur + imprimante", function (e) { return e.ris; }, { cout: true });
         // Résultat = revenus moins coûts, au patient (mêmes lignes que ci-dessus, rien d'autre).
         ligne("Résultat", function (e) {
           var revenu = e.ftMoyen + (params.acteIntellectuelActif ? e.acte : 0);
-          var cout = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + (avecContraste ? e.contraste : 0);
+          var cout = e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0)
+            + (avecContraste ? e.contraste : 0) + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
           return revenu - cout;
         }, { total: true });
         box.appendChild(table);
