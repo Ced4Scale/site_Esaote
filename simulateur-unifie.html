@@ -1103,7 +1103,7 @@
              jour/an). Le bouger recalcule aussi « Examens par heure » (= examens par an /
              heures d'ouverture par an) ; si ce n'est pas réalisable avec les horaires, les
              heures d'ouverture montent toutes seules et le groupe suivant apparaît. -->
-        <div class="un-mixer__group">
+        <div class="un-mixer__group" id="unMixGroupActivite">
           <span class="un-mixer__group-title">Examens par an</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
@@ -1152,7 +1152,7 @@
         </div>
         <!-- Coût du kWh — miroir de #unKwh (écran 2, "Charges partagées"), un
              seul fader (pas de paire A/B, valeur commune aux 2 machines). ----->
-        <div class="un-mixer__group">
+        <div class="un-mixer__group" id="unMixGroupKwh">
           <span class="un-mixer__group-title">Coût du kWh</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
@@ -1165,7 +1165,7 @@
           </div>
         </div>
 
-        <div class="un-mixer__group">
+        <div class="un-mixer__group" id="unMixGroupDebit">
           <span class="un-mixer__group-title">Examens par heure</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
@@ -1187,7 +1187,7 @@
           </div>
         </div>
 
-        <div class="un-mixer__group">
+        <div class="un-mixer__group" id="unMixGroupManip">
           <span class="un-mixer__group-title">Manip en poste</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
@@ -1372,6 +1372,32 @@
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixContrasteBVal" value="0" aria-label="Part des examens injectés — Machine B, valeur" />
             </div>
           </div>
+        </div>
+
+        <!-- Icône « Curseurs affichés » (22/09/2026, demande de Cédric) : choisit quels groupes
+             de la table de mixage sont visibles (préférence mémorisée, localStorage) — s'ajoute
+             à la visibilité déjà pilotée par le formulaire (un groupe reste caché tant qu'il ne
+             s'applique pas, ex. Machine B en mode 1 seule IRM, même si coché ici). -->
+        <div class="un-mixer__check-group">
+          <span class="un-mixer__group-title">Curseurs affichés</span>
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unMixerChoixBtn" aria-expanded="false" aria-controls="unMixerChoixPop" aria-label="Choisir les curseurs affichés dans la table de mixage">🧰</button>
+            <div class="un-info-pop" id="unMixerChoixPop" hidden>
+              <div class="un-outils-titre">Curseurs affichés</div>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupActivite" /> Examens par an</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixHeuresGroup" /> Heures d'ouverture</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupKwh" /> Coût du kWh</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupDebit" /> Examens par heure</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupManip" /> Manip en poste</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixMembreGroup" /> % examens membre (MSK)</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupSecretaire" /> Secrétaire médicale</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupCadreSante" /> Cadre de santé</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupAideManip" /> Aide-manip</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupInfirmiere" /> Infirmière</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupManipAlternance" /> Manip en alternance</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixContrasteGroup" /> % examens injectés</label>
+            </div>
+          </span>
         </div>
 
         <!-- Boîte à outils 🧰 de la carte « Composition des recettes » : choix d'affichage (histogramme /
@@ -1642,6 +1668,14 @@
   <script>
     (function () {
       "use strict";
+
+      // « Curseurs affichés » (22/09/2026) — préférence lue TOUT EN HAUT du script (pas
+      // seulement là où l'icône 🧰 est câblée, plus bas) : majVisibilitePostesAnnexes()
+      // l'utilise dès son 1er appel, avant que le reste du fichier ne soit exécuté.
+      var UN_MIXER_CHOIX_CLE = "ced4scale-unifie-mixer-groupes-visibles";
+      var unMixerChoixPrefs = {};
+      try { unMixerChoixPrefs = JSON.parse(localStorage.getItem(UN_MIXER_CHOIX_CLE) || "{}"); } catch (e) {}
+      function unMixerGroupeVoulu(id) { return unMixerChoixPrefs[id] !== false; }
 
       // ---------------------------------------------------------------------
       // Navigation entre les 3 écrans
@@ -1977,7 +2011,7 @@
           // Table de mixage (écran Résultats) : le groupe de faders suit la même
           // visibilité que les champs sources ci-dessus — pas une 2ᵉ case à part.
           var groupeMix = document.getElementById("unMixPosteGroup" + role);
-          if (groupeMix) groupeMix.hidden = !visible;
+          if (groupeMix) groupeMix.hidden = !visible || !unMixerGroupeVoulu("unMixPosteGroup" + role);
         });
         document.getElementById("unAutresPostesHintA").hidden = !auMoinsUnA;
         document.getElementById("unAutresPostesHintB").hidden = !auMoinsUnB;
@@ -2709,6 +2743,11 @@
           document.querySelectorAll('.un-mixer__fader-col-slot[data-slot="' + slot + '"]').forEach(function (el) { el.textContent = nom; });
         });
         var params = unConstruireParamsPointMort();
+        // 4 groupes toujours applicables (aucune condition de formulaire) : seule la
+        // préférence « Curseurs affichés » peut les masquer.
+        ["unMixGroupActivite", "unMixGroupKwh", "unMixGroupDebit", "unMixGroupManip"].forEach(function (id) {
+          document.getElementById(id).hidden = !unMixerGroupeVoulu(id);
+        });
         var uneSeuleMachine = document.getElementById("unColB").hidden;
         document.getElementById("unMixInstallBCol").hidden = uneSeuleMachine;
         document.getElementById("unMixMermBCol").hidden = uneSeuleMachine;
@@ -2723,14 +2762,14 @@
         var membreBVisible = !document.getElementById("unMembreFieldB").hidden;
         document.getElementById("unMixMembreACol").hidden = !membreAVisible;
         document.getElementById("unMixMembreBCol").hidden = !membreBVisible || uneSeuleMachine;
-        document.getElementById("unMixMembreGroup").hidden = !membreAVisible && !membreBVisible;
+        document.getElementById("unMixMembreGroup").hidden = (!membreAVisible && !membreBVisible) || !unMixerGroupeVoulu("unMixMembreGroup");
         // % examens injectés : toujours visible dans la table de mixage (comme les autres
         // groupes), pour pouvoir le régler directement sans repasser par le formulaire —
         // remplace la règle du 19/09/2026 (visible seulement si déjà > 0), devenue gênante
         // (demande de Cédric le 22/09/2026 : « faire varier le % d'examen injecté par IRM »).
         document.getElementById("unMixContrasteACol").hidden = false;
         document.getElementById("unMixContrasteBCol").hidden = uneSeuleMachine;
-        document.getElementById("unMixContrasteGroup").hidden = false;
+        document.getElementById("unMixContrasteGroup").hidden = !unMixerGroupeVoulu("unMixContrasteGroup");
         var slots = [0];
         if (!uneSeuleMachine) slots.push(1);
         var entries = slots.map(function (slot) {
@@ -2929,7 +2968,7 @@
           if (unMixSaisie !== "unMixHeures" + c[0] + "Val") document.getElementById("unMixHeures" + c[0] + "Val").value = patientsFmt.format(h);
         });
         document.getElementById("unMixHeuresBCol").hidden = unSlotsActifs().length < 2;
-        document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable());
+        document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable()) || !unMixerGroupeVoulu("unMixHeuresGroup");
       }
       // Demi-anneau (style « jauge » : moitié haute, trou au centre) — remplace le camembert
       // plein depuis le 21/09/2026 (demande de Cédric, modèle GetApp).
@@ -3827,6 +3866,17 @@
         unRenderPointMort();
       });
 
+      // « Curseurs affichés » — câblage de l'icône et des cases (la préférence elle-même,
+      // unMixerChoixPrefs/unMixerGroupeVoulu, est chargée tout en haut du script).
+      wireOutilsBtn("unMixerChoixBtn", "unMixerChoixPop");
+      document.querySelectorAll('#unMixerChoixPop input[data-mixgroupe]').forEach(function (cb) {
+        cb.checked = unMixerGroupeVoulu(cb.dataset.mixgroupe);
+        cb.addEventListener("change", function () {
+          unMixerChoixPrefs[cb.dataset.mixgroupe] = cb.checked;
+          try { localStorage.setItem(UN_MIXER_CHOIX_CLE, JSON.stringify(unMixerChoixPrefs)); } catch (e) {}
+          unRenderPointMort();
+        });
+      });
       wireOutilsBtn("unCompoOutilsBtn", "unCompoOutilsPop");
       // Boîte à outils déplaçable : glisser la poignée ; la position est mémorisée (localStorage) et
       // reste la même à la réouverture ; double-clic sur la poignée = position d'origine.
