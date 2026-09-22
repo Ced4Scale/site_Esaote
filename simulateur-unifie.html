@@ -2724,14 +2724,13 @@
         document.getElementById("unMixMembreACol").hidden = !membreAVisible;
         document.getElementById("unMixMembreBCol").hidden = !membreBVisible || uneSeuleMachine;
         document.getElementById("unMixMembreGroup").hidden = !membreAVisible && !membreBVisible;
-        // % examens injectés : visible SEULEMENT si renseigné (valeur > 0),
-        // demande explicite de Cédric — contrairement aux autres groupes,
-        // aucun sélecteur d'activation dédié pour ce champ.
-        var contrasteA = parseFloat(document.getElementById("unContrastePctA").value) || 0;
-        var contrasteB = parseFloat(document.getElementById("unContrastePctB").value) || 0;
-        document.getElementById("unMixContrasteACol").hidden = !(contrasteA > 0);
-        document.getElementById("unMixContrasteBCol").hidden = !(contrasteB > 0) || uneSeuleMachine;
-        document.getElementById("unMixContrasteGroup").hidden = !(contrasteA > 0) && !(contrasteB > 0);
+        // % examens injectés : toujours visible dans la table de mixage (comme les autres
+        // groupes), pour pouvoir le régler directement sans repasser par le formulaire —
+        // remplace la règle du 19/09/2026 (visible seulement si déjà > 0), devenue gênante
+        // (demande de Cédric le 22/09/2026 : « faire varier le % d'examen injecté par IRM »).
+        document.getElementById("unMixContrasteACol").hidden = false;
+        document.getElementById("unMixContrasteBCol").hidden = uneSeuleMachine;
+        document.getElementById("unMixContrasteGroup").hidden = false;
         var slots = [0];
         if (!uneSeuleMachine) slots.push(1);
         var entries = slots.map(function (slot) {
