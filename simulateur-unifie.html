@@ -3452,10 +3452,19 @@
         var cadreSante = unPosteAnnexeIntegre("CadreSante") ? (config.nombreCadreSante * params.coutCadreSanteMensuel * 12) : 0;
         var ris = config.fractionRis > 0 ? (config.fractionRis * params.coutRisMensuel * 12) : 0;
         var loyer = config.loyer * 12;
+        // Électricité : 2 parts distinctes, comme le loyer/cadre de santé/RIS d'un côté et le
+        // personnel pendant l'examen de l'autre — la machine consomme même sans patient (socle
+        // + « entre deux patients », part FIXE annuelle) ET consomme davantage pendant
+        // l'acquisition elle-même (part VARIABLE, par examen, indépendante du volume total).
+        // « Coût électricité » (moyenne) et « Résultat » utilisent les 2 parts ramenées au
+        // patient (la part fixe diminue quand l'activité augmente, comme le loyer) ; « Gain par
+        // patient supplémentaire » n'utilise QUE la part variable (un patient de plus ne change
+        // rien au socle).
+        var elecFixe = volume > 0 ? (elec.fixeMensuel * 12) / volume : 0;
         return {
           label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume,
           ftMoyen: volume > 0 ? totalFt / volume : 0, tranches: unTranchesCompo(config.machine, params), acte: acte,
-          elec: elec.variablePatient, personnel: personnel, contraste: contraste,
+          elecFixe: elecFixe, elecVariable: elec.variablePatient, personnel: personnel, contraste: contraste,
           cadreSante: volume > 0 ? cadreSante / volume : 0, ris: volume > 0 ? ris / volume : 0,
           loyer: volume > 0 ? loyer / volume : 0
         };
@@ -3550,16 +3559,24 @@
         else ligne("Revenu FT moyen", function (e) { return e.ftMoyen; });
         if (params.acteIntellectuelActif) ligne("Revenu acte intellectuel moyen", function (e) { return e.acte; });
         ligne("Coût loyer", function (e) { return e.loyer; }, { cout: true });
-        ligne("Coût électricité", function (e) { return e.elec; }, { cout: true });
+        // « Coût électricité » affiché = moyenne complète (part fixe + part variable), la
+        // seule cohérente avec « Résultat » (une moyenne). Diminue avec l'activité comme le
+        // loyer, puisque sa part fixe (socle + « entre deux patients ») se répartit sur plus
+        // de patients — c'était le manque signalé par Cédric le 22/09/2026 (le chiffre ne
+        // bougeait jamais avec l'activité, car seule la part variable était comptée).
+        ligne("Coût électricité", function (e) { return e.elecFixe + e.elecVariable; }, { cout: true });
         postesActifs.forEach(function (p) { ligne("Coût " + p.label, function (e) { return e.personnel[p.label]; }, { cout: true }); });
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; }, { cout: true });
         if (avecCadreSante) ligne("Coût cadre de santé", function (e) { return e.cadreSante; }, { cout: true });
         if (avecRis) ligne("Coût RIS + graveur + imprimante", function (e) { return e.ris; }, { cout: true });
         var coutsFixesTotal = function (e) {
-          return e.loyer + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
+          return e.loyer + e.elecFixe + (avecCadreSante ? e.cadreSante : 0) + (avecRis ? e.ris : 0);
         };
+        // Coûts VARIABLES (changent avec un patient de plus) : SEULEMENT la part variable de
+        // l'électricité (elecVariable), jamais sa part fixe (elecFixe, déjà dans les coûts
+        // fixes ci-dessus).
         var coutVariableTotal = function (e) {
-          return e.elec + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + (avecContraste ? e.contraste : 0);
+          return e.elecVariable + postesActifs.reduce(function (s, p) { return s + e.personnel[p.label]; }, 0) + (avecContraste ? e.contraste : 0);
         };
         // Résultat = revenus moins coûts (loyer/RH fixe compris). En mode « FT ventilé », UN
         // RÉSULTAT PAR COLONNE (par tranche), avec le revenu FT DE CETTE TRANCHE — pas ventilé,
