@@ -378,7 +378,7 @@
        skill "boîte à outils déplaçable" mais en position:fixed (pas ancrée à un bouton),
        pour pouvoir être posée n'importe où sur l'écran, y compris en dehors de la carte
        qui a servi à l'ouvrir. */
-    .un-patient-bulle { position: fixed; top: 6rem; right: 1.2rem; translate: var(--dx, 0px) var(--dy, 0px); z-index: 601; width: min(calc(100vw - 2.4rem), 340px); background: #fcfcfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); }
+    .un-patient-bulle { position: fixed; z-index: 601; width: min(calc(100vw - 2.4rem), 340px); background: #fcfcfb; border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,.22); }
     .un-patient-bulle[hidden] { display: none; }
     .un-patient-bulle__tete { display: flex; align-items: center; justify-content: space-between; gap: .5rem; padding: .5rem .6rem; border-bottom: 1px dashed var(--line); font-weight: 800; font-size: .8rem; cursor: grab; touch-action: none; user-select: none; }
     .un-patient-bulle__tete:active { cursor: grabbing; }
@@ -3479,17 +3479,20 @@
         if (avecContraste) ligne("Coût produit de contraste", function (e) { return e.contraste; });
         box.appendChild(table);
       }
-      // Bouton flottant : ouvre/ferme la bulle, calcule son contenu à l'ouverture.
-      // Tant qu'elle n'est pas fixée (📌), elle se referme seule après 3 secondes —
-      // le glisser-déposer relance ce délai pour ne jamais la faire disparaître en
-      // pleine manipulation.
+      // Bouton : ouvre/ferme la bulle, calcule son contenu à l'ouverture. Tant qu'elle n'est
+      // pas fixée (📌), elle se referme seule après 3 secondes — le glisser-déposer relance ce
+      // délai pour ne jamais la faire disparaître en pleine manipulation. Position en LEFT/TOP
+      // absolus (pas une translation depuis un point fixe) : à l'ouverture, elle apparaît juste
+      // sous le bouton qui l'a ouverte (jamais « trop haute »/hors champ), puis garde la
+      // position choisie au glisser d'une fois sur l'autre. En plein écran, elle est déplacée
+      // DANS le cadre plein écran (comme la table de mixage juste au-dessus), sinon invisible
+      // (l'API Fullscreen masque tout ce qui est hors de l'élément mis en plein écran).
       (function () {
         var launcher = document.getElementById("unPatientLauncherBtn"), bulle = document.getElementById("unPatientBulle");
         var poignee = document.getElementById("unPatientPoignee"), pinBtn = document.getElementById("unPatientPinBtn");
-        var CLE_POS = "ced4scale-unifie-bulle-patient-pos", CLE_PIN = "ced4scale-unifie-bulle-patient-fixee";
-        var dx = 0, dy = 0, dep = null, fixee = false, minuteur = null;
-        function appliquerPos() { bulle.style.setProperty("--dx", dx + "px"); bulle.style.setProperty("--dy", dy + "px"); }
-        try { var m = JSON.parse(localStorage.getItem(CLE_POS) || "null"); if (m) { dx = m.dx || 0; dy = m.dy || 0; appliquerPos(); } } catch (e) {}
+        var homeParent = bulle.parentNode, homeNext = bulle.nextSibling;
+        var CLE_POS = "ced4scale-unifie-bulle-patient-pos2", CLE_PIN = "ced4scale-unifie-bulle-patient-fixee";
+        var dep = null, fixee = false, minuteur = null, posConnue = false;
         try { fixee = localStorage.getItem(CLE_PIN) === "1"; } catch (e) {}
         function majPin() { pinBtn.setAttribute("aria-pressed", String(fixee)); }
         majPin();
@@ -3498,9 +3501,26 @@
           annulerMinuteur();
           if (!fixee) minuteur = setTimeout(function () { bulle.hidden = true; }, 3000);
         }
+        function clamp(left, top) {
+          var w = Math.min(340, window.innerWidth - 16), h = bulle.offsetHeight || 200;
+          return { left: Math.max(8, Math.min(left, window.innerWidth - w - 8)), top: Math.max(8, Math.min(top, window.innerHeight - h - 8)) };
+        }
+        function positionner() {
+          var p = null;
+          try { p = JSON.parse(localStorage.getItem(CLE_POS) || "null"); } catch (e) {}
+          if (!p) {
+            var r = launcher.getBoundingClientRect();
+            p = { left: r.left, top: r.bottom + 8 };
+          }
+          p = clamp(p.left, p.top);
+          bulle.style.left = p.left + "px"; bulle.style.top = p.top + "px";
+          posConnue = true;
+        }
         launcher.addEventListener("click", function () {
           bulle.hidden = false;
-          unPatientRendre();
+          unPatientRendre(); // AVANT positionner() : le calcul des limites d'écran a besoin de
+          // la vraie hauteur de la bulle une fois remplie, jamais de la hauteur vide/réduite.
+          if (!posConnue) positionner(); // ne re-recentre pas une bulle déjà ouverte/déplacée
           relancerMinuteur();
         });
         pinBtn.addEventListener("click", function () {
@@ -3510,21 +3530,33 @@
         });
         poignee.addEventListener("pointerdown", function (e) {
           if (e.target === pinBtn) return;
-          dep = { x: e.clientX - dx, y: e.clientY - dy };
+          var r = bulle.getBoundingClientRect();
+          dep = { x: e.clientX - r.left, y: e.clientY - r.top };
           poignee.setPointerCapture(e.pointerId); e.preventDefault();
           annulerMinuteur();
         });
         poignee.addEventListener("pointermove", function (e) {
           if (!dep) return;
-          dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquerPos();
+          bulle.style.left = (e.clientX - dep.x) + "px"; bulle.style.top = (e.clientY - dep.y) + "px";
         });
         function finDrag() {
           if (!dep) return; dep = null;
-          try { localStorage.setItem(CLE_POS, JSON.stringify({ dx: dx, dy: dy })); } catch (e) {}
+          try { localStorage.setItem(CLE_POS, JSON.stringify({ left: parseFloat(bulle.style.left), top: parseFloat(bulle.style.top) })); } catch (e) {}
           relancerMinuteur();
         }
         poignee.addEventListener("pointerup", finDrag); poignee.addEventListener("pointercancel", finDrag);
         window.unPatientRendreDepuisMixage = function () { if (!bulle.hidden) unPatientRendre(); };
+        // Suivre la carte en plein écran (voir le bloc juste au-dessus qui déplace
+        // #unMixerPointMort de la même façon) : sans ce déplacement, la bulle resterait hors de
+        // l'élément mis en plein écran et l'API Fullscreen la rendrait invisible.
+        document.addEventListener("fullscreenchange", function () {
+          if (document.fullscreenElement) {
+            if (bulle.parentNode !== document.fullscreenElement) document.fullscreenElement.appendChild(bulle);
+          } else if (bulle.parentNode !== homeParent) {
+            if (homeNext && homeNext.parentNode === homeParent) homeParent.insertBefore(bulle, homeNext);
+            else homeParent.appendChild(bulle);
+          }
+        });
       })();
 
       // ---------------------------------------------------------------------
