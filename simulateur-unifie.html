@@ -2197,6 +2197,21 @@
         var p = Math.max(0, Math.min(100, pctMembre)) / 100;
         return p * TARIF_ACTE_MEMBRE + (1 - p) * TARIF_ACTE_AUTRE;
       }
+      // Acte intellectuel selon le TYPE de machine — un scanner facture un acte intellectuel
+      // mono-région/multi-région (25,27 €/50,54 €, champ « Part des examens multi-régions »),
+      // jamais le tarif membre/autre région d'une IRM (55 €/69 €). Corrige un bug signalé par
+      // Cédric le 22/09/2026 (Projet 03, scanner Go.All) : Point mort/Composition/bulle « Par
+      // patient » utilisaient tous acteIntellectuelMoyen(config.pctMembre), qui vaut TOUJOURS
+      // 69 € pour un scanner (pctMembre forcé à 0, aucun tarif « membre » pour cette machine) —
+      // seul l'écran « Comparatif CT vs IRM » avait la bonne formule (unActeIntellectuelMachine,
+      // plus bas dans ce fichier, hoisté donc utilisable ici malgré l'ordre).
+      function unActeIntellectuelConfig(config) {
+        if (config.machine && config.machine.type === "ct") {
+          var champ = document.getElementById("unMultiRegion" + (config.slot === 0 ? "A" : "B"));
+          return unActeIntellectuelMachine(config.machine, champ ? parseFloat(champ.value) || 0 : 0);
+        }
+        return acteIntellectuelMoyen(config.pctMembre);
+      }
       function classKeyFromChampT(t) {
         if (t < 0.5) return "le05";
         if (t < 1.5) return "mid";
@@ -2243,7 +2258,7 @@
         // pour cet outil unifié (simulateur-point-mort.html, fichier réel,
         // ajoute toujours cette recette, sans bascule). Lue via .checked,
         // jamais .value (motif "cases à cocher" du skill).
-        var acte = params.acteIntellectuelActif ? acteIntellectuelMoyen(m.pctMembre) : 0;
+        var acte = params.acteIntellectuelActif ? unActeIntellectuelConfig(m) : 0;
         var recette = recetteFt + acte;
         var elec = electriciteMensuellePointMort(m.machine, params.heuresParJour, params.joursParMois, params.prixKwh);
         var rh = m.nombreCadreSante * params.coutCadreSanteMensuel;
@@ -3385,7 +3400,7 @@
           var config = unConfigMachinePointMort(slot);
           if (!config.machine) return;
           var detail = unDetailCA(volume, config.machine, params);
-          if (params.acteIntellectuelActif) detail.acte = acteIntellectuelMoyen(config.pctMembre) * volume;
+          if (params.acteIntellectuelActif) detail.acte = unActeIntellectuelConfig(config) * volume;
           camemberts.push({ cout: unCoutsDetail(config, unParamsPourSlot(slot, params), volume), label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + (detail.acte || 0) });
         });
@@ -3483,7 +3498,7 @@
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var d = unDetailCA(volume, config.machine, params);
         var totalFt = d.plein + d.seuil1 + d.seuil2 + d.plafond;
-        var acte = params.acteIntellectuelActif ? acteIntellectuelMoyen(config.pctMembre) : 0;
+        var acte = params.acteIntellectuelActif ? unActeIntellectuelConfig(config) : 0;
         var elec = electriciteMensuellePointMort(config.machine, paramsSlot.heuresParJour, paramsSlot.joursParMois, paramsSlot.prixKwh);
         var heures = config.tempsInstallation / 60;
         var personnel = {};
