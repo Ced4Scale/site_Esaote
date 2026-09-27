@@ -33,28 +33,41 @@ var FT_CLASSES = {
   },
   t15: {
     label: "1,5 T standard", REF: 4750, SEUIL1: 8000, SEUIL2: 11000,
+    /* Tarifs réduits corrigés le 27/09/2026 (signalé par Cédric) : le PDF source
+       (decision-2025-forfaits-techniques.pdf, p. 7-9) liste, à côté de la classe
+       « 1,5 T (2) » (généraliste — note 2 : "hors IRM 1,5 T dédié aux membres et IRM
+       1,5 T spécialisé ostéoarticulaire"), deux AUTRES colonnes "1,5 T dédié aux
+       membres" et "1,5 T spécialisé ostéoarticulaire" (adossées à une machine 1,5T/>1,5T
+       déjà installée, plus vendues seules depuis 5+ ans). Les tarifs réduits 2025-2027
+       (44,81/37,89/24,91 puis 52,72/44,58/29,30) pris ici par erreur étaient ceux de la
+       colonne ostéoarticulaire, jamais ceux de la vraie classe généraliste — qui
+       partage en fait le MÊME tarif réduit que la classe ≤ 0,5 T (confirmé par le PDF,
+       colonnes identiques). Le tarif plein (amorti/non amorti) n'était PAS concerné,
+       déjà correct. */
     dates: [
       { iso: "2018-07-01", label: "1er juil. 2018", plein: { paris: { amorti: 124.62, nonAmorti: 170.24 }, idf: { amorti: 120.94, nonAmorti: 166.55 }, province: { amorti: 119.68, nonAmorti: 165.22 } }, reduits: { seuil1: 69.00, seuil2: 52.54, plafond: 26.11 } },
       { iso: "2019-01-01", label: "1er janv. 2019", plein: { paris: { amorti: 124.62, nonAmorti: 171.09 }, idf: { amorti: 120.94, nonAmorti: 167.38 }, province: { amorti: 119.68, nonAmorti: 166.05 } }, reduits: { seuil1: 70.10, seuil2: 55.69, plafond: 26.11 } },
       { iso: "2024-03-01", label: "1er mars 2024", plein: { paris: { amorti: 130.54, nonAmorti: 177.01 }, idf: { amorti: 126.86, nonAmorti: 173.30 }, province: { amorti: 125.60, nonAmorti: 171.97 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } },
-      { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 44.81, seuil2: 37.89, plafond: 24.91 } },
-      { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } },
-      { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { amorti: 87.02, nonAmorti: 159.31 }, idf: { amorti: 86.03, nonAmorti: 155.97 }, province: { amorti: 85.69, nonAmorti: 154.77 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } },
-      { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 86.10, nonAmorti: 154.71 }, idf: { amorti: 85.13, nonAmorti: 151.46 }, province: { amorti: 84.79, nonAmorti: 150.30 } }, reduits: { seuil1: 52.72, seuil2: 44.58, plafond: 29.30 } }
+      { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 62.85, seuil2: 50.60, plafond: 25.46 } },
+      { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { amorti: 87.94, nonAmorti: 162.85 }, idf: { amorti: 86.94, nonAmorti: 159.44 }, province: { amorti: 86.59, nonAmorti: 158.21 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } },
+      { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { amorti: 87.02, nonAmorti: 159.31 }, idf: { amorti: 86.03, nonAmorti: 155.97 }, province: { amorti: 85.69, nonAmorti: 154.77 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } },
+      { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 86.10, nonAmorti: 154.71 }, idf: { amorti: 85.13, nonAmorti: 151.46 }, province: { amorti: 84.79, nonAmorti: 150.30 } }, reduits: { seuil1: 73.94, seuil2: 59.53, plafond: 29.95 } }
     ]
   },
   sup15: {
-    // Avait un tarif "amorti" en 2018/2019/2024 (confirmé par Cédric sur les PDF sources) ;
-    // ce tarif a disparu du texte à partir de 2025 (uniquement "non amorti" ensuite).
+    // Correction du 27/09/2026 : le tarif "amorti" existe bien à toutes les dates
+    // 2025-2027 dans le PDF officiel (decision-2025-forfaits-techniques.pdf, p. 7-9,
+    // colonne "> 1,5 T") — l'ancienne note ci-dessous (aucun tarif amorti depuis nov.
+    // 2025) était fausse, relue et corrigée par Cédric le 27/09/2026.
     label: "> 1,5 T", REF: 4500, SEUIL1: 8000, SEUIL2: 11000,
     dates: [
       { iso: "2018-07-01", label: "1er juil. 2018", plein: { paris: { amorti: 138.83, nonAmorti: 197.91 }, idf: { amorti: 133.02, nonAmorti: 195.99 }, province: { amorti: 124.88, nonAmorti: 195.91 } }, reduits: { seuil1: 71.56, seuil2: 61.81, plafond: 38.63 } },
       { iso: "2019-01-01", label: "1er janv. 2019", plein: { paris: { amorti: 138.83, nonAmorti: 197.91 }, idf: { amorti: 133.02, nonAmorti: 195.99 }, province: { amorti: 124.88, nonAmorti: 195.91 } }, reduits: { seuil1: 71.56, seuil2: 61.81, plafond: 38.63 } },
       { iso: "2024-03-01", label: "1er mars 2024", plein: { paris: { amorti: 144.75, nonAmorti: 203.83 }, idf: { amorti: 138.94, nonAmorti: 201.91 }, province: { amorti: 130.80, nonAmorti: 201.43 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
-      { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { nonAmorti: 187.52 }, idf: { nonAmorti: 185.76 }, province: { nonAmorti: 185.32 } }, reduits: { seuil1: 64.09, seuil2: 55.80, plafond: 36.10 } },
-      { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { nonAmorti: 187.52 }, idf: { nonAmorti: 185.76 }, province: { nonAmorti: 185.32 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
-      { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { nonAmorti: 183.45 }, idf: { nonAmorti: 181.72 }, province: { nonAmorti: 181.29 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
-      { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { nonAmorti: 178.15 }, idf: { nonAmorti: 176.47 }, province: { nonAmorti: 176.05 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
+      { iso: "2025-11-05", label: "5 nov. 2025", plein: { paris: { amorti: 138.96, nonAmorti: 187.52 }, idf: { amorti: 133.38, nonAmorti: 185.76 }, province: { amorti: 125.57, nonAmorti: 185.32 } }, reduits: { seuil1: 64.09, seuil2: 55.80, plafond: 36.10 } },
+      { iso: "2026-01-01", label: "1er janv. 2026", plein: { paris: { amorti: 138.96, nonAmorti: 187.52 }, idf: { amorti: 133.38, nonAmorti: 185.76 }, province: { amorti: 125.57, nonAmorti: 185.32 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+      { iso: "2026-07-01", label: "1er juil. 2026", plein: { paris: { amorti: 137.52, nonAmorti: 183.45 }, idf: { amorti: 131.99, nonAmorti: 181.72 }, province: { amorti: 124.26, nonAmorti: 181.29 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } },
+      { iso: "2027-01-01", label: "1er janv. 2027", plein: { paris: { amorti: 136.07, nonAmorti: 178.15 }, idf: { amorti: 130.60, nonAmorti: 176.47 }, province: { amorti: 122.96, nonAmorti: 176.05 } }, reduits: { seuil1: 75.40, seuil2: 65.65, plafond: 42.47 } }
     ]
   },
   /* Scanner (CT) — pas de distinction Paris/IDF/Province dans le texte officiel ("toutes
