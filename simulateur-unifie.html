@@ -5400,7 +5400,11 @@
           // ---- Composition des recettes de l'année 1 ----
           if (inclureCompo && donnees.compo.length) {
             titreSection("Composition des recettes de l'année 1");
-            ajouterImage(compoImgs.recettes);
+            // Les 3 graphes (Recettes/Dépenses/Résultat) les uns derrière les autres,
+            // avant le texte et le tableau du barème (demande de Cédric, 30/09/2026).
+            sousTitre("Recettes"); ajouterImage(compoImgs.recettes);
+            if (compoImgs.depenses) { sousTitre("Dépenses"); ajouterImage(compoImgs.depenses); }
+            if (compoImgs.resultat) { sousTitre("Résultat"); ajouterImage(compoImgs.resultat); }
             donnees.compo.forEach(function (c) {
               ligneTexteCouleur(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat), c.color);
             });
@@ -5409,8 +5413,6 @@
               sousTitre("Tableau du barème dégressif");
               donnees.bareme.forEach(baremeBloc);
             }
-            if (compoImgs.depenses) { sousTitre("Dépenses"); ajouterImage(compoImgs.depenses); }
-            if (compoImgs.resultat) { sousTitre("Résultat"); ajouterImage(compoImgs.resultat); }
           }
 
           // ---- Impact énergétique / RSE (projet 1 uniquement) ----
