@@ -5144,26 +5144,30 @@
         { groupe: "unMixPosteGroupManipAlternance", label: "Manip en alternance", unite: "ETP", valA: "unMixManipAlternanceAVal", valB: "unMixManipAlternanceBVal", colB: "unMixManipAlternanceBCol" },
         { groupe: "unMixContrasteGroup", label: "% examens injectés", unite: "%", valA: "unMixContrasteAVal", valB: "unMixContrasteBVal", colA: "unMixContrasteACol", colB: "unMixContrasteBCol" }
       ];
-      function unMixerResumeLignes() {
-        var lignes = [];
+      // Source commune (UN_MIX_RESUME_CHAMPS, mêmes conditions de
+      // visibilité), mais séparée en 3 groupes — Paramètres (champs communs aux 2
+      // machines), Machine A, Machine B — pour le résumé en tête du PDF envoyé par e-mail
+      // (30/09/2026, demande de Cédric). Un champ A/B dont la colonne B est masquée (une
+      // seule machine, ou "Heures d'ouverture" non dédoublée) reste dans Machine A : c'est
+      // bien de là qu'est lue sa valeur à l'écran, même quand elle vaut aussi pour B.
+      function unMixerResumeSepare() {
+        var parametres = [], machineA = [], machineB = [];
         UN_MIX_RESUME_CHAMPS.forEach(function (c) {
           var groupeEl = document.getElementById(c.groupe);
           if (!groupeEl || groupeEl.hidden) return;
           if (c.val) {
             var el = document.getElementById(c.val);
-            if (el && el.value !== "") lignes.push({ label: c.label, valeur: el.value + (c.unite ? " " + c.unite : "") });
+            if (el && el.value !== "") parametres.push({ label: c.label, valeur: el.value + (c.unite ? " " + c.unite : "") });
             return;
           }
           var colA = c.colA ? document.getElementById(c.colA) : null;
           var colB = c.colB ? document.getElementById(c.colB) : null;
           var elA = document.getElementById(c.valA);
           var elB = document.getElementById(c.valB);
-          var texte = "";
-          if (elA && (!colA || !colA.hidden)) texte += "A : " + elA.value + (c.unite ? " " + c.unite : "");
-          if (elB && colB && !colB.hidden) texte += (texte ? "   ·   " : "") + "B : " + elB.value + (c.unite ? " " + c.unite : "");
-          if (texte) lignes.push({ label: c.label, valeur: texte });
+          if (elA && (!colA || !colA.hidden)) machineA.push({ label: c.label, valeur: elA.value + (c.unite ? " " + c.unite : "") });
+          if (elB && colB && !colB.hidden) machineB.push({ label: c.label, valeur: elB.value + (c.unite ? " " + c.unite : "") });
         });
-        return lignes;
+        return { parametres: parametres, machineA: machineA, machineB: machineB };
       }
 
       // ---- Rassemble toutes les données du récapitulatif pour le projet ACTUELLEMENT
@@ -5189,6 +5193,24 @@
         var params = unConstruireParamsPointMort();
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var slots = unSlotsActifs();
+
+        // ---- Paramètres (Forfait technique) + noms des machines A/B — repris du
+        // formulaire, pour identifier clairement en tête du PDF ce qui a été simulé
+        // (30/09/2026, demande de Cédric : « les données du formulaire : Paramètres et
+        // données de Machine A et B », absentes jusque-là du PDF). ----
+        function unTexteOptionChoisie(selectId) {
+          var el = document.getElementById(selectId);
+          return el && el.options[el.selectedIndex] ? el.options[el.selectedIndex].textContent : "";
+        }
+        var parametresForfait = {
+          date: unTexteOptionChoisie("unDate"),
+          zone: unTexteOptionChoisie("unZone"),
+          amorti: unTexteOptionChoisie("unAmorti")
+        };
+        var uneSeuleMachine = document.getElementById("unColB").hidden;
+        var configA = unConfigMachinePointMort(0), configB = uneSeuleMachine ? { machine: null } : unConfigMachinePointMort(1);
+        var machineANom = configA.machine ? configA.machine.nomCourt : "Machine A";
+        var machineBNom = configB.machine ? configB.machine.nomCourt : null;
 
         var pointMort = (unDernieresEntreesPointMort || []).map(function (e) {
           return { label: e.label, color: e.color, jour: e.value, annuelJours: (e.annuel && e.annuel.loyer) ? e.annuel.loyer.totalJours : null };
@@ -5265,7 +5287,12 @@
           }
         }
 
-        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
+        return {
+          projet: projetActuel, volume: volume, parametresForfait: parametresForfait,
+          machineANom: machineANom, machineBNom: machineBNom, mixageSepare: unMixerResumeSepare(),
+          pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference,
+          rse: rse, ctIrm: ctIrm
+        };
       }
 
       var UN_PROJET_TITRES = { 1: "Première installation d'IRM", 2: "IRM supplémentaire", 3: "Remplacement d'un scanner" };
@@ -5477,6 +5504,29 @@
             y += 2;
           }
 
+          // ---- Paramètres + Machine A / Machine B — données du formulaire (écran
+          // Paramètres) reprises en tête du PDF, pour identifier clairement ce qui a été
+          // simulé avant les résultats (30/09/2026, demande de Cédric). Mêmes champs et
+          // mêmes conditions de visibilité que la « Table de mixage » de l'écran
+          // Résultats (unMixerResumeSepare(), source commune UN_MIX_RESUME_CHAMPS),
+          // simplement répartis en 3 blocs au lieu d'une liste "A : x · B : y" unique. ----
+          titreSection("Paramètres");
+          ligneTexte("Date d'application des forfaits techniques : " + donnees.parametresForfait.date);
+          ligneTexte("Zone tarifaire : " + donnees.parametresForfait.zone);
+          ligneTexte("Machine amortie : " + donnees.parametresForfait.amorti);
+          donnees.mixageSepare.parametres.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
+          y += 3;
+
+          titreSection("Machine A : " + donnees.machineANom);
+          donnees.mixageSepare.machineA.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
+          y += 3;
+
+          if (donnees.machineBNom) {
+            titreSection("Machine B : " + donnees.machineBNom);
+            donnees.mixageSepare.machineB.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
+            y += 3;
+          }
+
           // ---- Point mort ----
           titreSection("Point mort");
           ajouterImage(pointMortImg);
@@ -5525,20 +5575,6 @@
             y += 3;
           }
 
-          // ---- Table de mixage (résumé des curseurs actuellement réglés) ----
-          if (donnees.mixage.length) {
-            titreSection("Table de mixage — réglages actuels");
-            donnees.mixage.forEach(function (m) {
-              ensureSpace(5.5);
-              doc.setFontSize(9.5);
-              doc.setTextColor(0);
-              doc.text(m.label, LEFT_X + 2, y);
-              doc.setTextColor(70);
-              doc.text(m.valeur, LEFT_X + 82, y);
-              y += 5.2;
-            });
-            y += 3;
-          }
 
           // ---- Commentaire du visiteur ----
           var commentaire = document.getElementById("unExportCommentaire").value.trim();
