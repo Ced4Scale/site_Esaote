@@ -109,6 +109,7 @@
   <script data-goatcounter="https://ced4scale.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
   <script src="assets/forfaits-techniques-data.js?v=20260810-irm"></script>
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js" integrity="sha512-qZvrmS2ekKPF2mSznTQsxqPgnpkI4DNTlrdUmTzrDgektczlKNRRhy5X5AAOnx5S09ydFYWWNSfcEqDTTHgtNA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <style>
     /* Verrou "marques concurrentes" (21/09/2026) — display posé sur la classe, pas en
        inline, sinon [hidden] ne l'emporte jamais (piège déjà documenté du skill). */
@@ -1679,6 +1680,77 @@
           <p class="simulator__hint" style="margin-top:.6rem">Case RSE et « Part des examens multi-régions » du scanner : réglables dans la colonne Machine A du formulaire (écran précédent).</p>
         </details>
       </div>
+
+      <!-- Envoi par e-mail du récapitulatif (22/09/2026) — même mécanisme que
+           #simExport de simulateur-recettes.html (skill ced4scale-simulateur-web,
+           section "Export PDF (jsPDF)"), réutilisé À L'IDENTIQUE : même URL de
+           déclencheur Power Automate "Simulateur_Recettes_Envoi_PDF_V1" (flux
+           générique, déjà en production, reçoit le même contrat JSON), mêmes
+           fonctions figerLesStyles()/svgVersPng()/imageDataUrl() et même
+           neutralisation des caractères qui corrompent jsPDF (espace fine U+202F,
+           "−" U+2212, "≤", "₂"). SEULE différence avec simuler-recettes.html :
+           l'e-mail part au visiteur, PAS en copie à Cédric — comportement gardé
+           tel quel côté flux Power Automate (rien à changer dans le JSON envoyé
+           ici, identique à celui de simulateur-recettes.html).
+           Contenu du PDF construit à partir des DONNÉES (unDernieresEntreesPointMort,
+           unCompoEntrees/unDetailCA, unCalculerComposCtIrm) plutôt que d'une capture
+           d'image des graphiques SVG — un graphique dans une carte encore jamais
+           ouverte (ex. Point mort annuel) peut ne jamais avoir été dessiné (voir
+           unDessinerBarresPointMortAnnuel(), appelée seulement si la carte est
+           ouverte) alors que les chiffres, eux, sont toujours calculés dans
+           unRenderPointMort() — plus robuste que de convertir un SVG parfois vide. -->
+      <div class="simulator__export" id="unExport">
+        <button type="button" class="btn btn--lg" id="unExportToggle">Recevoir ce tableau par e-mail</button>
+        <form id="unExportForm" hidden>
+          <div class="simulator__export-grid">
+            <div class="field">
+              <label for="unExportPrenom">Prénom</label>
+              <input type="text" id="unExportPrenom" required autocomplete="given-name" />
+            </div>
+            <div class="field">
+              <label for="unExportNom">Nom</label>
+              <input type="text" id="unExportNom" required autocomplete="family-name" />
+            </div>
+            <div class="field">
+              <label for="unExportEtablissement">Établissement</label>
+              <input type="text" id="unExportEtablissement" required placeholder="CHU, clinique, cabinet…" />
+            </div>
+            <div class="field">
+              <label for="unExportFonction">Fonction</label>
+              <input type="text" id="unExportFonction" placeholder="Radiologue, directeur, cadre, MERM…" autocomplete="organization-title" />
+            </div>
+            <div class="field">
+              <label for="unExportEmail">E-mail</label>
+              <input type="email" id="unExportEmail" required autocomplete="email" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="unExportCommentaire">Commentaire</label>
+            <textarea id="unExportCommentaire" placeholder="Nous pouvons améliorer ce simulateur, qu'aimeriez-vous voir de plus ou présenté différemment ?" rows="3"></textarea>
+          </div>
+          <div class="field" id="unExportChartsField">
+            <label>Graphiques à inclure dans le PDF</label>
+            <div class="simulator__checkbox-field">
+              <label><input type="checkbox" id="unExportInclureCompo" checked /> Composition des recettes de l'année 1</label>
+            </div>
+            <div class="simulator__checkbox-field" id="unExportInclureRseWrap" hidden>
+              <label><input type="checkbox" id="unExportInclureRse" checked /> Impact énergétique / RSE</label>
+            </div>
+            <div class="simulator__checkbox-field" id="unExportInclureCtWrap" hidden>
+              <label><input type="checkbox" id="unExportInclureCt" checked /> Comparatif CT vs IRM</label>
+            </div>
+          </div>
+          <button type="submit" class="btn btn--lg" id="unExportSubmit">Recevoir ma simulation en PDF</button>
+          <span class="un-info-wrap" style="margin-top:.7rem">
+            <button type="button" class="un-info-btn" id="unExportInfoBtn" aria-expanded="false" aria-controls="unExportInfoPop" aria-label="Confidentialité de vos données">💡</button>
+            <div class="un-info-pop" id="unExportInfoPop" hidden>Aucune donnée n'est stockée sur ce site ; ces informations servent uniquement à vous envoyer votre simulation.</div>
+          </span>
+        </form>
+        <div class="simulator__export-success" id="unExportSuccess" role="status" hidden>
+          ✓ Merci&nbsp;! Vous allez recevoir votre simulation par e-mail dans quelques instants.
+        </div>
+        <p class="simulator__export-error" id="unExportError" role="alert" hidden>Une erreur est survenue, merci de réessayer ou de me contacter directement.</p>
+      </div>
     </section>
 
   </main>
@@ -2162,6 +2234,7 @@
       wireInfoBtn("unInfoReglagesBtn", "unInfoReglagesPop");
       wireInfoBtn("unInfoTauxBtn", "unInfoTauxPop");
       wireInfoBtn("unInfoRisBtn", "unInfoRisPop");
+      wireInfoBtn("unExportInfoBtn", "unExportInfoPop");
       document.addEventListener("click", function () { unInfoPopsOuverts.forEach(function (f) { f(); }); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") unInfoPopsOuverts.forEach(function (f) { f(); }); });
 
@@ -4904,6 +4977,338 @@
         wrap.hidden = false;
         unDessinerBarresCtIrm(compos, params);
       }
+
+      // =======================================================================
+      // Envoi par e-mail du récapitulatif (22/09/2026) — bouton "Recevoir ce
+      // tableau par e-mail" en bas de l'écran Résultats (voir #unExport dans le
+      // HTML). Mécanisme repris À L'IDENTIQUE de simulateur-recettes.html (skill
+      // ced4scale-simulateur-web, section "Export PDF (jsPDF)") : même URL de
+      // déclencheur Power Automate, même contrat JSON, mêmes coordonnées
+      // Ced4Scale, même neutralisation des caractères qui corrompent jsPDF.
+      // Contenu construit à partir des DONNÉES déjà calculées par
+      // unRenderPointMort()/unCompoEntrees/unCalculerComposCtIrm (jamais une
+      // 2ᵉ formule), pas d'une capture d'image des graphiques SVG — un
+      // graphique dans une carte jamais ouverte (ex. Point mort annuel) peut ne
+      // jamais avoir été dessiné (unDessinerBarresPointMortAnnuel() n'est
+      // appelée que si la carte est ouverte), alors que les chiffres, eux, sont
+      // toujours calculés — plus robuste qu'un SVG parfois vide.
+      // =======================================================================
+      var CED4SCALE_CONTACT = {
+        nom: "Cédric Goillot",
+        role: "Consultant — Esaote Medical France",
+        email: "cedric.goillot@ced4scale.fr",
+        tel: "06 80 73 52 33",
+        site: "ced4scale.fr"
+      };
+      var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
+
+      // Charge une image locale (logo) et la renvoie en PNG base64 — copié tel
+      // quel de simulateur-recettes.html (imageDataUrl()).
+      function unImageDataUrl(src) {
+        return new Promise(function (resolve, reject) {
+          var img = new Image();
+          img.crossOrigin = "anonymous";
+          img.onload = function () {
+            var canvas = document.createElement("canvas");
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            canvas.getContext("2d").drawImage(img, 0, 0);
+            resolve(canvas.toDataURL("image/png"));
+          };
+          img.onerror = reject;
+          img.src = src;
+        });
+      }
+
+      // ---- Descriptif déclaratif des champs de la table de mixage repris dans le
+      // récapitulatif (résumé texte, pas une image) — un champ n'apparaît que si son
+      // groupe/sa colonne est actuellement visible (mêmes hidden que la table de
+      // mixage à l'écran, lus juste après un unRenderPointMort() à jour). ----
+      var UN_MIX_RESUME_CHAMPS = [
+        { groupe: "unMixGroupActivite", label: "Examens par an", unite: "FT/an", val: "unMixActiviteVal" },
+        { groupe: "unMixHeuresGroup", label: "Heures d'ouverture (semaine)", unite: "h/j", valA: "unMixHeuresVal", valB: "unMixHeuresBVal", colB: "unMixHeuresBCol" },
+        { groupe: "unMixGroupKwh", label: "Coût du kWh", unite: "€", val: "unMixKwhVal" },
+        { groupe: "unMixLoyerGroup", label: "Loyer", unite: "€ / mois", valA: "unMixLoyerAVal", valB: "unMixLoyerBVal", colB: "unMixLoyerBCol" },
+        { groupe: "unMixGroupDebit", label: "Examens par heure (débit)", unite: "FT/h", valA: "unMixInstallAVal", valB: "unMixInstallBVal", colB: "unMixInstallBCol" },
+        { groupe: "unMixGroupManip", label: "Manip en poste", unite: "ETP", valA: "unMixMermAVal", valB: "unMixMermBVal", colB: "unMixMermBCol" },
+        { groupe: "unMixMembreGroup", label: "Part des examens membre (MSK)", unite: "%", valA: "unMixMembreAVal", valB: "unMixMembreBVal", colA: "unMixMembreACol", colB: "unMixMembreBCol" },
+        { groupe: "unMixPosteGroupSecretaire", label: "Secrétaire médicale", unite: "ETP", valA: "unMixSecretaireAVal", valB: "unMixSecretaireBVal", colB: "unMixSecretaireBCol" },
+        { groupe: "unMixPosteGroupCadreSante", label: "Cadre de santé", unite: "ETP", valA: "unMixCadreSanteAVal", valB: "unMixCadreSanteBVal", colB: "unMixCadreSanteBCol" },
+        { groupe: "unMixPosteGroupAideManip", label: "Aide-manip", unite: "ETP", valA: "unMixAideManipAVal", valB: "unMixAideManipBVal", colB: "unMixAideManipBCol" },
+        { groupe: "unMixPosteGroupInfirmiere", label: "Infirmière", unite: "ETP", valA: "unMixInfirmiereAVal", valB: "unMixInfirmiereBVal", colB: "unMixInfirmiereBCol" },
+        { groupe: "unMixPosteGroupManipAlternance", label: "Manip en alternance", unite: "ETP", valA: "unMixManipAlternanceAVal", valB: "unMixManipAlternanceBVal", colB: "unMixManipAlternanceBCol" },
+        { groupe: "unMixContrasteGroup", label: "% examens injectés", unite: "%", valA: "unMixContrasteAVal", valB: "unMixContrasteBVal", colA: "unMixContrasteACol", colB: "unMixContrasteBCol" }
+      ];
+      function unMixerResumeLignes() {
+        var lignes = [];
+        UN_MIX_RESUME_CHAMPS.forEach(function (c) {
+          var groupeEl = document.getElementById(c.groupe);
+          if (!groupeEl || groupeEl.hidden) return;
+          if (c.val) {
+            var el = document.getElementById(c.val);
+            if (el && el.value !== "") lignes.push({ label: c.label, valeur: el.value + (c.unite ? " " + c.unite : "") });
+            return;
+          }
+          var colA = c.colA ? document.getElementById(c.colA) : null;
+          var colB = c.colB ? document.getElementById(c.colB) : null;
+          var elA = document.getElementById(c.valA);
+          var elB = document.getElementById(c.valB);
+          var texte = "";
+          if (elA && (!colA || !colA.hidden)) texte += "A : " + elA.value + (c.unite ? " " + c.unite : "");
+          if (elB && colB && !colB.hidden) texte += (texte ? "   ·   " : "") + "B : " + elB.value + (c.unite ? " " + c.unite : "");
+          if (texte) lignes.push({ label: c.label, valeur: texte });
+        });
+        return lignes;
+      }
+
+      // ---- Rassemble toutes les données du récapitulatif pour le projet ACTUELLEMENT
+      // affiché — recalculées à l'instant de l'envoi (unRenderPointMort() d'abord, pour
+      // être sûr que la table de mixage/les cartes reflètent le tout dernier réglage). ----
+      function unRecapDonnees() {
+        unRenderPointMort();
+        var params = unConstruireParamsPointMort();
+        var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
+        var slots = unSlotsActifs();
+
+        var pointMort = (unDernieresEntreesPointMort || []).map(function (e) {
+          return { label: e.label, jour: e.value, annuelJours: (e.annuel && e.annuel.loyer) ? e.annuel.loyer.totalJours : null };
+        });
+
+        var compo = slots.map(function (slot) {
+          var config = unConfigMachinePointMort(slot);
+          if (!config.machine) return null;
+          var detail = unDetailCA(volume, config.machine, params);
+          var acte = params.acteIntellectuelActif ? unActeIntellectuelConfig(config) * volume : 0;
+          var recette = detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + acte;
+          var cout = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
+          var charges = cout.loyer + cout.personnel + cout.elec + cout.autres;
+          return { label: config.machine.nomCourt, recette: recette, charges: charges, resultat: recette - charges };
+        }).filter(Boolean);
+
+        var rse = null;
+        if (projetActuel === 1) {
+          rse = unRseResultats().map(function (r) {
+            return { label: r.machine.nomCourt, coutAnnuel: r.coutAnnuel, coutParPatient: r.coutParPatient, kwh: r.kwh };
+          });
+        }
+
+        var ctIrm = null;
+        if (projetActuel === 3) {
+          var composBase = unCalculerComposCtIrm(params);
+          if (composBase) {
+            var composH = unCtAppliquerHorizon(composBase, params, unCtHorizon);
+            var horizonBtn = document.getElementById(UN_CT_HORIZONS[unCtHorizon].btnId);
+            ctIrm = {
+              horizonLabel: horizonBtn ? horizonBtn.textContent.trim() : unCtHorizon,
+              lignes: composH.map(function (c) { return { label: c.nom, recette: c.recetteTotale, charges: c.charges, resultat: c.resultat }; })
+            };
+          }
+        }
+
+        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
+      }
+
+      var UN_PROJET_TITRES = { 1: "Première installation d'IRM", 2: "IRM supplémentaire", 3: "Remplacement d'un scanner" };
+
+      function unGenererPdfBase64() {
+        var donnees = unRecapDonnees();
+        var inclureCompo = document.getElementById("unExportInclureCompo").checked;
+        var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
+        var inclureCt = donnees.ctIrm && document.getElementById("unExportInclureCt").checked;
+
+        return unImageDataUrl("assets/logo-ced4scale.png").then(function (logoPng) {
+          var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
+          var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
+          var y = 40;
+
+          // Même neutralisation que simulateur-recettes.html : les nombres formatés en
+          // Intl.NumberFormat("de-DE", ...) utilisent une espace fine insécable (U+202F)
+          // que la police par défaut de jsPDF ne connaît pas ; idem pour "−"/"≤"/"₂".
+          var _origDocText = doc.text.bind(doc);
+          doc.text = function (text, x, yy, opts) {
+            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-").replace(/≤/g, "<=").replace(/₂/g, "2") : t; }
+            text = Array.isArray(text) ? text.map(clean) : clean(text);
+            return _origDocText(text, x, yy, opts);
+          };
+
+          function ensureSpace(needed) {
+            if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
+          }
+
+          // En-tête : logo à gauche, coordonnées Ced4Scale alignées à droite (identique à
+          // simulateur-recettes.html).
+          var logoH = 12, logoW = logoH * 3.2;
+          doc.addImage(logoPng, "PNG", LEFT_X, 14, logoW, logoH, undefined, "MEDIUM");
+          doc.setFontSize(10);
+          doc.setTextColor(0);
+          doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
+          doc.setFont(undefined, "normal");
+          doc.setFontSize(8.5);
+          doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
+          doc.setDrawColor(220);
+          doc.line(LEFT_X, 33, RIGHT_X, 33);
+
+          doc.setTextColor(0);
+          doc.setFontSize(14);
+          doc.setFont(undefined, "bold");
+          doc.text("Simulation IRM — Projet " + donnees.projet + " : " + (UN_PROJET_TITRES[donnees.projet] || ""), LEFT_X, y);
+          y += 6;
+          doc.setFontSize(9.5);
+          doc.setFont(undefined, "normal");
+          doc.setTextColor(90);
+          doc.text("Activité : " + milliersFmt.format(donnees.volume) + " examens / an", LEFT_X, y);
+          y += 9;
+
+          function titreSection(txt) {
+            ensureSpace(11);
+            doc.setFontSize(11.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(0);
+            doc.text(txt, LEFT_X, y);
+            y += 6.5;
+            doc.setFont(undefined, "normal");
+          }
+          function ligneTexte(txt, taille, couleurGris) {
+            ensureSpace(5.5);
+            doc.setFontSize(taille || 9.5);
+            doc.setTextColor(couleurGris || 0);
+            doc.text(txt, LEFT_X + 2, y);
+            y += 5.2;
+          }
+
+          // ---- Point mort ----
+          titreSection("Point mort");
+          donnees.pointMort.forEach(function (p) {
+            var jourTxt = isFinite(p.jour) ? milliersFmt.format(Math.ceil(p.jour)) + " examens / jour" : "jamais atteint";
+            var anTxt = p.annuelJours != null && isFinite(p.annuelJours) ? Math.ceil(p.annuelJours) + " jours (loyer annuel remboursé)" : "jamais atteint dans l'année";
+            ligneTexte(p.label + " — point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt);
+          });
+          y += 3;
+
+          // ---- Composition des recettes de l'année 1 ----
+          if (inclureCompo && donnees.compo.length) {
+            titreSection("Composition des recettes de l'année 1");
+            donnees.compo.forEach(function (c) {
+              ligneTexte(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat));
+            });
+            y += 3;
+          }
+
+          // ---- Impact énergétique / RSE (projet 1 uniquement) ----
+          if (inclureRse) {
+            titreSection("Impact énergétique / RSE");
+            donnees.rse.forEach(function (r) {
+              ligneTexte(r.label + " — coût électrique annuel : " + unEurosFmt.format(r.coutAnnuel) + "   ·   par patient : " + unRseEurosCent.format(r.coutParPatient) + "   ·   consommation : " + milliersFmt.format(Math.round(r.kwh)) + " kWh / an");
+            });
+            y += 3;
+          }
+
+          // ---- Comparatif CT vs IRM (projet 3 uniquement) ----
+          if (inclureCt) {
+            titreSection("Comparatif CT vs IRM — " + donnees.ctIrm.horizonLabel);
+            donnees.ctIrm.lignes.forEach(function (l) {
+              ligneTexte(l.label + " — recette : " + unEurosFmt.format(l.recette) + "   ·   charges : " + unEurosFmt.format(l.charges) + "   ·   résultat : " + unEurosFmt.format(l.resultat));
+            });
+            y += 3;
+          }
+
+          // ---- Table de mixage (résumé des curseurs actuellement réglés) ----
+          if (donnees.mixage.length) {
+            titreSection("Table de mixage — réglages actuels");
+            donnees.mixage.forEach(function (m) {
+              ensureSpace(5.5);
+              doc.setFontSize(9.5);
+              doc.setTextColor(0);
+              doc.text(m.label, LEFT_X + 2, y);
+              doc.setTextColor(70);
+              doc.text(m.valeur, LEFT_X + 82, y);
+              y += 5.2;
+            });
+            y += 3;
+          }
+
+          // ---- Commentaire du visiteur ----
+          var commentaire = document.getElementById("unExportCommentaire").value.trim();
+          if (commentaire) {
+            titreSection("Commentaire");
+            doc.setFontSize(9);
+            var lignesCommentaire = doc.splitTextToSize(commentaire, RIGHT_X - LEFT_X - 4);
+            ensureSpace(5 * lignesCommentaire.length);
+            lignesCommentaire.forEach(function (l) { doc.text(l, LEFT_X + 2, y); y += 5; });
+          }
+
+          return doc.output("datauristring").split(",")[1];
+        });
+      }
+
+      var unExportForm = document.getElementById("unExportForm");
+      var unExportSuccess = document.getElementById("unExportSuccess");
+      var unExportError = document.getElementById("unExportError");
+      var unExportToggle = document.getElementById("unExportToggle");
+
+      // Le formulaire reste caché jusqu'au clic sur ce bouton (même bascule que
+      // #simExportToggle de simulateur-recettes.html). Les 2 cases "graphiques
+      // à inclure" propres à un projet (RSE/CT vs IRM) n'apparaissent que pour
+      // le projet où elles ont un sens — recalculé à chaque ouverture, puisque
+      // le visiteur peut changer de projet sans recharger la page.
+      unExportToggle.addEventListener("click", function () {
+        unExportForm.hidden = !unExportForm.hidden;
+        if (!unExportForm.hidden) {
+          document.getElementById("unExportInclureRseWrap").hidden = projetActuel !== 1;
+          document.getElementById("unExportInclureCtWrap").hidden = projetActuel !== 3;
+        }
+      });
+
+      unExportForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var submitButton = document.getElementById("unExportSubmit");
+        var prenom = document.getElementById("unExportPrenom").value.trim();
+        var nom = document.getElementById("unExportNom").value.trim();
+        var etablissement = document.getElementById("unExportEtablissement").value.trim();
+        var fonction = document.getElementById("unExportFonction").value.trim();
+        var commentaire = document.getElementById("unExportCommentaire").value.trim();
+        var email = document.getElementById("unExportEmail").value.trim();
+
+        submitButton.disabled = true;
+        unExportError.hidden = true;
+
+        Promise.resolve().then(function () {
+          return unGenererPdfBase64();
+        }).then(function (pdfBase64) {
+          return fetch(SIMULATOR_REQUEST_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              prenom: prenom,
+              nom: nom,
+              email: email,
+              etablissement: etablissement,
+              fonction: fonction,
+              commentaire: commentaire,
+              filename: "simulation-irm-unifiee.pdf",
+              pdfBase64: pdfBase64,
+              volume: "" // volume déjà dans le PDF ; champ conservé pour coller au même contrat JSON que simulateur-recettes.html
+            })
+          }).then(function (response) {
+            if (!response.ok) throw new Error("HTTP " + response.status);
+            unExportSuccess.hidden = false;
+            unExportForm.hidden = true;
+            if (window.goatcounter && window.goatcounter.count) {
+              window.goatcounter.count({ path: "simulateur-unifie-envoye", title: "Simulation unifiée envoyée", event: true });
+            }
+          }).catch(function () {
+            unExportError.hidden = false;
+            submitButton.disabled = false;
+          });
+        }).catch(function () {
+          unExportError.hidden = false;
+          submitButton.disabled = false;
+        });
+      });
 
       // ---------------------------------------------------------------------
       // Initialisation
