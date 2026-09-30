@@ -5125,49 +5125,98 @@
         });
       }
 
-      // ---- Descriptif déclaratif des champs de la table de mixage repris dans le
-      // récapitulatif (résumé texte, pas une image) — un champ n'apparaît que si son
-      // groupe/sa colonne est actuellement visible (mêmes hidden que la table de
-      // mixage à l'écran, lus juste après un unRenderPointMort() à jour). ----
-      var UN_MIX_RESUME_CHAMPS = [
-        { groupe: "unMixGroupActivite", label: "Examens par an", unite: "FT/an", val: "unMixActiviteVal" },
-        { groupe: "unMixHeuresGroup", label: "Heures d'ouverture (semaine)", unite: "h/j", valA: "unMixHeuresVal", valB: "unMixHeuresBVal", colB: "unMixHeuresBCol" },
-        { groupe: "unMixGroupKwh", label: "Coût du kWh", unite: "€", val: "unMixKwhVal" },
-        { groupe: "unMixLoyerGroup", label: "Loyer", unite: "€ / mois", valA: "unMixLoyerAVal", valB: "unMixLoyerBVal", colB: "unMixLoyerBCol" },
-        { groupe: "unMixGroupDebit", label: "Examens par heure (débit)", unite: "FT/h", valA: "unMixInstallAVal", valB: "unMixInstallBVal", colB: "unMixInstallBCol" },
-        { groupe: "unMixGroupManip", label: "Manip en poste", unite: "ETP", valA: "unMixMermAVal", valB: "unMixMermBVal", colB: "unMixMermBCol" },
-        { groupe: "unMixMembreGroup", label: "Part des examens membre (MSK)", unite: "%", valA: "unMixMembreAVal", valB: "unMixMembreBVal", colA: "unMixMembreACol", colB: "unMixMembreBCol" },
-        { groupe: "unMixPosteGroupSecretaire", label: "Secrétaire médicale", unite: "ETP", valA: "unMixSecretaireAVal", valB: "unMixSecretaireBVal", colB: "unMixSecretaireBCol" },
-        { groupe: "unMixPosteGroupCadreSante", label: "Cadre de santé", unite: "ETP", valA: "unMixCadreSanteAVal", valB: "unMixCadreSanteBVal", colB: "unMixCadreSanteBCol" },
-        { groupe: "unMixPosteGroupAideManip", label: "Aide-manip", unite: "ETP", valA: "unMixAideManipAVal", valB: "unMixAideManipBVal", colB: "unMixAideManipBCol" },
-        { groupe: "unMixPosteGroupInfirmiere", label: "Infirmière", unite: "ETP", valA: "unMixInfirmiereAVal", valB: "unMixInfirmiereBVal", colB: "unMixInfirmiereBCol" },
-        { groupe: "unMixPosteGroupManipAlternance", label: "Manip en alternance", unite: "ETP", valA: "unMixManipAlternanceAVal", valB: "unMixManipAlternanceBVal", colB: "unMixManipAlternanceBCol" },
-        { groupe: "unMixContrasteGroup", label: "% examens injectés", unite: "%", valA: "unMixContrasteAVal", valB: "unMixContrasteBVal", colA: "unMixContrasteACol", colB: "unMixContrasteBCol" }
-      ];
-      // Source commune (UN_MIX_RESUME_CHAMPS, mêmes conditions de
-      // visibilité), mais séparée en 3 groupes — Paramètres (champs communs aux 2
-      // machines), Machine A, Machine B — pour le résumé en tête du PDF envoyé par e-mail
-      // (30/09/2026, demande de Cédric). Un champ A/B dont la colonne B est masquée (une
-      // seule machine, ou "Heures d'ouverture" non dédoublée) reste dans Machine A : c'est
-      // bien de là qu'est lue sa valeur à l'écran, même quand elle vaut aussi pour B.
-      function unMixerResumeSepare() {
-        var parametres = [], machineA = [], machineB = [];
-        UN_MIX_RESUME_CHAMPS.forEach(function (c) {
-          var groupeEl = document.getElementById(c.groupe);
-          if (!groupeEl || groupeEl.hidden) return;
-          if (c.val) {
-            var el = document.getElementById(c.val);
-            if (el && el.value !== "") parametres.push({ label: c.label, valeur: el.value + (c.unite ? " " + c.unite : "") });
-            return;
-          }
-          var colA = c.colA ? document.getElementById(c.colA) : null;
-          var colB = c.colB ? document.getElementById(c.colB) : null;
-          var elA = document.getElementById(c.valA);
-          var elB = document.getElementById(c.valB);
-          if (elA && (!colA || !colA.hidden)) machineA.push({ label: c.label, valeur: elA.value + (c.unite ? " " + c.unite : "") });
-          if (elB && colB && !colB.hidden) machineB.push({ label: c.label, valeur: elB.value + (c.unite ? " " + c.unite : "") });
-        });
-        return { parametres: parametres, machineA: machineA, machineB: machineB };
+      // ---- Données brutes du formulaire (écran Paramètres) pour le récapitulatif en
+      // tête du PDF envoyé par e-mail (30/09/2026, demande de Cédric : « il manque
+      // beaucoup de données », la 1ʳᵉ version ne reprenait que le sous-ensemble exposé
+      // par la table de mixage). Lit directement les champs du formulaire plutôt que la
+      // table de mixage — plus complet (salaires, coupures, samedi/dimanche, loyer de
+      // salle, assurance, entretien, injecteur, RIS…), mêmes règles de visibilité
+      // qu'à l'écran (un champ masqué par choisirProjet()/un panneau "Autre RH" fermé
+      // au poste non intégré n'apparaît pas ici non plus). ----
+      function unChampVisible(id) {
+        var el = document.getElementById(id);
+        if (!el) return false;
+        var champ = el.closest(".field");
+        return !(champ && champ.hidden);
+      }
+      // <input type="number"> natifs : la valeur est toujours au format JS ("0.2"), point
+      // décimal — jamais la virgule française utilisée partout ailleurs dans le PDF. Les
+      // champs texte (loyers, salaires…) n'en font pas partie : ils utilisent déjà un
+      // point comme séparateur de MILLIERS (ex. "21.600"), à ne surtout pas toucher.
+      var UN_CHAMPS_NUMBER_NATIF = ["unActivite", "unKwh", "unContrasteCout", "unHeuresSemaine",
+        "unCoupureDureeSemaine", "unHeuresSamedi", "unCoupureDureeSamedi", "unHeuresDimanche",
+        "unCoupureDureeDimanche", "unMermA", "unMermB", "unSecretaireA", "unSecretaireB",
+        "unCadreSanteA", "unCadreSanteB", "unAideManipA", "unAideManipB", "unInfirmiereA",
+        "unInfirmiereB", "unManipAlternanceA", "unManipAlternanceB", "unInstallA", "unInstallB",
+        "unMembreA", "unMembreB", "unMultiRegionA", "unContrastePctA", "unContrastePctB",
+        "unRisA", "unRisB"];
+      function unParametresFormulaireDonnees() {
+        function texte(id) { var el = document.getElementById(id); return el && el.options[el.selectedIndex] ? el.options[el.selectedIndex].textContent : ""; }
+        function val(id) {
+          var el = document.getElementById(id);
+          if (!el) return "";
+          return UN_CHAMPS_NUMBER_NATIF.indexOf(id) !== -1 ? el.value.replace(".", ",") : el.value;
+        }
+        function coche(id) { var el = document.getElementById(id); return !!(el && el.checked); }
+        function suffixe(id) { var el = document.getElementById(id); return el ? el.textContent : ""; }
+
+        var parametres = [];
+        parametres.push({ label: "Date d'application des forfaits techniques", valeur: texte("unDate") });
+        parametres.push({ label: "Zone tarifaire", valeur: texte("unZone") });
+        parametres.push({ label: "Machine amortie", valeur: texte("unAmorti") });
+        parametres.push({ label: "Votre activité", valeur: val("unActivite") + " patients / " + (val("unActiviteMode") === "an" ? "an" : "jour") });
+
+        function salaire(label, idIntegre, idNet, idSuffixe) {
+          if (idIntegre && document.getElementById(idIntegre).value !== "oui") { parametres.push({ label: label, valeur: "non intégré au simulateur" }); return; }
+          parametres.push({ label: label + " — salaire net avant impôt", valeur: val(idNet) + " " + suffixe(idSuffixe) });
+        }
+        salaire("MERM", null, "unNetMerm", "unNetMermSuffix");
+        salaire("Secrétaire médicale", "unIntegreSecretaire", "unNetSecretaire", "unNetSecretaireSuffix");
+        salaire("Cadre de santé", "unIntegreCadreSante", "unNetCadreSante", "unNetCadreSanteSuffix");
+        salaire("Aide-manip", "unIntegreAideManip", "unNetAideManip", "unNetAideManipSuffix");
+        salaire("Infirmière", "unIntegreInfirmiere", "unNetInfirmiere", "unNetInfirmiereSuffix");
+        salaire("Manip en alternance", "unIntegreManipAlternance", "unNetManipAlternance", "unNetManipAlternanceSuffix");
+
+        parametres.push({ label: "Amplitude d'ouverture (lundi-vendredi)", valeur: val("unHeuresSemaine") + " h/jour" });
+        if (coche("unCoupureSemaine")) parametres.push({ label: "Coupure (lundi-vendredi)", valeur: val("unCoupureDureeSemaine") + " h" });
+        parametres.push({ label: "Ouvert le samedi", valeur: coche("unOuvertSamedi") ? val("unHeuresSamedi") + " h/jour" + (coche("unCoupureSamedi") ? "  ·  coupure " + val("unCoupureDureeSamedi") + " h" : "") : "non" });
+        parametres.push({ label: "Ouvert le dimanche", valeur: coche("unOuvertDimanche") ? val("unHeuresDimanche") + " h/jour" + (coche("unCoupureDimanche") ? "  ·  coupure " + val("unCoupureDureeDimanche") + " h" : "") : "non" });
+        parametres.push({ label: "Coût du kWh", valeur: val("unKwh") + " € TTC" });
+        parametres.push({ label: "Coût du produit de contraste (partagé)", valeur: val("unContrasteCout") + " €" });
+        parametres.push({ label: "Coût RIS + graveur + imprimante (partagé)", valeur: val("unCoutRis") + " € / mois" });
+
+        var uneSeuleMachine = document.getElementById("unColB").hidden;
+        var machines = [];
+        function ligneMachine(label, idA, idB, unite, champConditionA) {
+          if (champConditionA && !unChampVisible(champConditionA)) return;
+          machines.push({
+            label: label,
+            valA: val(idA) + (unite ? " " + unite : ""),
+            valB: uneSeuleMachine ? null : val(idB) + (unite ? " " + unite : "")
+          });
+        }
+        ligneMachine("Loyer", "unLoyerA", "unLoyerB", "€ / mois");
+        ligneMachine("Manip en poste", "unMermA", "unMermB", "ETP");
+        ligneMachine("Secrétaire médicale", "unSecretaireA", "unSecretaireB", "ETP", "unSecretaireA");
+        ligneMachine("Cadre de santé", "unCadreSanteA", "unCadreSanteB", "ETP", "unCadreSanteA");
+        ligneMachine("Aide-manip", "unAideManipA", "unAideManipB", "ETP", "unAideManipA");
+        ligneMachine("Infirmière", "unInfirmiereA", "unInfirmiereB", "ETP", "unInfirmiereA");
+        ligneMachine("Manip en alternance", "unManipAlternanceA", "unManipAlternanceB", "ETP", "unManipAlternanceA");
+        ligneMachine("Examens par heure (débit)", "unInstallA", "unInstallB", "FT/h");
+        if (unChampVisible("unMembreFieldA")) {
+          machines.push({ label: "Part des examens membre (MSK)", valA: val("unMembreA") + " %", valB: uneSeuleMachine ? null : (unChampVisible("unMembreFieldB") ? val("unMembreB") + " %" : "—") });
+        }
+        if (unChampVisible("unMultiRegionFieldA")) {
+          machines.push({ label: "Part des examens multi-régions", valA: val("unMultiRegionA") + " %", valB: null });
+        }
+        ligneMachine("Part des examens injectés", "unContrastePctA", "unContrastePctB", "%");
+        ligneMachine("Loyer de la salle", "unSalleA", "unSalleB", "€ / mois");
+        ligneMachine("Assurance", "unAssuranceA", "unAssuranceB", "€ / mois");
+        ligneMachine("Entretien / nettoyage", "unEntretienA", "unEntretienB", "€ / mois");
+        ligneMachine("Injecteur", "unInjecteurA", "unInjecteurB", "€ / mois");
+        ligneMachine("Part du RIS (fraction)", "unRisA", "unRisB", "");
+
+        return { parametres: parametres, machines: machines };
       }
 
       // ---- Rassemble toutes les données du récapitulatif pour le projet ACTUELLEMENT
@@ -5194,19 +5243,8 @@
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var slots = unSlotsActifs();
 
-        // ---- Paramètres (Forfait technique) + noms des machines A/B — repris du
-        // formulaire, pour identifier clairement en tête du PDF ce qui a été simulé
-        // (30/09/2026, demande de Cédric : « les données du formulaire : Paramètres et
-        // données de Machine A et B », absentes jusque-là du PDF). ----
-        function unTexteOptionChoisie(selectId) {
-          var el = document.getElementById(selectId);
-          return el && el.options[el.selectedIndex] ? el.options[el.selectedIndex].textContent : "";
-        }
-        var parametresForfait = {
-          date: unTexteOptionChoisie("unDate"),
-          zone: unTexteOptionChoisie("unZone"),
-          amorti: unTexteOptionChoisie("unAmorti")
-        };
+        // Noms des machines A/B — repris du formulaire, pour identifier clairement en
+        // tête du PDF ce qui a été simulé (30/09/2026, demande de Cédric).
         var uneSeuleMachine = document.getElementById("unColB").hidden;
         var configA = unConfigMachinePointMort(0), configB = uneSeuleMachine ? { machine: null } : unConfigMachinePointMort(1);
         var machineANom = configA.machine ? configA.machine.nomCourt : "Machine A";
@@ -5288,8 +5326,8 @@
         }
 
         return {
-          projet: projetActuel, volume: volume, parametresForfait: parametresForfait,
-          machineANom: machineANom, machineBNom: machineBNom, mixageSepare: unMixerResumeSepare(),
+          projet: projetActuel, volume: volume,
+          machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
           pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference,
           rse: rse, ctIrm: ctIrm
         };
@@ -5504,28 +5542,66 @@
             y += 2;
           }
 
-          // ---- Paramètres + Machine A / Machine B — données du formulaire (écran
-          // Paramètres) reprises en tête du PDF, pour identifier clairement ce qui a été
-          // simulé avant les résultats (30/09/2026, demande de Cédric). Mêmes champs et
-          // mêmes conditions de visibilité que la « Table de mixage » de l'écran
-          // Résultats (unMixerResumeSepare(), source commune UN_MIX_RESUME_CHAMPS),
-          // simplement répartis en 3 blocs au lieu d'une liste "A : x · B : y" unique. ----
-          titreSection("Paramètres");
-          ligneTexte("Date d'application des forfaits techniques : " + donnees.parametresForfait.date);
-          ligneTexte("Zone tarifaire : " + donnees.parametresForfait.zone);
-          ligneTexte("Machine amortie : " + donnees.parametresForfait.amorti);
-          donnees.mixageSepare.parametres.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
-          y += 3;
-
-          titreSection("Machine A : " + donnees.machineANom);
-          donnees.mixageSepare.machineA.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
-          y += 3;
-
-          if (donnees.machineBNom) {
-            titreSection("Machine B : " + donnees.machineBNom);
-            donnees.mixageSepare.machineB.forEach(function (m) { ligneTexte(m.label + " : " + m.valeur); });
-            y += 3;
+          // Tableau à 2 colonnes (Libellé | Valeur), sans cadre — pour les Paramètres
+          // (champs communs aux 2 machines, 30/09/2026, demande de Cédric).
+          function tableDeuxColonnes(lignes) {
+            var colLabelX = LEFT_X + 2, colValX = LEFT_X + 108;
+            lignes.forEach(function (l) {
+              ensureSpace(5.4);
+              doc.setFontSize(8.8);
+              doc.setTextColor(0);
+              doc.text(l.label, colLabelX, y);
+              doc.setTextColor(70);
+              doc.text(String(l.valeur), colValX, y);
+              doc.setTextColor(0);
+              y += 5.1;
+            });
           }
+          // Tableau à 3 colonnes (Libellé | Machine A | Machine B), sans cadre — pour les
+          // données propres à chaque machine (30/09/2026, demande de Cédric). valB absent
+          // (une seule machine) -> pas de 3ᵉ colonne ; valB === "—" -> case affichée vide
+          // (champ non pertinent pour cette machine, ex. Part multi-régions côté IRM).
+          function tableMachines(lignes, nomA, nomB) {
+            var COL_LABEL_W = 78;
+            var colLabelX = LEFT_X + 2, colAX = colLabelX + COL_LABEL_W, colBX = colAX + 78;
+            ensureSpace(6);
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, "bold");
+            var rgbA = unHexRgb(UN_SLOT_COLORS[0]);
+            doc.setTextColor(rgbA[0], rgbA[1], rgbA[2]);
+            doc.text(nomA, colAX, y);
+            if (nomB) {
+              var rgbB = unHexRgb(UN_SLOT_COLORS[1]);
+              doc.setTextColor(rgbB[0], rgbB[1], rgbB[2]);
+              doc.text(nomB, colBX, y);
+            }
+            doc.setFont(undefined, "normal");
+            doc.setTextColor(0);
+            y += 5.5;
+            lignes.forEach(function (l) {
+              ensureSpace(5.4);
+              doc.setFontSize(8.8);
+              doc.setTextColor(0);
+              doc.text(l.label, colLabelX, y);
+              doc.setTextColor(70);
+              doc.text(String(l.valA), colAX, y);
+              if (nomB && l.valB != null) doc.text(String(l.valB), colBX, y);
+              doc.setTextColor(0);
+              y += 5.1;
+            });
+          }
+
+          // ---- Paramètres + Machine A / Machine B — données complètes du formulaire,
+          // en tableau sans cadre (30/09/2026, demande de Cédric, complétée le
+          // 01/10/2026 : version texte initiale incomplète -> lecture directe de TOUS
+          // les champs du formulaire, présentation en tableau). ----
+          titreSection("Paramètres");
+          tableDeuxColonnes(donnees.formulaire.parametres);
+          y += 3;
+
+          titreSection("Machines");
+          tableMachines(donnees.formulaire.machines, donnees.machineANom, donnees.machineBNom);
+          y += 3;
 
           // ---- Point mort ----
           titreSection("Point mort");
