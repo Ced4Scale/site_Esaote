@@ -5172,6 +5172,20 @@
       function unRecapDonnees() {
         unRenderPointMort();
         if (projetActuel === 3) unRenderCtIrm(); // garantit #unCtIrmChart à jour avant capture PDF
+        // Graphe Point mort annuel : dessiné seulement si sa carte est ouverte (voir plus
+        // haut, unDessinerBarresPointMortAnnuel() mesure le texte via getBBox(), qui
+        // renvoie 0 tant que la <details> est fermée — piège déjà documenté dans le
+        // fichier). On l'ouvre le temps du dessin puis on la remet comme le visiteur
+        // l'avait laissée : les coordonnées du SVG restent correctes une fois dessinées,
+        // la capture PNG (asynchrone, plus loin) n'a pas besoin que la carte reste
+        // ouverte (30/09/2026, demande de Cédric : ce graphe aussi dans le PDF).
+        var unCarteAnnuelle = document.getElementById("unPointMortAnnuelCard");
+        var unCarteAnnuelleEtaitOuverte = unCarteAnnuelle.open;
+        if (unDernieresEntreesPointMort) {
+          unCarteAnnuelle.open = true;
+          unDessinerBarresPointMortAnnuel(unDernieresEntreesPointMort);
+          unCarteAnnuelle.open = unCarteAnnuelleEtaitOuverte;
+        }
         var params = unConstruireParamsPointMort();
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var slots = unSlotsActifs();
@@ -5253,10 +5267,11 @@
         return Promise.all([
           unImageDataUrl("assets/logo-ced4scale.png"),
           donnees.pointMort.length ? unSvgPngInfo("unPointMortChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
+          donnees.pointMort.length ? unSvgPngInfo("unPointMortAnnuelChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
           inclureCompo && donnees.compo.length ? unCompoImagesTousPanneaux(LARGEUR_GRAPHE_COMPO_MM, LARGEUR_GRAPHE_MM) : Promise.resolve({ recettes: null, depenses: null, resultat: null }),
           inclureCt ? unSvgPngInfo("unCtIrmChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null)
         ]).then(function (images) {
-          var logoPng = images[0], pointMortImg = images[1], compoImgs = images[2], ctImg = images[3];
+          var logoPng = images[0], pointMortImg = images[1], pointMortAnnuelImg = images[2], compoImgs = images[3], ctImg = images[4];
           var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
           var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
           var y = 40;
@@ -5374,6 +5389,7 @@
           // ---- Point mort ----
           titreSection("Point mort");
           ajouterImage(pointMortImg);
+          if (pointMortAnnuelImg) { sousTitre("Point mort annuel (en jours)"); ajouterImage(pointMortAnnuelImg); }
           donnees.pointMort.forEach(function (p) {
             var jourTxt = isFinite(p.jour) ? milliersFmt.format(Math.ceil(p.jour)) + " examens / jour" : "jamais atteint";
             var anTxt = p.annuelJours != null && isFinite(p.annuelJours) ? Math.ceil(p.annuelJours) + " jours (loyer annuel remboursé)" : "jamais atteint dans l'année";
