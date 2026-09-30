@@ -5146,7 +5146,7 @@
         var slots = unSlotsActifs();
 
         var pointMort = (unDernieresEntreesPointMort || []).map(function (e) {
-          return { label: e.label, jour: e.value, annuelJours: (e.annuel && e.annuel.loyer) ? e.annuel.loyer.totalJours : null };
+          return { label: e.label, color: e.color, jour: e.value, annuelJours: (e.annuel && e.annuel.loyer) ? e.annuel.loyer.totalJours : null };
         });
 
         var compo = slots.map(function (slot) {
@@ -5190,18 +5190,19 @@
         var inclureCompo = document.getElementById("unExportInclureCompo").checked;
         var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
         var inclureCt = donnees.ctIrm && document.getElementById("unExportInclureCt").checked;
-        // Largeur cible des graphes insérés dans le PDF : modeste, pour laisser le
-        // tableau de chiffres la source de vérité et le graphe une illustration à côté
-        // (pas de RSE ici, son graphe n'est plus un <svg> depuis le 22/09/2026 — voir
-        // #unRseChart — reste donc en texte seul, comme avant).
+        // Largeur cible des graphes insérés dans le PDF (Point mort, Composition, CT vs
+        // IRM) : modeste, pour laisser le tableau de chiffres la source de vérité et le
+        // graphe une illustration à côté (pas de RSE ici, son graphe n'est plus un <svg>
+        // depuis le 22/09/2026 — voir #unRseChart — reste donc en texte seul, comme avant).
         var LARGEUR_GRAPHE_MM = 95;
 
         return Promise.all([
           unImageDataUrl("assets/logo-ced4scale.png"),
+          donnees.pointMort.length ? unSvgPngInfo("unPointMortChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
           inclureCompo && donnees.compo.length ? unSvgPngInfo("unCompoChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
           inclureCt ? unSvgPngInfo("unCtIrmChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null)
         ]).then(function (images) {
-          var logoPng = images[0], compoImg = images[1], ctImg = images[2];
+          var logoPng = images[0], pointMortImg = images[1], compoImg = images[2], ctImg = images[3];
           var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
           var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
           var y = 40;
@@ -5293,10 +5294,11 @@
 
           // ---- Point mort ----
           titreSection("Point mort");
+          ajouterImage(pointMortImg);
           donnees.pointMort.forEach(function (p) {
             var jourTxt = isFinite(p.jour) ? milliersFmt.format(Math.ceil(p.jour)) + " examens / jour" : "jamais atteint";
             var anTxt = p.annuelJours != null && isFinite(p.annuelJours) ? Math.ceil(p.annuelJours) + " jours (loyer annuel remboursé)" : "jamais atteint dans l'année";
-            ligneTexte(p.label + " — point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt);
+            ligneTexteCouleur(p.label + " — point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt, p.color);
           });
           y += 3;
 
