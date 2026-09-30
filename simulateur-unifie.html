@@ -5205,11 +5205,13 @@
           return { label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], recette: recette, charges: charges, resultat: recette - charges };
         }).filter(Boolean);
 
-        // ---- Tableau du barème dégressif — même détail par tranche que la vue « Tableau »
-        // de la carte Composition (unDessinerTableCompo()), reconstruit en texte plutôt
-        // qu'en image : ce n'est pas un <svg> à l'écran (c'est un <table> HTML), donc pas
-        // capturable par unSvgPngInfo() (30/09/2026, demande de Cédric). unCompoEntrees
-        // est déjà à jour, peuplé par unDessinerCompo() dans unRenderPointMort() ci-dessus. ----
+        // ---- Tableau du barème dégressif — même contenu complet que la vue « Tableau » de
+        // la carte Composition, charges comprises (unDessinerTableCompo()), reconstruit en
+        // texte plutôt qu'en image : ce n'est pas un <svg> à l'écran (c'est un <table>
+        // HTML), donc pas capturable par unSvgPngInfo() (30/09/2026, demande de Cédric,
+        // complété le même jour pour inclure aussi l'acte intellectuel et les charges,
+        // comme la case « Afficher les charges » du site). unCompoEntrees est déjà à
+        // jour, peuplé par unDessinerCompo() dans unRenderPointMort() ci-dessus. ----
         var UN_BAREME_LABELS = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
         var bareme = unCompoEntrees.map(function (e) {
           var total = 0;
@@ -5221,8 +5223,27 @@
             var plage = (t.fin != null ? "de " + milliersFmt.format(t.debut) + " à " + milliersFmt.format(t.fin) : "au-delà de " + milliersFmt.format(t.debut - 1)) + " ex./an";
             return { label: label, plage: plage, tarif: t.montant, examens: examens, ca: ca };
           });
-          return { nom: e.nom, couleur: e.couleur, lignes: lignes, total: total };
+          var totalCharges = e.cout.loyer + e.cout.personnel + e.cout.elec + e.cout.autres;
+          var totalRecettes = total + e.acte;
+          return {
+            nom: e.nom, couleur: e.couleur, lignes: lignes, total: total, acte: e.acte,
+            totalRecettes: totalRecettes, loyer: e.cout.loyer, personnel: e.cout.personnel,
+            elec: e.cout.elec, autres: e.cout.autres, totalCharges: totalCharges,
+            resultat: totalRecettes - totalCharges
+          };
         });
+        // « Différence résultats » (projet 1, 2 machines) / « Total résultats » (autres
+        // projets) — même règle qu'à l'écran (unDessinerTableCompo(), basePour2).
+        var baremeDifference = null;
+        if (bareme.length === 2) {
+          if (projetActuel === 1) {
+            var ecartBareme = bareme[1].resultat - bareme[0].resultat;
+            var gagnanteBareme = ecartBareme >= 0 ? bareme[1] : bareme[0];
+            baremeDifference = { label: "Différence résultats", texte: unEurosFmt.format(Math.abs(ecartBareme)) + " en faveur de " + gagnanteBareme.nom, couleur: gagnanteBareme.couleur };
+          } else {
+            baremeDifference = { label: "Total résultats", texte: unEurosFmt.format(bareme[0].resultat + bareme[1].resultat), couleur: "#1d2a44" };
+          }
+        }
 
         var rse = null;
         if (projetActuel === 1) {
@@ -5244,7 +5265,7 @@
           }
         }
 
-        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, bareme: bareme, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
+        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
       }
 
       var UN_PROJET_TITRES = { 1: "Première installation d'IRM", 2: "IRM supplémentaire", 3: "Remplacement d'un scanner" };
@@ -5374,16 +5395,86 @@
             y += 5;
             doc.setFont(undefined, "normal");
           }
-          // Tableau du barème dégressif (texte, pas une image — voir unCompoImagesTousPanneaux
-          // ci-dessus pour les 3 graphes de la carte Composition) : une tranche par ligne,
-          // un bloc par machine, couleur de la machine reprise sur son nom.
-          function baremeBloc(b) {
-            ligneTexteCouleur(b.nom, b.couleur, 9.5);
-            b.lignes.forEach(function (l) {
-              ligneTexte("   " + l.label + " (" + l.plage + ") : " + unEur(l.tarif, 2) + " × " + milliersFmt.format(l.examens) + " = " + unEurosFmt.format(l.ca), 8.5, 90);
+          // Tableau du barème dégressif — vrai tableau en colonnes (pas une image : ce
+          // n'est pas un <svg> à l'écran), une colonne par machine, même contenu complet
+          // que la vue « Tableau » de la carte Composition avec charges affichées (tarif
+          // plein/tranches, total, acte intellectuel, charges détaillées, résultat,
+          // différence) — mêmes couleurs recette/charges/résultat qu'à l'écran.
+          function tableBareme(liste, difference) {
+            var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
+            var COL_LABEL_W = 30;
+            var colLabelX = LEFT_X + 2;
+            var colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length;
+
+            ensureSpace(6);
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, "bold");
+            liste.forEach(function (b, i) {
+              var rgb = unHexRgb(b.couleur);
+              doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+              doc.text(b.nom, colLabelX + COL_LABEL_W + i * colW, y);
             });
-            ligneTexte("   Total recette du barème : " + unEurosFmt.format(b.total), 9, 40);
-            y += 1.5;
+            doc.setFont(undefined, "normal");
+            doc.setTextColor(0);
+            y += 5.5;
+
+            function ligne(label, cellules, gras) {
+              ensureSpace(gras ? 6 : 5.4);
+              doc.setFontSize(8.7);
+              doc.setFont(undefined, gras ? "bold" : "normal");
+              doc.setTextColor(0);
+              doc.text(label, colLabelX, y);
+              cellules.forEach(function (c, i) {
+                var x = colLabelX + COL_LABEL_W + i * colW;
+                if (c.detail) {
+                  doc.setFontSize(7.8);
+                  doc.setFont(undefined, "normal");
+                  doc.setTextColor(110);
+                  doc.text(c.detail, x, y);
+                }
+                doc.setFontSize(8.7);
+                doc.setFont(undefined, gras ? "bold" : "normal");
+                var rgb = unHexRgb(c.couleur);
+                doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+                doc.text(c.montant, x + colW - 2, y, { align: "right" });
+              });
+              doc.setFont(undefined, "normal");
+              doc.setTextColor(0);
+              y += gras ? 6 : 5.4;
+            }
+
+            liste[0].lignes.forEach(function (_, k) {
+              ligne(liste[0].lignes[k].label, liste.map(function (b) {
+                var l = b.lignes[k];
+                return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: b.couleur };
+              }));
+            });
+            ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: b.couleur }; }), true);
+
+            if (liste.some(function (b) { return b.acte > 0; })) {
+              ligne("Acte intellectuel", liste.map(function (b) { return { montant: unEurosFmt.format(b.acte), couleur: COUL_RECETTES }; }));
+              ligne("Total des recettes", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalRecettes), couleur: COUL_RECETTES }; }), true);
+            }
+            [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c) {
+              ligne(c[0], liste.map(function (b) { return { montant: unEurosFmt.format(b[c[1]]), couleur: COUL_CHARGES }; }));
+            });
+            ligne("Total des charges", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalCharges), couleur: COUL_CHARGES }; }), true);
+            ligne("Résultat", liste.map(function (b) { return { montant: unEurosFmt.format(b.resultat), couleur: COUL_RESULTAT }; }), true);
+
+            if (difference) {
+              ensureSpace(6);
+              doc.setFontSize(9);
+              doc.setFont(undefined, "bold");
+              doc.setTextColor(0);
+              doc.text(difference.label, colLabelX, y);
+              var rgb = unHexRgb(difference.couleur);
+              doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+              doc.text(difference.texte, colLabelX + 52, y);
+              doc.setFont(undefined, "normal");
+              doc.setTextColor(0);
+              y += 6;
+            }
+            y += 2;
           }
 
           // ---- Point mort ----
@@ -5411,7 +5502,7 @@
             y += 3;
             if (donnees.bareme.length) {
               sousTitre("Tableau du barème dégressif");
-              donnees.bareme.forEach(baremeBloc);
+              tableBareme(donnees.bareme, donnees.baremeDifference);
             }
           }
 
