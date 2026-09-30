@@ -5250,9 +5250,27 @@
         var machineANom = configA.machine ? configA.machine.nomCourt : "Machine A";
         var machineBNom = configB.machine ? configB.machine.nomCourt : null;
 
-        var pointMort = (unDernieresEntreesPointMort || []).map(function (e) {
-          return { label: e.label, color: e.color, jour: e.value, annuelJours: (e.annuel && e.annuel.loyer) ? e.annuel.loyer.totalJours : null };
-        });
+        // Point mort AVEC et SANS acte intellectuel, côte à côte (01/10/2026, demande de
+        // Cédric) — recalculé directement avec calculerPointMortMachine()/unCalculerAnnuel(),
+        // jamais une 2ᵉ formule : mêmes fonctions que le graphe, params.acteIntellectuelActif
+        // forcé à true puis à false plutôt que lu depuis la case à cocher #unActeIntellectuelActif
+        // (qui ne reflète qu'UN seul des deux scénarios à la fois).
+        function unPointMortScenario(config, paramsSlot, acteActif) {
+          var paramsScenario = Object.assign({}, paramsSlot, { acteIntellectuelActif: acteActif });
+          var res = calculerPointMortMachine(config, paramsScenario);
+          var annuel = unCalculerAnnuel(config, res, paramsScenario);
+          return { jour: res.pointMortJour, annuelJours: annuel.loyer ? annuel.loyer.totalJours : null };
+        }
+        var pointMort = slots.map(function (slot) {
+          var config = unConfigMachinePointMort(slot);
+          if (!config.machine) return null;
+          var paramsSlot = unParamsPourSlot(slot, params);
+          return {
+            label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
+            avecActe: unPointMortScenario(config, paramsSlot, true),
+            sansActe: unPointMortScenario(config, paramsSlot, false)
+          };
+        }).filter(Boolean);
 
         var compo = slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
@@ -5607,10 +5625,15 @@
           titreSection("Point mort");
           ajouterImage(pointMortImg);
           if (pointMortAnnuelImg) { sousTitre("Point mort annuel (en jours)"); ajouterImage(pointMortAnnuelImg); }
+          function unPointMortTexte(scn) {
+            var jourTxt = isFinite(scn.jour) ? milliersFmt.format(Math.ceil(scn.jour)) + " examens / jour" : "jamais atteint";
+            var anTxt = scn.annuelJours != null && isFinite(scn.annuelJours) ? Math.ceil(scn.annuelJours) + " jours" : "jamais atteint dans l'année";
+            return "point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt;
+          }
           donnees.pointMort.forEach(function (p) {
-            var jourTxt = isFinite(p.jour) ? milliersFmt.format(Math.ceil(p.jour)) + " examens / jour" : "jamais atteint";
-            var anTxt = p.annuelJours != null && isFinite(p.annuelJours) ? Math.ceil(p.annuelJours) + " jours (loyer annuel remboursé)" : "jamais atteint dans l'année";
-            ligneTexteCouleur(p.label + " — point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt, p.color);
+            ligneTexteCouleur(p.label, p.color, 9.5);
+            ligneTexte("   avec acte intellectuel — " + unPointMortTexte(p.avecActe), 8.7, 90);
+            ligneTexte("   sans acte intellectuel — " + unPointMortTexte(p.sansActe), 8.7, 90);
           });
           y += 3;
 
