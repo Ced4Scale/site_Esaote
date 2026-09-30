@@ -1693,12 +1693,18 @@
            tel quel côté flux Power Automate (rien à changer dans le JSON envoyé
            ici, identique à celui de simulateur-recettes.html).
            Contenu du PDF construit à partir des DONNÉES (unDernieresEntreesPointMort,
-           unCompoEntrees/unDetailCA, unCalculerComposCtIrm) plutôt que d'une capture
-           d'image des graphiques SVG — un graphique dans une carte encore jamais
-           ouverte (ex. Point mort annuel) peut ne jamais avoir été dessiné (voir
-           unDessinerBarresPointMortAnnuel(), appelée seulement si la carte est
-           ouverte) alors que les chiffres, eux, sont toujours calculés dans
-           unRenderPointMort() — plus robuste que de convertir un SVG parfois vide. -->
+           unCompoEntrees/unDetailCA, unCalculerComposCtIrm), jamais d'une 2ᵉ formule —
+           les chiffres restent donc la source de vérité même quand un graphe n'a pas pu
+           être capturé. Les graphes Composition et CT vs IRM sont EN PLUS insérés en
+           image (30/09/2026, unSvgPngInfo()) quand la case correspondante est cochée ;
+           unRecapDonnees()/unRenderCtIrm() redessinent les graphes juste avant l'envoi
+           pour éviter le cas d'une carte jamais ouverte (ex. Point mort annuel, qui
+           n'est dessinée que si sa carte est ouverte — voir
+           unDessinerBarresPointMortAnnuel() — n'est d'ailleurs pas incluse en image ici,
+           seulement en texte), et unSvgPngInfo() renvoie null si le SVG est encore vide
+           (childElementCount) plutôt que d'insérer une image blanche. Le graphe RSE
+           n'est plus un <svg> depuis le 22/09/2026 (voir #unRseChart) : sa section reste
+           donc en texte seul. -->
       <div class="simulator__export" id="unExport">
         <button type="button" class="btn btn--lg" id="unExportToggle">Recevoir ce tableau par e-mail</button>
         <form id="unExportForm" hidden>
@@ -5020,6 +5026,74 @@
         });
       }
 
+      // Sérialise un SVG de graphe en PNG (via un <canvas> hors écran) pour pouvoir
+      // l'insérer dans le PDF — copié À L'IDENTIQUE de simulateur-recettes.html
+      // (figerLesStyles()/svgVersPng(), skill ced4scale-simulateur-web section "Export
+      // PDF (jsPDF)") : un SVG exporté en image autonome perd l'accès à styles.css, on
+      // copie donc le style RÉELLEMENT calculé de chaque élément dans son attribut
+      // "style" avant de sérialiser, sinon les tailles de texte reviennent à la valeur
+      // par défaut du navigateur.
+      function unFigerLesStyles(svgSource) {
+        var clone = svgSource.cloneNode(true);
+        var liveEls = svgSource.querySelectorAll("*");
+        var cloneEls = clone.querySelectorAll("*");
+        for (var i = 0; i < liveEls.length; i++) {
+          var cs = getComputedStyle(liveEls[i]);
+          cloneEls[i].style.fontSize = cs.fontSize;
+          cloneEls[i].style.fontFamily = cs.fontFamily;
+          cloneEls[i].style.fontWeight = cs.fontWeight;
+          cloneEls[i].style.fill = cs.fill;
+          cloneEls[i].style.stroke = cs.stroke;
+          cloneEls[i].style.strokeWidth = cs.strokeWidth;
+          cloneEls[i].style.opacity = cs.opacity;
+        }
+        return clone;
+      }
+      function unSvgVersPng(svgSource) {
+        return new Promise(function (resolve, reject) {
+          var viewBox = svgSource.viewBox.baseVal;
+          var vbWidth = viewBox && viewBox.width ? viewBox.width : 640;
+          var vbHeight = viewBox && viewBox.height ? viewBox.height : 300;
+          var svgString = new XMLSerializer().serializeToString(unFigerLesStyles(svgSource));
+          var svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
+          var url = URL.createObjectURL(svgBlob);
+          var img = new Image();
+          img.onload = function () {
+            var scale = 2; // export net (retina) plutôt que la taille d'affichage
+            var canvas = document.createElement("canvas");
+            canvas.width = vbWidth * scale;
+            canvas.height = vbHeight * scale;
+            var ctx = canvas.getContext("2d");
+            ctx.fillStyle = "#fcfcfb";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            URL.revokeObjectURL(url);
+            resolve({ dataUrl: canvas.toDataURL("image/png"), width: vbWidth, height: vbHeight });
+          };
+          img.onerror = reject;
+          img.src = url;
+        });
+      }
+      // Convertit un graphe SVG en image prête à insérer dans le PDF, à une largeur
+      // cible en mm (hauteur calculée depuis le ratio réel du viewBox source, pour ne
+      // jamais déformer le dessin). svgId introuvable, graphe non pertinent, OU jamais
+      // dessiné (childElementCount à 0 — ex. panneau masqué dont le dessin n'a jamais
+      // été déclenché) -> null, plutôt qu'une image blanche insérée dans le PDF.
+      function unSvgPngInfo(svgId, targetWidthMm) {
+        var svgEl = document.getElementById(svgId);
+        if (!svgEl || !svgEl.childElementCount) return Promise.resolve(null);
+        return unSvgVersPng(svgEl).then(function (info) {
+          if (!info.width) return null;
+          var w = targetWidthMm;
+          var h = w * (info.height / info.width);
+          return { dataUrl: info.dataUrl, w: w, h: h };
+        });
+      }
+      function unHexRgb(hex) {
+        hex = (hex || "#000000").replace("#", "");
+        return [parseInt(hex.substr(0, 2), 16), parseInt(hex.substr(2, 2), 16), parseInt(hex.substr(4, 2), 16)];
+      }
+
       // ---- Descriptif déclaratif des champs de la table de mixage repris dans le
       // récapitulatif (résumé texte, pas une image) — un champ n'apparaît que si son
       // groupe/sa colonne est actuellement visible (mêmes hidden que la table de
@@ -5066,6 +5140,7 @@
       // être sûr que la table de mixage/les cartes reflètent le tout dernier réglage). ----
       function unRecapDonnees() {
         unRenderPointMort();
+        if (projetActuel === 3) unRenderCtIrm(); // garantit #unCtIrmChart à jour avant capture PDF
         var params = unConstruireParamsPointMort();
         var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var slots = unSlotsActifs();
@@ -5082,7 +5157,7 @@
           var recette = detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + acte;
           var cout = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
           var charges = cout.loyer + cout.personnel + cout.elec + cout.autres;
-          return { label: config.machine.nomCourt, recette: recette, charges: charges, resultat: recette - charges };
+          return { label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], recette: recette, charges: charges, resultat: recette - charges };
         }).filter(Boolean);
 
         var rse = null;
@@ -5100,7 +5175,7 @@
             var horizonBtn = document.getElementById(UN_CT_HORIZONS[unCtHorizon].btnId);
             ctIrm = {
               horizonLabel: horizonBtn ? horizonBtn.textContent.trim() : unCtHorizon,
-              lignes: composH.map(function (c) { return { label: c.nom, recette: c.recetteTotale, charges: c.charges, resultat: c.resultat }; })
+              lignes: composH.map(function (c) { return { label: c.nom, color: c.color, recette: c.recetteTotale, charges: c.charges, resultat: c.resultat }; })
             };
           }
         }
@@ -5115,8 +5190,18 @@
         var inclureCompo = document.getElementById("unExportInclureCompo").checked;
         var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
         var inclureCt = donnees.ctIrm && document.getElementById("unExportInclureCt").checked;
+        // Largeur cible des graphes insérés dans le PDF : modeste, pour laisser le
+        // tableau de chiffres la source de vérité et le graphe une illustration à côté
+        // (pas de RSE ici, son graphe n'est plus un <svg> depuis le 22/09/2026 — voir
+        // #unRseChart — reste donc en texte seul, comme avant).
+        var LARGEUR_GRAPHE_MM = 95;
 
-        return unImageDataUrl("assets/logo-ced4scale.png").then(function (logoPng) {
+        return Promise.all([
+          unImageDataUrl("assets/logo-ced4scale.png"),
+          inclureCompo && donnees.compo.length ? unSvgPngInfo("unCompoChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
+          inclureCt ? unSvgPngInfo("unCtIrmChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null)
+        ]).then(function (images) {
+          var logoPng = images[0], compoImg = images[1], ctImg = images[2];
           var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
           var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
           var y = 40;
@@ -5179,6 +5264,32 @@
             doc.text(txt, LEFT_X + 2, y);
             y += 5.2;
           }
+          // Même ligne que ligneTexte(), précédée d'une pastille carrée de la couleur de
+          // la machine (UN_SLOT_COLORS) — reprend la légende à pastilles déjà utilisée à
+          // l'écran (pastilles() dans unDessinerCompo) pour relier visuellement chaque
+          // ligne au graphe inséré juste au-dessus.
+          function ligneTexteCouleur(txt, couleurHex, taille) {
+            ensureSpace(5.5);
+            doc.setFontSize(taille || 9.5);
+            if (couleurHex) {
+              var rgb = unHexRgb(couleurHex);
+              doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+              doc.rect(LEFT_X + 2, y - 2.6, 2.6, 2.6, "F");
+            }
+            doc.setTextColor(0);
+            doc.text(txt, LEFT_X + 6.5, y);
+            y += 5.2;
+          }
+          // Insère un graphe déjà converti en PNG (voir unSvgPngInfo) sous le titre de
+          // section courant, à une largeur fixe pour rester lisible sans prendre toute la
+          // page — l'appelant a déjà vérifié que infoImg n'est pas null (graphe absent/
+          // jamais dessiné -> pas d'image, la liste de chiffres suffit alors).
+          function ajouterImage(infoImg) {
+            if (!infoImg) return;
+            ensureSpace(infoImg.h + 4);
+            doc.addImage(infoImg.dataUrl, "PNG", LEFT_X + 2, y, infoImg.w, infoImg.h, undefined, "MEDIUM");
+            y += infoImg.h + 4;
+          }
 
           // ---- Point mort ----
           titreSection("Point mort");
@@ -5192,8 +5303,9 @@
           // ---- Composition des recettes de l'année 1 ----
           if (inclureCompo && donnees.compo.length) {
             titreSection("Composition des recettes de l'année 1");
+            ajouterImage(compoImg);
             donnees.compo.forEach(function (c) {
-              ligneTexte(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat));
+              ligneTexteCouleur(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat), c.color);
             });
             y += 3;
           }
@@ -5210,8 +5322,9 @@
           // ---- Comparatif CT vs IRM (projet 3 uniquement) ----
           if (inclureCt) {
             titreSection("Comparatif CT vs IRM — " + donnees.ctIrm.horizonLabel);
+            ajouterImage(ctImg);
             donnees.ctIrm.lignes.forEach(function (l) {
-              ligneTexte(l.label + " — recette : " + unEurosFmt.format(l.recette) + "   ·   charges : " + unEurosFmt.format(l.charges) + "   ·   résultat : " + unEurosFmt.format(l.resultat));
+              ligneTexteCouleur(l.label + " — recette : " + unEurosFmt.format(l.recette) + "   ·   charges : " + unEurosFmt.format(l.charges) + "   ·   résultat : " + unEurosFmt.format(l.resultat), l.color);
             });
             y += 3;
           }
