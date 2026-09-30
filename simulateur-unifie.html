@@ -5093,6 +5093,37 @@
         hex = (hex || "#000000").replace("#", "");
         return [parseInt(hex.substr(0, 2), 16), parseInt(hex.substr(2, 2), 16), parseInt(hex.substr(4, 2), 16)];
       }
+      // Capture les 3 panneaux de la carte Composition (Recettes / Dépenses / Résultat)
+      // l'un après l'autre, CHACUN SEUL actif — comme le réglage par défaut du visiteur
+      // (une seule case cochée) — pour garder le rendu détaillé "panneau seul" (viewBox
+      // large, W=640 dans unDessinerCompo) plutôt que le rendu resserré qu'on obtiendrait
+      // en cochant les 3 cases à la fois (W=420, pensé pour un affichage côte à côte à
+      // l'écran). Remet les cases exactement comme le visiteur les avait laissées une
+      // fois la capture terminée (30/09/2026, demande de Cédric : les 3 graphes dans le
+      // PDF, pas seulement celui que le visiteur avait affiché à l'écran).
+      function unCompoImagesTousPanneaux(largeurRecettesMm, largeurAutresMm) {
+        var affRec = document.getElementById("unCompoAffRec");
+        var affDep = document.getElementById("unCompoCouts");
+        var affRes = document.getElementById("unCompoAffRes");
+        var etat = { rec: affRec.checked, dep: affDep.checked, res: affRes.checked };
+        var slots = unSlotsActifs(), params = unConstruireParamsPointMort();
+        function unSeul(cible) {
+          affRec.checked = cible === "rec"; affDep.checked = cible === "dep"; affRes.checked = cible === "res";
+          unDessinerCompo(slots, params);
+        }
+        unSeul("rec");
+        return unSvgPngInfo("unCompoChart", largeurRecettesMm).then(function (recettes) {
+          unSeul("dep");
+          return unSvgPngInfo("unCompoCoutsChart", largeurAutresMm).then(function (depenses) {
+            unSeul("res");
+            return unSvgPngInfo("unCompoResChart", largeurAutresMm).then(function (resultat) {
+              affRec.checked = etat.rec; affDep.checked = etat.dep; affRes.checked = etat.res;
+              unDessinerCompo(slots, params); // remet l'écran tel que le visiteur l'avait laissé
+              return { recettes: recettes, depenses: depenses, resultat: resultat };
+            });
+          });
+        });
+      }
 
       // ---- Descriptif déclaratif des champs de la table de mixage repris dans le
       // récapitulatif (résumé texte, pas une image) — un champ n'apparaît que si son
@@ -5160,6 +5191,25 @@
           return { label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], recette: recette, charges: charges, resultat: recette - charges };
         }).filter(Boolean);
 
+        // ---- Tableau du barème dégressif — même détail par tranche que la vue « Tableau »
+        // de la carte Composition (unDessinerTableCompo()), reconstruit en texte plutôt
+        // qu'en image : ce n'est pas un <svg> à l'écran (c'est un <table> HTML), donc pas
+        // capturable par unSvgPngInfo() (30/09/2026, demande de Cédric). unCompoEntrees
+        // est déjà à jour, peuplé par unDessinerCompo() dans unRenderPointMort() ci-dessus. ----
+        var UN_BAREME_LABELS = ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"];
+        var bareme = unCompoEntrees.map(function (e) {
+          var total = 0;
+          var lignes = UN_BAREME_LABELS.map(function (label, i) {
+            var t = e.tranches[i];
+            var examens = Math.max(0, Math.min(e.volume, t.fin != null ? t.fin : e.volume) - (t.debut - 1));
+            var ca = examens * t.montant;
+            total += ca;
+            var plage = (t.fin != null ? "de " + milliersFmt.format(t.debut) + " à " + milliersFmt.format(t.fin) : "au-delà de " + milliersFmt.format(t.debut - 1)) + " ex./an";
+            return { label: label, plage: plage, tarif: t.montant, examens: examens, ca: ca };
+          });
+          return { nom: e.nom, couleur: e.couleur, lignes: lignes, total: total };
+        });
+
         var rse = null;
         if (projetActuel === 1) {
           rse = unRseResultats().map(function (r) {
@@ -5180,7 +5230,7 @@
           }
         }
 
-        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
+        return { projet: projetActuel, volume: volume, pointMort: pointMort, compo: compo, bareme: bareme, mixage: unMixerResumeLignes(), rse: rse, ctIrm: ctIrm };
       }
 
       var UN_PROJET_TITRES = { 1: "Première installation d'IRM", 2: "IRM supplémentaire", 3: "Remplacement d'un scanner" };
@@ -5190,29 +5240,35 @@
         var inclureCompo = document.getElementById("unExportInclureCompo").checked;
         var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
         var inclureCt = donnees.ctIrm && document.getElementById("unExportInclureCt").checked;
-        // Largeur cible des graphes insérés dans le PDF (Point mort, Composition, CT vs
-        // IRM) : modeste, pour laisser le tableau de chiffres la source de vérité et le
-        // graphe une illustration à côté (pas de RSE ici, son graphe n'est plus un <svg>
-        // depuis le 22/09/2026 — voir #unRseChart — reste donc en texte seul, comme avant).
+        // Largeur cible des graphes insérés dans le PDF (Point mort, CT vs IRM, et les
+        // panneaux Dépenses/Résultat de la Composition) : modeste, pour laisser le tableau
+        // de chiffres la source de vérité et le graphe une illustration à côté. Le panneau
+        // Recettes de la Composition est en revanche deux fois plus grand (demande de
+        // Cédric, 30/09/2026) : c'est le premier graphe du PDF, celui qui résume le mieux
+        // la simulation. Pas de RSE ici, son graphe n'est plus un <svg> depuis le
+        // 22/09/2026 — voir #unRseChart — reste donc en texte seul, comme avant.
         var LARGEUR_GRAPHE_MM = 95;
+        var LARGEUR_GRAPHE_COMPO_MM = LARGEUR_GRAPHE_MM * 2;
 
         return Promise.all([
           unImageDataUrl("assets/logo-ced4scale.png"),
           donnees.pointMort.length ? unSvgPngInfo("unPointMortChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
-          inclureCompo && donnees.compo.length ? unSvgPngInfo("unCompoChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
+          inclureCompo && donnees.compo.length ? unCompoImagesTousPanneaux(LARGEUR_GRAPHE_COMPO_MM, LARGEUR_GRAPHE_MM) : Promise.resolve({ recettes: null, depenses: null, resultat: null }),
           inclureCt ? unSvgPngInfo("unCtIrmChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null)
         ]).then(function (images) {
-          var logoPng = images[0], pointMortImg = images[1], compoImg = images[2], ctImg = images[3];
+          var logoPng = images[0], pointMortImg = images[1], compoImgs = images[2], ctImg = images[3];
           var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
           var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
           var y = 40;
 
           // Même neutralisation que simulateur-recettes.html : les nombres formatés en
           // Intl.NumberFormat("de-DE", ...) utilisent une espace fine insécable (U+202F)
-          // que la police par défaut de jsPDF ne connaît pas ; idem pour "−"/"≤"/"₂".
+          // que la police par défaut de jsPDF ne connaît pas ; idem pour "−"/"≤"/"₂". Idem
+          // pour "ᵉ" (exposant de "2ᵉ tranche"/"3ᵉ tranche", tableau du barème dégressif,
+          // 30/09/2026) : glyphe absent -> espacement des lettres complètement disloqué.
           var _origDocText = doc.text.bind(doc);
           doc.text = function (text, x, yy, opts) {
-            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-").replace(/≤/g, "<=").replace(/₂/g, "2") : t; }
+            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-").replace(/≤/g, "<=").replace(/₂/g, "2").replace(/ᵉ/g, "e") : t; }
             text = Array.isArray(text) ? text.map(clean) : clean(text);
             return _origDocText(text, x, yy, opts);
           };
@@ -5291,6 +5347,29 @@
             doc.addImage(infoImg.dataUrl, "PNG", LEFT_X + 2, y, infoImg.w, infoImg.h, undefined, "MEDIUM");
             y += infoImg.h + 4;
           }
+          // Petit intitulé au-dessus d'un graphe secondaire (Dépenses/Résultat), plus
+          // discret que titreSection() — le titre de section reste celui de la carte
+          // (« Composition des recettes de l'année 1 »), ceci n'est qu'une légende locale.
+          function sousTitre(txt) {
+            ensureSpace(5.5);
+            doc.setFontSize(9.5);
+            doc.setFont(undefined, "bold");
+            doc.setTextColor(60);
+            doc.text(txt, LEFT_X + 2, y);
+            y += 5;
+            doc.setFont(undefined, "normal");
+          }
+          // Tableau du barème dégressif (texte, pas une image — voir unCompoImagesTousPanneaux
+          // ci-dessus pour les 3 graphes de la carte Composition) : une tranche par ligne,
+          // un bloc par machine, couleur de la machine reprise sur son nom.
+          function baremeBloc(b) {
+            ligneTexteCouleur(b.nom, b.couleur, 9.5);
+            b.lignes.forEach(function (l) {
+              ligneTexte("   " + l.label + " (" + l.plage + ") : " + unEur(l.tarif, 2) + " × " + milliersFmt.format(l.examens) + " = " + unEurosFmt.format(l.ca), 8.5, 90);
+            });
+            ligneTexte("   Total recette du barème : " + unEurosFmt.format(b.total), 9, 40);
+            y += 1.5;
+          }
 
           // ---- Point mort ----
           titreSection("Point mort");
@@ -5305,11 +5384,17 @@
           // ---- Composition des recettes de l'année 1 ----
           if (inclureCompo && donnees.compo.length) {
             titreSection("Composition des recettes de l'année 1");
-            ajouterImage(compoImg);
+            ajouterImage(compoImgs.recettes);
             donnees.compo.forEach(function (c) {
               ligneTexteCouleur(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat), c.color);
             });
             y += 3;
+            if (donnees.bareme.length) {
+              sousTitre("Tableau du barème dégressif");
+              donnees.bareme.forEach(baremeBloc);
+            }
+            if (compoImgs.depenses) { sousTitre("Dépenses"); ajouterImage(compoImgs.depenses); }
+            if (compoImgs.resultat) { sousTitre("Résultat"); ajouterImage(compoImgs.resultat); }
           }
 
           // ---- Impact énergétique / RSE (projet 1 uniquement) ----
