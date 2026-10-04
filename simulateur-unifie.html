@@ -3742,6 +3742,27 @@
       // Vue « Histogramme » : GRAND demi-anneau (le pourcentage est écrit dans l'anneau) + histogramme
       // en barres HORIZONTALES (nom, barre, montant) — à droite du demi-anneau en pleine largeur,
       // sous le demi-anneau en mode double affichage (recettes | coûts). Même hauteur de bloc qu'avant.
+      // Barre à DEUX couleurs (projet 02, demi-anneau unique) : la part de la machine A (sa couleur) puis celle de la
+      // machine B (sa couleur), avec le montant en € écrit dans chaque morceau quand il y a la place (04/10/2026).
+      function unBarreDeuxCouleurs(svgC, b, p, x, y, w, h, maxVal, taille) {
+        var valA = b.parts[0][p.key] || 0, valB = b.parts[1][p.key] || 0;
+        var wA = valA / maxVal * w, wB = valB / maxVal * w;
+        function morceau(x0, wi, coul, val, gauche, droite) {
+          if (!(val > 0) || wi <= 0) return;
+          wi = Math.max(2, wi);
+          svgC.appendChild(unSvgEl("rect", { x: x0, y: y, width: wi, height: h, fill: coul, rx: 3, ry: 3 }));
+          if (!gauche && wi > 4) svgC.appendChild(unSvgEl("rect", { x: x0, y: y, width: Math.min(4, wi / 2), height: h, fill: coul }));
+          if (!droite && wi > 4) svgC.appendChild(unSvgEl("rect", { x: x0 + wi - Math.min(4, wi / 2), y: y, width: Math.min(4, wi / 2), height: h, fill: coul }));
+          var txt = unEurosFmt.format(val);
+          if (wi >= txt.length * taille * 0.62 + 6) {
+            var t = unSvgEl("text", { x: x0 + wi / 2, y: y + h / 2 + taille * 0.36, "text-anchor": "middle", fill: "#fff", "font-size": taille, "font-weight": 800 });
+            t.textContent = txt; svgC.appendChild(t);
+          }
+          return wi;
+        }
+        var wa = morceau(x, wA, b.partCouleurs[0], valA, true, !(valB > 0));
+        morceau(x + (wa || 0), wB, b.partCouleurs[1], valB, !(valA > 0), true);
+      }
       function unDessinerPanneauHisto(svgC, items, cats, W) {
         var n = items.length, cellW = W / n, cote = W >= 500;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
@@ -3774,12 +3795,21 @@
           // Barres horizontales
           if (cote) {
             var x0 = cx + rMax + 14, bw = cellX + cellW - 8 - x0, y0 = 34, rowH = Math.min(36, (178 - y0) / cats.length);
+            if (b.parts) {
+              var lgx = x0;
+              b.partNoms.forEach(function (nom, q) {
+                svgC.appendChild(unSvgEl("rect", { x: lgx, y: 20, width: 8, height: 8, fill: b.partCouleurs[q], rx: 2, ry: 2 }));
+                var lt = unSvgEl("text", { x: lgx + 11, y: 27.5, "font-size": 8, "font-weight": 700, fill: "#555" }); lt.textContent = nom; svgC.appendChild(lt);
+                lgx += 11 + nom.length * 4.6 + 14;
+              });
+            }
             cats.forEach(function (p, k) {
               var y = y0 + k * rowH, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: x0, y: y + 8, "font-size": 8, "font-weight": 700, fill: "#555" }); nm.textContent = p.sideLabel || p.label; svgC.appendChild(nm);
               var vt = unSvgEl("text", { x: x0 + bw, y: y + 8, "text-anchor": "end", "font-size": 8.5, "font-weight": 800, fill: p.color }); vt.textContent = unEurosFmt.format(val); svgC.appendChild(vt);
               svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: bw, height: 11, fill: "#eef1f5", rx: 3, ry: 3 }));
-              if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
+              if (b.parts) unBarreDeuxCouleurs(svgC, b, p, x0, y + 13, bw, 11, maxVal, 7.5);
+              else if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
             });
           } else {
             var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 121, rowS = Math.min(19, (198 - yS) / cats.length);
@@ -3787,7 +3817,8 @@
               var y = yS + k * rowS, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
               svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: bwS, height: 9, fill: "#eef1f5", rx: 3, ry: 3 }));
-              if (val > 0) svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: Math.max(3, val / maxVal * bwS), height: 9, fill: p.color, rx: 3, ry: 3 }));
+              if (b.parts) unBarreDeuxCouleurs(svgC, b, p, xb, y + 2, bwS, 9, maxVal, 6);
+              else if (val > 0) svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: Math.max(3, val / maxVal * bwS), height: 9, fill: p.color, rx: 3, ry: 3 }));
               var vt = unSvgEl("text", { x: xv, y: y + 9.5, "text-anchor": "end", "font-size": 7.5, "font-weight": 800, fill: p.color }); vt.textContent = unEurosFmt.format(val); svgC.appendChild(vt);
             });
           }
@@ -3863,23 +3894,33 @@
       }
       function unCompoItemsBascule(e) {
         var rec = { plein: 0, seuil1: 0, seuil2: 0, plafond: 0, acte: 0 }, dep = { loyer: 0, personnel: 0, elec: 0, autres: 0 };
+        var recM = [{}, {}], depM = [{}, {}], resM = [0, 0]; // détail PAR MACHINE (A, B) pour les barres à deux couleurs
         [[0, e.configA, e.volA], [1, e.configB, e.N - e.volA]].forEach(function (m) {
           var v = m[2]; if (v <= 0) return;
           var d = unDetailCA(v, m[1].machine, e.params);
-          Object.keys(rec).forEach(function (k) { rec[k] += d[k] || 0; });
-          if (e.params.acteIntellectuelActif) rec.acte += unActeIntellectuelConfig(m[1]) * v;
+          Object.keys(rec).forEach(function (k) { rec[k] += d[k] || 0; recM[m[0]][k] = d[k] || 0; });
+          if (e.params.acteIntellectuelActif) { var ac = unActeIntellectuelConfig(m[1]) * v; rec.acte += ac; recM[m[0]].acte = ac; }
           var c = unCoutsDetail(m[1], unParamsPourSlot(m[0], e.params), v);
-          Object.keys(dep).forEach(function (k) { dep[k] += c[k] || 0; });
+          Object.keys(dep).forEach(function (k) { dep[k] += c[k] || 0; depM[m[0]][k] = c[k] || 0; });
+          var recTot = 0; Object.keys(recM[m[0]]).forEach(function (k) { recTot += recM[m[0]][k]; });
+          resM[m[0]] = recTot - (c.loyer + c.personnel + c.elec + c.autres);
         });
         var totRec = rec.plein + rec.seuil1 + rec.seuil2 + rec.plafond + rec.acte;
         var totDep = dep.loyer + dep.personnel + dep.elec + dep.autres, res = totRec - totDep;
-        var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472", W = null;
+        var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472";
+        var noms = [e.configA.machine.nomCourt, e.configB.machine.nomCourt], couls = [UN_SLOT_COLORS[0], UN_SLOT_COLORS[1]];
+        // Résultat par machine : part positive de chacune, remise à l'échelle du résultat total affiché.
+        var rA = Math.max(0, resM[0]), rB = Math.max(0, resM[1]), rTot = Math.max(0, res), rSom = rA + rB;
+        var resParts = rSom > 0 ? [rA / rSom * rTot, rB / rSom * rTot] : [0, 0];
+        function avecParts(base, pa, pb) { base.parts = [pa, pb]; base.partNoms = noms; base.partCouleurs = couls; return base; }
         return {
-          rec: { label: label, color: color, volume: e.N, detail: rec, total: totRec },
-          dep: { label: label, color: color, volume: e.N, detail: dep, total: totDep },
-          res: { label: label, color: color, volume: e.N, detail: { loyer: dep.loyer, personnel: dep.personnel, elec: dep.elec, autres: dep.autres, resultat: Math.max(0, res) },
+          rec: avecParts({ label: label, color: color, volume: e.N, detail: rec, total: totRec }, recM[0], recM[1]),
+          dep: avecParts({ label: label, color: color, volume: e.N, detail: dep, total: totDep }, depM[0], depM[1]),
+          res: avecParts({ label: label, color: color, volume: e.N, detail: { loyer: dep.loyer, personnel: dep.personnel, elec: dep.elec, autres: dep.autres, resultat: Math.max(0, res) },
             total: Math.max(totRec, totDep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(e.N > 0 ? res / e.N : 0),
-            captionColor: res >= 0 ? "#1baf7a" : "#d33", res: res, rec: totRec }
+            captionColor: res >= 0 ? "#1baf7a" : "#d33", res: res, rec: totRec },
+            { loyer: depM[0].loyer || 0, personnel: depM[0].personnel || 0, elec: depM[0].elec || 0, autres: depM[0].autres || 0, resultat: resParts[0] },
+            { loyer: depM[1].loyer || 0, personnel: depM[1].personnel || 0, elec: depM[1].elec || 0, autres: depM[1].autres || 0, resultat: resParts[1] })
         };
       }
       function unCompoRedessinerSeul() {
