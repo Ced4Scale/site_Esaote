@@ -3729,10 +3729,24 @@
           var vy = yMax * g / 4, yy = py(vy);
           if (g > 0) svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: yy, y2: yy, class: "simulator__gridline" }));
           var ly = el("text", { x: pad.left - 8, y: yy + 3, class: "simulator__axis-label", "text-anchor": "end" }); ly.textContent = unEur(vy, 0); svg.appendChild(ly);
-          var vx = xMax * g / 4;
-          var lx = el("text", { x: px(vx), y: pad.top + plotH + 15, class: "simulator__axis-label", "text-anchor": g === 4 ? "end" : (g === 0 ? "start" : "middle") });
-          lx.textContent = milliersFmt.format(vx) + (g === 4 ? " ex./an" : ""); svg.appendChild(lx);
         }
+        // Axe des volumes : uniquement 0, le montant de chaque seuil du barème et la fin d'axe (« ex./an »)
+        // — plus de graduations régulières (demande de Cédric, 04/10/2026).
+        var ticks = [{ v: 0, c: null }];
+        entrees.forEach(function (e) {
+          e.tranches.forEach(function (t, i) {
+            if (t.fin == null || i === e.tranches.length - 1 || t.fin >= xMax) return;
+            var ex = ticks.filter(function (k) { return k.v === t.fin; })[0];
+            if (ex) { if (ex.c !== e.couleur) ex.c = null; } else ticks.push({ v: t.fin, c: e.couleur });
+          });
+        });
+        ticks.sort(function (a, b) { return a.v - b.v; });
+        ticks.push({ v: xMax, c: null, fin: true });
+        ticks.forEach(function (k, i) {
+          var lx = el("text", { x: px(k.v), y: pad.top + plotH + 15, class: "simulator__axis-label", "text-anchor": k.fin ? "end" : (i === 0 ? "start" : "middle") });
+          if (k.c && !k.fin) { lx.style.fill = k.c; lx.style.fontWeight = 700; }
+          lx.textContent = milliersFmt.format(k.v) + (k.fin ? " ex./an" : ""); svg.appendChild(lx);
+        });
         if (voirSeuils) entrees.forEach(function (e) {
           e.tranches.forEach(function (t, i) {
             if (t.fin == null || i === e.tranches.length - 1 || t.fin > xMax) return;
