@@ -1187,6 +1187,27 @@
             </div>
           </div>
         </div>
+        <!-- Répartition des examens entre l'IRM A et l'IRM B (projet 02 seulement, 04/10/2026, demande de Cédric) :
+             pilote le MÊME curseur que « Bascule progressive » (#unBasculeCurseur) — part de l'IRM A en %,
+             le reste va à l'IRM B ; Point mort, Composition et RSE suivent. -->
+        <div class="un-mixer__group" id="unMixGroupRepart" hidden>
+          <span class="un-mixer__group-title">Répartition A / B</span>
+          <div class="un-mixer__faders">
+            <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot" data-slot="0">part de A</span>
+                <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
+              </div>
+              <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixRepartMoins" aria-label="Diminuer la part de l'IRM A">−</button>
+                <button type="button" id="unMixRepartPlus" aria-label="Augmenter la part de l'IRM A">+</button>
+              </div>
+              <div class="un-mixer__fader-unit" id="unMixRepartUnite">% sur A</div>
+            </div>
+          </div>
+        </div>
         <div class="un-mixer__group" id="unMixHeuresGroup" hidden>
           <span class="un-mixer__group-title">Heures d'ouverture</span>
           <div class="un-mixer__faders">
@@ -1506,6 +1527,7 @@
             <div class="un-info-pop" id="unMixerChoixPop" hidden>
               <div class="un-outils-titre">Curseurs affichés</div>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupActivite" /> Examens par an</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupRepart" /> Répartition A / B (projet 02)</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixHeuresGroup" /> Heures d'ouverture</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupKwh" /> Coût du kWh</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixLoyerGroup" /> Loyer</label>
@@ -3198,6 +3220,7 @@
           document.getElementById(id).hidden = !unMixerGroupeVoulu(id);
         });
         var uneSeuleMachine = document.getElementById("unColB").hidden;
+        document.getElementById("unMixGroupRepart").hidden = projetActuel !== 2 || uneSeuleMachine || !unMixerGroupeVoulu("unMixGroupRepart");
         document.getElementById("unMixInstallBCol").hidden = uneSeuleMachine;
         document.getElementById("unMixMermBCol").hidden = uneSeuleMachine;
         document.getElementById("unMixLoyerBCol").hidden = uneSeuleMachine;
@@ -3230,6 +3253,7 @@
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
         unBasculeSuivreActivite();
+        if (projetActuel === 2) unMixRepartSync();
       }
       // Projet 02 : quand « Votre activité » (examens par an) change, le volume total de la Bascule suit et la
       // position du curseur garde la même proportion A/B ; la Bascule se redessine, et avec elle le Point mort,
@@ -3488,6 +3512,33 @@
         [["unMixActiviteMoins", -1], ["unMixActivitePlus", 1]].forEach(function (d) {
           document.getElementById(d[0]).addEventListener("click", function (e) {
             unMixAppliquerActivite(unActiviteAnnuelle() + d[1] * 50 * (e.shiftKey ? 10 : 1));
+          });
+        });
+      })();
+      // ---- Répartition A / B (projet 02) : miroir du curseur de la Bascule ----
+      function unMixRepartSync() {
+        var champN = document.getElementById("unBasculeVolumeTotal"), curseur = document.getElementById("unBasculeCurseur");
+        var N = Math.max(0, parseInt(champN.value, 10) || 0), volA = Math.max(0, Math.min(N, parseInt(curseur.value, 10) || 0));
+        var pct = N > 0 ? Math.round(volA / N * 100) : 100;
+        var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
+        f.value = pct; f.parentNode.style.setProperty("--pct", pct);
+        if (document.activeElement !== v) v.value = pct;
+        document.getElementById("unMixRepartUnite").textContent = "A : " + milliersFmt.format(volA) + " · B : " + milliersFmt.format(N - volA);
+      }
+      function unMixRepartAppliquer(pct) {
+        var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
+        var curseur = document.getElementById("unBasculeCurseur");
+        curseur.value = Math.round(Math.max(0, Math.min(100, pct)) / 100 * N);
+        curseur.dispatchEvent(new Event("input", { bubbles: true })); // même chemin que le curseur de la Bascule
+      }
+      (function () {
+        var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
+        f.addEventListener("input", function () { unMixRepartAppliquer(parseFloat(f.value) || 0); });
+        v.addEventListener("input", function () { var x = parseFloat(String(v.value).replace(",", ".")); if (isFinite(x)) unMixRepartAppliquer(x); });
+        v.addEventListener("blur", unMixRepartSync);
+        [["unMixRepartMoins", -1], ["unMixRepartPlus", 1]].forEach(function (d) {
+          document.getElementById(d[0]).addEventListener("click", function (e) {
+            unMixRepartAppliquer((parseFloat(f.value) || 0) + d[1] * (e.shiftKey ? 10 : 1));
           });
         });
       })();
@@ -5134,6 +5185,7 @@
         // La carte Composition suit la répartition de la Bascule (projet 02), seulement quand elle est ouverte.
         if (document.getElementById("unCompoCard").open) unCompoRedessinerSeul();
         unPointMortRedessiner();
+        unMixRepartSync();
         if (document.getElementById("unRseCard").open) unRseRendre();
       }
 
