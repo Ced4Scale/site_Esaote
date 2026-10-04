@@ -2333,6 +2333,13 @@
         sup15: { eteint: 4.8,  pret: 10.8, mesure: 22.4, coeffLT: 0.33, climSalleKw: 3.2 },
         le05:  { eteint: 0.05, pret: 0.3,  mesure: 1.0,  coeffLT: 0,    climSalleKw: 1.0 }
       };
+      // 06/10/2026 (écart signalé par Cédric avec « IRM supplémentaire » du simulateur unifié) : les valeurs génériques
+      // de la Machine A (1,5 T / 3 T) restaient celles d'avant la décision du 21/09/2026 (moyenne des IRM tunnel du fichier
+      // machines-energie-data.js). On les relit donc dans ce fichier — mêmes chiffres que partout ailleurs sur le site.
+      [["t15", "generique-15t"], ["sup15", "generique-3t"]].forEach(function (c) {
+        var g = (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).filter(function (m) { return m.key === c[1]; })[0];
+        if (g) ELEC_GENERIC[c[0]] = { eteint: g.eteint, pret: g.pret, mesure: g.mesure, coeffLT: g.coeffRefroidissementLT, climSalleKw: g.climSalleKw };
+      });
       var HEURES_AN = 8736; // 52 semaines × 168 h — cohérent avec SEMAINES_PAR_AN
       // Durée d'acquisition PURE (gradients actifs seulement, pas la prise en charge
       // totale du patient) — nouveau champ éditable de la roue crantée, ajouté le
@@ -2341,6 +2348,13 @@
       // horaire (Examens par heure) déjà réglable sur la page principale, qui lui
       // inclut la prise en charge complète (habillage, installation, etc.).
       var DUREE_ACQ_A_DEFAUTS = { t15: 8, sup15: 7 };
+      (function () {
+        var m = typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : [];
+        [["t15", "generique-15t"], ["sup15", "generique-3t"]].forEach(function (c) {
+          var g = m.filter(function (x) { return x.key === c[1]; })[0];
+          if (g) DUREE_ACQ_A_DEFAUTS[c[0]] = g.dureeAcquisitionMinutes;
+        });
+      })();
       var DUREE_ACQ_A = DUREE_ACQ_A_DEFAUTS.t15;
       var DUREE_ACQ_O = 10;
       // Hypothèses par défaut, modifiables via la roue crantée du bloc Machine A
