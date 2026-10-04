@@ -676,6 +676,10 @@
 
             <details class="bascule-hyp-section" name="unParamAccordion">
               <summary>Horaires d'ouverture</summary>
+              <label style="display:flex;align-items:center;gap:.5rem;margin:0 0 .9rem">
+                <input type="checkbox" id="unPlafond13Heures" checked style="width:16px;height:16px;margin:0" />
+                <span>Ne pas dépasser 13 heures d'ouverture par jour <small style="color:var(--ink-soft)">(décochée : jusqu'à 24 h par jour)</small></span>
+              </label>
               <div class="field">
                 <label for="unHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
                 <div class="simulator__field-suffix">
@@ -3447,6 +3451,19 @@
       function unActiverSplit() { // fige les heures de la Machine B (elle ne suit plus la A)
         if (unSlotsActifs().length === 2 && unHeuresB == null) unHeuresB = unHeuresAmpl(0);
       }
+      // Plafond d'heures d'ouverture par jour (05/10/2026, demande de Cédric) : 13 h par défaut (case cochée dans
+      // Paramètres > Horaires d'ouverture), 24 h si elle est décochée. S'applique aux champs du formulaire, aux 2 curseurs
+      // « Heures d'ouverture » de la table de mixage et aux ajustements automatiques d'heures.
+      function unHeuresMax() { var c = document.getElementById("unPlafond13Heures"); return c && !c.checked ? 24 : 13; }
+      function unAppliquerPlafondHeures() {
+        var mx = unHeuresMax();
+        ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unMixHeuresFader", "unMixHeuresBFader"].forEach(function (id) {
+          var el = document.getElementById(id); if (!el) return;
+          el.max = mx;
+          if ((parseFloat(el.value) || 0) > mx) { el.value = mx; el.dispatchEvent(new Event("input", { bubbles: true })); }
+        });
+        if (unHeuresB != null && unHeuresB > mx) unHeuresB = mx;
+      }
       function unEcrireAmpl(slot, v) {
         if (slot === 1 && unHeuresB != null) unHeuresB = v;
         else document.getElementById("unHeuresSemaine").value = v;
@@ -3463,7 +3480,7 @@
         if (!unActiviteRealisable()) unActiverSplit();
         unSlotsActifs().forEach(function (slot) {
           var h = unHeuresAmpl(slot);
-          while (!unRealisableSlot(slot) && h < 24) { h += 0.5; unEcrireAmpl(slot, h); unHeuresGroupeForce = true; }
+          while (!unRealisableSlot(slot) && h < unHeuresMax()) { h += 0.5; unEcrireAmpl(slot, h); unHeuresGroupeForce = true; }
         });
         unMajDebitsDepuisHeures();
       }
@@ -3518,7 +3535,7 @@
         if (!(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
         var cible = annuel / (d * unJoursParMois() * 12);
         var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
-        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
+        unEcrireAmpl(slot, Math.max(1, Math.min(unHeuresMax(), Math.round(ampl * 100) / 100)));
       }
       // Le simulateur baisse (ou monte) raisonnablement les examens par heure d'UNE machine :
       // le nombre d'examens par an ne bouge PAS, ce sont ses heures d'ouverture qui
@@ -3545,7 +3562,7 @@
         } else {
           var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
           var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
-          unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(ampl * 100) / 100)));
+          unEcrireAmpl(slot, Math.max(1, Math.min(unHeuresMax(), Math.round(ampl * 100) / 100)));
           unHeuresGroupeForce = true;
           unMajDebitsDepuisHeures();
         }
@@ -3567,7 +3584,7 @@
       }
       function unMixAppliquerHeures(slot, h) {
         unActiverSplit();
-        unEcrireAmpl(slot, Math.max(1, Math.min(24, Math.round(h * 2) / 2)));
+        unEcrireAmpl(slot, Math.max(1, Math.min(unHeuresMax(), Math.round(h * 2) / 2)));
         if (unCadenasActif === "debit") {
           var d = unDebitPourSlot(slot);
           if (d > 0) {
@@ -4722,6 +4739,20 @@
         fader.parentNode.style.setProperty("--pct", pct);
       }
       function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); }
+      // Case « Ne pas dépasser 13 h par jour » : (dé)cocher recale les champs, les curseurs et les débits.
+      document.getElementById("unPlafond13Heures").addEventListener("change", function () {
+        unAppliquerPlafondHeures();
+        unRecalerDebitsEtHeures();
+        unMixSyncTous();
+        if (!screenResultats.hidden) unRenderPointMort();
+      });
+      ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () {
+          var mx = unHeuresMax();
+          if ((parseFloat(this.value) || 0) > mx) { this.value = mx; this.dispatchEvent(new Event("input", { bubbles: true })); }
+        });
+      });
+      unAppliquerPlafondHeures();
 
       // Écrit une nouvelle valeur (venant du fader ou de son champ texte) vers
       // les 3 éléments (fader, champ texte, champ source de l'écran 2), puis
