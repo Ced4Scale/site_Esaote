@@ -2587,10 +2587,10 @@
         var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
         var socleMensuel = socleHeuresJours
           ? puissanceSocle * socleHeuresJours.heuresParJour * socleHeuresJours.joursParMois * prixKwh
-          : puissanceSocle * 24 * 30 * prixKwh;
+          : puissanceSocle * (8736 / 12) * prixKwh /* 8.736 h/an (52 sem. x 168 h) comme le simulateur d énergie, 06/10/2026 */;
         var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
         var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
-        var deltaMesure = (machine.mesure - machine.eteint) * (1 + coeffLT);
+        var deltaMesure = (machine.mesure - machine.pret) * (1 + coeffLT); // Corrigé le 06/10/2026 (écart avec « IRM supplémentaire » signalé par Cédric) : pendant l'examen la machine passe de « prêt » à « mesure », pas de « éteint » à « mesure » (les heures « prêt » sont déjà comptées sur toute l'ouverture).
         var coutVariablePatient = deltaMesure * (machine.dureeAcquisitionMinutes / 60) * prixKwh;
         return { fixeMensuel: socleMensuel + entrePatientsMensuel, variablePatient: coutVariablePatient };
       }
@@ -2954,7 +2954,7 @@
         [{ nb: 5, net: pr.semNet, brut: pr.semBrut }, { nb: 1, net: pr.samNet, brut: pr.samBrut }, { nb: 1, net: pr.dimNet, brut: pr.dimBrut }].forEach(function (t) {
           if (t.brut <= 0) { acc.heuresEteint += 24 * t.nb * 52; return; }
           var part = totalHeuresSemaine > 0 ? t.net / totalHeuresSemaine : 0;
-          var parJour = patientsParSemaine * part / t.nb;
+          var parJour = patientsParSemaine * part; // Corrigé le 06/10/2026 : le nombre de patients PAR JOUR d'un type de jour = part du jour (heures/total hebdo) × patients/semaine, sans division par le nombre de jours (les heures d'examen étaient sous-estimées ×5 en semaine).
           var mesure = Math.min(t.net, parJour * tAcqH);
           var necessaires = Math.min(t.brut, Math.max(mesure, parJour * tInstallH));
           acc.heuresEteint += (24 - necessaires) * t.nb * 52;

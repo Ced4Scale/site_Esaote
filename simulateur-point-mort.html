@@ -1628,12 +1628,12 @@
       function electriciteMensuelle(machine, heuresParJour, joursParMois, prixKwh) {
         var coeffLT = machine.coeffRefroidissementLT;
         var puissanceSocle = machine.eteint * (1 + coeffLT) + machine.climSalleKw;
-        var socleMensuel = puissanceSocle * 24 * 30 * prixKwh;
+        var socleMensuel = puissanceSocle * (8736 / 12) * prixKwh /* 8.736 h/an (52 sem. x 168 h) comme le simulateur d énergie, 06/10/2026 */;
 
         var deltaPret = (machine.pret - machine.eteint) * (1 + coeffLT);
         var entrePatientsMensuel = deltaPret * heuresParJour * joursParMois * prixKwh;
 
-        var deltaMesure = (machine.mesure - machine.eteint) * (1 + coeffLT);
+        var deltaMesure = (machine.mesure - machine.pret) * (1 + coeffLT); // Corrigé le 06/10/2026 (écart avec « IRM supplémentaire » signalé par Cédric) : pendant l'examen la machine passe de « prêt » à « mesure », pas de « éteint » à « mesure » (les heures « prêt » sont déjà comptées sur toute l'ouverture).
         var coutVariablePatient = deltaMesure * (machine.dureeAcquisitionMinutes / 60) * prixKwh;
 
         return { fixeMensuel: socleMensuel + entrePatientsMensuel, variablePatient: coutVariablePatient };

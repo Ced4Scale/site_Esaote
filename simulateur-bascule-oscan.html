@@ -2564,7 +2564,7 @@
           if (t.heuresOuverture <= 0) return;
           var partHeures = totalHeuresOuvertesSemaine > 0 ? t.heuresOuverture / totalHeuresOuvertesSemaine : 0;
           var patientsCeTypeParSemaine = patientsParSemaine * partHeures;
-          var patientsParJourCeType = patientsCeTypeParSemaine / t.nb;
+          var patientsParJourCeType = patientsCeTypeParSemaine; // Corrigé le 06/10/2026 : le nombre de patients PAR JOUR d'un type de jour = part du jour (heures/total hebdo) × patients/semaine, sans division par le nombre de jours (les heures d'examen étaient sous-estimées ×5 en semaine).
           var heuresMesureJour = Math.min(t.heuresOuverture, patientsParJourCeType * tAcqH);
           var heuresPretJour = t.heuresOuverture - heuresMesureJour;
           heuresPret += heuresPretJour * t.nb * 52;
