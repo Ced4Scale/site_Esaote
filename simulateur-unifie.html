@@ -201,6 +201,8 @@
     .un-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
     .un-mixer__fader-col[hidden] { display: none; }
     .un-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: #e5e7eb; background: color-mix(in srgb, var(--fader-color) 16%, #fff); overflow: hidden; }
+    /* Répartition entre IRM A et IRM B : le bâton montre les deux couleurs (A en bas, B en haut), sans texte */
+    #unMixGroupRepart .un-mixer__bar { background: #eb6834; }
     .un-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); }
     .un-mixer__fader-col-slot {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none;
@@ -1191,12 +1193,11 @@
              pilote le MÊME curseur que « Bascule progressive » (#unBasculeCurseur) — part de l'IRM A en %,
              le reste va à l'IRM B ; Point mort, Composition et RSE suivent. -->
         <div class="un-mixer__group" id="unMixGroupRepart" hidden>
-          <span class="un-mixer__group-title">Répartition A / B</span>
+          <span class="un-mixer__group-title">Répartition des examens</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
               <div class="un-mixer__bar">
                 <div class="un-mixer__bar-fill"></div>
-                <span class="un-mixer__fader-col-slot" data-slot="0">part de A</span>
                 <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
@@ -1204,7 +1205,7 @@
                 <button type="button" id="unMixRepartMoins" aria-label="Diminuer la part de l'IRM A">−</button>
                 <button type="button" id="unMixRepartPlus" aria-label="Augmenter la part de l'IRM A">+</button>
               </div>
-              <div class="un-mixer__fader-unit" id="unMixRepartUnite">% sur A</div>
+              <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
             </div>
           </div>
         </div>
@@ -1527,7 +1528,7 @@
             <div class="un-info-pop" id="unMixerChoixPop" hidden>
               <div class="un-outils-titre">Curseurs affichés</div>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupActivite" /> Examens par an</label>
-              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupRepart" /> Répartition A / B (projet 02)</label>
+              <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupRepart" /> Répartition des examens (projet 02)</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixHeuresGroup" /> Heures d'ouverture</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixGroupKwh" /> Coût du kWh</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixLoyerGroup" /> Loyer</label>
@@ -3523,7 +3524,7 @@
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
         f.value = pct; f.parentNode.style.setProperty("--pct", pct);
         if (document.activeElement !== v) v.value = pct;
-        document.getElementById("unMixRepartUnite").textContent = "A : " + milliersFmt.format(volA) + " · B : " + milliersFmt.format(N - volA);
+        document.getElementById("unMixRepartUnite").innerHTML = '<span style="color:' + UN_SLOT_COLORS[0] + '">' + milliersFmt.format(volA) + '</span> · <span style="color:' + UN_SLOT_COLORS[1] + '">' + milliersFmt.format(N - volA) + '</span>';
       }
       function unMixRepartAppliquer(pct) {
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
