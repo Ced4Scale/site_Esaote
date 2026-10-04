@@ -1097,6 +1097,41 @@
           <div class="ene-fact-list" id="unRseChart" role="img" aria-label="Décomposition en trois couches (socle, entre deux patients, examens) du coût énergétique annuel des machines choisies"></div>
         </div>
         <div class="ene-fact-list" id="unRseFaits" style="margin-top:0"></div>
+
+        <!-- Ajouté le 04/10/2026 (demande de Cédric) : les 3 autres blocs de simulateur-energie.html
+             — « Hypothèses de ce simulateur », « Évolution du prix du kWh en France depuis 2000 »,
+             « Ce que disent les études indépendantes » — en cadres intérieurs repliables. -->
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRseHypCard" style="margin-top:1rem">
+          <summary>Hypothèses de ce simulateur</summary>
+          <p class="simulator__hint" style="margin-top:.4rem">Valeurs techniques utilisées</p>
+          <div class="simulator__legend" id="unRseHypLegende"></div>
+          <div class="ene-fact-list" id="unRseHypTech"></div>
+          <p class="simulator__hint" style="margin-top:.8rem">Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</p>
+          <p class="simulator__hint" style="margin-top:1rem">Paramètres saisis avant de lancer la simulation</p>
+          <table class="stats-table simulator__table"><tbody id="unRseHypCommunsBody"></tbody></table>
+          <div style="overflow-x:auto">
+            <table class="stats-table simulator__table simulator__table--compare2" style="margin-top:.6rem">
+              <thead><tr><th></th><th><span class="simulator__swatch-text" data-slot="0" id="unRseHypHeadA"></span></th><th><span class="simulator__swatch-text" data-slot="1" id="unRseHypHeadB"></span></th></tr></thead>
+              <tbody id="unRseHypMachinesBody"></tbody>
+            </table>
+          </div>
+        </details>
+
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRsePrixCard">
+          <summary>Évolution du prix du kWh en France depuis 2000</summary>
+          <div class="simulator__chart-wrap" style="position:relative">
+            <svg id="unRsePrixChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
+            <div class="simulator__tooltip" id="unRsePrixTooltip" hidden></div>
+          </div>
+          <p class="simulator__hint">Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Cliquez sur une barre pour voir son évolution depuis 2000.</p>
+          <p class="simulator__hint"><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE (historique des délibérations tarifaires, via <a href="https://www.fournisseurs-electricite.com/contrat-electricite/prix/evolution" target="_blank" rel="noopener">fournisseurs-electricite.com</a>, consulté le 03/09/2026). <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an, INSEE Première n°1746, avril 2019). Pas une mesure réelle année par année.</p>
+        </details>
+
+        <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRseEtudesCard">
+          <summary>Ce que disent les études indépendantes</summary>
+          <p class="simulator__hint" style="margin:.4rem 0 0">L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</p>
+          <ul id="unRseEtudesListe" style="margin:.6rem 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
+        </details>
       </details>
 
       <!-- Table de mixage — motif "Table de mixage (faders verticaux)" du skill.
@@ -2767,7 +2802,7 @@
           });
           var decomp = unRseDecomposition(m, profil);
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
-          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsAn > 0 ? kwh * prix / patientsAn : 0, profil: profil, prix: prix };
+          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsAn > 0 ? kwh * prix / patientsAn : 0, profil: profil, prix: prix };
         });
       }
       function unRseLigneBarre(container, label, valeurs, formateur, opts) {
@@ -2850,6 +2885,142 @@
         ligne(UN_RSE_CAT3[1], { indent: 1 });
         ligne(UN_RSE_CAT3[2], { indent: 1 });
       }
+      var UN_RSE_HISTO_PRIX = [
+        { date: "2000-01", prix: 0.0887, estime: true },
+        { date: "2001-01", prix: 0.0910, estime: true },
+        { date: "2002-01", prix: 0.0933, estime: true },
+        { date: "2003-01", prix: 0.0957, estime: true },
+        { date: "2004-01", prix: 0.0982, estime: true },
+        { date: "2005-01", prix: 0.1008, estime: true },
+        { date: "2006-01", prix: 0.1034, estime: true },
+        { date: "2007-01", prix: 0.1061, estime: true },
+        { date: "2008-01", prix: 0.1089, estime: true },
+        { date: "2009-01", prix: 0.1117, estime: true },
+        { date: "2010-01", prix: 0.1146, estime: true },
+        { date: "2011-01", prix: 0.1176, estime: true },
+        { date: "2012-07", prix: 0.1263 },
+        { date: "2013-08", prix: 0.1329 },
+        { date: "2014-11", prix: 0.1401 },
+        { date: "2015-08", prix: 0.1437 },
+        { date: "2016-08", prix: 0.1503 },
+        { date: "2017-08", prix: 0.1466 },
+        { date: "2018-02", prix: 0.1467 },
+        { date: "2018-08", prix: 0.1450 },
+        { date: "2019-06", prix: 0.1531 },
+        { date: "2020-02", prix: 0.1546 },
+        { date: "2020-08", prix: 0.1557 },
+        { date: "2021-02", prix: 0.1582 },
+        { date: "2021-08", prix: 0.1558 },
+        { date: "2022-02", prix: 0.1740 },
+        { date: "2023-02", prix: 0.2062 },
+        { date: "2023-08", prix: 0.2276 },
+        { date: "2024-02", prix: 0.2516 },
+        { date: "2025-02", prix: 0.2016 },
+        { date: "2025-08", prix: 0.1952 },
+        { date: "2026-02", prix: 0.1940 },
+        { date: "2026-08", prix: 0.2001 }
+      ];
+
+      function unRseDessinerPrix() {
+        var svg = document.getElementById("unRsePrixChart"); svg.innerHTML = "";
+        var top = 20, chartH = 220, plotX0 = 95, plotX1 = 600, plotW = plotX1 - plotX0;
+        var data = UN_RSE_HISTO_PRIX;
+        var yMax = unNiceCeil(Math.max.apply(null, data.map(function (d) { return d.prix; })) * 1.08 * 1000) / 1000;
+        for (var g = 0; g <= 5; g++) {
+          var val = (yMax * g) / 5, y = top + chartH - (chartH * val) / yMax;
+          svg.appendChild(unSvgEl("line", { x1: plotX0, x2: plotX1, y1: y, y2: y, class: "simulator__gridline" }));
+          var ly = unSvgEl("text", { x: plotX0 - 8, y: y + 4, class: "simulator__axis-label", "text-anchor": "end" });
+          ly.style.fontSize = "11px"; ly.textContent = unRseEurosCent.format(val) + "/kWh"; svg.appendChild(ly);
+        }
+        var slotW = plotW / data.length, barWidth = slotW - 3, ref = data[0];
+        data.forEach(function (d, i) {
+          var barH = (d.prix / yMax) * chartH, barX = plotX0 + i * slotW + 1.5, barY = top + chartH - barH;
+          var dernier = i === data.length - 1;
+          var rect = unSvgEl("rect", { x: barX, y: barY, width: Math.max(0, barWidth), height: Math.max(0, barH), fill: dernier ? "#eb6834" : (d.estime ? "#a9c2e8" : "#2a78d6") });
+          rect.style.cursor = "pointer";
+          rect.addEventListener("click", function () { unRseEvolutionPrix(d, ref); });
+          svg.appendChild(rect);
+          var lx = barX + barWidth / 2, lyy = top + chartH + 8;
+          var lab = unSvgEl("text", { x: lx, y: lyy, class: "simulator__axis-label", "text-anchor": "end", transform: "rotate(-90 " + lx + " " + lyy + ")" });
+          lab.style.fontSize = "9px"; lab.textContent = d.estime ? d.date.slice(0, 4) : (d.date.slice(5, 7) + "/" + d.date.slice(0, 4)); svg.appendChild(lab);
+          if (dernier) {
+            var tl = unSvgEl("text", { x: barX + barWidth / 2, y: barY - 8, class: "simulator__axis-label", "text-anchor": "middle" });
+            tl.style.fontSize = "13px"; tl.style.fontWeight = "800"; tl.textContent = unRseEurosCent.format(d.prix); svg.appendChild(tl);
+          }
+        });
+        svg.appendChild(unSvgEl("line", { x1: plotX0, x2: plotX1, y1: top + chartH, y2: top + chartH, class: "simulator__gridline" }));
+      }
+      var unRsePrixTimer = null;
+      function unRseMoisAnnee(dateStr) {
+        var MOIS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+        var parts = dateStr.split("-"); return MOIS[parseInt(parts[1], 10) - 1] + " " + parts[0];
+      }
+      function unRseEvolutionPrix(point, ref) {
+        var el = document.getElementById("unRsePrixTooltip");
+        var pct = ref.prix > 0 ? Math.round(((point.prix - ref.prix) / ref.prix) * 100) : 0;
+        el.innerHTML = '<div class="simulator__tooltip-title">' + unRseEurosCent.format(point.prix) + "/kWh — " + unRseMoisAnnee(point.date) + (point.estime ? " (estimé)" : "") + "</div>" +
+          '<div class="simulator__tooltip-row">' + (pct >= 0 ? "+" : "") + pct + " % depuis " + unRseMoisAnnee(ref.date) + (ref.estime ? " (estimé)" : "") + "</div>";
+        el.hidden = false; clearTimeout(unRsePrixTimer);
+        unRsePrixTimer = setTimeout(function () { el.hidden = true; }, 3500);
+      }
+      function unRseEtudes() {
+        var ul = document.getElementById("unRseEtudesListe");
+        if (ul.children.length) return;
+        ENERGIE_ETUDES.forEach(function (e) {
+          var li = document.createElement("li"); li.style.marginBottom = ".5rem";
+          var a = document.createElement("a"); a.href = e.url; a.target = "_blank"; a.rel = "noopener"; a.style.fontWeight = "700"; a.textContent = e.label;
+          li.appendChild(a);
+          var p = document.createElement("div"); p.textContent = e.resume; li.appendChild(p);
+          ul.appendChild(li);
+        });
+      }
+      function unRseHypotheses(res) {
+        var leg = document.getElementById("unRseHypLegende"); leg.innerHTML = "";
+        res.forEach(function (r) {
+          var item = document.createElement("span"); item.className = "simulator__legend-item";
+          var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = r.color; item.appendChild(key);
+          var tx = document.createElement("span"); tx.textContent = (r.slot === 0 ? "A — " : "B — ") + r.machine.nomCourt; item.appendChild(tx);
+          leg.appendChild(item);
+        });
+        var box = document.getElementById("unRseHypTech"); box.innerHTML = "";
+        var slots = res.map(function (x) { return x.slot; });
+        function ligne(label, fn, fmt) { unRseLigneBarre(box, label, res.map(function (x) { return fn(x.machine); }), fmt, { slots: slots }); }
+        function kw(v) { return String(v).replace(".", ",") + " kW"; }
+        ligne("Puissance à l'arrêt", function (m) { return m.eteint; }, kw);
+        ligne("Puissance prête", function (m) { return m.pret; }, kw);
+        ligne("Puissance en acquisition", function (m) { return m.mesure; }, kw);
+        ligne("Surcoût local technique", function (m) { return m.coeffRefroidissementLT * 100; }, function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; });
+        ligne("Climatisation salle (continu)", function (m) { return m.climSalleKw; }, kw);
+
+        function libJour(brut, net, coche) { return coche ? net + " h/jour" : "Fermé"; }
+        var samCoche = document.getElementById("unOuvertSamedi").checked, dimCoche = document.getElementById("unOuvertDimanche").checked;
+        var coupure = document.getElementById("unCoupureSemaine").checked ? Math.max(0, parseFloat(document.getElementById("unCoupureDureeSemaine").value) || 0) : 0;
+        var ampl = unHeuresAmpl(res[0].slot);
+        var communs = [
+          ["Coût du kWh", unRseEurosCent.format(res[0].prix)],
+          ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", Math.max(0, ampl - coupure) + " h/jour"],
+          ["Samedi (coupure déjà déduite)", libJour(0, samCoche ? unHeuresEffectives("Samedi") : 0, samCoche)],
+          ["Dimanche (coupure déjà déduite)", libJour(0, dimCoche ? unHeuresEffectives("Dimanche") : 0, dimCoche)],
+          ["Votre activité", milliersFmt.format(Math.round(unActiviteAnnuelle())) + " patients/an"]
+        ];
+        var tb = document.getElementById("unRseHypCommunsBody"); tb.innerHTML = "";
+        communs.forEach(function (pair) {
+          var tr = document.createElement("tr"), td0 = document.createElement("td"), td1 = document.createElement("td");
+          td0.innerHTML = "<strong>" + pair[0] + "</strong>"; td1.textContent = pair[1];
+          tr.appendChild(td0); tr.appendChild(td1); tb.appendChild(tr);
+        });
+        document.getElementById("unRseHypHeadA").textContent = res[0].machine.nomCourt;
+        document.getElementById("unRseHypHeadB").textContent = res[1] ? res[1].machine.nomCourt : "";
+        document.getElementById("unRseHypHeadB").parentNode.hidden = !res[1];
+        var tm = document.getElementById("unRseHypMachinesBody"); tm.innerHTML = "";
+        [["Durée d'acquisition", function (x) { return Math.round(x.acqMin * 10) / 10 + " min"; }],
+         ["Temps de changement de patient (ready to scan)", function (x) { return Math.round(x.changementMin * 10) / 10 + " min"; }]].forEach(function (l) {
+          var tr = document.createElement("tr"), td0 = document.createElement("td");
+          td0.innerHTML = "<strong>" + l[0] + "</strong>"; tr.appendChild(td0);
+          res.forEach(function (x) { var td = document.createElement("td"); td.textContent = l[1](x); tr.appendChild(td); });
+          tm.appendChild(tr);
+        });
+      }
       document.getElementById("unRseCard").addEventListener("toggle", function () { if (this.open) unRseRendre(); });
       window.addEventListener("resize", function () { if (document.getElementById("unRseCard").open) unRseRendre(); });
       function unRseRendre() {
@@ -2866,6 +3037,9 @@
         });
         unRseGraphe(res);
         unRseFaits(res);
+        unRseHypotheses(res);
+        unRseDessinerPrix();
+        unRseEtudes();
       }
 
       function unRenderPointMort() {
