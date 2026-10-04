@@ -1578,13 +1578,13 @@
             <div class="un-info-pop" id="unCompoOutilsPop" hidden>
               <div class="un-outils-poignee" id="unCompoOutilsPoignee" title="Glisser pour déplacer la boîte à outils (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="un-outils-titre">Affichage</div>
-              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="histo" checked /> Histogramme</label>
-              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="table" /> Tableau du barème dégressif</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueHistoCb" checked /> Histogramme</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueTableCb" /> Tableau du barème dégressif</label>
               <div id="unCompoSousTable" class="un-outils-sous" hidden>
                 <label class="un-outils-check"><input type="checkbox" id="unCompoShowAllCa" /> Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)</label>
                 <label class="un-outils-check"><input type="checkbox" id="unCompoTableCharges" /> Afficher les charges en dessous (charges annuelles, total et résultat)</label>
               </div>
-              <label class="un-outils-check"><input type="radio" name="unCompoVue" value="moyen" /> Tarif moyen du F.T. selon le volume</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueMoyenCb" /> Tarif moyen du F.T. selon le volume</label>
               <div class="un-outils-titre" style="margin-top:.6rem">Afficher</div>
               <label class="un-outils-check"><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
               <label class="un-outils-check"><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
@@ -3750,8 +3750,13 @@
         ];
       }
       var unCompoEntrees = [];
-      function unCompoVueTable() { return document.querySelector('input[name="unCompoVue"]:checked').value === "table"; }
-      function unCompoVueHisto() { return document.querySelector('input[name="unCompoVue"]:checked').value === "histo"; }
+      // Affichages de la carte Composition (05/10/2026, demande de Cédric) : cases à cocher, au choix 1, 2 ou 3 vues
+      // en même temps (histogramme / tableau du barème dégressif / tarif moyen du F.T.) — au moins une reste cochée.
+      // Ordre d'affichage = ordre de la boîte à outils : histogramme, tableau du barème, puis tarif moyen.
+      (function () { var t = document.getElementById("unCompoTableWrap"), m = document.getElementById("unCompoMoyenWrap"); if (t && m && t.parentNode === m.parentNode) m.parentNode.insertBefore(t, m); })();
+      function unCompoVueTable() { return document.getElementById("unCompoVueTableCb").checked; }
+      function unCompoVueHisto() { return document.getElementById("unCompoVueHistoCb").checked; }
+      function unCompoVueMoyen() { return document.getElementById("unCompoVueMoyenCb").checked; }
       function unDessinerTableCompo() {
         var entrees = unCompoEntrees, tous = document.getElementById("unCompoShowAllCa").checked;
         var head = document.getElementById("unCompoTableHead"), body = document.getElementById("unCompoTableBody");
@@ -3906,8 +3911,10 @@
       ["unCompoAffRec", "unCompoCouts", "unCompoAffRes"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", function () { unRenderPointMort(); });
       });
-      document.querySelectorAll('input[name="unCompoVue"]').forEach(function (r) {
-        r.addEventListener("change", function () { unRenderPointMort(); });
+      ["unCompoVueHistoCb", "unCompoVueTableCb", "unCompoVueMoyenCb"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", function () {
+          unRenderPointMort();
+        });
       });
       // Catégories de COÛTS annuels (panneau de droite de la carte Composition).
       var UN_COUTS_CATS = [
@@ -4264,6 +4271,7 @@
           camemberts.push({ cout: unCoutsDetail(config, unParamsPourSlot(slot, params), volume), label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
             total: detail.plein + detail.seuil1 + detail.seuil2 + detail.plafond + (detail.acte || 0) });
         });
+        if (!unCompoVueHisto() && !unCompoVueTable() && !unCompoVueMoyen()) document.getElementById("unCompoVueHistoCb").checked = true; // au moins un affichage (l'histogramme par défaut)
         var histo = unCompoVueHisto();
         unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume, cout: b.cout, acte: b.detail.acte || 0 }; });
         if (unCompoVueTable()) unDessinerTableCompo();
@@ -4279,10 +4287,10 @@
         document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
         document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
         document.getElementById("unCompoResWrap").hidden = !affRes.checked;
-        var vueCompo = document.querySelector('input[name="unCompoVue"]:checked').value;
-        document.getElementById("unCompoTableWrap").hidden = vueCompo !== "table" || !affRec.checked;
-        document.getElementById("unCompoMoyenWrap").hidden = vueCompo !== "moyen";
-        document.getElementById("unCompoSousTable").hidden = vueCompo !== "table";
+        var vueTable = unCompoVueTable(), vueMoyen = unCompoVueMoyen();
+        document.getElementById("unCompoTableWrap").hidden = !vueTable || !affRec.checked;
+        document.getElementById("unCompoMoyenWrap").hidden = !vueMoyen;
+        document.getElementById("unCompoSousTable").hidden = !vueTable;
         var etatB = unEtatBascule();
         document.getElementById("unJokerWrap").hidden = !etatB;
         if (etatB && !document.getElementById("unJokerPop").hidden) unJokerRendre();
@@ -4291,9 +4299,9 @@
         document.getElementById("unCompoMoyBoiteSimple").hidden = !!etatB;
         document.getElementById("unCompoMoyBoiteBascule").hidden = !etatB;
         var noteB = document.getElementById("unCompoFtMoyNote");
-        noteB.hidden = !etatB || vueCompo !== "moyen";
+        noteB.hidden = !etatB || !vueMoyen;
         if (etatB) noteB.textContent = "Plus on va vers la gauche, plus les examens de " + etatB.configA.machine.nomCourt + " passent sur " + etatB.configB.machine.nomCourt + " : leurs forfaits réduits sont remplacés par des forfaits pleins.";
-        if (vueCompo === "moyen") {
+        if (vueMoyen) {
           if (etatB) unDessinerFtMoyChart(etatB.N, etatB.volA, etatB.trA, etatB.trB, etatB.configA.machine.nomCourt, etatB.configB.machine.nomCourt, "unCompoFtMoyChart", "unCompoFtMoy");
           else unDessinerCompoMoyen(unCompoEntrees);
         }
@@ -5428,10 +5436,10 @@
         if (ouvert === unJokerOuvert) return;
         unJokerOuvert = ouvert;
         if (ouvert) {
-          var r = document.querySelector('input[name="unCompoVue"][value="table"]');
-          if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true })); }
+          var r = document.getElementById("unCompoVueTableCb");
+          if (!r.checked) { r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true })); }
         }
-        if (document.querySelector('input[name="unCompoVue"]:checked').value === "table") unDessinerTableCompo();
+        if (unCompoVueTable()) unDessinerTableCompo();
       }).observe(document.getElementById("unJokerPop"), { attributes: true, attributeFilter: ["hidden"] });
       (function () {
         var maitre = document.getElementById("unActeIntellectuelActif"), miroir = document.getElementById("unPmActe");
@@ -6822,8 +6830,12 @@
                 var el = document.getElementById(id);
                 if (el && el.type === "checkbox" && /^(unCompo|unFtMoy|unPatient|unActeIntellectuelActif)/.test(id)) declencher(el, ["change"]);
               });
-              var vue = etat.radios.unCompoVue && document.querySelector('input[name="unCompoVue"][value="' + etat.radios.unCompoVue + '"]');
-              if (vue) { vue.checked = true; declencher(vue, ["change"]); }
+              // Ancienne session (boutons radio) : on coche la seule vue qui était choisie.
+              var ancienne = etat.radios.unCompoVue && etat.champs.unCompoVueHistoCb == null ? { histo: "unCompoVueHistoCb", table: "unCompoVueTableCb", moyen: "unCompoVueMoyenCb" }[etat.radios.unCompoVue] : null;
+              if (ancienne) {
+                ["unCompoVueHistoCb", "unCompoVueTableCb", "unCompoVueMoyenCb"].forEach(function (id) { document.getElementById(id).checked = id === ancienne; });
+                declencher(document.getElementById(ancienne), ["change"]);
+              }
               if (etat.ctHorizon && UN_CT_HORIZONS[etat.ctHorizon]) unCtChoisirHorizon(etat.ctHorizon);
             }
             // Cartes ouvertes/fermées (après l'affichage des résultats, qui referme certaines cartes).
