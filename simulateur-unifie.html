@@ -2788,9 +2788,10 @@
         });
         return acc;
       }
-      function unRseDecomposition(m, profil) {
+      function unRseDecomposition(m, profil, heuresSocle) {
         var lt = m.coeffRefroidissementLT;
-        var socleIRM = UN_RSE_HEURES_AN * m.eteint, socleLT = socleIRM * lt, socleClim = UN_RSE_HEURES_AN * m.climSalleKw;
+        var hSocle = heuresSocle != null ? heuresSocle : UN_RSE_HEURES_AN;
+        var socleIRM = hSocle * m.eteint, socleLT = socleIRM * lt, socleClim = hSocle * m.climSalleKw;
         var epIRM = profil.heuresPret * (m.pret - m.eteint), exIRM = profil.heuresMesure * (m.mesure - m.eteint);
         return {
           socle: { irm: socleIRM, lt: socleLT, clim: socleClim, total: socleIRM + socleLT + socleClim },
@@ -2802,8 +2803,19 @@
         var prix = Math.max(0, parseFloat(document.getElementById("unKwh").value) || 0);
         var patientsAn = unActiviteAnnuelle();
         var samCoche = document.getElementById("unOuvertSamedi").checked, dimCoche = document.getElementById("unOuvertDimanche").checked;
+        // Adaptation aux 3 projets (04/10/2026, demande de Cédric) : projet 02 -> chaque machine ne traite que sa
+        // part du volume (répartition de la Bascule) ; projet 03 -> la machine A (scanner) peut être coupée la nuit
+        // (même réglage que le comparatif CT vs IRM, unSocleHeuresJoursScanner). Projet 01 inchangé.
+        var etatB = unEtatBascule();
+        var paramsPM = projetActuel === 3 ? unConstruireParamsPointMort() : null;
         return unSlotsActifs().map(function (slot) {
           var c = unConfigMachinePointMort(slot), m = c.machine;
+          var patientsMachine = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : patientsAn;
+          var heuresSocle = null;
+          if (projetActuel === 3 && slot === 0) {
+            var sc = unSocleHeuresJoursScanner(paramsPM);
+            if (sc) heuresSocle = Math.min(UN_RSE_HEURES_AN, sc.heuresParJour * sc.joursParMois * 12);
+          }
           var ampl = unHeuresAmpl(slot);
           var coupure = document.getElementById("unCoupureSemaine").checked ? Math.max(0, parseFloat(document.getElementById("unCoupureDureeSemaine").value) || 0) : 0;
           var acq = m.dureeAcquisitionMinutes || 0;
@@ -2812,11 +2824,12 @@
             semBrut: Math.min(24, ampl), semNet: Math.max(0, ampl - coupure),
             samBrut: samCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresSamedi").value) || 0) : 0, samNet: samCoche ? unHeuresEffectives("Samedi") : 0,
             dimBrut: dimCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresDimanche").value) || 0) : 0, dimNet: dimCoche ? unHeuresEffectives("Dimanche") : 0,
-            patientsAn: patientsAn, acqMin: acq, changementMin: Math.max(1, total - acq)
+            patientsAn: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq)
           });
-          var decomp = unRseDecomposition(m, profil);
+          var decomp = unRseDecomposition(m, profil, heuresSocle);
+          if (etatB && patientsMachine <= 0) decomp = { socle: { irm: 0, lt: 0, clim: 0, total: 0 }, entrePatients: { total: 0 }, examens: { total: 0 } };
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
-          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsAn > 0 ? kwh * prix / patientsAn : 0, profil: profil, prix: prix };
+          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsMachine > 0 ? kwh * prix / patientsMachine : 0, profil: profil, prix: prix };
         });
       }
       function unRseLigneBarre(container, label, valeurs, formateur, opts) {
@@ -3039,8 +3052,7 @@
       window.addEventListener("resize", function () { if (document.getElementById("unRseCard").open) unRseRendre(); });
       function unRseRendre() {
         var card = document.getElementById("unRseCard");
-        card.hidden = projetActuel !== 1;
-        if (card.hidden) return;
+        card.hidden = false;
         var res = unRseResultats();
         var leg = document.getElementById("unRseLegende"); leg.innerHTML = "";
         res.forEach(function (r) {
@@ -3056,6 +3068,45 @@
         unRseEtudes();
       }
 
+      // Entrées du Point mort (une barre par machine). Projet 02 « IRM supplémentaire » (04/10/2026, demande de
+      // Cédric) : les deux IRM sont FUSIONNÉES en une seule barre — charges fixes additionnées, marge par examen
+      // moyenne pondérée par la répartition de la Bascule (même curseur que la Composition) ; jamais une 2ᵉ
+      // formule : mêmes calculerPointMortMachine()/unCalculerAnnuel(). `acteActif` (facultatif) force le scénario
+      // avec/sans acte intellectuel (PDF). ---
+      function unPointMortEntrees(slots, params, acteActif) {
+        function prm(slot) {
+          var ps = unParamsPourSlot(slot, params);
+          return acteActif === undefined ? ps : Object.assign({}, ps, { acteIntellectuelActif: acteActif });
+        }
+        function nom(config, slot) { return config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"); }
+        var etatB = unEtatBascule();
+        if (etatB && slots.length === 2) {
+          var resA = calculerPointMortMachine(etatB.configA, prm(0)), resB = calculerPointMortMachine(etatB.configB, prm(1));
+          var partA = etatB.N > 0 ? etatB.volA / etatB.N : 0.5, partB = 1 - partA;
+          var marge = partA * resA.margeParPatient + partB * resB.margeParPatient;
+          var charges = resA.chargesFixesMensuelles + resB.chargesFixesMensuelles;
+          var fusion = { margeParPatient: marge, chargesFixesMensuelles: charges };
+          var joursMois = prm(0).joursParMois;
+          return [{
+            label: nom(etatB.configA, 0) + " + " + nom(etatB.configB, 1), color: "#5b6472",
+            value: marge > 0 ? (charges / marge) / joursMois : Infinity,
+            annuel: unCalculerAnnuel(etatB.configA, fusion, prm(0))
+          }];
+        }
+        return slots.map(function (slot) {
+          var config = unConfigMachinePointMort(slot);
+          var paramsSlot = prm(slot);
+          var res = calculerPointMortMachine(config, paramsSlot);
+          return { label: nom(config, slot), color: UN_SLOT_COLORS[slot], value: res.pointMortJour, annuel: unCalculerAnnuel(config, res, paramsSlot) };
+        });
+      }
+      function unPointMortRedessiner() {
+        if (projetActuel !== 2) return;
+        var entries = unPointMortEntrees(unSlotsActifs(), unConstruireParamsPointMort());
+        unDessinerBarresPointMort(entries);
+        unDernieresEntreesPointMort = entries;
+        if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
+      }
       function unRenderPointMort() {
         // Resynchronise la table de mixage sur l'état réel des champs de
         // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
@@ -3100,18 +3151,7 @@
         document.getElementById("unMixContrasteGroup").hidden = !unMixerGroupeVoulu("unMixContrasteGroup");
         var slots = [0];
         if (!uneSeuleMachine) slots.push(1);
-        var entries = slots.map(function (slot) {
-          var config = unConfigMachinePointMort(slot);
-          // Heures d'ouverture propres à la Machine B quand le curseur est dédoublé (unHeuresB).
-          var paramsSlot = unParamsPourSlot(slot, params);
-          var res = calculerPointMortMachine(config, paramsSlot);
-          return {
-            label: config.machine ? config.machine.nomCourt : (slot === 0 ? "Machine A" : "Machine B"),
-            color: UN_SLOT_COLORS[slot],
-            value: res.pointMortJour,
-            annuel: unCalculerAnnuel(config, res, paramsSlot)
-          };
-        });
+        var entries = unPointMortEntrees(slots, params);
         unDessinerBarresPointMort(entries);
         unDessinerCompo(slots, params);
         unRseRendre();
@@ -4951,6 +4991,8 @@
         unDessinerFtMoyChart(N, volA, unBasculeTrA, unBasculeTrB, unBasculeConfigA.machine.nomCourt, unBasculeConfigB.machine.nomCourt);
         // La carte Composition suit la répartition de la Bascule (projet 02), seulement quand elle est ouverte.
         if (document.getElementById("unCompoCard").open) unCompoRedessinerSeul();
+        unPointMortRedessiner();
+        if (document.getElementById("unRseCard").open) unRseRendre();
       }
 
       document.getElementById("unBasculeCurseur").addEventListener("input", unRecalculerBascule);
@@ -5496,22 +5538,13 @@
         // jamais une 2ᵉ formule : mêmes fonctions que le graphe, params.acteIntellectuelActif
         // forcé à true puis à false plutôt que lu depuis la case à cocher #unActeIntellectuelActif
         // (qui ne reflète qu'UN seul des deux scénarios à la fois).
-        function unPointMortScenario(config, paramsSlot, acteActif) {
-          var paramsScenario = Object.assign({}, paramsSlot, { acteIntellectuelActif: acteActif });
-          var res = calculerPointMortMachine(config, paramsScenario);
-          var annuel = unCalculerAnnuel(config, res, paramsScenario);
-          return { jour: res.pointMortJour, annuelJours: annuel.loyer ? annuel.loyer.totalJours : null };
+        function unPointMortScenario(entree) {
+          return { jour: entree.value, annuelJours: entree.annuel.loyer ? entree.annuel.loyer.totalJours : null };
         }
-        var pointMort = slots.map(function (slot) {
-          var config = unConfigMachinePointMort(slot);
-          if (!config.machine) return null;
-          var paramsSlot = unParamsPourSlot(slot, params);
-          return {
-            label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot],
-            avecActe: unPointMortScenario(config, paramsSlot, true),
-            sansActe: unPointMortScenario(config, paramsSlot, false)
-          };
-        }).filter(Boolean);
+        var pmAvec = unPointMortEntrees(slots, params, true), pmSans = unPointMortEntrees(slots, params, false);
+        var pointMort = pmAvec.map(function (e, k) {
+          return { label: e.label, color: e.color, avecActe: unPointMortScenario(e), sansActe: unPointMortScenario(pmSans[k]) };
+        });
 
         var compo = slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
@@ -5564,11 +5597,63 @@
           }
         }
 
-        var rse = null;
-        if (projetActuel === 1) {
-          rse = unRseResultats().map(function (r) {
-            return { label: r.machine.nomCourt, coutAnnuel: r.coutAnnuel, coutParPatient: r.coutParPatient, kwh: r.kwh };
+        // Données des demi-anneaux du PDF (04/10/2026) : une entrée par machine, ou UNE seule pour les deux
+        // IRM ensemble (projet 02, répartition de la Bascule) — mêmes fonctions que la carte Composition.
+        var compoGraph = [], etatB = unEtatBascule();
+        if (etatB) {
+          var ib = unCompoItemsBascule(etatB);
+          compoGraph.push({ label: ib.rec.label, color: ib.rec.color, volume: ib.rec.volume, rec: ib.rec, dep: ib.dep, res: ib.res });
+        } else {
+          slots.forEach(function (slot) {
+            var config = unConfigMachinePointMort(slot);
+            if (!config.machine) return;
+            var det = unDetailCA(volume, config.machine, params);
+            if (params.acteIntellectuelActif) det.acte = unActeIntellectuelConfig(config) * volume;
+            var totRec = det.plein + det.seuil1 + det.seuil2 + det.plafond + (det.acte || 0);
+            var cout = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
+            var totDep = cout.loyer + cout.personnel + cout.elec + cout.autres, res = totRec - totDep;
+            compoGraph.push({
+              label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], volume: volume,
+              rec: { detail: det, total: totRec },
+              dep: { detail: { loyer: cout.loyer, personnel: cout.personnel, elec: cout.elec, autres: cout.autres }, total: totDep },
+              res: { detail: { loyer: cout.loyer, personnel: cout.personnel, elec: cout.elec, autres: cout.autres, resultat: Math.max(0, res) }, total: Math.max(totRec, totDep), res: res, rec: totRec }
+            });
           });
+        }
+
+        var rse = null, rseHyp = null;
+        {
+          var rseRes = unRseResultats();
+          rse = rseRes.map(function (r) {
+            var kg = r.kwh * CO2_G_PAR_KWH_FRANCE / 1000;
+            return { label: r.machine.nomCourt, color: r.color, coutAnnuel: r.coutAnnuel, coutParPatient: r.coutParPatient, kwh: r.kwh, kgCo2: kg, arbres: Math.round(kg / ARBRE_KG_CO2_PAR_AN) };
+          });
+          function kwTxt(v) { return String(v).replace(".", ",") + " kW"; }
+          var techDef = [
+            ["Puissance à l'arrêt", function (m) { return m.eteint; }, kwTxt],
+            ["Puissance prête", function (m) { return m.pret; }, kwTxt],
+            ["Puissance en acquisition", function (m) { return m.mesure; }, kwTxt],
+            ["Surcoût local technique", function (m) { return m.coeffRefroidissementLT * 100; }, function (v) { return v > 0 ? "+" + Math.round(v) + " %" : "—"; }],
+            ["Climatisation salle (continu)", function (m) { return m.climSalleKw; }, kwTxt]
+          ];
+          var samCoche = document.getElementById("unOuvertSamedi").checked, dimCoche = document.getElementById("unOuvertDimanche").checked;
+          var coupure = document.getElementById("unCoupureSemaine").checked ? Math.max(0, parseFloat(document.getElementById("unCoupureDureeSemaine").value) || 0) : 0;
+          rseHyp = {
+            tech: techDef.map(function (t) {
+              return { label: t[0], fmt: t[2], vals: rseRes.map(function (r) { return { label: r.machine.nomCourt, color: r.color, valeur: t[1](r.machine) }; }) };
+            }),
+            communs: [
+              ["Coût du kWh", unRseEurosCent.format(rseRes.length ? rseRes[0].prix : 0)],
+              ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", Math.max(0, unHeuresAmpl(slots[0]) - coupure) + " h/jour"],
+              ["Samedi (coupure déjà déduite)", samCoche ? unHeuresEffectives("Samedi") + " h/jour" : "Fermé"],
+              ["Dimanche (coupure déjà déduite)", dimCoche ? unHeuresEffectives("Dimanche") + " h/jour" : "Fermé"],
+              ["Votre activité", milliersFmt.format(Math.round(unActiviteAnnuelle())) + " patients/an"]
+            ],
+            machines: [
+              { label: "Durée d'acquisition", vals: rseRes.map(function (r) { return Math.round(r.acqMin * 10) / 10 + " min"; }) },
+              { label: "Temps de changement de patient (ready to scan)", vals: rseRes.map(function (r) { return Math.round(r.changementMin * 10) / 10 + " min"; }) }
+            ]
+          };
         }
 
         var ctIrm = null;
@@ -5588,7 +5673,7 @@
           projet: projetActuel, volume: volume,
           machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
           pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference,
-          rse: rse, ctIrm: ctIrm
+          rse: rse, rseHyp: rseHyp, ctIrm: ctIrm, compoGraph: compoGraph, avecActe: !!params.acteIntellectuelActif
         };
       }
 
@@ -5599,182 +5684,242 @@
         var inclureCompo = document.getElementById("unExportInclureCompo").checked;
         var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
         var inclureCt = donnees.ctIrm && document.getElementById("unExportInclureCt").checked;
-        // Largeur cible des graphes insérés dans le PDF (Point mort, CT vs IRM, et les
-        // panneaux Dépenses/Résultat de la Composition) : modeste, pour laisser le tableau
-        // de chiffres la source de vérité et le graphe une illustration à côté. Le panneau
-        // Recettes de la Composition est en revanche deux fois plus grand (demande de
-        // Cédric, 30/09/2026) : c'est le premier graphe du PDF, celui qui résume le mieux
-        // la simulation. Pas de RSE ici, son graphe n'est plus un <svg> depuis le
-        // 22/09/2026 — voir #unRseChart — reste donc en texte seul, comme avant.
-        var LARGEUR_GRAPHE_MM = 95;
-        var LARGEUR_GRAPHE_COMPO_MM = LARGEUR_GRAPHE_MM * 2;
-
+        // Refonte du 04/10/2026 (demande de Cédric : le PDF doit ressembler à la maquette « PDF
+        // Simulateur unifié — e-mail ») : A4 PORTRAIT, une section par page, graphes DESSINÉS
+        // directement dans le PDF (colonnes, demi-anneaux, barres, courbe du prix du kWh) avec les
+        // couleurs et les formules du simulateur, valeurs écrites sous chaque graphe.
+        // Pages : 1 en-tête/Paramètres/Machines · 2 Seuil de rentabilité · 3 Composition ·
+        // 4 Barème (+ comparatif CT vs IRM, projet 03) · 5 RSE et hypothèses · 6 Prix du kWh, études.
         return Promise.all([
           unImageDataUrl("assets/logo-ced4scale.png"),
-          donnees.pointMort.length ? unSvgPngInfo("unPointMortChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
-          donnees.pointMort.length ? unSvgPngInfo("unPointMortAnnuelChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null),
-          inclureCompo && donnees.compo.length ? unCompoImagesTousPanneaux(LARGEUR_GRAPHE_COMPO_MM, LARGEUR_GRAPHE_MM) : Promise.resolve({ recettes: null, depenses: null, resultat: null }),
-          inclureCt ? unSvgPngInfo("unCtIrmChart", LARGEUR_GRAPHE_MM) : Promise.resolve(null)
+          inclureCt ? unSvgPngInfo("unCtIrmChart", 150) : Promise.resolve(null)
         ]).then(function (images) {
-          var logoPng = images[0], pointMortImg = images[1], pointMortAnnuelImg = images[2], compoImgs = images[3], ctImg = images[4];
-          var doc = new window.jspdf.jsPDF({ orientation: "landscape" });
-          var RIGHT_X = 282, LEFT_X = 15, PAGE_BOTTOM = 195;
-          var y = 40;
+          var logoPng = images[0], ctImg = images[1];
+          var doc = new window.jspdf.jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+          var LEFT_X = 15, RIGHT_X = 195, PAGE_BOTTOM = 280, CW = RIGHT_X - LEFT_X;
+          var y = 20;
+          var NAVY = [29, 42, 68];
 
-          // Même neutralisation que simulateur-recettes.html : les nombres formatés en
-          // Intl.NumberFormat("de-DE", ...) utilisent une espace fine insécable (U+202F)
-          // que la police par défaut de jsPDF ne connaît pas ; idem pour "−"/"≤"/"₂". Idem
-          // pour "ᵉ" (exposant de "2ᵉ tranche"/"3ᵉ tranche", tableau du barème dégressif,
-          // 30/09/2026) : glyphe absent -> espacement des lettres complètement disloqué.
           var _origDocText = doc.text.bind(doc);
           doc.text = function (text, x, yy, opts) {
-            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-").replace(/≤/g, "<=").replace(/₂/g, "2").replace(/ᵉ/g, "e") : t; }
+            function clean(t) { return typeof t === "string" ? t.replace(/[  ]/g, " ").replace(/−/g, "-").replace(/≤/g, "<=").replace(/₂/g, "2").replace(/ᵉ/g, "e").replace(/ʳ/g, "r") : t; }
             text = Array.isArray(text) ? text.map(clean) : clean(text);
             return _origDocText(text, x, yy, opts);
           };
+          function rgbDe(hex) { return unHexRgb(hex); }
+          function fill(hex) { var c = rgbDe(hex); doc.setFillColor(c[0], c[1], c[2]); }
+          function textColor(hex) { var c = rgbDe(hex); doc.setTextColor(c[0], c[1], c[2]); }
+          function virg(n, d) { return n.toFixed(d).replace(".", ","); }
+          function nouvellePage() { doc.addPage(); y = 20; }
+          function ensureSpace(needed) { if (y + needed > PAGE_BOTTOM) nouvellePage(); }
 
-          function ensureSpace(needed) {
-            if (y + needed > PAGE_BOTTOM) { doc.addPage(); y = 20; }
-          }
-
-          // En-tête : logo à gauche, coordonnées Ced4Scale alignées à droite (identique à
-          // simulateur-recettes.html).
+          // ---- Page 1 : en-tête (logo + coordonnées) ----
           var logoH = 12, logoW = logoH * 3.2;
-          doc.addImage(logoPng, "PNG", LEFT_X, 14, logoW, logoH, undefined, "MEDIUM");
-          doc.setFontSize(10);
-          doc.setTextColor(0);
-          doc.setFont(undefined, "bold");
-          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 16, { align: "right" });
-          doc.setFont(undefined, "normal");
-          doc.setFontSize(8.5);
-          doc.setTextColor(110);
-          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
-          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
-          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
-          doc.setDrawColor(220);
-          doc.line(LEFT_X, 33, RIGHT_X, 33);
-
-          doc.setTextColor(0);
-          doc.setFontSize(14);
-          doc.setFont(undefined, "bold");
+          doc.addImage(logoPng, "PNG", LEFT_X, 12, logoW, logoH, undefined, "MEDIUM");
+          doc.setFontSize(10); doc.setTextColor(0); doc.setFont(undefined, "bold");
+          doc.text(CED4SCALE_CONTACT.nom, RIGHT_X, 14, { align: "right" });
+          doc.setFont(undefined, "normal"); doc.setFontSize(8.5); doc.setTextColor(110);
+          doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 18, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 22, { align: "right" });
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 26, { align: "right" });
+          doc.setDrawColor(210); doc.line(LEFT_X, 30, RIGHT_X, 30);
+          y = 40;
+          doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]); doc.setFontSize(14); doc.setFont(undefined, "bold");
           doc.text("Simulation IRM — Projet " + donnees.projet + " : " + (UN_PROJET_TITRES[donnees.projet] || ""), LEFT_X, y);
-          y += 6;
-          doc.setFontSize(9.5);
-          doc.setFont(undefined, "normal");
-          doc.setTextColor(90);
+          y += 6; doc.setFontSize(9.5); doc.setFont(undefined, "normal"); doc.setTextColor(90);
           doc.text("Activité : " + milliersFmt.format(donnees.volume) + " examens / an", LEFT_X, y);
           y += 9;
 
           function titreSection(txt) {
             ensureSpace(11);
-            doc.setFontSize(11.5);
-            doc.setFont(undefined, "bold");
+            doc.setFontSize(11.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text(txt, LEFT_X, y); y += 6.5; doc.setFont(undefined, "normal");
+          }
+          function titrePage(txt, sousTxt) {
+            doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text(txt, LEFT_X, y); y += 6; doc.setFont(undefined, "normal");
+            if (sousTxt) { doc.setFontSize(8.5); doc.setTextColor(120); doc.text(sousTxt, LEFT_X, y); y += 5; }
+            y += 3;
+          }
+          // Tableau à 2 colonnes (Libellé | Valeur), sans cadre.
+          function tableDeuxColonnes(lignes) {
+            lignes.forEach(function (l) {
+              ensureSpace(5.2); doc.setFont(undefined, "normal"); doc.setFontSize(8.6); doc.setTextColor(0);
+              doc.text(l.label, LEFT_X + 2, y); doc.setTextColor(70); doc.text(String(l.valeur), LEFT_X + 100, y);
+              y += 4.9;
+            });
             doc.setTextColor(0);
-            doc.text(txt, LEFT_X, y);
-            y += 6.5;
-            doc.setFont(undefined, "normal");
           }
-          function ligneTexte(txt, taille, couleurGris) {
-            ensureSpace(5.5);
-            doc.setFontSize(taille || 9.5);
-            doc.setTextColor(couleurGris || 0);
-            doc.text(txt, LEFT_X + 2, y);
-            y += 5.2;
-          }
-          // Même ligne que ligneTexte(), précédée d'une pastille carrée de la couleur de
-          // la machine (UN_SLOT_COLORS) — reprend la légende à pastilles déjà utilisée à
-          // l'écran (pastilles() dans unDessinerCompo) pour relier visuellement chaque
-          // ligne au graphe inséré juste au-dessus.
-          function ligneTexteCouleur(txt, couleurHex, taille) {
-            ensureSpace(5.5);
-            doc.setFontSize(taille || 9.5);
-            if (couleurHex) {
-              var rgb = unHexRgb(couleurHex);
-              doc.setFillColor(rgb[0], rgb[1], rgb[2]);
-              doc.rect(LEFT_X + 2, y - 2.6, 2.6, 2.6, "F");
-            }
+          // Tableau à 3 colonnes (Libellé | Machine A | Machine B), sans cadre.
+          function tableMachines(lignes, nomA, nomB) {
+            var colAX = LEFT_X + 82, colBX = colAX + 50;
+            ensureSpace(6); doc.setFontSize(9.2); doc.setFont(undefined, "bold");
+            textColor(UN_SLOT_COLORS[0]); doc.text(nomA, colAX, y);
+            if (nomB) { textColor(UN_SLOT_COLORS[1]); doc.text(nomB, colBX, y); }
+            doc.setFont(undefined, "normal"); y += 5.5;
+            lignes.forEach(function (l) {
+              ensureSpace(5.2); doc.setFontSize(8.6); doc.setTextColor(0);
+              doc.text(l.label, LEFT_X + 2, y); doc.setTextColor(70);
+              doc.text(String(l.valA), colAX, y);
+              if (nomB && l.valB != null) doc.text(String(l.valB), colBX, y);
+              y += 4.9;
+            });
             doc.setTextColor(0);
-            doc.text(txt, LEFT_X + 6.5, y);
-            y += 5.2;
           }
-          // Insère un graphe déjà converti en PNG (voir unSvgPngInfo) sous le titre de
-          // section courant, à une largeur fixe pour rester lisible sans prendre toute la
-          // page — l'appelant a déjà vérifié que infoImg n'est pas null (graphe absent/
-          // jamais dessiné -> pas d'image, la liste de chiffres suffit alors).
-          function ajouterImage(infoImg) {
-            if (!infoImg) return;
-            ensureSpace(infoImg.h + 4);
-            doc.addImage(infoImg.dataUrl, "PNG", LEFT_X + 2, y, infoImg.w, infoImg.h, undefined, "MEDIUM");
-            y += infoImg.h + 4;
-          }
-          // Petit intitulé au-dessus d'un graphe secondaire (Dépenses/Résultat), plus
-          // discret que titreSection() — le titre de section reste celui de la carte
-          // (« Composition des recettes de l'année 1 »), ceci n'est qu'une légende locale.
-          function sousTitre(txt) {
-            ensureSpace(5.5);
-            doc.setFontSize(9.5);
-            doc.setFont(undefined, "bold");
-            doc.setTextColor(60);
-            doc.text(txt, LEFT_X + 2, y);
-            y += 5;
-            doc.setFont(undefined, "normal");
-          }
-          // Tableau du barème dégressif — vrai tableau en colonnes (pas une image : ce
-          // n'est pas un <svg> à l'écran), une colonne par machine, même contenu complet
-          // que la vue « Tableau » de la carte Composition avec charges affichées (tarif
-          // plein/tranches, total, acte intellectuel, charges détaillées, résultat,
-          // différence) — mêmes couleurs recette/charges/résultat qu'à l'écran.
-          function tableBareme(liste, difference) {
-            var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
-            var COL_LABEL_W = 30;
-            var colLabelX = LEFT_X + 2;
-            var colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length;
+          titreSection("Paramètres");
+          tableDeuxColonnes(donnees.formulaire.parametres);
+          y += 4;
+          titreSection("Machines");
+          tableMachines(donnees.formulaire.machines, donnees.machineANom, donnees.machineBNom);
 
-            ensureSpace(6);
-            doc.setFontSize(9.5);
-            doc.setFont(undefined, "bold");
-            liste.forEach(function (b, i) {
-              var rgb = unHexRgb(b.couleur);
-              doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-              doc.text(b.nom, colLabelX + COL_LABEL_W + i * colW, y);
+          // ---- Page 2 : Seuil de rentabilité (colonnes, valeurs sous chaque graphe) ----
+          function cadre(x, yy, w, h) { doc.setDrawColor(222); doc.setLineWidth(0.25); doc.roundedRect(x, yy, w, h, 1.5, 1.5, "S"); }
+          function celluleColonnes(x, yy, w, h, titre, barres) {
+            cadre(x, yy, w, h);
+            doc.setFontSize(9.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text(titre, x + 5, yy + 8);
+            var base = yy + 8 + 8 + 62, maxH = 56, maxV = Math.max.apply(null, barres.map(function (b) { return isFinite(b.valeur) ? b.valeur : 0; }).concat([0.0001]));
+            doc.setDrawColor(200); doc.line(x + 5, base, x + w - 5, base);
+            var bw = 24, gap = 16, total = barres.length * bw + (barres.length - 1) * gap, bx = x + (w - total) / 2;
+            barres.forEach(function (b, i) {
+              var v = isFinite(b.valeur) ? b.valeur : 0, bh = v > 0 ? Math.max(1.5, maxH * v / maxV) : 0;
+              var px = bx + i * (bw + gap);
+              if (bh > 0) { fill(b.color); doc.roundedRect(px, base - bh, bw, bh, 1, 1, "F"); }
+              doc.setFontSize(10.5); doc.setFont(undefined, "bold"); textColor(b.color);
+              doc.text(b.texte, px + bw / 2, base - bh - 2.5, { align: "center" });
+            });
+            var ly = base + 8; doc.setFontSize(8.6);
+            barres.forEach(function (b) {
+              fill(b.color); doc.rect(x + 6, ly - 2.7, 2.8, 2.8, "F");
+              doc.setFont(undefined, "normal"); doc.setTextColor(40); doc.text(b.label, x + 11, ly);
+              doc.setFont(undefined, "bold"); doc.text(b.texte, x + w - 6, ly, { align: "right" });
+              ly += 6;
             });
             doc.setFont(undefined, "normal");
-            doc.setTextColor(0);
-            y += 5.5;
+          }
+          if (donnees.pointMort.length) {
+            nouvellePage();
+            titrePage("Seuil de rentabilité — Projet " + donnees.projet);
+            var cw2 = (CW - 8) / 2, ch2 = 108;
+            function ligneCellules(titreLigne, fnValeur, fnTexte) {
+              doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+              doc.text(titreLigne, LEFT_X, y); y += 4;
+              [["Avec acte intellectuel", "avecActe"], ["Sans acte intellectuel", "sansActe"]].forEach(function (sc, k) {
+                celluleColonnes(LEFT_X + k * (cw2 + 8), y, cw2, ch2, sc[0], donnees.pointMort.map(function (p) {
+                  var v = fnValeur(p[sc[1]]);
+                  return { label: p.label, color: p.color, valeur: v, texte: fnTexte(v) };
+                }));
+              });
+              y += ch2 + 8;
+            }
+            ligneCellules("Seuil de rentabilité (examens / jour)", function (s) { return s.jour; },
+              function (v) { return isFinite(v) ? virg(v, 1) + " ex./j" : "jamais atteint"; });
+            ligneCellules("Point mort annuel (en jours d'activité)", function (s) { return s.annuelJours != null ? s.annuelJours : Infinity; },
+              function (v) { return isFinite(v) ? Math.ceil(v) + " jours" : "jamais atteint"; });
+            doc.setFontSize(8); doc.setTextColor(120);
+            doc.splitTextToSize("Le point mort annuel indique le nombre de jours d'activité nécessaires pour rembourser l'ensemble des charges fixes annuelles (loyer, personnel, électricité de base, salle, assurance, entretien, injecteur, RIS) de chaque machine.", CW).forEach(function (l) { doc.text(l, LEFT_X, y); y += 4; });
+          }
 
+          // ---- Page 3 : Composition (demi-anneaux de même taille, légende en dessous) ----
+          function demiAnneau(cx, cyBase, R, cats, detail, total) {
+            var r = R * 0.55, debut = Math.PI;
+            cats.forEach(function (p) {
+              var part = detail[p.key];
+              if (!part || total <= 0) return;
+              var f = part / total, fin = debut + f * Math.PI, n = Math.max(4, Math.ceil(f * 60));
+              var pts = [], i, a;
+              for (i = 0; i <= n; i++) { a = debut + (fin - debut) * i / n; pts.push([cx + R * Math.cos(a), cyBase + R * Math.sin(a)]); }
+              for (i = n; i >= 0; i--) { a = debut + (fin - debut) * i / n; pts.push([cx + r * Math.cos(a), cyBase + r * Math.sin(a)]); }
+              var vect = [];
+              for (i = 1; i < pts.length; i++) vect.push([pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]]);
+              fill(p.color); doc.setDrawColor(255, 255, 255); doc.setLineWidth(0.5);
+              doc.lines(vect, pts[0][0], pts[0][1], [1, 1], "FD", true);
+              if (f >= 0.06) {
+                var m = (debut + fin) / 2, rr = (R + r) / 2;
+                doc.setFontSize(7.5); doc.setFont(undefined, "bold"); doc.setTextColor(255);
+                doc.text(Math.round(f * 100) + " %", cx + rr * Math.cos(m), cyBase + rr * Math.sin(m) + 1, { align: "center" });
+              }
+              debut = fin;
+            });
+            doc.setFont(undefined, "normal");
+          }
+          function blocComposition(titreBloc, items, cats, cle) {
+            var R = 26, colW = items.length > 1 ? CW / 2 : CW;
+            var nLeg = Math.max.apply(null, items.map(function (it) { return cats.filter(function (p) { return it[cle].detail[p.key] > 0; }).length + 1; }));
+            var h = 10 + 8 + R + 6 + nLeg * 4.5 + 3;
+            ensureSpace(h + 2);
+            cadre(LEFT_X, y, CW, h);
+            doc.setFontSize(10.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text(titreBloc, LEFT_X + 5, y + 7);
+            items.forEach(function (it, k) {
+              var cx = LEFT_X + colW * k + colW / 2, bloc = it[cle], yy = y + 10;
+              doc.setFontSize(8.8); doc.setFont(undefined, "bold"); textColor(it.color);
+              doc.text(it.label, cx, yy + 3, { align: "center" });
+              doc.setFont(undefined, "normal"); doc.setTextColor(80);
+              var cap;
+              if (cle === "res") cap = (bloc.res >= 0 ? "Résultat : " : "Déficit : ") + unEurosFmt.format(it.volume > 0 ? bloc.res / it.volume : 0) + " / examen" + (bloc.rec > 0 ? " · marge " + Math.round(bloc.res / bloc.rec * 100) + " %" : "");
+              else cap = unEurosFmt.format(it.volume > 0 ? bloc.total / it.volume : 0) + " / examen";
+              if (cle === "res") textColor(bloc.res >= 0 ? "#1baf7a" : "#c2334d");
+              doc.text(cap, cx, yy + 7.5, { align: "center" });
+              demiAnneau(cx, yy + 10 + R, R, cats, bloc.detail, bloc.total);
+              var ly = yy + 10 + R + 7;
+              cats.forEach(function (p) {
+                var v = bloc.detail[p.key];
+                if (!(v > 0)) return;
+                var lx = cx - 38;
+                fill(p.color); doc.rect(lx, ly - 2.5, 2.6, 2.6, "F");
+                doc.setFontSize(8); doc.setTextColor(40); doc.text(p.label, lx + 4.5, ly);
+                doc.setFont(undefined, "bold"); doc.text(unEurosFmt.format(v || 0), lx + 76, ly, { align: "right" }); doc.setFont(undefined, "normal");
+                ly += 4.5;
+              });
+              if (cle === "res" && bloc.res < 0) {
+                doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(194, 51, 77);
+                doc.text("Déficit", cx - 33.5, ly); doc.text("(" + unEurosFmt.format(-bloc.res) + ")", cx + 38, ly, { align: "right" }); doc.setFont(undefined, "normal"); ly += 4.5;
+              }
+              if (cle !== "res") {
+                doc.setDrawColor(225); doc.line(cx - 38, ly - 3.2, cx + 38, ly - 3.2);
+                doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(0);
+                doc.text("Total", cx - 33.5, ly); doc.text(unEurosFmt.format(bloc.total), cx + 38, ly, { align: "right" }); doc.setFont(undefined, "normal");
+              }
+            });
+            y += h + 3;
+          }
+          if (inclureCompo && donnees.compoGraph.length) {
+            nouvellePage();
+            titrePage("Composition des recettes de l'année 1");
+            var catsRec = donnees.avecActe ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS;
+            blocComposition("Recettes", donnees.compoGraph, catsRec, "rec");
+            blocComposition("Dépenses", donnees.compoGraph, UN_COUTS_CATS, "dep");
+            blocComposition("Résultat", donnees.compoGraph, UN_RENTA_CATS, "res");
+            if (donnees.compoGraph.length === 1 && donnees.projet === 2) {
+              doc.setFontSize(8); doc.setTextColor(120);
+              doc.text("Les deux IRM sont regroupées selon la répartition choisie dans la Bascule progressive.", LEFT_X, y + 1);
+            }
+          }
+
+          // ---- Page 4 : Tableau du barème dégressif (+ comparatif CT vs IRM, projet 03) ----
+          function tableBareme(liste, difference) {
+            var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
+            var COL_LABEL_W = 38, colLabelX = LEFT_X + 2, colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length;
+            ensureSpace(6); doc.setFontSize(9.5); doc.setFont(undefined, "bold");
+            liste.forEach(function (b, i) { textColor(b.couleur); doc.text(b.nom, colLabelX + COL_LABEL_W + i * colW, y); });
+            doc.setFont(undefined, "normal"); doc.setTextColor(0); y += 6;
             function ligne(label, cellules, gras) {
-              ensureSpace(gras ? 6 : 5.4);
-              doc.setFontSize(8.7);
-              doc.setFont(undefined, gras ? "bold" : "normal");
-              doc.setTextColor(0);
+              ensureSpace(gras ? 6.4 : 5.8); doc.setFontSize(8.8); doc.setFont(undefined, gras ? "bold" : "normal"); doc.setTextColor(0);
               doc.text(label, colLabelX, y);
               cellules.forEach(function (c, i) {
                 var x = colLabelX + COL_LABEL_W + i * colW;
-                if (c.detail) {
-                  doc.setFontSize(7.8);
-                  doc.setFont(undefined, "normal");
-                  doc.setTextColor(110);
-                  doc.text(c.detail, x, y);
-                }
-                doc.setFontSize(8.7);
-                doc.setFont(undefined, gras ? "bold" : "normal");
-                var rgb = unHexRgb(c.couleur);
-                doc.setTextColor(rgb[0], rgb[1], rgb[2]);
+                if (c.detail) { doc.setFontSize(7.2); doc.setFont(undefined, "normal"); doc.setTextColor(110); doc.text(c.detail, x, y); }
+                doc.setFontSize(8.8); doc.setFont(undefined, gras ? "bold" : "normal"); textColor(c.couleur);
                 doc.text(c.montant, x + colW - 2, y, { align: "right" });
               });
-              doc.setFont(undefined, "normal");
-              doc.setTextColor(0);
-              y += gras ? 6 : 5.4;
+              doc.setFont(undefined, "normal"); doc.setTextColor(0); doc.setDrawColor(238); doc.line(colLabelX, y + 1.6, RIGHT_X - 2, y + 1.6);
+              y += gras ? 6.4 : 5.8;
             }
-
             liste[0].lignes.forEach(function (_, k) {
-              ligne(liste[0].lignes[k].label, liste.map(function (b) {
-                var l = b.lignes[k];
-                return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: b.couleur };
-              }));
+              ligne(liste[0].lignes[k].label, liste.map(function (b) { var l = b.lignes[k]; return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: b.couleur }; }));
             });
             ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: b.couleur }; }), true);
-
             if (liste.some(function (b) { return b.acte > 0; })) {
               ligne("Acte intellectuel", liste.map(function (b) { return { montant: unEurosFmt.format(b.acte), couleur: COUL_RECETTES }; }));
               ligne("Total des recettes", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalRecettes), couleur: COUL_RECETTES }; }), true);
@@ -5784,148 +5929,137 @@
             });
             ligne("Total des charges", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalCharges), couleur: COUL_CHARGES }; }), true);
             ligne("Résultat", liste.map(function (b) { return { montant: unEurosFmt.format(b.resultat), couleur: COUL_RESULTAT }; }), true);
-
             if (difference) {
-              ensureSpace(6);
-              doc.setFontSize(9);
-              doc.setFont(undefined, "bold");
-              doc.setTextColor(0);
-              doc.text(difference.label, colLabelX, y);
-              var rgb = unHexRgb(difference.couleur);
-              doc.setTextColor(rgb[0], rgb[1], rgb[2]);
-              doc.text(difference.texte, colLabelX + 52, y);
-              doc.setFont(undefined, "normal");
-              doc.setTextColor(0);
-              y += 6;
-            }
-            y += 2;
-          }
-
-          // Tableau à 2 colonnes (Libellé | Valeur), sans cadre — pour les Paramètres
-          // (champs communs aux 2 machines, 30/09/2026, demande de Cédric).
-          function tableDeuxColonnes(lignes) {
-            var colLabelX = LEFT_X + 2, colValX = LEFT_X + 108;
-            lignes.forEach(function (l) {
-              ensureSpace(5.4);
-              doc.setFontSize(8.8);
-              doc.setTextColor(0);
-              doc.text(l.label, colLabelX, y);
-              doc.setTextColor(70);
-              doc.text(String(l.valeur), colValX, y);
-              doc.setTextColor(0);
-              y += 5.1;
-            });
-          }
-          // Tableau à 3 colonnes (Libellé | Machine A | Machine B), sans cadre — pour les
-          // données propres à chaque machine (30/09/2026, demande de Cédric). valB absent
-          // (une seule machine) -> pas de 3ᵉ colonne ; valB === "—" -> case affichée vide
-          // (champ non pertinent pour cette machine, ex. Part multi-régions côté IRM).
-          function tableMachines(lignes, nomA, nomB) {
-            var COL_LABEL_W = 78;
-            var colLabelX = LEFT_X + 2, colAX = colLabelX + COL_LABEL_W, colBX = colAX + 78;
-            ensureSpace(6);
-            doc.setFontSize(9.5);
-            doc.setFont(undefined, "bold");
-            var rgbA = unHexRgb(UN_SLOT_COLORS[0]);
-            doc.setTextColor(rgbA[0], rgbA[1], rgbA[2]);
-            doc.text(nomA, colAX, y);
-            if (nomB) {
-              var rgbB = unHexRgb(UN_SLOT_COLORS[1]);
-              doc.setTextColor(rgbB[0], rgbB[1], rgbB[2]);
-              doc.text(nomB, colBX, y);
-            }
-            doc.setFont(undefined, "normal");
-            doc.setTextColor(0);
-            y += 5.5;
-            lignes.forEach(function (l) {
-              ensureSpace(5.4);
-              doc.setFontSize(8.8);
-              doc.setTextColor(0);
-              doc.text(l.label, colLabelX, y);
-              doc.setTextColor(70);
-              doc.text(String(l.valA), colAX, y);
-              if (nomB && l.valB != null) doc.text(String(l.valB), colBX, y);
-              doc.setTextColor(0);
-              y += 5.1;
-            });
-          }
-
-          // ---- Paramètres + Machine A / Machine B — données complètes du formulaire,
-          // en tableau sans cadre (30/09/2026, demande de Cédric, complétée le
-          // 01/10/2026 : version texte initiale incomplète -> lecture directe de TOUS
-          // les champs du formulaire, présentation en tableau). ----
-          titreSection("Paramètres");
-          tableDeuxColonnes(donnees.formulaire.parametres);
-          y += 3;
-
-          titreSection("Machines");
-          tableMachines(donnees.formulaire.machines, donnees.machineANom, donnees.machineBNom);
-          y += 3;
-
-          // ---- Point mort ----
-          titreSection("Point mort");
-          ajouterImage(pointMortImg);
-          if (pointMortAnnuelImg) { sousTitre("Point mort annuel (en jours)"); ajouterImage(pointMortAnnuelImg); }
-          function unPointMortTexte(scn) {
-            var jourTxt = isFinite(scn.jour) ? milliersFmt.format(Math.ceil(scn.jour)) + " examens / jour" : "jamais atteint";
-            var anTxt = scn.annuelJours != null && isFinite(scn.annuelJours) ? Math.ceil(scn.annuelJours) + " jours" : "jamais atteint dans l'année";
-            return "point mort : " + jourTxt + "   ·   point mort annuel : " + anTxt;
-          }
-          donnees.pointMort.forEach(function (p) {
-            ligneTexteCouleur(p.label, p.color, 9.5);
-            ligneTexte("   avec acte intellectuel — " + unPointMortTexte(p.avecActe), 8.7, 90);
-            ligneTexte("   sans acte intellectuel — " + unPointMortTexte(p.sansActe), 8.7, 90);
-          });
-          y += 3;
-
-          // ---- Composition des recettes de l'année 1 ----
-          if (inclureCompo && donnees.compo.length) {
-            titreSection("Composition des recettes de l'année 1");
-            // Les 3 graphes (Recettes/Dépenses/Résultat) les uns derrière les autres,
-            // avant le texte et le tableau du barème (demande de Cédric, 30/09/2026).
-            sousTitre("Recettes"); ajouterImage(compoImgs.recettes);
-            if (compoImgs.depenses) { sousTitre("Dépenses"); ajouterImage(compoImgs.depenses); }
-            if (compoImgs.resultat) { sousTitre("Résultat"); ajouterImage(compoImgs.resultat); }
-            donnees.compo.forEach(function (c) {
-              ligneTexteCouleur(c.label + " — recette : " + unEurosFmt.format(c.recette) + "   ·   charges : " + unEurosFmt.format(c.charges) + "   ·   résultat : " + unEurosFmt.format(c.resultat), c.color);
-            });
-            y += 3;
-            if (donnees.bareme.length) {
-              sousTitre("Tableau du barème dégressif");
-              tableBareme(donnees.bareme, donnees.baremeDifference);
+              ensureSpace(10); y += 2;
+              doc.setFillColor(244, 245, 247); doc.roundedRect(LEFT_X, y - 4.5, CW, 8, 1, 1, "F");
+              doc.setFontSize(9.2); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+              doc.text(difference.label, LEFT_X + 3, y);
+              textColor(difference.couleur); doc.text(difference.texte, RIGHT_X - 3, y, { align: "right" });
+              doc.setFont(undefined, "normal"); y += 8;
             }
           }
-
-          // ---- Impact énergétique / RSE (projet 1 uniquement) ----
-          if (inclureRse) {
-            titreSection("Impact énergétique / RSE");
-            donnees.rse.forEach(function (r) {
-              ligneTexte(r.label + " — coût électrique annuel : " + unEurosFmt.format(r.coutAnnuel) + "   ·   par patient : " + unRseEurosCent.format(r.coutParPatient) + "   ·   consommation : " + milliersFmt.format(Math.round(r.kwh)) + " kWh / an");
-            });
-            y += 3;
+          if (inclureCompo && donnees.bareme.length) {
+            nouvellePage();
+            titrePage("Tableau du barème dégressif");
+            tableBareme(donnees.bareme, donnees.baremeDifference);
           }
-
-          // ---- Comparatif CT vs IRM (projet 3 uniquement) ----
           if (inclureCt) {
+            if (!(inclureCompo && donnees.bareme.length)) nouvellePage(); else y += 8;
+            ensureSpace(20);
             titreSection("Comparatif CT vs IRM — " + donnees.ctIrm.horizonLabel);
-            ajouterImage(ctImg);
+            if (ctImg) { ensureSpace(ctImg.h + 4); doc.addImage(ctImg.dataUrl, "PNG", LEFT_X + 2, y, ctImg.w, ctImg.h, undefined, "MEDIUM"); y += ctImg.h + 4; }
             donnees.ctIrm.lignes.forEach(function (l) {
-              ligneTexteCouleur(l.label + " — recette : " + unEurosFmt.format(l.recette) + "   ·   charges : " + unEurosFmt.format(l.charges) + "   ·   résultat : " + unEurosFmt.format(l.resultat), l.color);
+              ensureSpace(6); fill(l.color); doc.rect(LEFT_X + 2, y - 2.6, 2.6, 2.6, "F");
+              doc.setFontSize(8.8); doc.setTextColor(0);
+              doc.text(l.label + " — recette : " + unEurosFmt.format(l.recette) + "   ·   charges : " + unEurosFmt.format(l.charges) + "   ·   résultat : " + unEurosFmt.format(l.resultat), LEFT_X + 7, y);
+              y += 5.6;
             });
-            y += 3;
           }
 
+          // ---- Page 5 : RSE et hypothèses ----
+          function paireBarres(titreBloc, valeurs, formateur, compact) {
+            var maxV = Math.max.apply(null, valeurs.map(function (v) { return v.valeur; }).concat([0.0001]));
+            var hb = compact ? 4.4 : 5.2, pas = compact ? 5.4 : 6.4;
+            ensureSpace(9 + valeurs.length * pas);
+            doc.setFontSize(compact ? 8.8 : 9.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            y += 2.5; doc.text(titreBloc, LEFT_X, y); y += 2.2;
+            valeurs.forEach(function (v) {
+              doc.setFont(undefined, "normal"); doc.setFontSize(8.5); doc.setTextColor(60);
+              doc.text(v.label, LEFT_X + 1, y + hb * 0.72);
+              var x0 = LEFT_X + 45, tw = RIGHT_X - x0, w = Math.max(v.valeur > 0 ? 0.8 : 0, tw * v.valeur / maxV);
+              doc.setFillColor(241, 241, 241); doc.roundedRect(x0, y, tw, hb, 0.8, 0.8, "F");
+              if (w > 0) { fill(v.color); doc.roundedRect(x0, y, w, hb, 0.8, 0.8, "F"); }
+              var txt = formateur(v.valeur); doc.setFontSize(8); doc.setFont(undefined, "bold");
+              if (w > doc.getTextWidth(txt) + 4) { doc.setTextColor(255); doc.text(txt, x0 + w - 2, y + hb * 0.72, { align: "right" }); }
+              else { doc.setTextColor(40); doc.text(txt, x0 + w + 2, y + hb * 0.72); }
+              y += hb + 1;
+            });
+            y += 1;
+          }
+          if (inclureRse) {
+            nouvellePage();
+            titrePage("Impact énergétique et RSE", donnees.projet === 1 ? null : "Chaque machine : sa part des examens (projet 02) ou le même volume (projet 03)");
+            var rse = donnees.rse;
+            function serie(cle) { return rse.map(function (r) { return { label: r.label, color: r.color, valeur: r[cle] }; }); }
+            paireBarres("Consommation électrique annuelle", serie("kwh"), function (v) { return milliersFmt.format(Math.round(v)) + " kWh"; });
+            paireBarres("Émissions de CO₂ annuelles", serie("kgCo2"), function (v) { return milliersFmt.format(Math.round(v)) + " kg"; });
+            paireBarres("Équivalence en arbres (absorption annuelle)", serie("arbres"), function (v) { return milliersFmt.format(Math.round(v)) + " arbres"; });
+            paireBarres("Coût électrique annuel", serie("coutAnnuel"), function (v) { return unEurosFmt.format(v); });
+            paireBarres("Coût électrique par patient", serie("coutParPatient"), function (v) { return unRseEurosCent.format(v); });
+            y += 6;
+            titreSection("Hypothèses de ce simulateur");
+            doc.setFontSize(8.5); doc.setTextColor(120); doc.text("Valeurs techniques utilisées", LEFT_X, y); y += 5;
+            donnees.rseHyp.tech.forEach(function (t) { paireBarres(t.label, t.vals, function (v) { return t.fmt(v); }, true); });
+            y += 4; doc.setFontSize(8.5); doc.setTextColor(120); ensureSpace(8); doc.text("Paramètres saisis avant de lancer la simulation", LEFT_X, y); y += 5;
+            tableDeuxColonnes(donnees.rseHyp.communs.map(function (p) { return { label: p[0], valeur: p[1] }; }));
+            y += 2;
+            tableMachines(donnees.rseHyp.machines.map(function (m) { return { label: m.label, valA: m.vals[0], valB: m.vals[1] }; }), rse[0].label, rse[1] ? rse[1].label : null);
+          }
+
+          // ---- Page 6 : Prix du kWh, études indépendantes ----
+          if (inclureRse) {
+            nouvellePage();
+            titrePage("Évolution du prix du kWh en France depuis 2000");
+            var data = UN_RSE_HISTO_PRIX, gx0 = LEFT_X + 20, gx1 = RIGHT_X - 2, gTop = y + 4, gH = 62, yMax = 0.30;
+            for (var g = 0; g <= 5; g++) {
+              var gv = yMax * g / 5, gy = gTop + gH - gH * gv / yMax;
+              doc.setDrawColor(230); doc.setLineWidth(0.2); doc.line(gx0, gy, gx1, gy);
+              doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(120);
+              doc.text(virg(gv, 2) + " €", gx0 - 2, gy + 1, { align: "right" });
+            }
+            var sw = (gx1 - gx0) / data.length, bwid = sw - 0.9;
+            data.forEach(function (d, i) {
+              var bh = gH * d.prix / yMax, bx = gx0 + i * sw + 0.45;
+              var dernier = i === data.length - 1;
+              fill(dernier ? "#eb6834" : (d.estime ? "#a9c2e8" : "#2a78d6"));
+              doc.rect(bx, gTop + gH - bh, bwid, bh, "F");
+              var lab = d.estime ? d.date.slice(0, 4) : d.date.slice(5, 7) + "/" + d.date.slice(0, 4);
+              doc.setFontSize(5.8); doc.setTextColor(110); doc.setFont(undefined, "normal");
+              doc.text(lab, bx + bwid / 2 + 1, gTop + gH + 2 + doc.getTextWidth(lab), { angle: 90 });
+              if (dernier) { doc.setFontSize(8.5); doc.setFont(undefined, "bold"); doc.setTextColor(80); doc.text(virg(d.prix, 2) + " €", bx + bwid / 2, gTop + gH - bh - 2, { align: "center" }); }
+            });
+            y = gTop + gH + 14;
+            doc.setFontSize(7.6); doc.setFont(undefined, "normal"); doc.setTextColor(100);
+            doc.splitTextToSize("Tarif réglementé de vente d'électricité (TRV), option Base, TTC — tarif résidentiel. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance.", CW).forEach(function (l) { doc.text(l, LEFT_X, y); y += 3.7; });
+            fill("#2a78d6"); doc.rect(LEFT_X, y - 2.2, 2.4, 2.4, "F");
+            doc.splitTextToSize("2012-2026 : chaque changement réel de tarif, sourcé CRE (historique des délibérations tarifaires, via fournisseurs-electricite.com, consulté le 03/09/2026).", CW - 5).forEach(function (l) { doc.text(l, LEFT_X + 4, y); y += 3.7; });
+            fill("#a9c2e8"); doc.rect(LEFT_X, y - 2.2, 2.4, 2.4, "F");
+            doc.splitTextToSize("2000-2011 : estimation, aucune série CRE datée trouvée en accès public — reconstruite depuis le seul point connu (2007 : 0,1061 €/kWh) avec le taux moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an, INSEE Première n°1746, avril 2019). Pas une mesure réelle année par année.", CW - 5).forEach(function (l) { doc.text(l, LEFT_X + 4, y); y += 3.7; });
+            y += 5;
+            titreSection("Ce que disent les études indépendantes");
+            ENERGIE_ETUDES.forEach(function (e) {
+              doc.setFont(undefined, "bold"); doc.setFontSize(8); var lt = doc.splitTextToSize(e.label, CW - 4); doc.setFont(undefined, "normal"); doc.setFontSize(7.6); var lr = doc.splitTextToSize(e.resume, CW - 4);
+              ensureSpace(lt.length * 3.9 + lr.length * 3.6 + 3);
+              doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+              lt.forEach(function (l) { doc.text(l, LEFT_X + 2, y); y += 3.9; });
+              doc.setFontSize(7.6); doc.setFont(undefined, "normal"); doc.setTextColor(70);
+              lr.forEach(function (l) { doc.text(l, LEFT_X + 2, y); y += 3.6; });
+              y += 2.2;
+            });
+          }
 
           // ---- Commentaire du visiteur ----
           var commentaire = document.getElementById("unExportCommentaire").value.trim();
           if (commentaire) {
-            titreSection("Commentaire");
             doc.setFontSize(9);
-            var lignesCommentaire = doc.splitTextToSize(commentaire, RIGHT_X - LEFT_X - 4);
-            ensureSpace(5 * lignesCommentaire.length);
-            lignesCommentaire.forEach(function (l) { doc.text(l, LEFT_X + 2, y); y += 5; });
+            var lignesCommentaire = doc.splitTextToSize(commentaire, CW - 8);
+            ensureSpace(14 + 4.6 * lignesCommentaire.length);
+            y += 3;
+            doc.setFillColor(244, 245, 247); doc.roundedRect(LEFT_X, y, CW, 12 + 4.6 * lignesCommentaire.length, 1.5, 1.5, "F");
+            doc.setFontSize(9.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text("Commentaire du visiteur", LEFT_X + 4, y + 6);
+            doc.setFont(undefined, "italic"); doc.setFontSize(9); doc.setTextColor(50);
+            var cy = y + 11.5; lignesCommentaire.forEach(function (l) { doc.text(l, LEFT_X + 4, cy); cy += 4.6; });
+            doc.setFont(undefined, "normal"); y += 12 + 4.6 * lignesCommentaire.length;
           }
 
+          // ---- Pieds de page « Page i / n » sur toutes les pages ----
+          var nbPages = doc.getNumberOfPages();
+          for (var pg = 1; pg <= nbPages; pg++) {
+            doc.setPage(pg); doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(150);
+            doc.text("Simulation IRM — Projet " + donnees.projet + " — Ced4Scale", LEFT_X, 290);
+            doc.text("Page " + pg + " / " + nbPages, RIGHT_X, 290, { align: "right" });
+          }
           return doc.output("datauristring").split(",")[1];
         });
       }
@@ -5943,7 +6077,7 @@
       unExportToggle.addEventListener("click", function () {
         unExportForm.hidden = !unExportForm.hidden;
         if (!unExportForm.hidden) {
-          document.getElementById("unExportInclureRseWrap").hidden = projetActuel !== 1;
+          document.getElementById("unExportInclureRseWrap").hidden = false;
           document.getElementById("unExportInclureCtWrap").hidden = projetActuel !== 3;
         }
       });
