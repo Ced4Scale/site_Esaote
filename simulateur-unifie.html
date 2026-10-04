@@ -287,6 +287,8 @@
     .un-joker-demi { width: 100%; height: auto; display: block; }
     .un-joker-legende { font-size: .68rem; line-height: 1.25; display: flex; gap: .3rem; align-items: flex-start; margin-top: .15rem; }
     .un-joker-legende span { flex: 0 0 .6rem; width: .6rem; height: .6rem; border-radius: 2px; margin-top: .12rem; }
+    .un-joker-poignee { cursor: grab; touch-action: none; user-select: none; }
+    #unJokerPop { transform: translate(var(--jx, 0px), var(--jy, 0px)); }
     .un-joker-titre { font-weight: 800; font-size: .88rem; margin-bottom: .4rem; }
     .un-joker-table { width: 100%; font-size: .78rem; border-collapse: collapse; margin-bottom: .5rem; }
     .un-joker-table td { padding: .12rem 0; } .un-joker-table td:last-child { text-align: right; font-weight: 700; }
@@ -3851,7 +3853,21 @@
           } else sp2.textContent = unEur(basePour2[0] + basePour2[1], 2);
           td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
         }
+        // Joker ouvert (projet 02) : comme sous « Total des 2 machines » dans « Bascule vers un O-scan », 2 lignes en orange —
+        // examens réalisables en plus pour atteindre 100 % de la capacité de la seconde IRM, et le CA équivalent.
+        var jk = unJokerOuvert ? unJokerCapacite() : null;
+        if (jk) {
+          var trE = document.createElement("tr"), tdE = document.createElement("td");
+          tdE.colSpan = entrees.length + 1;
+          tdE.innerHTML = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:.6rem;white-space:nowrap"><strong>Examens réalisables (' + jk.nomB + ' à 100&nbsp;%)</strong><span class="un-bareme-ca" style="color:' + UN_SLOT_COLORS[1] + '">+' + milliersFmt.format(jk.capRestante) + ' FT/an</span></div>';
+          trE.appendChild(tdE); body.appendChild(trE);
+          var trC = document.createElement("tr"), tdCL = document.createElement("td"), tdCV = document.createElement("td");
+          tdCL.innerHTML = "<strong>CA équivalent</strong>"; trC.appendChild(tdCL);
+          tdCV.colSpan = entrees.length; tdCV.innerHTML = '<span class="un-bareme-ca" style="color:' + UN_SLOT_COLORS[1] + '">+' + unEur(jk.gainCA, 2) + '</span>';
+          trC.appendChild(tdCV); body.appendChild(trC);
+        }
       }
+      var unJokerOuvert = false;
       var unCompoInfoTimer = null;
       document.getElementById("unCompoTableWrap").addEventListener("click", function (e) {
         var btn = e.target.closest(".un-ca-tranche-btn");
@@ -5294,13 +5310,19 @@
       // Joker (projet 02, 05/10/2026, demande de Cédric) : repris du simulateur « Bascule vers un O-scan »
       // (carte « Capacité restante » + « Résultat selon 3 scénarios »), calculé avec les fonctions de ce fichier.
       wireOutilsBtn("unJokerBtn", "unJokerPop");
-      function unJokerRendre() {
-        var pop = document.getElementById("unJokerPop"), e = unEtatBascule();
-        if (!e) { pop.textContent = ""; return; }
-        var nomA = e.configA.machine.nomCourt, nomB = e.configB.machine.nomCourt;
+      function unJokerCapacite() {
+        var e = unEtatBascule();
+        if (!e) return null;
         var volB = e.N - e.volA, pB = unParamsPourSlot(1, e.params);
         var capAn = Math.max(0, Math.round(e.configB.debitHoraire * pB.heuresParJour * pB.joursParMois * 12));
         var capRestante = Math.max(0, capAn - volB);
+        function ca(v) { var d = unDetailCA(v, e.configB.machine, e.params); return d.plein + d.seuil1 + d.seuil2 + d.plafond; }
+        return { e: e, nomB: e.configB.machine.nomCourt, volB: volB, pB: pB, capAn: capAn, capRestante: capRestante, gainCA: ca(volB + capRestante) - ca(volB) };
+      }
+      function unJokerRendre() {
+        var pop = document.getElementById("unJokerPop"), jk = unJokerCapacite();
+        if (!jk) { pop.textContent = ""; return; }
+        var e = jk.e, nomA = e.configA.machine.nomCourt, nomB = jk.nomB, volB = jk.volB, pB = jk.pB, capAn = jk.capAn, capRestante = jk.capRestante;
         var acteB = e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configB) : 0;
         function resB(v) {
           if (!(v > 0)) return 0;
@@ -5332,7 +5354,7 @@
         }
         var hOuv = pB.heuresParJour, hUtil = capAn > 0 ? hOuv * Math.min(1, volB / capAn) : 0, hDispo = Math.max(0, hOuv - hUtil);
         var virgule1 = function (v) { return (Math.round(v * 10) / 10).toString().replace(".", ","); };
-        var h = '<div class="un-joker-titre">🃏 Capacité restante sur ' + nomB + '</div>' +
+        var h = '<div class="un-joker-titre un-joker-poignee" id="unJokerPoignee" title="Glisser pour déplacer (double-clic : position d\'origine)">⠿ 🃏 Capacité restante sur ' + nomB + '</div>' +
           (capRestante > 0 ? '' : '<table class="un-joker-table"><tbody><tr><td>Statut</td><td>Déjà à pleine capacité</td></tr></tbody></table>') +
           '<div class="un-joker-demis">' +
           demi(capAn > 0 ? volB / capAn : 0, 'Déjà réalisés (forfaits techniques/an)', 'Réalisables en plus (forfaits techniques/an)', milliersFmt.format(Math.round(volB)), '+ ' + milliersFmt.format(capRestante)) +
@@ -5348,6 +5370,30 @@
         pop.innerHTML = h;
       }
       document.getElementById("unJokerBtn").addEventListener("click", unJokerRendre, true);
+      // Panneau déplaçable (pour découvrir le tableau du barème dessous) : glisser le titre ; double-clic = position d'origine.
+      (function () {
+        var pop = document.getElementById("unJokerPop"), jx = 0, jy = 0, dep = null;
+        function appliquer() { pop.style.setProperty("--jx", jx + "px"); pop.style.setProperty("--jy", jy + "px"); }
+        pop.addEventListener("pointerdown", function (ev) {
+          var t = ev.target.closest("#unJokerPoignee"); if (!t) return;
+          dep = { x: ev.clientX - jx, y: ev.clientY - jy, id: ev.pointerId }; t.setPointerCapture(ev.pointerId); ev.preventDefault();
+        });
+        pop.addEventListener("pointermove", function (ev) { if (!dep) return; jx = ev.clientX - dep.x; jy = ev.clientY - dep.y; appliquer(); });
+        pop.addEventListener("pointerup", function () { dep = null; });
+        pop.addEventListener("dblclick", function (ev) { if (ev.target.closest("#unJokerPoignee")) { jx = 0; jy = 0; appliquer(); } });
+      })();
+      // Ouvrir le joker affiche aussi le « Tableau du barème dégressif » (avec les 2 lignes orange sous « Total 2 machines »),
+      // comme dans « Bascule vers un O-scan » ; le fermer retire ces 2 lignes.
+      new MutationObserver(function () {
+        var ouvert = !document.getElementById("unJokerPop").hidden;
+        if (ouvert === unJokerOuvert) return;
+        unJokerOuvert = ouvert;
+        if (ouvert) {
+          var r = document.querySelector('input[name="unCompoVue"][value="table"]');
+          if (r && !r.checked) { r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true })); }
+        }
+        if (document.querySelector('input[name="unCompoVue"]:checked').value === "table") unDessinerTableCompo();
+      }).observe(document.getElementById("unJokerPop"), { attributes: true, attributeFilter: ["hidden"] });
       (function () {
         var maitre = document.getElementById("unActeIntellectuelActif"), miroir = document.getElementById("unPmActe");
         miroir.checked = maitre.checked;
