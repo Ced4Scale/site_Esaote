@@ -3145,11 +3145,15 @@
           var charges = resA.chargesFixesMensuelles + resB.chargesFixesMensuelles;
           var fusion = { margeParPatient: marge, chargesFixesMensuelles: charges };
           var joursMois = prm(0).joursParMois;
+          // Les deux IRM sont ajoutées EN DESSOUS de la combinaison (04/10/2026, demande de Cédric).
           return [{
             label: nom(etatB.configA, 0) + " + " + nom(etatB.configB, 1), color: "#5b6472",
             value: marge > 0 ? (charges / marge) / joursMois : Infinity,
             annuel: unCalculerAnnuel(etatB.configA, fusion, prm(0))
-          }];
+          }].concat(slots.map(function (slot) {
+            var config = unConfigMachinePointMort(slot), paramsSlot = prm(slot), res = calculerPointMortMachine(config, paramsSlot);
+            return { label: nom(config, slot), color: UN_SLOT_COLORS[slot], value: res.pointMortJour, annuel: unCalculerAnnuel(config, res, paramsSlot) };
+          }));
         }
         return slots.map(function (slot) {
           var config = unConfigMachinePointMort(slot);
@@ -5854,7 +5858,7 @@
             doc.text(titre, x + 5, yy + 8);
             var base = yy + 8 + 8 + 62, maxH = 56, maxV = Math.max.apply(null, barres.map(function (b) { return isFinite(b.valeur) ? b.valeur : 0; }).concat([0.0001]));
             doc.setDrawColor(200); doc.line(x + 5, base, x + w - 5, base);
-            var bw = 24, gap = 16, total = barres.length * bw + (barres.length - 1) * gap, bx = x + (w - total) / 2;
+            var bw = barres.length > 2 ? 16 : 24, gap = barres.length > 2 ? 10 : 16, total = barres.length * bw + (barres.length - 1) * gap, bx = x + (w - total) / 2;
             barres.forEach(function (b, i) {
               var v = isFinite(b.valeur) ? b.valeur : 0, bh = v > 0 ? Math.max(1.5, maxH * v / maxV) : 0;
               var px = bx + i * (bw + gap);
