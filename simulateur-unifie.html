@@ -281,7 +281,12 @@
     .un-compo-joker-carte[hidden] { display: none; }
     .un-joker-btn { padding: 0; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; background: #fff; }
     .un-joker-btn img { width: 1.15rem; height: auto; display: block; }
-    #unJokerPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; width: min(27rem, 88vw); }
+    #unJokerPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; width: min(32rem, 90vw); max-width: none; }
+    .un-joker-demis { display: flex; gap: .6rem; }
+    .un-joker-demi-unite { flex: 1 1 0; min-width: 0; }
+    .un-joker-demi { width: 100%; height: auto; display: block; }
+    .un-joker-legende { font-size: .68rem; line-height: 1.25; display: flex; gap: .3rem; align-items: flex-start; margin-top: .15rem; }
+    .un-joker-legende span { flex: 0 0 .6rem; width: .6rem; height: .6rem; border-radius: 2px; margin-top: .12rem; }
     .un-joker-titre { font-weight: 800; font-size: .88rem; margin-bottom: .4rem; }
     .un-joker-table { width: 100%; font-size: .78rem; border-collapse: collapse; margin-bottom: .5rem; }
     .un-joker-table td { padding: .12rem 0; } .un-joker-table td:last-child { text-align: right; font-weight: 700; }
@@ -5313,11 +5318,26 @@
         ];
         var maxAbs = Math.max(1, Math.abs(scen[0].val), Math.abs(scen[1].val), Math.abs(scen[2].val));
         function ecart(d) { return (d >= 0 ? "+ " : "− ") + unEurosFmt.format(Math.abs(d)); }
-        var h = '<div class="un-joker-titre">🃏 Capacité restante sur ' + nomB + '</div><table class="un-joker-table"><tbody>' +
-          '<tr><td>Capacité maximale</td><td>' + milliersFmt.format(capAn) + ' ex./an</td></tr>' +
-          '<tr><td>Examens déjà réalisés</td><td>' + milliersFmt.format(Math.round(volB)) + ' ex./an</td></tr>' +
-          '<tr><td>Capacité encore disponible</td><td>' + (capRestante > 0 ? milliersFmt.format(capRestante) + ' ex./an' : 'Déjà à pleine capacité') + '</td></tr></tbody></table>' +
-          '<div class="un-joker-titre" style="margin-bottom:0">Résultat selon 3 scénarios</div>';
+        // Deux demi-anneaux (comme les camemberts du joker de « Bascule vers un O-scan », mais en demi-cercle) : déjà réalisé
+        // (bleu) / réalisable en plus (orange), avec les valeurs écrites dans la partie blanche.
+        var BLEU = UN_SLOT_COLORS[0], ORANGE = UN_SLOT_COLORS[1];
+        function demi(partBleue, lBleu, lOrange, vBleu, vOrange) {
+          var f = Math.max(0, Math.min(1, partBleue)), g = '<svg viewBox="0 0 200 108" class="un-joker-demi" role="img" aria-label="' + lBleu + ' ' + vBleu + ', ' + lOrange + ' ' + vOrange + '">';
+          if (f > 0) g += '<path d="' + unDonutPath(100, 100, 92, 52, -Math.PI, -Math.PI + f * Math.PI) + '" fill="' + BLEU + '" stroke="#fff" stroke-width="1.5"/>';
+          if (f < 1) g += '<path d="' + unDonutPath(100, 100, 92, 52, -Math.PI + f * Math.PI, 0) + '" fill="' + ORANGE + '" stroke="#fff" stroke-width="1.5"/>';
+          g += '<text x="100" y="78" text-anchor="middle" font-size="17" font-weight="800" fill="' + BLEU + '">' + vBleu + '</text>' +
+               '<text x="100" y="97" text-anchor="middle" font-size="17" font-weight="800" fill="' + ORANGE + '">' + vOrange + '</text></svg>';
+          return '<div class="un-joker-demi-unite">' + g + '<div class="un-joker-legende"><span style="background:' + BLEU + '"></span>' + lBleu + '</div>' +
+            '<div class="un-joker-legende"><span style="background:' + ORANGE + '"></span>' + lOrange + '</div></div>';
+        }
+        var hOuv = pB.heuresParJour, hUtil = capAn > 0 ? hOuv * Math.min(1, volB / capAn) : 0, hDispo = Math.max(0, hOuv - hUtil);
+        var virgule1 = function (v) { return (Math.round(v * 10) / 10).toString().replace(".", ","); };
+        var h = '<div class="un-joker-titre">🃏 Capacité restante sur ' + nomB + '</div>' +
+          (capRestante > 0 ? '' : '<table class="un-joker-table"><tbody><tr><td>Statut</td><td>Déjà à pleine capacité</td></tr></tbody></table>') +
+          '<div class="un-joker-demis">' +
+          demi(capAn > 0 ? volB / capAn : 0, 'Déjà réalisés (forfaits techniques/an)', 'Réalisables en plus (forfaits techniques/an)', milliersFmt.format(Math.round(volB)), '+ ' + milliersFmt.format(capRestante)) +
+          demi(hOuv > 0 ? hUtil / hOuv : 0, 'Heures/jour déjà utilisées', 'Heures/jour encore disponibles', virgule1(hUtil) + ' h', '+ ' + virgule1(hDispo) + ' h') +
+          '</div><div class="un-joker-titre" style="margin-bottom:0;margin-top:.5rem;border-top:1px dashed #d8d2b8;padding-top:.5rem">Résultat selon 3 scénarios</div>';
         scen.forEach(function (sc, i) {
           h += '<div class="un-joker-scen"><div class="un-joker-scen__nom">' + sc.nom + '</div><div class="un-joker-scen__barre"><div class="un-joker-scen__piste"><div class="un-joker-scen__remplissage" style="width:' +
             Math.max(2, Math.abs(sc.val) / maxAbs * 100) + '%;background:' + (sc.val < 0 ? "#c2334d" : sc.coul) + '"></div></div><div class="un-joker-scen__val" style="color:' + (sc.val < 0 ? "#c2334d" : "#222") + '">' + unEurosFmt.format(sc.val) + '</div></div>';
