@@ -250,6 +250,9 @@
     .un-pm-btn { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; padding: 0; border: 1px solid var(--line-2, #d6d6d0); border-radius: 50%; background: #fff; color: var(--ink, #222); font-size: 1.05rem; line-height: 1; cursor: pointer; }
     .un-pm-btn:hover { border-color: var(--red, #cd0000); color: var(--red, #cd0000); }
     .un-pm-btn:active { background: #f3f3ef; }
+    /* Boîte à outils 🧰 dupliquée dans la carte Composition : posée à gauche de l'icône plein écran (2 rem + marges) */
+    #unCompoCard > .un-compo-outils-carte { position: absolute; top: .85rem; right: 3.4rem; z-index: 3; margin: 0; }
+    .un-compo-outils-carte #unCompoOutilsPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; }
     #unRseCard[hidden] { display: none; }
     .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
     #unRseCard .simulator__legend { margin-bottom: 0; }
@@ -1038,6 +1041,12 @@
             </button>
             Composition des recettes de l'année 1
           </summary>
+        <!-- Boîte à outils 🧰 dupliquée dans la carte (04/10/2026, demande de Cédric) : à gauche de l'icône plein
+             écran. C'est la MÊME boîte (mêmes cases, mêmes ids) : son panneau est simplement amené sous l'icône
+             sur laquelle on clique (voir unCompoOutilsBtn2 dans le script). -->
+        <span class="un-info-wrap un-compo-outils-carte">
+          <button type="button" class="un-info-btn" id="unCompoOutilsBtn2" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes" title="Boîte à outils">🧰</button>
+        </span>
         <div class="simulator__legend" id="unCompoLegende"></div>
         <div class="un-compo-duo">
         <div class="simulator__chart-wrap" id="unCompoRecWrap">
@@ -4529,6 +4538,20 @@
         });
       });
       wireOutilsBtn("unCompoOutilsBtn", "unCompoOutilsPop");
+      // Même boîte à outils, deux icônes (table de mixage + carte Composition) : le panneau est amené sous
+      // l'icône cliquée ; s'il était ouvert sous l'autre, il se referme d'abord (le clic le rouvre ici).
+      (function () {
+        var pop = document.getElementById("unCompoOutilsPop"), b1 = document.getElementById("unCompoOutilsBtn"), b2 = document.getElementById("unCompoOutilsBtn2");
+        wireOutilsBtn("unCompoOutilsBtn2", "unCompoOutilsPop");
+        [b1, b2].forEach(function (b) {
+          b.addEventListener("click", function () {
+            var wrap = b.parentNode;
+            if (pop.parentNode === wrap) return;
+            if (!pop.hidden) { pop.hidden = true; pop.style.transform = ""; b1.setAttribute("aria-expanded", "false"); b2.setAttribute("aria-expanded", "false"); }
+            wrap.appendChild(pop);
+          }, true);
+        });
+      })();
       // Boîte à outils déplaçable : glisser la poignée ; la position est mémorisée (localStorage) et
       // reste la même à la réouverture ; double-clic sur la poignée = position d'origine.
       (function () {
