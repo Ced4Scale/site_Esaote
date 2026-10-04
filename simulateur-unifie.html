@@ -279,7 +279,7 @@
     /* Icône joker (projet 02, carte Composition) : à gauche de la boîte à outils rouge */
     #unCompoCard > .un-compo-joker-carte { position: absolute; top: .85rem; right: 6.1rem; z-index: 3; margin: 0; }
     .un-compo-joker-carte[hidden] { display: none; }
-    .un-joker-btn { padding: 0; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; background: #fff; }
+    .un-joker-btn { padding: 0; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; background: #fff; color: #222; border-color: #d6d6d0; }
     .un-joker-btn img { width: 1.15rem; height: auto; display: block; }
     #unJokerPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; width: min(32rem, 90vw); max-width: none; }
     .un-joker-demis { display: flex; gap: .6rem; }
@@ -288,7 +288,7 @@
     .un-joker-legende { font-size: .68rem; line-height: 1.25; display: flex; gap: .3rem; align-items: flex-start; margin-top: .15rem; }
     .un-joker-legende span { flex: 0 0 .6rem; width: .6rem; height: .6rem; border-radius: 2px; margin-top: .12rem; }
     .un-joker-poignee { cursor: grab; touch-action: none; user-select: none; }
-    #unJokerPop { transform: translate(var(--jx, 0px), var(--jy, 0px)); }
+    #unJokerPop { transform: translate(var(--jx, 0px), var(--jy, 0px)); background: #fff; color: #222; border-color: #d6d6d0; }
     .un-joker-titre { font-weight: 800; font-size: .88rem; margin-bottom: .4rem; }
     .un-joker-table { width: 100%; font-size: .78rem; border-collapse: collapse; margin-bottom: .5rem; }
     .un-joker-table td { padding: .12rem 0; } .un-joker-table td:last-child { text-align: right; font-weight: 700; }
@@ -5309,7 +5309,15 @@
       wireOutilsBtn("unPmOutilsBtn", "unPmOutilsPop");
       // Joker (projet 02, 05/10/2026, demande de Cédric) : repris du simulateur « Bascule vers un O-scan »
       // (carte « Capacité restante » + « Résultat selon 3 scénarios »), calculé avec les fonctions de ce fichier.
-      wireOutilsBtn("unJokerBtn", "unJokerPop");
+      // Le panneau du joker ne se referme PAS tout seul (clic ailleurs, Échap, autre bulle) : seulement en recliquant sur
+      // l'icône joker (05/10/2026, demande de Cédric) — il peut donc être déplacé puis consulté à loisir.
+      document.getElementById("unJokerBtn").addEventListener("click", function (ev) {
+        ev.stopPropagation();
+        var pop = document.getElementById("unJokerPop");
+        pop.hidden = !pop.hidden;
+        this.setAttribute("aria-expanded", String(!pop.hidden));
+      });
+      document.getElementById("unJokerPop").addEventListener("click", function (ev) { ev.stopPropagation(); });
       function unJokerCapacite() {
         var e = unEtatBascule();
         if (!e) return null;
