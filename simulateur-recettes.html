@@ -612,7 +612,7 @@
           </span>
           <div class="simulator__legend" id="simLegend2"></div>
           <div class="simulator__chart-wrap" id="simCompoChartWrap">
-            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 330" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
+            <svg id="simChart2" class="simulator__chart" viewBox="0 0 640 264" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Camemberts et graphes en barres des seuils de la composition des recettes de l'année 1, un par date de forfait technique choisie"></svg>
           </div>
           <!-- Table de mixage (17/09/2026) : un seul curseur "Activité", miroir de
                #simVolume — voir commentaire CSS .sim-mixer-panel et le JS de
@@ -1315,14 +1315,23 @@
       // d'origine (commit avant `f3fcf6c`), cohérent avec les autres
       // simulateurs du site. Historique complet de la tentative dans
       // [[site-web/simulateur-recettes]] si jamais repris un jour.
+      // Anneau (trou central) — demi-anneau seulement depuis le 04/10/2026 (demande de Cédric, même
+      // présentation que le simulateur unifié) : même tracé que unDonutPath() de simulateur-unifie.html.
+      function donutPath(cx, cy, r, ri, a0, a1) {
+        var large = (a1 - a0) > Math.PI ? 1 : 0;
+        return "M" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
+          " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) +
+          " L" + (cx + ri * Math.cos(a1)) + "," + (cy + ri * Math.sin(a1)) +
+          " A" + ri + "," + ri + " 0 " + large + " 0 " + (cx + ri * Math.cos(a0)) + "," + (cy + ri * Math.sin(a0)) + " Z";
+      }
       function dessinerUnCamembert(cx, cy, r, camembert) {
-        var startAngle = -Math.PI / 2;
+        var startAngle = -Math.PI;
         PALIERS.forEach(function (p) {
           var part = camembert.detail[p.key];
           if (!part) return; // palier non atteint à ce volume (ex. sous l'activité de référence)
           var fraction = part / camembert.total;
-          var endAngle = startAngle + fraction * 2 * Math.PI;
-          svg2.appendChild(svgEl("path", { d: pieSlicePath(cx, cy, r, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
+          var endAngle = startAngle + fraction * Math.PI;
+          svg2.appendChild(svgEl("path", { d: donutPath(cx, cy, r, r * 0.55, startAngle, endAngle), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
 
           // Montant (et %) de chaque part, toujours affiché en dehors du camembert avec une
           // ligne de repère de la couleur du palier — plus lisible qu'un tableau séparé, et
@@ -1372,7 +1381,7 @@
       // deux dates (même échelle verticale pour les deux). BAR_TOP tient compte de la taille
       // maximale possible d'un camembert (maxR), pas de sa taille réelle (qui varie), pour que
       // les deux graphes en barres démarrent toujours à la même hauteur.
-      var BAR_TOP = 208, BAR_BOTTOM = 300, BAR_LABEL_Y = 318;
+      var BAR_TOP = 142, BAR_BOTTOM = 232, BAR_LABEL_Y = 250;
       function dessinerBarresSeuils(cx, halfWidth, camembert, yMax) {
         // Noms de palier abrégés, sans montant au-dessus de la barre (le montant exact est
         // déjà donné par l'étiquette du camembert au-dessus et par le tableau du PDF) — les
@@ -1401,10 +1410,10 @@
         svg2.innerHTML = "";
         if (derniereBaremes.length === 0) return;
 
-        var maxR = 50;
+        var maxR = 60;
         var maxTotal = Math.max.apply(null, derniereBaremes.map(function (b) { return b.total; }));
         var n = derniereBaremes.length;
-        var centerY = 108;
+        var centerY = 122;
         var centers = n === 1 ? [320] : [170, 470];
         var halfWidths = n === 1 ? [140] : [85, 85];
 
