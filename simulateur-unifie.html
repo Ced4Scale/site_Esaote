@@ -1947,6 +1947,15 @@
       var UN_MIXER_CHOIX_CLE = "ced4scale-unifie-mixer-groupes-visibles";
       var unMixerChoixPrefs = {};
       try { unMixerChoixPrefs = JSON.parse(localStorage.getItem(UN_MIXER_CHOIX_CLE) || "{}"); } catch (e) {}
+      // 05/10/2026 (demande de Cédric) : les 2 curseurs « Heures d'ouverture » (h / jour) sont de nouveau TOUJOURS présents
+      // dans la table de mixage ; une ancienne préférence « masqué » est effacée une seule fois.
+      try {
+        if (!localStorage.getItem("ced4scale-unifie-heures-visibles-v2")) {
+          unMixerChoixPrefs.unMixHeuresGroup = true;
+          localStorage.setItem(UN_MIXER_CHOIX_CLE, JSON.stringify(unMixerChoixPrefs));
+          localStorage.setItem("ced4scale-unifie-heures-visibles-v2", "1");
+        }
+      } catch (e) {}
       function unMixerGroupeVoulu(id) { return unMixerChoixPrefs[id] !== false; }
 
       // ---------------------------------------------------------------------
@@ -3669,11 +3678,11 @@
           var h = unHeuresAmpl(c[1]);
           var fH = document.getElementById("unMixHeures" + c[0] + "Fader");
           fH.value = h;
-          fH.parentNode.style.setProperty("--pct", Math.max(0, Math.min(100, (h - 1) / 23 * 100)));
+          fH.parentNode.style.setProperty("--pct", Math.max(0, Math.min(100, (h - 1) / Math.max(1, unHeuresMax() - 1) * 100)));
           if (unMixSaisie !== "unMixHeures" + c[0] + "Val") document.getElementById("unMixHeures" + c[0] + "Val").value = patientsFmt.format(h);
         });
         document.getElementById("unMixHeuresBCol").hidden = unSlotsActifs().length < 2;
-        document.getElementById("unMixHeuresGroup").hidden = !(unHeuresGroupeForce || !unActiviteRealisable()) || !unMixerGroupeVoulu("unMixHeuresGroup");
+        document.getElementById("unMixHeuresGroup").hidden = !unMixerGroupeVoulu("unMixHeuresGroup"); // toujours visible (05/10/2026), sauf si décoché dans 🎚️
       }
       // Demi-anneau (style « jauge » : moitié haute, trou au centre) — remplace le camembert
       // plein depuis le 21/09/2026 (demande de Cédric, modèle GetApp).
