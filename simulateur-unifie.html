@@ -268,6 +268,9 @@
     /* Boîte à outils 🧰 dupliquée dans la carte Composition : posée à gauche de l'icône plein écran (2 rem + marges) */
     #unCompoCard > .un-compo-outils-carte { position: absolute; top: .85rem; right: 3.4rem; z-index: 3; margin: 0; }
     .un-compo-outils-carte #unCompoOutilsPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; }
+    /* Boîte à outils 🧰 du bloc des points morts (05/10/2026) : seulement « Intégrer l'acte intellectuel » */
+    #unBlocPointMort > .un-pm-outils-carte { position: absolute; top: .85rem; right: 3.4rem; z-index: 3; margin: 0; }
+    .un-pm-outils-carte #unPmOutilsPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; }
     #unRseCard[hidden] { display: none; }
     #unRseCard.un-rse-seul-couts > details { display: none; }
     #unRseCard details:fullscreen { font-size: 1.05rem; }
@@ -1024,6 +1027,13 @@
                 <g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g>
               </svg>
             </button>
+      <span class="un-info-wrap un-pm-outils-carte">
+        <button type="button" class="un-info-btn" id="unPmOutilsBtn" aria-expanded="false" aria-controls="unPmOutilsPop" aria-label="Boîte à outils des points morts" title="Boîte à outils">🧰</button>
+        <div class="un-info-pop" id="unPmOutilsPop" hidden>
+          <div class="un-outils-titre">Recette</div>
+          <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unPmActe" checked /> Intégrer l'acte intellectuel</label>
+        </div>
+      </span>
       <details class="simulator__chart-card simulator__chart-card--collapsible un-sous-carte" id="unPointMortCard">
         <summary id="unPointMortSummary">Point mort — nombre d'examens par jour</summary>
         <div class="simulator__chart-wrap" id="unPointMortJourVue">
@@ -5226,6 +5236,15 @@
       wireInfoBtn("unFtMoyInfoBtn", "unFtMoyInfoPop");
       ["Tech", "Recap", "Tarif", "Clic", "Etudes"].forEach(function (k) { wireInfoBtn("unRseInfo" + k + "Btn", "unRseInfo" + k + "Pop"); });
       wireOutilsBtn("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
+      // Boîte à outils des points morts : même case que « Intégrer l'acte intellectuel » de la boîte de la Composition
+      // (deux cases jumelées : cocher l'une coche l'autre et recalcule tout).
+      wireOutilsBtn("unPmOutilsBtn", "unPmOutilsPop");
+      (function () {
+        var maitre = document.getElementById("unActeIntellectuelActif"), miroir = document.getElementById("unPmActe");
+        miroir.checked = maitre.checked;
+        miroir.addEventListener("change", function () { maitre.checked = miroir.checked; maitre.dispatchEvent(new Event("change", { bubbles: true })); });
+        maitre.addEventListener("change", function () { miroir.checked = maitre.checked; });
+      })();
       ["unFtMoyAfficheA", "unFtMoyAfficheB", "unFtMoyAfficheReelA", "unFtMoyAfficheReelB", "unFtMoyAfficheMoyenne", "unFtMoyAfficheSeuils"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", function () { unRecalculerBascule(); });
       });
