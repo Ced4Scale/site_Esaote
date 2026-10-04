@@ -205,7 +205,8 @@
     #unMixGroupRepart .un-mixer__bar { background: #eb6834; }
     /* Bâton HORIZONTAL (04/10/2026) : IRM A (bleu) à gauche, IRM B (orange) à droite */
     /* marges de 53 px = (150 − 44) / 2 : le bâton est centré dans la hauteur des autres faders, la case de valeur est donc au même niveau que celles du coût du kWh, du loyer, etc. */
-    #unMixGroupRepart .un-mixer__bar { width: 230px; height: 44px; margin: 53px 0; }
+    #unMixGroupRepart .un-mixer__bar { width: 230px; height: 44px; }
+    #unMixGroupRepart .un-repart-zone { height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
     #unMixGroupRepart .un-mixer__bar-fill { left: 0; top: 0; bottom: 0; right: auto; height: auto; width: calc(var(--pct, 0) * 1%); }
     #unMixGroupRepart .un-mixer__bar input[type="range"] { writing-mode: horizontal-tb; direction: ltr; }
     /* % de chaque IRM, de part et d'autre du curseur, dans le bâton */
@@ -1207,18 +1208,20 @@
           <span class="un-mixer__group-title">Répartition des examens</span>
           <div class="un-mixer__faders">
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
+              <div class="un-repart-zone">
               <div class="un-mixer__bar">
                 <div class="un-mixer__bar-fill"></div>
                 <span class="un-repart-pct un-repart-pct--a" id="unMixRepartPctA" aria-hidden="true"></span>
                 <span class="un-repart-pct un-repart-pct--b" id="unMixRepartPctB" aria-hidden="true"></span>
                 <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
+              <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
+              </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
               <div class="un-mixer__pm">
                 <button type="button" id="unMixRepartMoins" aria-label="Diminuer la part de l'IRM A">−</button>
                 <button type="button" id="unMixRepartPlus" aria-label="Augmenter la part de l'IRM A">+</button>
               </div>
-              <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
             </div>
           </div>
         </div>
