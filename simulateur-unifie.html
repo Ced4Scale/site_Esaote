@@ -207,6 +207,10 @@
     #unMixGroupRepart .un-mixer__bar { width: 230px; height: 44px; }
     #unMixGroupRepart .un-mixer__bar-fill { left: 0; top: 0; bottom: 0; right: auto; height: auto; width: calc(var(--pct, 0) * 1%); }
     #unMixGroupRepart .un-mixer__bar input[type="range"] { writing-mode: horizontal-tb; direction: ltr; }
+    /* % de chaque IRM, de part et d'autre du curseur, dans le bâton */
+    .un-repart-pct { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-size: .8rem; font-weight: 800; color: #fff; pointer-events: none; white-space: nowrap; }
+    .un-repart-pct--a { right: calc((100 - var(--pct, 0)) * 1% + 12px); }
+    .un-repart-pct--b { left: calc(var(--pct, 0) * 1% + 12px); }
     #unMixGroupRepart .un-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 10px; height: 44px; }
     #unMixGroupRepart .un-mixer__bar input[type="range"]::-moz-range-thumb { width: 10px; height: 40px; }
     .un-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); }
@@ -1204,6 +1208,8 @@
             <div class="un-mixer__fader-col" style="--fader-color:#2a78d6">
               <div class="un-mixer__bar">
                 <div class="un-mixer__bar-fill"></div>
+                <span class="un-repart-pct un-repart-pct--a" id="unMixRepartPctA" aria-hidden="true"></span>
+                <span class="un-repart-pct un-repart-pct--b" id="unMixRepartPctB" aria-hidden="true"></span>
                 <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
@@ -3530,6 +3536,9 @@
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
         f.value = pct; f.parentNode.style.setProperty("--pct", pct);
         if (document.activeElement !== v) v.value = pct;
+        var pa = document.getElementById("unMixRepartPctA"), pb = document.getElementById("unMixRepartPctB");
+        pa.textContent = pct + " %"; pb.textContent = (100 - pct) + " %";
+        pa.style.visibility = pct >= 12 ? "visible" : "hidden"; pb.style.visibility = pct <= 88 ? "visible" : "hidden"; // pas la place sinon
         document.getElementById("unMixRepartUnite").innerHTML = '<span style="color:' + UN_SLOT_COLORS[0] + '">' + milliersFmt.format(volA) + '</span> · <span style="color:' + UN_SLOT_COLORS[1] + '">' + milliersFmt.format(N - volA) + '</span>';
       }
       function unMixRepartAppliquer(pct) {
