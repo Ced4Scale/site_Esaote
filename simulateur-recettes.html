@@ -1354,6 +1354,11 @@
           svg2.appendChild(label);
           startAngle = endAngle;
         });
+        // Montant total au centre du demi-anneau (06/10/2026, demande de Cédric : les montants dans tous les demi-camemberts).
+        var riC = r * 0.55, fsC = Math.min(11, riC * 0.24);
+        var tC = svgEl("text", { x: cx, y: cy - 3, "text-anchor": "middle", "font-size": fsC, "font-weight": 800, fill: "#222" });
+        tC.textContent = euros.format(camembert.total);
+        svg2.appendChild(tC);
         // Uniquement le forfait moyen par examen ici (pas le total) — c'est le chiffre le
         // plus parlant à cet endroit, juste au-dessus du détail par palier (demande de
         // Cédric du 08/08/2026).

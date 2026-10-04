@@ -3984,16 +3984,23 @@
       }
       // Texte compact (1,5 T / 2 IRM / Écart) dans la zone blanche d'un demi-anneau (projet 02) ; taille commune
       // ajustée à la largeur disponible de la ligne la plus étroite.
+      // Sans texte propre (projets 1 et 3, 06/10/2026, demande de Cédric : « les montants dans tous les demi-camemberts ») :
+      // le montant total (recettes, dépenses) ou le résultat, selon le demi-anneau — voir unCentreParDefaut.
+      function unCentreParDefaut(b) {
+        if (b.centre) return b.centre;
+        if (b.res != null && b.rec != null) return [{ label: b.res >= 0 ? "Résultat" : "Déficit", valeur: unEurosFmt.format(b.res), couleur: b.res >= 0 ? "#1baf7a" : "#c2334d" }];
+        return [{ label: "Total", valeur: unEurosFmt.format(b.total) }];
+      }
       function unCentreTexte(svgC, b, cx, baseY, ri) {
-        if (!b.centre) return;
+        var centre = unCentreParDefaut(b);
         var kc = ri / 46;
         var fsCommun = 8.5 * kc;
-        b.centre.forEach(function (li, q) {
-          var h = (3 + (2 - q) * 9.5) * kc, chord = 2 * Math.sqrt(Math.max(1, ri * ri - Math.pow(h + 6 * kc, 2))) * 0.92;
+        centre.forEach(function (li, q) {
+          var h = (3 + (centre.length - 1 - q) * 9.5) * kc, chord = 2 * Math.sqrt(Math.max(1, ri * ri - Math.pow(h + 6 * kc, 2))) * 0.92;
           fsCommun = Math.min(fsCommun, chord / ((li.label.length + li.valeur.length + 1.5) * 0.56));
         });
-        b.centre.forEach(function (li, q) {
-          var h = (3 + (2 - q) * 9.5) * kc;
+        centre.forEach(function (li, q) {
+          var h = (3 + (centre.length - 1 - q) * 9.5) * kc;
           var tl = unSvgEl("text", { x: cx, y: baseY - h, "text-anchor": "middle", "font-size": fsCommun });
           var t1 = unSvgEl("tspan", { fill: "#777", "font-weight": 600 }); t1.textContent = li.label + " "; tl.appendChild(t1);
           var t2 = unSvgEl("tspan", { fill: li.couleur || "#222", "font-weight": 800 }); t2.textContent = li.valeur; tl.appendChild(t2);
@@ -6441,11 +6448,12 @@
               if (cle === "res") textColor(bloc.res >= 0 ? "#1baf7a" : "#c2334d");
               doc.text(cap, cx, yy + 7.5, { align: "center" });
               demiAnneau(cx, yy + 10 + R, R, cats, bloc.detail, bloc.total);
-              if (bloc.centre) {
-                // Texte au centre du demi-anneau « Recettes » (projet 02) : 1,5 T seule / 2 IRM / écart.
-                bloc.centre.forEach(function (li, q) {
-                  var yl = yy + 10 + R - 1.6 - (2 - q) * 3.7;
-                  doc.setFontSize(6.4); doc.setFont(undefined, "normal"); doc.setTextColor(110);
+              {
+                // Texte au centre du demi-anneau : projet 02 = 1,5 T seule / 2 IRM / écart ; sinon total ou résultat (06/10/2026).
+                var centreP = unCentreParDefaut(bloc);
+                centreP.forEach(function (li, q) {
+                  var yl = yy + 10 + R - 1.6 - (centreP.length - 1 - q) * 3.7;
+                  doc.setFontSize(centreP.length === 1 ? 8.5 : 6.4); doc.setFont(undefined, "normal"); doc.setTextColor(110);
                   var w1 = doc.getTextWidth(li.label + " "); doc.setFont(undefined, "bold");
                   var w2 = doc.getTextWidth(li.valeur), x0 = cx - (w1 + w2) / 2;
                   doc.setFont(undefined, "normal"); doc.text(li.label + " ", x0, yl);
