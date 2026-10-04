@@ -4553,6 +4553,13 @@
         unRenderPointMort();
       }
 
+      // Lecture de la case texte d'un fader. Les LOYERS sont écrits avec le point des milliers (« 25.000 ») :
+      // parseFloat y lisait « 25 » (le point pris pour une virgule) — bug corrigé le 04/10/2026 : taper 30.000, ou
+      // cliquer sur − / + ou les flèches, donnait 30 puis 275 €… Pour ces champs on ne garde que les chiffres.
+      function unMixLireVal(champ, val) {
+        if (champ.milliers) { var t = String(val.value).replace(/[^\d]/g, ""); return t === "" ? NaN : parseInt(t, 10); }
+        return parseFloat(String(val.value).replace(",", "."));
+      }
       UN_MIX_FIELDS.forEach(function (champ) {
         var fader = document.getElementById(champ.faderId);
         var val = document.getElementById(champ.valId);
@@ -4568,7 +4575,7 @@
           if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
           e.preventDefault();
           var pas = (parseFloat(fader.step) || 1) * (e.shiftKey ? 10 : 1);
-          var courant = parseFloat(String(val.value).replace(",", "."));
+          var courant = unMixLireVal(champ, val);
           if (!isFinite(courant)) courant = parseFloat(fader.value) || 0;
           var nouveau = Math.round((courant + (e.key === "ArrowUp" ? pas : -pas)) * 1000) / 1000;
           unMixEcrireVersSource(champ, nouveau);
@@ -4582,7 +4589,7 @@
           b.addEventListener("click", function (e) {
             if (val.readOnly) return;
             var pas = (parseFloat(fader.step) || 1) * (e.shiftKey ? 10 : 1);
-            var courant = parseFloat(String(val.value).replace(",", "."));
+            var courant = unMixLireVal(champ, val);
             if (!isFinite(courant)) courant = parseFloat(fader.value) || 0;
             unMixEcrireVersSource(champ, Math.round((courant + d[1] * pas) * 1000) / 1000);
           });
@@ -4591,7 +4598,7 @@
         val.parentNode.insertBefore(pave, val.nextSibling);
         val.addEventListener("input", function () {
           if (unMixEcritureProg) return;
-          var v = parseFloat(String(val.value).replace(",", "."));
+          var v = unMixLireVal(champ, val);
           if (!isFinite(v)) return;
           unMixEcrireVersSource(champ, v);
         });
