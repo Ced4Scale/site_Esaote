@@ -994,7 +994,7 @@
       <div class="simulator__intro">
         <button type="button" class="btn btn--sm btn--ghost" id="unBtnRetourForm" style="margin-bottom:1rem">◂ Revenir au formulaire</button>
         <span class="kicker">Simulateur unifié</span>
-        <h1>Résultats</h1>
+        <h1 id="unResultatsTitre">Résultats</h1>
       </div>
 
       <!-- Point mort — seul écran de résultat construit à cette étape (19/09/2026,
@@ -1966,6 +1966,7 @@
         var infos = PROJET_INFOS[n];
         document.getElementById("unProjetKicker").textContent = infos.kicker;
         document.getElementById("unProjetTitre").textContent = infos.titre;
+        document.getElementById("unResultatsTitre").textContent = "Résultats — " + infos.titre;
         document.getElementById("unNbMachinesField").hidden = !infos.nbMachinesVisible;
         // Verrou "marques concurrentes" : concerne MACHINES_IRM (projets 01/02) ET, depuis
         // le 22/09/2026, MACHINES_SCANNER (projet 03, tous les scanners nommés — Esaote n'en
@@ -2936,7 +2937,7 @@
           var decomp = unRseDecomposition(m, profil, heuresSocle);
           if (etatB && patientsMachine <= 0) decomp = { socle: { irm: 0, lt: 0, clim: 0, total: 0 }, entrePatients: { total: 0 }, examens: { total: 0 } };
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
-          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsMachine > 0 ? kwh * prix / patientsMachine : 0, profil: profil, prix: prix };
+          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, patientsMachine: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsMachine > 0 ? kwh * prix / patientsMachine : 0, profil: profil, prix: prix };
         });
       }
       function unRseLigneBarre(container, label, valeurs, formateur, opts) {
@@ -3147,7 +3148,8 @@
         document.getElementById("unRseHypHeadB").textContent = res[1] ? res[1].machine.nomCourt : "";
         document.getElementById("unRseHypHeadB").parentNode.hidden = !res[1];
         var tm = document.getElementById("unRseHypMachinesBody"); tm.innerHTML = "";
-        [["Durée d'acquisition", function (x) { return Math.round(x.acqMin * 10) / 10 + " min"; }],
+        [["Activité traitée par machine", function (x) { return milliersFmt.format(Math.round(x.patientsMachine)) + " patients/an"; }],
+         ["Durée d'acquisition", function (x) { return Math.round(x.acqMin * 10) / 10 + " min"; }],
          ["Temps de changement de patient (ready to scan)", function (x) { return Math.round(x.changementMin * 10) / 10 + " min"; }]].forEach(function (l) {
           var tr = document.createElement("tr"), td0 = document.createElement("td");
           td0.innerHTML = "<strong>" + l[0] + "</strong>"; tr.appendChild(td0);
@@ -3302,7 +3304,7 @@
       ];
       // Palier « Acte intellectuel » : ajouté aux recettes (donc au résultat) seulement quand la case
       // « Intégrer l'acte intellectuel » de la table de mixage est cochée — comme le point mort.
-      var UN_PALIER_ACTE = { key: "acte", label: "Acte intellectuel", sideLabel: "Acte intellectuel", shortLabel: "Acte", color: "#7b61c9" };
+      var UN_PALIER_ACTE = { key: "acte", label: "Acte intellectuel", sideLabel: "Acte intellectuel", shortLabel: "Acte intellectuel", color: "#7b61c9" };
       var unEurosFmt = new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
       var UN_SVG_NS = "http://www.w3.org/2000/svg";
       function unSvgEl(tag, attrs) {
@@ -3884,10 +3886,10 @@
               else if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
             });
           } else {
-            var xn = cellX + 6, xb = cellX + 46, xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 121, rowS = Math.min(19, (198 - yS) / cats.length);
+            var xn = cellX + 6, xb = cellX + (cats.some(function (q) { return q.key === "acte"; }) ? 58 : 46), xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 121, rowS = Math.min(19, (198 - yS) / cats.length);
             cats.forEach(function (p, k) {
               var y = yS + k * rowS, val = b.detail[p.key] || 0;
-              var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
+              var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": p.shortLabel.length > 10 ? 5.9 : 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
               svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: bwS, height: 9, fill: "#eef1f5", rx: 3, ry: 3 }));
               if (b.parts) unBarreDeuxCouleurs(svgC, b, p, xb, y + 2, bwS, 9, maxVal, 6);
               else if (val > 0) svgC.appendChild(unSvgEl("rect", { x: xb, y: y + 2, width: Math.max(3, val / maxVal * bwS), height: 9, fill: p.color, rx: 3, ry: 3 }));
@@ -5876,6 +5878,7 @@
               ["Votre activité", milliersFmt.format(Math.round(unActiviteAnnuelle())) + " patients/an"]
             ],
             machines: [
+              { label: "Activité traitée par machine", vals: rseRes.map(function (r) { return milliersFmt.format(Math.round(r.patientsMachine)) + " patients/an"; }) },
               { label: "Durée d'acquisition", vals: rseRes.map(function (r) { return Math.round(r.acqMin * 10) / 10 + " min"; }) },
               { label: "Temps de changement de patient (ready to scan)", vals: rseRes.map(function (r) { return Math.round(r.changementMin * 10) / 10 + " min"; }) }
             ]
@@ -5954,7 +5957,26 @@
           doc.text("Simulation IRM — Projet " + donnees.projet + " : " + (UN_PROJET_TITRES[donnees.projet] || ""), LEFT_X, y);
           y += 6; doc.setFontSize(9.5); doc.setFont(undefined, "normal"); doc.setTextColor(90);
           doc.text("Activité : " + milliersFmt.format(donnees.volume) + " examens / an", LEFT_X, y);
-          y += 9;
+          y += 5;
+          // Coordonnées du visiteur (saisies dans le formulaire d'envoi) : rappelées en haut de la page 1.
+          (function () {
+            function val(id) { return document.getElementById(id).value.trim(); }
+            var qui = (val("unExportPrenom") + " " + val("unExportNom")).trim();
+            var poste = [val("unExportFonction"), val("unExportEtablissement")].filter(Boolean).join(" — ");
+            var lignesV = [qui, poste, val("unExportEmail")].filter(Boolean);
+            if (!lignesV.length) return;
+            var hv = 8 + 4.6 * lignesV.length;
+            doc.setFillColor(244, 245, 247); doc.roundedRect(LEFT_X, y, CW, hv, 1.5, 1.5, "F");
+            doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(120);
+            doc.text("SIMULATION PRÉPARÉE POUR", LEFT_X + 4, y + 5);
+            var yv = y + 10;
+            lignesV.forEach(function (l, i) {
+              doc.setFontSize(i === 0 ? 10 : 9); doc.setFont(undefined, i === 0 ? "bold" : "normal"); doc.setTextColor(i === 0 ? 0 : 60);
+              doc.text(l, LEFT_X + 4, yv); yv += 4.6;
+            });
+            doc.setFont(undefined, "normal"); y += hv;
+          })();
+          y += 6;
 
           function titreSection(txt) {
             ensureSpace(11);
@@ -6070,9 +6092,10 @@
             doc.setFont(undefined, "normal");
           }
           function blocComposition(titreBloc, items, cats, cle) {
-            var R = 26, colW = items.length > 1 ? CW / 2 : CW;
+            var parts2 = !!(items[0][cle].parts), rowH = parts2 ? 4.8 : 4.5;
+            var R = parts2 ? 20 : 26, colW = items.length > 1 ? CW / 2 : CW;
             var nLeg = Math.max.apply(null, items.map(function (it) { return cats.filter(function (p) { return it[cle].detail[p.key] > 0; }).length + 1; }));
-            var h = 10 + 8 + R + 6 + nLeg * 4.5 + 3;
+            var h = 10 + 8 + R + 6 + (nLeg + (parts2 ? 1 : 0)) * rowH + 3;
             ensureSpace(h + 2);
             cadre(LEFT_X, y, CW, h);
             doc.setFontSize(10.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
@@ -6089,6 +6112,38 @@
               doc.text(cap, cx, yy + 7.5, { align: "center" });
               demiAnneau(cx, yy + 10 + R, R, cats, bloc.detail, bloc.total);
               var ly = yy + 10 + R + 7;
+              if (bloc.parts) {
+                // Projet 02 : bâtons à deux couleurs (A puis B), montant en € dans chaque morceau (comme à l'écran).
+                var bx = LEFT_X + 42, bw = CW - 42 - 46, maxV = 0, lg = bx;
+                cats.forEach(function (p) { if ((bloc.detail[p.key] || 0) > maxV) maxV = bloc.detail[p.key]; });
+                if (!(maxV > 0)) maxV = 1;
+                bloc.partNoms.forEach(function (nom, q) {
+                  fill(bloc.partCouleurs[q]); doc.rect(lg, ly - 2.5, 2.6, 2.6, "F");
+                  doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(60); doc.text(nom, lg + 4.5, ly);
+                  lg += 4.5 + doc.getTextWidth(nom) + 8;
+                });
+                doc.setFont(undefined, "normal"); ly += rowH;
+                cats.forEach(function (p) {
+                  var v = bloc.detail[p.key];
+                  if (!(v > 0)) return;
+                  fill(p.color); doc.rect(LEFT_X + 8, ly - 2.5, 2.6, 2.6, "F");
+                  doc.setFontSize(8); doc.setTextColor(40); doc.text(p.label, LEFT_X + 12.5, ly);
+                  doc.setFillColor(238, 241, 245); doc.rect(bx, ly - 3.2, bw, 4, "F");
+                  var xa = bx;
+                  [0, 1].forEach(function (q) {
+                    var vq = bloc.parts[q][p.key] || 0, wq = vq / maxV * bw;
+                    if (!(vq > 0) || wq <= 0) return;
+                    fill(bloc.partCouleurs[q]); doc.rect(xa, ly - 3.2, wq, 4, "F");
+                    var txt = unEurosFmt.format(vq);
+                    doc.setFontSize(6.5); doc.setFont(undefined, "bold");
+                    if (wq > doc.getTextWidth(txt) + 2) { doc.setTextColor(255); doc.text(txt, xa + wq / 2, ly - 0.4, { align: "center" }); }
+                    doc.setFont(undefined, "normal"); xa += wq;
+                  });
+                  doc.setFontSize(8); doc.setFont(undefined, "bold"); doc.setTextColor(40);
+                  doc.text(unEurosFmt.format(v), RIGHT_X - 5, ly, { align: "right" }); doc.setFont(undefined, "normal");
+                  ly += rowH;
+                });
+              } else
               cats.forEach(function (p) {
                 var v = bloc.detail[p.key];
                 if (!(v > 0)) return;
@@ -6207,11 +6262,11 @@
             titrePage("Impact énergétique et RSE", donnees.projet === 1 ? null : "Chaque machine : sa part des examens (projet 02) ou le même volume (projet 03)");
             var rse = donnees.rse;
             function serie(cle) { return rse.map(function (r) { return { label: r.label, color: r.color, valeur: r[cle] }; }); }
-            paireBarres("Consommation électrique annuelle", serie("kwh"), function (v) { return milliersFmt.format(Math.round(v)) + " kWh"; });
-            paireBarres("Émissions de CO₂ annuelles", serie("kgCo2"), function (v) { return milliersFmt.format(Math.round(v)) + " kg"; });
-            paireBarres("Équivalence en arbres (absorption annuelle)", serie("arbres"), function (v) { return milliersFmt.format(Math.round(v)) + " arbres"; });
-            paireBarres("Coût électrique annuel", serie("coutAnnuel"), function (v) { return unEurosFmt.format(v); });
-            paireBarres("Coût électrique par patient", serie("coutParPatient"), function (v) { return unRseEurosCent.format(v); });
+            paireBarres("Consommation électrique annuelle", serie("kwh"), function (v) { return milliersFmt.format(Math.round(v)) + " kWh"; }, true);
+            paireBarres("Émissions de CO₂ annuelles", serie("kgCo2"), function (v) { return milliersFmt.format(Math.round(v)) + " kg"; }, true);
+            paireBarres("Équivalence en arbres (absorption annuelle)", serie("arbres"), function (v) { return milliersFmt.format(Math.round(v)) + " arbres"; }, true);
+            paireBarres("Coût électrique annuel", serie("coutAnnuel"), function (v) { return unEurosFmt.format(v); }, true);
+            paireBarres("Coût électrique par patient", serie("coutParPatient"), function (v) { return unRseEurosCent.format(v); }, true);
             y += 6;
             titreSection("Hypothèses de ce simulateur");
             doc.setFontSize(8.5); doc.setTextColor(120); doc.text("Valeurs techniques utilisées", LEFT_X, y); y += 5;
@@ -6363,8 +6418,8 @@
       // ---------------------------------------------------------------------
       // Mémoire de session (04/10/2026, demande de Cédric) : un rafraîchissement de la page ramène au MÊME
       // projet, au MÊME écran, avec les mêmes réglages (formulaire, table de mixage, répartition A/B, cartes
-      // ouvertes, vue choisie…). Stockée dans sessionStorage : elle survit à F5 / Cmd+R mais disparaît à la
-      // fermeture de l'onglet (un nouveau visiteur repart toujours d'une page vierge). Les curseurs de la
+      // ouvertes, vue choisie…). Stockée dans localStorage (décision de Cédric du 04/10/2026) : elle survit à F5 / Cmd+R ET à la
+      // fermeture de l'onglet ou du navigateur. Les curseurs de la
       // table de mixage ne sont PAS mémorisés un par un : ils se recalent seuls sur le formulaire.
       // ---------------------------------------------------------------------
       (function () {
@@ -6389,7 +6444,7 @@
         }
         function sauver() {
           if (restauration || projetActuel == null) return;
-          try { sessionStorage.setItem(CLE, JSON.stringify(capturer())); } catch (e) {}
+          try { localStorage.setItem(CLE, JSON.stringify(capturer())); } catch (e) {}
         }
         function planifier() { clearTimeout(minuterie); minuterie = setTimeout(sauver, 250); }
         ["input", "change", "click"].forEach(function (t) { document.addEventListener(t, planifier, true); });
@@ -6400,7 +6455,7 @@
         function declencher(el, types) { types.forEach(function (t) { el.dispatchEvent(new Event(t, { bubbles: true })); }); }
         function restaurer() {
           var brut = null, etat = null;
-          try { brut = sessionStorage.getItem(CLE); etat = brut ? JSON.parse(brut) : null; } catch (e) { return; }
+          try { brut = localStorage.getItem(CLE); etat = brut ? JSON.parse(brut) : null; } catch (e) { return; }
           if (!etat || !etat.projet || etat.ecran === "projet") return;
           restauration = true;
           try {
