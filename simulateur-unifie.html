@@ -6128,8 +6128,14 @@
 
         // Données des demi-anneaux du PDF (04/10/2026) : une entrée par machine, ou UNE seule pour les deux
         // IRM ensemble (projet 02, répartition de la Bascule) — mêmes fonctions que la carte Composition.
+        // Page « Composition » en DOUBLE dans le PDF (05/10/2026, demande de Cédric) : une page avec l'acte intellectuel,
+        // une page sans — mêmes données recalculées avec la case forcée dans un sens puis dans l'autre.
+        var paramsExt = params;
+        function compoPour(avecActe) {
         var compoGraph = [], etatB = unEtatBascule();
+        var params = Object.assign({}, paramsExt, { acteIntellectuelActif: avecActe });
         if (etatB) {
+          etatB = Object.assign({}, etatB, { params: params });
           var ib = unCompoItemsBascule(etatB);
           compoGraph.push({ label: ib.rec.label, color: ib.rec.color, volume: ib.rec.volume, rec: ib.rec, dep: ib.dep, res: ib.res });
         } else {
@@ -6149,6 +6155,9 @@
             });
           });
         }
+        return compoGraph;
+        }
+        var compoGraphAvec = compoPour(true), compoGraphSans = compoPour(false);
 
         var rse = null, rseHyp = null;
         {
@@ -6203,7 +6212,7 @@
           projet: projetActuel, volume: volume,
           machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
           pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference,
-          rse: rse, rseHyp: rseHyp, ctIrm: ctIrm, compoGraph: compoGraph, avecActe: !!params.acteIntellectuelActif
+          rse: rse, rseHyp: rseHyp, ctIrm: ctIrm, compoGraphAvec: compoGraphAvec, compoGraphSans: compoGraphSans, avecActe: !!params.acteIntellectuelActif
         };
       }
 
@@ -6480,19 +6489,21 @@
             });
             y += h + 3;
           }
-          if (inclureCompo && donnees.compoGraph.length) {
-            nouvellePage();
-            titrePage("Composition des recettes de l'année 1");
-            var catsRec = donnees.avecActe ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS;
-            blocComposition("Recettes", donnees.compoGraph, catsRec, "rec");
-            blocComposition("Dépenses", donnees.compoGraph, UN_COUTS_CATS, "dep");
-            blocComposition("Résultat", donnees.compoGraph, UN_RENTA_CATS, "res");
-            if (donnees.compoGraph.length === 1 && donnees.projet === 2) {
-              doc.setFontSize(8); doc.setTextColor(120);
-              doc.text("Les deux IRM sont regroupées selon la répartition choisie dans la Bascule progressive.", LEFT_X, y + 1);
-            }
+          if (inclureCompo && donnees.compoGraphAvec.length) {
+            // 2 pages : avec puis sans l'acte intellectuel (demande de Cédric, 05/10/2026).
+            [[true, donnees.compoGraphAvec, "avec l'acte intellectuel"], [false, donnees.compoGraphSans, "sans l'acte intellectuel"]].forEach(function (sc) {
+              nouvellePage();
+              titrePage("Composition des recettes de l'année 1 — " + sc[2]);
+              var catsRec = sc[0] ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS;
+              blocComposition("Recettes", sc[1], catsRec, "rec");
+              blocComposition("Dépenses", sc[1], UN_COUTS_CATS, "dep");
+              blocComposition("Résultat", sc[1], UN_RENTA_CATS, "res");
+              if (sc[1].length === 1 && donnees.projet === 2) {
+                doc.setFontSize(8); doc.setTextColor(120);
+                doc.text("Les deux IRM sont regroupées selon la répartition choisie dans la Bascule progressive.", LEFT_X, y + 1);
+              }
+            });
           }
-
           // ---- Page 4 : Tableau du barème dégressif (+ comparatif CT vs IRM, projet 03) ----
           function tableBareme(liste, difference) {
             var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
