@@ -4186,7 +4186,10 @@
         var config = unConfigMachinePointMort(slot);
         if (!config.machine) return null;
         var paramsSlot = unParamsPourSlot(slot, params);
-        var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
+        // Projet 02 : chaque IRM ne fait que SA part des examens (répartition de la Bascule / de la table de
+        // mixage) — barème dégressif et charges par patient se calculent sur ce volume-là (04/10/2026).
+        var etatB = unEtatBascule();
+        var volume = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : Math.max(0, Math.round(unActiviteAnnuelle()));
         var d = unDetailCA(volume, config.machine, params);
         var totalFt = d.plein + d.seuil1 + d.seuil2 + d.plafond;
         var acte = params.acteIntellectuelActif ? unActeIntellectuelConfig(config) : 0;
@@ -5187,6 +5190,7 @@
         if (document.getElementById("unCompoCard").open) unCompoRedessinerSeul();
         unPointMortRedessiner();
         unMixRepartSync();
+        if (window.unPatientRendreDepuisMixage) window.unPatientRendreDepuisMixage();
         if (document.getElementById("unRseCard").open) unRseRendre();
       }
 
