@@ -350,6 +350,7 @@
     .un-outils-sous { margin: .1rem 0 .3rem 1.6rem; }
     .un-outils-sous[hidden] { display: none; }
     #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
+    #unPmOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     .un-outils-poignee { cursor: grab; touch-action: none; user-select: none; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-align: center; padding: .15rem 0 .35rem; margin: -.25rem -.4rem .3rem; border-bottom: 1px dashed var(--un-info-bd); color: var(--muted); }
     .un-outils-poignee:active { cursor: grabbing; }
     #unCompoOutilsPop { width: min(calc(100vw - 4.5rem), 400px); max-width: none; overflow-x: hidden; }
@@ -1062,6 +1063,7 @@
       <span class="un-info-wrap un-pm-outils-carte">
         <button type="button" class="un-info-btn" id="unPmOutilsBtn" aria-expanded="false" aria-controls="unPmOutilsPop" aria-label="Boîte à outils des points morts" title="Boîte à outils">🧰</button>
         <div class="un-info-pop" id="unPmOutilsPop" hidden>
+          <div class="un-outils-poignee" id="unPmOutilsPoignee" title="Glisser pour déplacer la boîte à outils (double-clic : position d'origine)">⠿ Déplacer</div>
           <div class="un-outils-titre">Recette</div>
           <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unPmActe" checked /> Intégrer l'acte intellectuel</label>
         </div>
@@ -5363,7 +5365,25 @@
       wireOutilsBtn("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
       // Boîte à outils des points morts : même case que « Intégrer l'acte intellectuel » de la boîte de la Composition
       // (deux cases jumelées : cocher l'une coche l'autre et recalcule tout).
-      wireOutilsBtn("unPmOutilsBtn", "unPmOutilsPop");
+      // 06/10/2026 (demande de Cédric) : cette boîte à outils est DÉPLAÇABLE (glisser « Déplacer ») et ne se referme que
+      // par un nouveau clic sur l'icône 🧰 — pas au clic ailleurs, ni Échap, ni à l'ouverture d'une autre bulle
+      // (comme le panneau du joker) ; double-clic sur la poignée = position d'origine.
+      (function () {
+        var btn = document.getElementById("unPmOutilsBtn"), pop = document.getElementById("unPmOutilsPop"), poignee = document.getElementById("unPmOutilsPoignee");
+        var dx = 0, dy = 0, dep = null;
+        function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          pop.hidden = !pop.hidden;
+          btn.setAttribute("aria-expanded", String(!pop.hidden));
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+        poignee.addEventListener("pointerdown", function (e) { dep = { x: e.clientX - dx, y: e.clientY - dy }; poignee.setPointerCapture(e.pointerId); e.preventDefault(); });
+        poignee.addEventListener("pointermove", function (e) { if (!dep) return; dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer(); });
+        poignee.addEventListener("pointerup", function () { dep = null; });
+        poignee.addEventListener("pointercancel", function () { dep = null; });
+        poignee.addEventListener("dblclick", function () { dx = 0; dy = 0; appliquer(); });
+      })();
       // Joker (projet 02, 05/10/2026, demande de Cédric) : repris du simulateur « Bascule vers un O-scan »
       // (carte « Capacité restante » + « Résultat selon 3 scénarios »), calculé avec les fonctions de ce fichier.
       // Le panneau du joker ne se referme PAS tout seul (clic ailleurs, Échap, autre bulle) : seulement en recliquant sur
