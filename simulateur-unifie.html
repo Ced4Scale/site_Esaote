@@ -1055,16 +1055,30 @@
               <button type="button" class="un-info-btn" id="unCompoMoyenOutilsBtn" aria-expanded="false" aria-controls="unCompoMoyenOutilsPop" aria-label="Choisir ce qui s'affiche sur ce graphe">🧰</button>
               <div class="un-info-pop" id="unCompoMoyenOutilsPop" hidden>
                 <div class="un-outils-titre">Afficher sur le graphe</div>
+<div id="unCompoMoyBoiteSimple">
                 <label class="un-outils-check"><input type="checkbox" id="unCompoMoyMoy" checked /> Courbes du tarif moyen (trait plein)</label>
                 <label class="un-outils-check"><input type="checkbox" id="unCompoMoyReel" checked /> Tarif réel de la tranche (marches)</label>
                 <label class="un-outils-check"><input type="checkbox" id="unCompoMoySeuils" /> Seuils du barème</label>
                 <label class="un-outils-check"><input type="checkbox" id="unCompoMoyRepere" checked /> Repère « Votre activité »</label>
               </div>
+              <div id="unCompoMoyBoiteBascule" hidden>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheA" /> Courbe Machine A (moyenne)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheB" /> Courbe Machine B (moyenne)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheReelA" checked /> Tarif réel Machine A (marches)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheReelB" checked /> Tarif réel Machine B (marches)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheMoyenne" /> Courbe moyenne pondérée globale</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoFtMoyAfficheSeuils" /> Seuils du barème</label>
+              </div>
+              </div>
             </span>
           </div>
           <div class="simulator__chart-wrap">
             <svg id="unCompoMoyenChart" class="simulator__chart" viewBox="0 0 640 210" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon le volume annuel d'examens, une courbe par machine"></svg>
+            <!-- Projet 02 « IRM supplémentaire » uniquement (04/10/2026) : même graphe que « Bascule progressive »
+                 (volume total partagé entre A et B, un axe par machine, repère = curseur de la Bascule). -->
+            <svg id="unCompoFtMoyChart" class="simulator__chart" viewBox="0 0 640 300" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tarif moyen du forfait technique selon la répartition du volume annuel entre Machine A et Machine B" style="display:none"></svg>
           </div>
+          <p class="simulator__hint" id="unCompoFtMoyNote" hidden></p>
         </div>
         <div id="unCompoTableWrap" hidden>
           <div style="overflow-x:auto">
@@ -3704,6 +3718,52 @@
       // repère « Votre activité » ; 4 cases dans la boîte à outils 🧰. Mêmes fonctions de calcul que
       // l'écran Bascule (unTarifMoyenPourVolume / unTarifReelPourVolume).
       wireOutilsBtn("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
+      // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
+      // la répartition de la Bascule progressive — UN SEUL demi-anneau (Recettes / Dépenses / Résultat)
+      // pour les deux IRM ensemble, et le graphe « Tarif moyen » de la Bascule. Lit le volume total et le
+      // curseur de la Bascule (champs du DOM) ; jamais de 2ᵉ formule : mêmes unDetailCA/unCoutsDetail que
+      // la Composition et mêmes tranches que la Bascule. Une machine à 0 examen n'est pas comptée (comme
+      // unResultatAnnuelMachine). ----
+      function unEtatBascule() {
+        if (projetActuel !== 2) return null;
+        var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
+        if (!configA.machine || !configB.machine) return null;
+        var params = unConstruireParamsPointMort();
+        var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
+        var volA = Math.max(0, Math.min(N, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
+        return { N: N, volA: volA, configA: configA, configB: configB, params: params,
+          trA: unTranchesAvecMontant(configA.machine, params.dateIso, params.zone, params.amortiKey),
+          trB: unTranchesAvecMontant(configB.machine, params.dateIso, params.zone, params.amortiKey) };
+      }
+      function unCompoItemsBascule(e) {
+        var rec = { plein: 0, seuil1: 0, seuil2: 0, plafond: 0, acte: 0 }, dep = { loyer: 0, personnel: 0, elec: 0, autres: 0 };
+        [[0, e.configA, e.volA], [1, e.configB, e.N - e.volA]].forEach(function (m) {
+          var v = m[2]; if (v <= 0) return;
+          var d = unDetailCA(v, m[1].machine, e.params);
+          Object.keys(rec).forEach(function (k) { rec[k] += d[k] || 0; });
+          if (e.params.acteIntellectuelActif) rec.acte += unActeIntellectuelConfig(m[1]) * v;
+          var c = unCoutsDetail(m[1], unParamsPourSlot(m[0], e.params), v);
+          Object.keys(dep).forEach(function (k) { dep[k] += c[k] || 0; });
+        });
+        var totRec = rec.plein + rec.seuil1 + rec.seuil2 + rec.plafond + rec.acte;
+        var totDep = dep.loyer + dep.personnel + dep.elec + dep.autres, res = totRec - totDep;
+        var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472", W = null;
+        return {
+          rec: { label: label, color: color, volume: e.N, detail: rec, total: totRec },
+          dep: { label: label, color: color, volume: e.N, detail: dep, total: totDep },
+          res: { label: label, color: color, volume: e.N, detail: { loyer: dep.loyer, personnel: dep.personnel, elec: dep.elec, autres: dep.autres, resultat: Math.max(0, res) },
+            total: Math.max(totRec, totDep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(e.N > 0 ? res / e.N : 0),
+            captionColor: res >= 0 ? "#1baf7a" : "#d33", res: res, rec: totRec }
+        };
+      }
+      function unCompoRedessinerSeul() {
+        if (projetActuel !== 2) return;
+        unDessinerCompo(unSlotsActifs(), unConstruireParamsPointMort());
+      }
+      document.getElementById("unCompoCard").addEventListener("toggle", function () { if (this.open) unCompoRedessinerSeul(); });
+      ["AfficheA", "AfficheB", "AfficheReelA", "AfficheReelB", "AfficheMoyenne", "AfficheSeuils"].forEach(function (k) {
+        document.getElementById("unCompoFtMoy" + k).addEventListener("change", unCompoRedessinerSeul);
+      });
       ["unCompoMoyMoy", "unCompoMoyReel", "unCompoMoySeuils", "unCompoMoyRepere"].forEach(function (id) {
         document.getElementById(id).addEventListener("change", function () { unRenderPointMort(); });
       });
@@ -3817,7 +3877,19 @@
         document.getElementById("unCompoTableWrap").hidden = vueCompo !== "table" || !affRec.checked;
         document.getElementById("unCompoMoyenWrap").hidden = vueCompo !== "moyen";
         document.getElementById("unCompoSousTable").hidden = vueCompo !== "table";
-        if (vueCompo === "moyen") unDessinerCompoMoyen(unCompoEntrees);
+        var etatB = unEtatBascule();
+        document.getElementById("unCompoMoyenChart").style.display = etatB ? "none" : "";
+        document.getElementById("unCompoFtMoyChart").style.display = etatB ? "" : "none";
+        document.getElementById("unCompoMoyBoiteSimple").hidden = !!etatB;
+        document.getElementById("unCompoMoyBoiteBascule").hidden = !etatB;
+        var noteB = document.getElementById("unCompoFtMoyNote");
+        noteB.hidden = !etatB || vueCompo !== "moyen";
+        if (etatB) noteB.textContent = "Plus on va vers la gauche, plus les examens de " + etatB.configA.machine.nomCourt + " passent sur " + etatB.configB.machine.nomCourt + " : leurs forfaits réduits sont remplacés par des forfaits pleins.";
+        if (vueCompo === "moyen") {
+          if (etatB) unDessinerFtMoyChart(etatB.N, etatB.volA, etatB.trA, etatB.trB, etatB.configA.machine.nomCourt, etatB.configB.machine.nomCourt, "unCompoFtMoyChart", "unCompoFtMoy");
+          else unDessinerCompoMoyen(unCompoEntrees);
+        }
+        var itemsBascule = etatB ? unCompoItemsBascule(etatB) : null;
         var svgK = document.getElementById("unCompoCoutsChart"), svgR = document.getElementById("unCompoResChart");
         svgK.innerHTML = ""; svgR.innerHTML = "";
         function pastilles(titre, cats) {
@@ -3835,7 +3907,7 @@
         var catsRec = params.acteIntellectuelActif ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS;
         if (affRec.checked) {
           svgC.setAttribute("viewBox", "0 0 " + W + vbH);
-          unDessinerPanneauCompo(svgC, camemberts, catsRec, W, histo);
+          unDessinerPanneauCompo(svgC, itemsBascule ? [itemsBascule.rec] : camemberts, catsRec, W, histo);
           pastilles(nPan > 1 ? "Recettes :" : "", catsRec);
         }
         var itemsK = [], itemsR = [];
@@ -3853,6 +3925,12 @@
             captionColor: res >= 0 ? "#1baf7a" : "#d33",
             captionSuffix: (W >= 500 ? " / examen" : " / ex.") + (rec > 0 ? " · marge " + Math.round(res / rec * 100) + " %" : "") });
         });
+        if (itemsBascule) {
+          itemsK = [itemsBascule.dep];
+          var rb = itemsBascule.res;
+          rb.captionSuffix = (W >= 500 ? " / examen" : " / ex.") + (rb.rec > 0 ? " · marge " + Math.round(rb.res / rb.rec * 100) + " %" : "");
+          itemsR = [rb];
+        }
         if (affDep.checked) {
           svgK.setAttribute("viewBox", "0 0 " + W + vbH);
           unDessinerPanneauCompo(svgK, itemsK, UN_COUTS_CATS, W, histo);
@@ -4642,17 +4720,18 @@
       // l'artefact abandonné le 19/09/2026 était ici : 5 cases au lieu de 6) :
       // Courbe A (moyenne) / Courbe B (moyenne) / Tarif réel A (marches) / Tarif
       // réel B (marches) / Courbe moyenne pondérée globale / Seuils du barème. ----
-      function unDessinerFtMoyChart(volumeTotal, volA, trA, trB, nomA, nomB) {
-        var svg = document.getElementById("unFtMoyChart");
+      function unDessinerFtMoyChart(volumeTotal, volA, trA, trB, nomA, nomB, svgId, prefixe) {
+        svgId = svgId || "unFtMoyChart"; prefixe = prefixe || "unFtMoy";
+        var svg = document.getElementById(svgId);
         svg.innerHTML = "";
         var NS = "http://www.w3.org/2000/svg";
         function el(tag, attrs) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
-        var afficherA = document.getElementById("unFtMoyAfficheA").checked;
-        var afficherB = document.getElementById("unFtMoyAfficheB").checked;
-        var afficherReelA = document.getElementById("unFtMoyAfficheReelA").checked;
-        var afficherReelB = document.getElementById("unFtMoyAfficheReelB").checked;
-        var afficherMoyenne = document.getElementById("unFtMoyAfficheMoyenne").checked;
-        var afficherSeuils = document.getElementById("unFtMoyAfficheSeuils").checked;
+        var afficherA = document.getElementById(prefixe + "AfficheA").checked;
+        var afficherB = document.getElementById(prefixe + "AfficheB").checked;
+        var afficherReelA = document.getElementById(prefixe + "AfficheReelA").checked;
+        var afficherReelB = document.getElementById(prefixe + "AfficheReelB").checked;
+        var afficherMoyenne = document.getElementById(prefixe + "AfficheMoyenne").checked;
+        var afficherSeuils = document.getElementById(prefixe + "AfficheSeuils").checked;
 
         // Textes dans la marge HAUTE (une ligne par élément), jamais sur les courbes — corrigé le 04/10/2026.
         var nLignes = ((afficherA || afficherReelA) ? 1 : 0) + ((afficherB || afficherReelB) ? 1 : 0) + (afficherMoyenne ? 1 : 0);
@@ -4870,6 +4949,8 @@
 
         unDessinerBaremeMini(unBasculeTrA, unBasculeConfigA.machine.nomCourt, unBasculeTrB, unBasculeConfigB.machine.nomCourt);
         unDessinerFtMoyChart(N, volA, unBasculeTrA, unBasculeTrB, unBasculeConfigA.machine.nomCourt, unBasculeConfigB.machine.nomCourt);
+        // La carte Composition suit la répartition de la Bascule (projet 02), seulement quand elle est ouverte.
+        if (document.getElementById("unCompoCard").open) unCompoRedessinerSeul();
       }
 
       document.getElementById("unBasculeCurseur").addEventListener("input", unRecalculerBascule);
