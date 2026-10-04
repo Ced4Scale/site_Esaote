@@ -3903,6 +3903,24 @@
         var wa = morceau(x, wA, b.partCouleurs[0], valA, true, !(valB > 0));
         morceau(x + (wa || 0), wB, b.partCouleurs[1], valB, !(valA > 0), true);
       }
+      // Texte compact (1,5 T / 2 IRM / Écart) dans la zone blanche d'un demi-anneau (projet 02) ; taille commune
+      // ajustée à la largeur disponible de la ligne la plus étroite.
+      function unCentreTexte(svgC, b, cx, baseY, ri) {
+        if (!b.centre) return;
+        var kc = ri / 46;
+        var fsCommun = 8.5 * kc;
+        b.centre.forEach(function (li, q) {
+          var h = (3 + (2 - q) * 9.5) * kc, chord = 2 * Math.sqrt(Math.max(1, ri * ri - Math.pow(h + 6 * kc, 2))) * 0.92;
+          fsCommun = Math.min(fsCommun, chord / ((li.label.length + li.valeur.length + 1.5) * 0.56));
+        });
+        b.centre.forEach(function (li, q) {
+          var h = (3 + (2 - q) * 9.5) * kc;
+          var tl = unSvgEl("text", { x: cx, y: baseY - h, "text-anchor": "middle", "font-size": fsCommun });
+          var t1 = unSvgEl("tspan", { fill: "#777", "font-weight": 600 }); t1.textContent = li.label + " "; tl.appendChild(t1);
+          var t2 = unSvgEl("tspan", { fill: li.couleur || "#222", "font-weight": 800 }); t2.textContent = li.valeur; tl.appendChild(t2);
+          svgC.appendChild(tl);
+        });
+      }
       function unDessinerPanneauHisto(svgC, items, cats, W) {
         var n = items.length, cellW = W / n, cote = W >= 500;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
@@ -3927,22 +3945,7 @@
             }
             start = end;
           });
-          if (b.centre) {
-            // Texte compact dans la zone blanche du demi-anneau : taille ajustée à la largeur disponible à chaque hauteur.
-            var kc = ri / 46;
-            var fsCommun = 8.5 * kc;
-            b.centre.forEach(function (li, q) {
-              var h = (3 + (2 - q) * 9.5) * kc, chord = 2 * Math.sqrt(Math.max(1, ri * ri - Math.pow(h + 6 * kc, 2))) * 0.92;
-              fsCommun = Math.min(fsCommun, chord / ((li.label.length + li.valeur.length + 1.5) * 0.56));
-            });
-            b.centre.forEach(function (li, q) {
-              var h = (3 + (2 - q) * 9.5) * kc, fs = fsCommun;
-              var tl = unSvgEl("text", { x: cx, y: baseY - h, "text-anchor": "middle", "font-size": fs });
-              var t1 = unSvgEl("tspan", { fill: "#777", "font-weight": 600 }); t1.textContent = li.label + " "; tl.appendChild(t1);
-              var t2 = unSvgEl("tspan", { fill: li.couleur || "#222", "font-weight": 800 }); t2.textContent = li.valeur; tl.appendChild(t2);
-              svgC.appendChild(tl);
-            });
-          }
+          unCentreTexte(svgC, b, cx, baseY, ri);
           var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
           var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
           var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
@@ -3983,7 +3986,7 @@
       function unDessinerPanneauCompo(svgC, items, cats, W, histo) {
         if (!items.length) return;
         if (histo) { unDessinerPanneauHisto(svgC, items, cats, W); return; }
-        var maxR = W < 500 ? 42 : 56, centerY = 90, n = items.length;
+        var maxR = W < 500 ? 52 : 70, centerY = 112, n = items.length;
         var centers = n === 1 ? [W / 2] : [W * 0.27, W * 0.73], halfWidth = n === 1 ? W * 0.22 : W * 0.133;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
         var maxPalier = 0;
@@ -4008,6 +4011,7 @@
             svgC.appendChild(lab);
             start = end;
           });
+          unCentreTexte(svgC, b, cx, centerY, r * 0.55);
           var cap = unSvgEl("text", { x: cx, y: 12, class: "simulator__pie-caption", "text-anchor": "middle" });
           var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
           var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
@@ -4208,7 +4212,7 @@
         var affRec = document.getElementById("unCompoAffRec"), affDep = document.getElementById("unCompoCouts"), affRes = document.getElementById("unCompoAffRes");
         if (!affRec.checked && !affDep.checked && !affRes.checked) affRec.checked = true; // au moins un affichage
         var nPan = (affRec.checked ? 1 : 0) + (affDep.checked ? 1 : 0) + (affRes.checked ? 1 : 0);
-        var W = nPan === 1 ? 640 : 420, vbH = histo ? (W < 500 ? " 200" : " 188") : " 93";
+        var W = nPan === 1 ? 640 : 420, vbH = histo ? (W < 500 ? " 200" : " 188") : " 118";
         document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
         document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
         document.getElementById("unCompoResWrap").hidden = !affRes.checked;
