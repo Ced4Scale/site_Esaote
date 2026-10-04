@@ -269,6 +269,12 @@
     #unCompoCard > .un-compo-outils-carte { position: absolute; top: .85rem; right: 3.4rem; z-index: 3; margin: 0; }
     .un-compo-outils-carte #unCompoOutilsPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; }
     #unRseCard[hidden] { display: none; }
+    #unRseCard.un-rse-seul-couts > details { display: none; }
+    #unRseCard details:fullscreen { font-size: 1.05rem; }
+    #unRsePrixCard:fullscreen .simulator__chart-wrap { width: 100%; height: 72vh; flex: 0 0 auto; }
+    #unRsePrixCard:fullscreen #unRsePrixChart { width: 100%; height: 100%; }
+    #unRseEtudesCard:fullscreen #unRseEtudesListe { font-size: 1.15rem; max-width: 70rem; }
+    #unRseHypCard:fullscreen > * { width: 100%; max-width: 70rem; }
     .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
     #unRseCard .simulator__legend { margin-bottom: 0; }
     /* En plein écran, .simulator__chart-wrap devient un conteneur flex (règle générale du
@@ -1144,7 +1150,7 @@
              — « Hypothèses de ce simulateur », « Évolution du prix du kWh en France depuis 2000 »,
              « Ce que disent les études indépendantes » — en cadres intérieurs repliables. -->
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRseHypCard" style="margin-top:1rem">
-          <summary>Hypothèses de ce simulateur</summary>
+          <summary><button type="button" class="chart-card-fullscreen-btn" id="unRseHypFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g><g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg></button>Hypothèses de ce simulateur</summary>
           <p class="simulator__hint" style="margin-top:.4rem">Valeurs techniques utilisées <span class="un-info-wrap"><button type="button" class="un-info-btn" id="unRseInfoTechBtn" aria-expanded="false" aria-controls="unRseInfoTechPop" aria-label="À propos de ce tableau">💡</button><div class="un-info-pop" id="unRseInfoTechPop" hidden>Les puissances (kW) qui alimentent tous les calculs de cette carte, pour les deux machines choisies. Détail des hypothèses et niveau de confiance par machine sur la <a href="sources-energie.html">page des sources</a>.</div></span></p>
           <div class="simulator__legend" id="unRseHypLegende"></div>
           <div class="ene-fact-list" id="unRseHypTech"></div>
@@ -1159,7 +1165,7 @@
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRsePrixCard">
-          <summary>Évolution du prix du kWh en France depuis 2000 <span class="un-info-wrap"><button type="button" class="un-info-btn" id="unRseInfoTarifBtn" aria-expanded="false" aria-controls="unRseInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button><div class="un-info-pop" id="unRseInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées.<br><br><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div></span></summary>
+          <summary><button type="button" class="chart-card-fullscreen-btn" id="unRsePrixFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g><g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg></button>Évolution du prix du kWh en France depuis 2000 <span class="un-info-wrap"><button type="button" class="un-info-btn" id="unRseInfoTarifBtn" aria-expanded="false" aria-controls="unRseInfoTarifPop" aria-label="À propos de ce tarif et de sa légende">💡</button><div class="un-info-pop" id="unRseInfoTarifPop" hidden>Tarif réglementé de vente d'électricité (TRV), option Base, TTC — <strong>tarif résidentiel</strong>. Un cabinet paie généralement un tarif professionnel négocié, mais celui-ci suit la même tendance. Donné à titre de repère, indépendamment des machines comparées.<br><br><span style="display:inline-block;width:10px;height:10px;background:#2a78d6;border-radius:2px;vertical-align:middle"></span> <strong>2012-2026</strong> : chaque changement réel de tarif, sourcé CRE. <span style="display:inline-block;width:10px;height:10px;background:#a9c2e8;border-radius:2px;vertical-align:middle;margin-left:.6rem"></span> <strong>2000-2011</strong> : <em>estimation</em>, aucune série CRE datée trouvée en accès public pour cette période — reconstruite par extrapolation depuis le seul point connu et sourcé (2007, 0,1061 €/kWh) avec le taux de croissance moyen publié par l'INSEE pour 1986-2007 (+2,6 %/an). Pas une mesure réelle année par année.</div></span></summary>
           <div class="simulator__chart-wrap" style="position:relative">
             <svg id="unRsePrixChart" class="simulator__chart" viewBox="0 0 640 320" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du tarif réglementé de vente d'électricité en France depuis 2000, en euros par kWh TTC"></svg>
             <div class="simulator__tooltip" id="unRsePrixTooltip" hidden></div>
@@ -1168,7 +1174,7 @@
         </details>
 
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="unRseEtudesCard">
-          <summary>Ce que disent les études indépendantes <span class="un-info-wrap"><button type="button" class="un-info-btn" id="unRseInfoEtudesBtn" aria-expanded="false" aria-controls="unRseInfoEtudesPop" aria-label="À propos de ces études">💡</button><div class="un-info-pop" id="unRseInfoEtudesPop" hidden>L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</div></span></summary>
+          <summary><button type="button" class="chart-card-fullscreen-btn" id="unRseEtudesFsBtn" aria-pressed="false" aria-label="Plein écran" title="Plein écran"><svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><g class="icon-expand"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g><g class="icon-compress"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></g></svg></button>Ce que disent les études indépendantes <span class="un-info-wrap"><button type="button" class="un-info-btn" id="unRseInfoEtudesBtn" aria-expanded="false" aria-controls="unRseInfoEtudesPop" aria-label="À propos de ces études">💡</button><div class="un-info-pop" id="unRseInfoEtudesPop" hidden>L'approche par états de consommation (arrêt / prêt / examen) et le poids du refroidissement dans la facture énergétique d'une IRM sont documentés indépendamment de ce simulateur — pas une estimation isolée de Ced4Scale.</div></span></summary>
           <ul id="unRseEtudesListe" style="margin:.6rem 0 0 1.2rem;font-size:.88rem;line-height:1.6;color:var(--ink-soft)"></ul>
         </details>
       </details>
@@ -3622,6 +3628,27 @@
         cabler("unCompoFsBtn", "unCompoCard");
         cabler("unBlocFsBtn", "unBlocPointMort");
         cabler("unRseFsBtn", "unRseCard");
+        // Plusieurs plein écran dans la carte RSE (05/10/2026, demande de Cédric — « celui qu'on a affiche
+        // tout », pas fonctionnel) : l'icône de la carte n'affiche plus que les COÛTS (graphe + faits) ;
+        // Hypothèses, Prix du kWh et Études ont chacun leur icône et passent seuls en plein écran.
+        // Remplace la décision du 04/10/2026 « pas de plein écran sur les 3 cadres RSE ».
+        var rseCard = document.getElementById("unRseCard");
+        document.getElementById("unRseFsBtn").addEventListener("click", function () { rseCard.classList.add("un-rse-seul-couts"); }, true);
+        document.addEventListener("fullscreenchange", function () { if (document.fullscreenElement !== rseCard) rseCard.classList.remove("un-rse-seul-couts"); });
+        [["unRseHypFsBtn", "unRseHypCard"], ["unRsePrixFsBtn", "unRsePrixCard"], ["unRseEtudesFsBtn", "unRseEtudesCard"]].forEach(function (c) {
+          var btn = document.getElementById(c[0]), card = document.getElementById(c[1]);
+          btn.addEventListener("click", function (e) {
+            e.preventDefault(); e.stopPropagation();
+            if (document.fullscreenElement === card) { document.exitFullscreen(); return; }
+            card.open = true;
+            card.requestFullscreen();
+          });
+          document.addEventListener("fullscreenchange", function () {
+            var actif = document.fullscreenElement === card;
+            btn.classList.toggle("is-fullscreen", actif); btn.setAttribute("aria-pressed", String(actif));
+            if (actif) { if (c[1] === "unRsePrixCard") unRseDessinerPrix(); }
+          });
+        });
       })();
       function unTranchesCompo(machine, params) {
         var classe = FT_CLASSES[unClasseFTDepuisMachine(machine)];
