@@ -6332,6 +6332,103 @@
       // Initialisation
       // ---------------------------------------------------------------------
       majActiviteLabel();
+
+      // ---------------------------------------------------------------------
+      // Mémoire de session (04/10/2026, demande de Cédric) : un rafraîchissement de la page ramène au MÊME
+      // projet, au MÊME écran, avec les mêmes réglages (formulaire, table de mixage, répartition A/B, cartes
+      // ouvertes, vue choisie…). Stockée dans sessionStorage : elle survit à F5 / Cmd+R mais disparaît à la
+      // fermeture de l'onglet (un nouveau visiteur repart toujours d'une page vierge). Les curseurs de la
+      // table de mixage ne sont PAS mémorisés un par un : ils se recalent seuls sur le formulaire.
+      // ---------------------------------------------------------------------
+      (function () {
+        var CLE = "ced4scale-unifie-etat-v1", restauration = false, minuterie = null;
+        function exclu(el) { return !el.id || /^(unExport|unGate|unMix|unCompoDate$)/.test(el.id); }
+        function ecranCourant() {
+          if (!screenResultats.hidden) return "resultats";
+          if (!screenForm.hidden) return "form";
+          return "projet";
+        }
+        function capturer() {
+          var etat = { projet: projetActuel, ecran: ecranCourant(), champs: {}, radios: {}, ouverts: [], colB: {}, scrollY: window.scrollY,
+            heuresB: unHeuresB, heuresForce: unHeuresGroupeForce, cadenas: unCadenasActif, ctHorizon: unCtHorizon };
+          document.querySelectorAll("input, select, textarea").forEach(function (el) {
+            if (el.type === "radio") { if (el.name && el.checked) etat.radios[el.name] = el.value; return; }
+            if (exclu(el) || el.type === "password" || el.type === "file") return;
+            etat.champs[el.id] = el.type === "checkbox" ? el.checked : el.value;
+          });
+          document.querySelectorAll("details").forEach(function (d) { etat.ouverts.push(d.open); });
+          ["A", "B"].forEach(function (c) { var b = document.getElementById("unColBody" + c); if (b) etat.colB[c] = !b.hidden; });
+          return etat;
+        }
+        function sauver() {
+          if (restauration || projetActuel == null) return;
+          try { sessionStorage.setItem(CLE, JSON.stringify(capturer())); } catch (e) {}
+        }
+        function planifier() { clearTimeout(minuterie); minuterie = setTimeout(sauver, 250); }
+        ["input", "change", "click"].forEach(function (t) { document.addEventListener(t, planifier, true); });
+        document.addEventListener("toggle", planifier, true);
+        window.addEventListener("pagehide", sauver);
+        window.addEventListener("scroll", planifier, { passive: true });
+
+        function declencher(el, types) { types.forEach(function (t) { el.dispatchEvent(new Event(t, { bubbles: true })); }); }
+        function restaurer() {
+          var brut = null, etat = null;
+          try { brut = sessionStorage.getItem(CLE); etat = brut ? JSON.parse(brut) : null; } catch (e) { return; }
+          if (!etat || !etat.projet || etat.ecran === "projet") return;
+          restauration = true;
+          try {
+            choisirProjet(etat.projet);
+            // 1) listes déroulantes d'abord (changer de machine ré-initialise Manip/débit/loyer), 2) boutons radio,
+            // 3) tous les autres champs (qui écrasent alors ces valeurs par défaut).
+            Object.keys(etat.champs).forEach(function (id) {
+              var el = document.getElementById(id);
+              if (!el || el.tagName !== "SELECT") return;
+              if (Array.prototype.some.call(el.options, function (o) { return o.value === etat.champs[id]; })) { el.value = etat.champs[id]; declencher(el, ["change"]); }
+            });
+            Object.keys(etat.radios).forEach(function (nom) {
+              var r = document.querySelector('input[type="radio"][name="' + nom + '"][value="' + etat.radios[nom] + '"]');
+              if (r) { r.checked = true; declencher(r, ["change"]); }
+            });
+            Object.keys(etat.champs).forEach(function (id) {
+              var el = document.getElementById(id);
+              if (!el || el.tagName === "SELECT" || id === "unBasculeCurseur") return;
+              if (el.type === "checkbox") { el.checked = !!etat.champs[id]; declencher(el, ["change"]); }
+              else if (el.type !== "range") { el.value = etat.champs[id]; declencher(el, ["input", "change"]); }
+            });
+            unHeuresB = etat.heuresB != null ? etat.heuresB : null; unHeuresGroupeForce = !!etat.heuresForce;
+            unCadenasActif = etat.cadenas || null; unMajCadenasUI();
+            ["A", "B"].forEach(function (c) { if (etat.colB && etat.colB[c] != null) unColReplier(c, !etat.colB[c]); });
+            if (etat.ecran === "resultats") {
+              document.getElementById("unBtnVoirResultats").click();
+              // Curseurs de la Bascule (projet 02) : même position qu'avant le rafraîchissement.
+              var cur = document.getElementById("unBasculeCurseur"), N0 = parseInt(etat.champs.unBasculeVolumeTotal, 10) || 0;
+              var N1 = parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0;
+              if (etat.projet === 2 && etat.champs.unBasculeCurseur != null && N1 > 0) {
+                cur.value = N0 > 0 ? Math.round(Math.min(parseInt(etat.champs.unBasculeCurseur, 10) || 0, N0) / N0 * N1) : N1;
+                declencher(cur, ["input"]);
+              }
+              // Vue et cases des graphes (Composition, Tarif moyen, Par patient…) : redéclenchées une fois l'écran affiché.
+              Object.keys(etat.champs).forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.type === "checkbox" && /^(unCompo|unFtMoy|unPatient|unActeIntellectuelActif)/.test(id)) declencher(el, ["change"]);
+              });
+              var vue = etat.radios.unCompoVue && document.querySelector('input[name="unCompoVue"][value="' + etat.radios.unCompoVue + '"]');
+              if (vue) { vue.checked = true; declencher(vue, ["change"]); }
+              if (etat.ctHorizon && UN_CT_HORIZONS[etat.ctHorizon]) unCtChoisirHorizon(etat.ctHorizon);
+            }
+            // Cartes ouvertes/fermées (après l'affichage des résultats, qui referme certaines cartes).
+            document.querySelectorAll("details").forEach(function (d, i) { if (etat.ouverts && etat.ouverts[i] != null) d.open = !!etat.ouverts[i]; });
+          } catch (e) {
+            try { console.warn("Restauration de la session impossible :", e); } catch (e2) {}
+          }
+          setTimeout(function () {
+            restauration = false;
+            window.scrollTo(0, etat.scrollY || 0);
+            sauver();
+          }, 400);
+        }
+        restaurer();
+      })();
     })();
   </script>
 </body>
