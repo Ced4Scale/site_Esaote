@@ -2180,14 +2180,13 @@
       // "Votre activité" (jour/an) — extraite en fonction dédiée le 20/09/2026 pour
       // être réutilisée par l'étape 3 (Bascule progressive, voir plus bas), qui a
       // besoin d'un volume total annuel partagé entre Machine A et Machine B.
-      // Hypothèse déjà en place dans majActiviteLabel() avant cette extraction (pas
-      // introduite ici) : 5 jours ouvrés/semaine, jamais réajustée sur les jours
-      // d'ouverture réels du panneau "Horaires d'ouverture" (samedi/dimanche).
+      // Corrigé le 04/10/2026 : le nombre de jours par mois suit désormais les vraies
+      // cases "Ouvert le samedi"/"Ouvert le dimanche" (unJoursParMois()), au lieu d'une
+      // hypothèse fixe de 5 jours ouvrés/semaine.
       function unActiviteAnnuelle() {
         var mode = document.getElementById("unActiviteMode").value;
         var v = parseFloat(document.getElementById("unActivite").value) || 0;
-        var joursParMois = 5 * (52 / 12);
-        return mode === "jour" ? v * joursParMois * 12 : v;
+        return mode === "jour" ? v * unJoursParMois() * 12 : v;
       }
       function majActiviteLabel() {
         var mode = document.getElementById("unActiviteMode").value;
@@ -2195,7 +2194,7 @@
         var label = document.getElementById("unActiviteLabel");
         var equiv = document.getElementById("unActiviteEquivalent");
         var v = parseFloat(champ.value) || 0;
-        var joursParMois = 5 * (52 / 12);
+        var joursParMois = unJoursParMois();
         if (mode === "jour") {
           label.textContent = "Nombre de patients par jour";
           equiv.textContent = "Soit environ " + patientsFmt.format(unActiviteAnnuelle()) + " patients par an.";
@@ -2215,6 +2214,9 @@
         majActiviteLabel();
       });
       document.getElementById("unActivite").addEventListener("input", majActiviteLabel);
+      ["unOuvertSamedi", "unOuvertDimanche"].forEach(function (id) {
+        document.getElementById(id).addEventListener("change", majActiviteLabel);
+      });
 
       // ---------------------------------------------------------------------
       // Bulles d'aide 💡 (motif wireInfoBtn du skill, repris tel quel)
@@ -3069,7 +3071,7 @@
       function unEcrireActivite(annuel) {
         annuel = Math.max(0, Math.min(100000, Math.round(annuel)));
         var mode = document.getElementById("unActiviteMode").value;
-        document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (5 * (52 / 12) * 12) * 1000) / 1000 : annuel;
+        document.getElementById("unActivite").value = mode === "jour" ? Math.round(annuel / (unJoursParMois() * 12) * 1000) / 1000 : annuel;
         majActiviteLabel();
       }
       function unDebitPourSlot(slot) { return parseFloat(document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value) || 0; }
