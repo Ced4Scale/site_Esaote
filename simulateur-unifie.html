@@ -246,6 +246,10 @@
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
     /* Carte RSE (projet 1) — lignes à barres : titre à GAUCHE des deux barres, valeurs en blanc DANS les barres
        (valeur trop grande pour une barre très courte : à droite de la barre, en noir). Graphe et lignes de faits = même composant. */
+    /* Boutons − / + du formulaire Paramètres (04/10/2026) */
+    .un-pm-btn { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; padding: 0; border: 1px solid var(--line-2, #d6d6d0); border-radius: 50%; background: #fff; color: var(--ink, #222); font-size: 1.05rem; line-height: 1; cursor: pointer; }
+    .un-pm-btn:hover { border-color: var(--red, #cd0000); color: var(--red, #cd0000); }
+    .un-pm-btn:active { background: #f3f3ef; }
     #unRseCard[hidden] { display: none; }
     .ene-fact-list { display: flex; flex-direction: column; gap: .3rem; }
     #unRseCard .simulator__legend { margin-bottom: 0; }
@@ -2139,6 +2143,63 @@
         input.addEventListener("blur", function () { formaterMilliers(input); });
       });
 
+      // Boutons − / + à côté de chaque champ numérique du formulaire Paramètres (04/10/2026, demande de
+      // Cédric) : même idée que les boutons de la table de mixage — monter/descendre d'un cran sans taper.
+      // Le pas est celui du champ (attribut step) ; pour « Votre activité » il dépend du mode jour/an, pour
+      // les montants (champs texte avec points de milliers) il est fixé ci-dessous. Chaque clic déclenche
+      // les mêmes événements « input »/« change » qu'une saisie au clavier : rien d'autre à recâbler.
+      (function () {
+        var PAS_MONTANT = { unCoutRis: 10, unLoyerA: 500, unLoyerB: 500 };
+        var SALAIRES = ["unNetMerm", "unNetSecretaire", "unNetCadreSante", "unNetAideManip", "unNetInfirmiere", "unNetManipAlternance"];
+        var CHAMPS = SALAIRES.concat(["unCoutRis", "unLoyerA", "unLoyerB", "unSalleA", "unAssuranceA", "unEntretienA", "unInjecteurA",
+          "unSalleB", "unAssuranceB", "unEntretienB", "unInjecteurB", "unActivite", "unHeuresSemaine", "unCoupureDureeSemaine",
+          "unHeuresSamedi", "unCoupureDureeSamedi", "unHeuresDimanche", "unCoupureDureeDimanche", "unKwh", "unContrasteCout",
+          "unMermA", "unSecretaireA", "unCadreSanteA", "unAideManipA", "unInfirmiereA", "unManipAlternanceA", "unInstallA", "unMembreA",
+          "unMultiRegionA", "unRseDelaiAllumageA", "unRseDelaiExtinctionA", "unContrastePctA", "unRisA",
+          "unMermB", "unSecretaireB", "unCadreSanteB", "unAideManipB", "unInfirmiereB", "unManipAlternanceB", "unInstallB", "unMembreB",
+          "unContrastePctB", "unRisB"]);
+        function pasDe(input) {
+          var id = input.id;
+          if (input.type !== "number") {
+            if (SALAIRES.indexOf(id) !== -1) { var suf = document.getElementById(id + "Suffix"); return suf && /mois/.test(suf.textContent) ? 100 : 600; }
+            return PAS_MONTANT[id] || 100;
+          }
+          if (id === "unActivite") return document.getElementById("unActiviteMode").value === "an" ? 100 : 1;
+          return parseFloat(input.step) || 1;
+        }
+        function decimales(n) { var t = String(n); return t.indexOf(".") === -1 ? 0 : t.split(".")[1].length; }
+        function bouger(input, sens) {
+          var pas = pasDe(input);
+          if (input.type !== "number") {
+            input.value = Math.max(0, valeurMilliers(input) + sens * pas);
+            formaterMilliers(input);
+          } else {
+            var dec = Math.max(decimales(pas), input.id === "unKwh" ? 2 : 0);
+            var v = Math.round(((parseFloat(input.value) || 0) + sens * pas) * 1e6) / 1e6;
+            if (input.min !== "") v = Math.max(parseFloat(input.min), v);
+            if (input.max !== "") v = Math.min(parseFloat(input.max), v);
+            input.value = (dec > 0 && (input.id === "unKwh" || !Number.isInteger(v))) ? v.toFixed(dec) : String(v);
+          }
+          input.dispatchEvent(new Event("input", { bubbles: true }));
+          input.dispatchEvent(new Event("change", { bubbles: true }));
+        }
+        CHAMPS.forEach(function (id) {
+          var input = document.getElementById(id);
+          if (!input || !input.parentNode) return;
+          var lab = document.querySelector('label[for="' + id + '"]');
+          var nom = lab ? lab.textContent.trim() : id;
+          function bouton(sens) {
+            var b = document.createElement("button");
+            b.type = "button"; b.className = "un-pm-btn"; b.textContent = sens < 0 ? "−" : "+";
+            b.setAttribute("aria-label", (sens < 0 ? "Diminuer : " : "Augmenter : ") + nom);
+            b.addEventListener("click", function () { bouger(input, sens); });
+            return b;
+          }
+          input.parentNode.insertBefore(bouton(-1), input);
+          input.parentNode.insertBefore(bouton(1), input.nextSibling);
+        });
+      })();
+
       // ---------------------------------------------------------------------
       // Toggle mensuel/annuel partagé par les 6 salaires
       // ---------------------------------------------------------------------
@@ -3155,6 +3216,21 @@
         if (window.unPatientRendreDepuisMixage) window.unPatientRendreDepuisMixage();
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
+        unBasculeSuivreActivite();
+      }
+      // Projet 02 : quand « Votre activité » (examens par an) change, le volume total de la Bascule suit et la
+      // position du curseur garde la même proportion A/B ; la Bascule se redessine, et avec elle le Point mort,
+      // la Composition (demi-anneau unique) et la carte RSE (04/10/2026, signalé par Cédric : la Composition ne
+      // bougeait pas quand il changeait le nombre d'examens).
+      function unBasculeSuivreActivite() {
+        if (projetActuel !== 2) return;
+        var champN = document.getElementById("unBasculeVolumeTotal"), curseur = document.getElementById("unBasculeCurseur");
+        var nouveauN = Math.max(0, Math.round(unActiviteAnnuelle())), ancienN = parseInt(champN.value, 10) || 0;
+        if (nouveauN === ancienN) return;
+        var cur = parseInt(curseur.value, 10) || 0;
+        curseur.max = nouveauN;
+        curseur.value = ancienN > 0 ? Math.round(Math.min(cur, ancienN) / ancienN * nouveauN) : nouveauN;
+        unRenderBascule();
       }
 
       // ---------------------------------------------------------------------
