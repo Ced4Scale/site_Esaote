@@ -297,6 +297,12 @@
     .ene-fact-value--dehors { position: absolute; left: calc(100% + 8px); top: 50%; transform: translateY(-50%); color: var(--ink); }
     #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 th:first-child, #unCompoCard:fullscreen #unCompoTableWrap .simulator__table.simulator__table--compare2 td:first-child { width: 24rem; }
     #unCompoCard:fullscreen .un-compo-source { font-size: .8rem; }
+    /* Vue « Tarif moyen du forfait technique » en plein écran (05/10/2026, demande de Cédric) : même encombrement que
+       les demi-anneaux (~40 % de la hauteur de l'écran) au lieu de remplir tout l'écran. */
+    #unCompoCard:fullscreen #unCompoMoyenWrap { width: 100%; }
+    #unCompoCard:fullscreen #unCompoMoyenWrap .simulator__chart-wrap { flex: 0 0 auto; width: 100%; height: 36vh; }
+    #unCompoCard:fullscreen { justify-content: safe center; }
+    #unCompoCard:fullscreen #unCompoMoyenWrap .simulator__chart { width: 100%; height: 100%; }
     #unCompoCard:fullscreen #unCompoDate { font-size: 1rem; }
     #unCompoTableWrap .simulator__table.simulator__table--compare2 th:not(:first-child), #unCompoTableWrap .simulator__table.simulator__table--compare2 td:not(:first-child) { width: auto; }
     #unCompoTableWrap th:first-child select { width: 100%; }
@@ -2946,6 +2952,25 @@
           return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, patientsMachine: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsMachine > 0 ? kwh * prix / patientsMachine : 0, profil: profil, prix: prix };
         });
       }
+      // Projet 02 (05/10/2026, demande de Cédric) : une ligne de plus, « Les 2 IRM ensemble » = somme des deux
+      // machines en activité en même temps. Couleur prune (pas de gris : peu lisible une fois imprimé),
+      // dans la gamme vive du reste du document (bleu A, orange B).
+      var UN_COULEUR_ENSEMBLE = "#8f4fc4";
+      function unRseEnsemble(res) {
+        if (projetActuel !== 2 || res.length !== 2) return res;
+        function somme(f) { return res[0] && f(res[0]) + f(res[1]); }
+        var kwh = somme(function (r) { return r.kwh; }), cout = somme(function (r) { return r.coutAnnuel; }), pat = somme(function (r) { return r.patientsMachine; });
+        return res.concat([{
+          slot: 2, color: UN_COULEUR_ENSEMBLE, ensemble: true, machine: { nomCourt: "Les 2 IRM ensemble" },
+          patientsMachine: pat, kwh: kwh, coutAnnuel: cout, coutParPatient: pat > 0 ? cout / pat : 0, prix: res[0].prix,
+          decomp: {
+            socle: { irm: somme(function (r) { return r.decomp.socle.irm; }), lt: somme(function (r) { return r.decomp.socle.lt; }), clim: somme(function (r) { return r.decomp.socle.clim; }), total: somme(function (r) { return r.decomp.socle.total; }) },
+            entrePatients: { total: somme(function (r) { return r.decomp.entrePatients.total; }) },
+            examens: { total: somme(function (r) { return r.decomp.examens.total; }) }
+          },
+          profil: { heuresEteint: somme(function (r) { return r.profil.heuresEteint; }), heuresPret: somme(function (r) { return r.profil.heuresPret; }), heuresMesure: somme(function (r) { return r.profil.heuresMesure; }) }
+        }]);
+      }
       function unRseLigneBarre(container, label, valeurs, formateur, opts) {
         opts = opts || {};
         var row = document.createElement("div");
@@ -2963,7 +2988,7 @@
           var track = document.createElement("div"); track.className = "ene-fact-bar-track2";
           var fill = document.createElement("div"); fill.className = "ene-fact-bar-fill2";
           var ratio = maxV > 0 ? Math.max(v > 0 ? 0.01 : 0, v / maxV) : 0;
-          fill.style.width = (ratio * 100) + "%"; fill.style.background = UN_SLOT_COLORS[opts.slots ? opts.slots[i] : i];
+          fill.style.width = (ratio * 100) + "%"; fill.style.background = UN_SLOT_COLORS[opts.slots ? opts.slots[i] : i] || UN_COULEUR_ENSEMBLE;
           if (!opts.masquer) {
             var val = document.createElement("span"); val.className = "ene-fact-value"; val.textContent = formateur(v);
             fill.appendChild(val);
@@ -2981,7 +3006,11 @@
       function unRseFaits(res) {
         var box = document.getElementById("unRseFaits"); box.innerHTML = "";
         var slots = res.map(function (x) { return x.slot; });
-        function ligne(label, fn, fmt, opts) { unRseLigneBarre(box, label, res.map(fn), fmt, Object.assign({ slots: slots }, opts || {})); }
+        function ligne(label, fn, fmt, opts) {
+          // sansEnsemble : les heures de fonctionnement additionnées de 2 machines n'ont pas de sens (heures-machine).
+          var r = opts && opts.sansEnsemble ? res.filter(function (x) { return !x.ensemble; }) : res;
+          unRseLigneBarre(box, label, r.map(fn), fmt, Object.assign({ slots: r.map(function (x) { return x.slot; }) }, opts || {}));
+        }
         ligne("Coût par patient", function (x) { return x.coutParPatient; }, function (v) { return unRseEurosCent.format(v); });
         ligne("Consommation annuelle (Empreinte carbone)", function (x) { return x.kwh; }, function (v) { return milliersFmt.format(v) + " kWh"; }, {
           triangle: unRseConso, wrap: true, onClicLabel: function () { unRseConso = !unRseConso; unRseFaits(res); }
@@ -2996,9 +3025,9 @@
         tl.addEventListener("click", function () { unRseVentilH = !unRseVentilH; unRseFaits(res); });
         titre.appendChild(tl); box.appendChild(titre);
         if (unRseVentilH) {
-          ligne("Heures à l'arrêt / an", function (x) { return x.profil.heuresEteint; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
-          ligne("Heures prêt / an", function (x) { return x.profil.heuresPret; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
-          ligne("Heures en acquisition / an", function (x) { return x.profil.heuresMesure; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1 });
+          ligne("Heures à l'arrêt / an", function (x) { return x.profil.heuresEteint; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1, sansEnsemble: true });
+          ligne("Heures prêt / an", function (x) { return x.profil.heuresPret; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1, sansEnsemble: true });
+          ligne("Heures en acquisition / an", function (x) { return x.profil.heuresMesure; }, function (v) { return milliersFmt.format(v) + " h"; }, { indent: 1, sansEnsemble: true });
         }
       }
       var UN_RSE_CAT3 = [
@@ -3168,17 +3197,17 @@
       function unRseRendre() {
         var card = document.getElementById("unRseCard");
         card.hidden = false;
-        var res = unRseResultats();
+        var resMachines = unRseResultats(), res = unRseEnsemble(resMachines);
         var leg = document.getElementById("unRseLegende"); leg.innerHTML = "";
         res.forEach(function (r) {
           var item = document.createElement("span"); item.className = "simulator__legend-item";
           var key = document.createElement("span"); key.className = "simulator__legend-key"; key.style.background = r.color; item.appendChild(key);
-          var tx = document.createElement("span"); tx.textContent = (r.slot === 0 ? "A — " : "B — ") + r.machine.nomCourt; item.appendChild(tx);
+          var tx = document.createElement("span"); tx.textContent = r.ensemble ? r.machine.nomCourt : (r.slot === 0 ? "A — " : "B — ") + r.machine.nomCourt; item.appendChild(tx);
           leg.appendChild(item);
         });
         unRseGraphe(res);
         unRseFaits(res);
-        unRseHypotheses(res);
+        unRseHypotheses(resMachines);
         unRseDessinerPrix();
         unRseEtudes();
       }
@@ -3888,6 +3917,22 @@
             }
             start = end;
           });
+          if (b.centre) {
+            // Texte compact dans la zone blanche du demi-anneau : taille ajustée à la largeur disponible à chaque hauteur.
+            var kc = ri / 46;
+            var fsCommun = 8.5 * kc;
+            b.centre.forEach(function (li, q) {
+              var h = (3 + (2 - q) * 9.5) * kc, chord = 2 * Math.sqrt(Math.max(1, ri * ri - Math.pow(h + 6 * kc, 2))) * 0.92;
+              fsCommun = Math.min(fsCommun, chord / ((li.label.length + li.valeur.length + 1.5) * 0.56));
+            });
+            b.centre.forEach(function (li, q) {
+              var h = (3 + (2 - q) * 9.5) * kc, fs = fsCommun;
+              var tl = unSvgEl("text", { x: cx, y: baseY - h, "text-anchor": "middle", "font-size": fs });
+              var t1 = unSvgEl("tspan", { fill: "#777", "font-weight": 600 }); t1.textContent = li.label + " "; tl.appendChild(t1);
+              var t2 = unSvgEl("tspan", { fill: li.couleur || "#222", "font-weight": 800 }); t2.textContent = li.valeur; tl.appendChild(t2);
+              svgC.appendChild(tl);
+            });
+          }
           var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
           var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
           var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
@@ -4007,7 +4052,23 @@
           resM[m[0]] = recTot - (c.loyer + c.personnel + c.elec + c.autres);
         });
         var totRec = rec.plein + rec.seuil1 + rec.seuil2 + rec.plafond + rec.acte;
+        // Texte au centre du demi-anneau « Recettes » (05/10/2026) : CA de la seule IRM 1,5 T (A) sur TOUT le volume,
+        // CA des 2 IRM selon la répartition, et l'écart entre les deux.
+        var dSeule = unDetailCA(e.N, e.configA.machine, e.params);
+        var totSeule = dSeule.plein + dSeule.seuil1 + dSeule.seuil2 + dSeule.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * e.N : 0);
+        // Idem pour les dépenses et le résultat (même demande, 05/10/2026) : « 1,5 T » = la seule IRM 1,5 T sur tout le volume.
+        function centre3(seule, deux, bonSiPlus) {
+          var ec = deux - seule, bon = bonSiPlus ? ec >= 0 : ec <= 0;
+          return [
+            { label: "1,5 T", valeur: unEurosFmt.format(seule) },
+            { label: "2 IRM", valeur: unEurosFmt.format(deux) },
+            { label: "Écart", valeur: (ec >= 0 ? "+" : "−") + unEurosFmt.format(Math.abs(ec)), couleur: bon ? "#1baf7a" : "#c2334d" }
+          ];
+        }
+        var cSeule = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), e.N), depSeule = cSeule.loyer + cSeule.personnel + cSeule.elec + cSeule.autres;
+        var centreRec = centre3(totSeule, totRec, true);
         var totDep = dep.loyer + dep.personnel + dep.elec + dep.autres, res = totRec - totDep;
+        var centreDep = centre3(depSeule, totDep, false), centreRes = centre3(totSeule - depSeule, res, true);
         var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472";
         var noms = [e.configA.machine.nomCourt, e.configB.machine.nomCourt], couls = [UN_SLOT_COLORS[0], UN_SLOT_COLORS[1]];
         // Résultat par machine : part positive de chacune, remise à l'échelle du résultat total affiché.
@@ -4015,11 +4076,11 @@
         var resParts = rSom > 0 ? [rA / rSom * rTot, rB / rSom * rTot] : [0, 0];
         function avecParts(base, pa, pb) { base.parts = [pa, pb]; base.partNoms = noms; base.partCouleurs = couls; return base; }
         return {
-          rec: avecParts({ label: label, color: color, volume: e.N, detail: rec, total: totRec }, recM[0], recM[1]),
-          dep: avecParts({ label: label, color: color, volume: e.N, detail: dep, total: totDep }, depM[0], depM[1]),
+          rec: avecParts({ label: label, color: color, volume: e.N, detail: rec, total: totRec, centre: centreRec }, recM[0], recM[1]),
+          dep: avecParts({ label: label, color: color, volume: e.N, detail: dep, total: totDep, centre: centreDep }, depM[0], depM[1]),
           res: avecParts({ label: label, color: color, volume: e.N, detail: { loyer: dep.loyer, personnel: dep.personnel, elec: dep.elec, autres: dep.autres, resultat: Math.max(0, res) },
             total: Math.max(totRec, totDep), captionLabel: res >= 0 ? "Résultat" : "Déficit", captionValue: unEurosFmt.format(e.N > 0 ? res / e.N : 0),
-            captionColor: res >= 0 ? "#1baf7a" : "#d33", res: res, rec: totRec },
+            captionColor: res >= 0 ? "#1baf7a" : "#d33", res: res, rec: totRec, centre: centreRes },
             { loyer: depM[0].loyer || 0, personnel: depM[0].personnel || 0, elec: depM[0].elec || 0, autres: depM[0].autres || 0, resultat: resParts[0] },
             { loyer: depM[1].loyer || 0, personnel: depM[1].personnel || 0, elec: depM[1].elec || 0, autres: depM[1].autres || 0, resultat: resParts[1] })
         };
@@ -5879,7 +5940,7 @@
         var rse = null, rseHyp = null;
         {
           var rseRes = unRseResultats();
-          rse = rseRes.map(function (r) {
+          rse = unRseEnsemble(rseRes).map(function (r) {
             var kg = r.kwh * CO2_G_PAR_KWH_FRANCE / 1000;
             return { label: r.machine.nomCourt, color: r.color, coutAnnuel: r.coutAnnuel, coutParPatient: r.coutParPatient, kwh: r.kwh, kgCo2: kg, arbres: Math.round(kg / ARBRE_KG_CO2_PAR_AN) };
           });
@@ -6120,7 +6181,7 @@
           }
           function blocComposition(titreBloc, items, cats, cle) {
             var parts2 = !!(items[0][cle].parts), rowH = parts2 ? 4.8 : 4.5;
-            var R = parts2 ? 20 : 26, colW = items.length > 1 ? CW / 2 : CW;
+            var R = parts2 ? 23 : 26, colW = items.length > 1 ? CW / 2 : CW;
             var nLeg = Math.max.apply(null, items.map(function (it) { return cats.filter(function (p) { return it[cle].detail[p.key] > 0; }).length + 1; }));
             var h = 10 + 8 + R + 6 + (nLeg + (parts2 ? 1 : 0)) * rowH + 3;
             ensureSpace(h + 2);
@@ -6138,6 +6199,19 @@
               if (cle === "res") textColor(bloc.res >= 0 ? "#1baf7a" : "#c2334d");
               doc.text(cap, cx, yy + 7.5, { align: "center" });
               demiAnneau(cx, yy + 10 + R, R, cats, bloc.detail, bloc.total);
+              if (bloc.centre) {
+                // Texte au centre du demi-anneau « Recettes » (projet 02) : 1,5 T seule / 2 IRM / écart.
+                bloc.centre.forEach(function (li, q) {
+                  var yl = yy + 10 + R - 1.4 - (2 - q) * 3.1;
+                  doc.setFontSize(5); doc.setFont(undefined, "normal"); doc.setTextColor(110);
+                  var w1 = doc.getTextWidth(li.label + " "); doc.setFont(undefined, "bold");
+                  var w2 = doc.getTextWidth(li.valeur), x0 = cx - (w1 + w2) / 2;
+                  doc.setFont(undefined, "normal"); doc.text(li.label + " ", x0, yl);
+                  doc.setFont(undefined, "bold"); if (li.couleur) textColor(li.couleur); else doc.setTextColor(30);
+                  doc.text(li.valeur, x0 + w1, yl);
+                });
+                doc.setFont(undefined, "normal");
+              }
               var ly = yy + 10 + R + 7;
               if (bloc.parts) {
                 // Projet 02 : bâtons à deux couleurs (A puis B), montant en € dans chaque morceau (comme à l'écran).
@@ -6267,17 +6341,17 @@
           // ---- Page 5 : RSE et hypothèses ----
           function paireBarres(titreBloc, valeurs, formateur, compact) {
             var maxV = Math.max.apply(null, valeurs.map(function (v) { return v.valeur; }).concat([0.0001]));
-            var hb = compact ? 4.4 : 5.2, pas = compact ? 5.4 : 6.4;
+            var hb = compact ? (valeurs.length > 2 ? 3.4 : 4.4) : 5.2, pas = compact ? (valeurs.length > 2 ? 4.4 : 5.4) : 6.4;
             ensureSpace(9 + valeurs.length * pas);
             doc.setFontSize(compact ? 8.8 : 9.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
             y += 2.5; doc.text(titreBloc, LEFT_X, y); y += 2.2;
             valeurs.forEach(function (v) {
               doc.setFont(undefined, "normal"); doc.setFontSize(8.5); doc.setTextColor(60);
-              doc.text(v.label, LEFT_X + 1, y + hb * 0.72);
+              doc.setFontSize(valeurs.length > 2 ? 8 : 8.5); doc.text(v.label, LEFT_X + 1, y + hb * 0.72 + (valeurs.length > 2 ? 0.2 : 0));
               var x0 = LEFT_X + 45, tw = RIGHT_X - x0, w = Math.max(v.valeur > 0 ? 0.8 : 0, tw * v.valeur / maxV);
               doc.setFillColor(241, 241, 241); doc.roundedRect(x0, y, tw, hb, 0.8, 0.8, "F");
               if (w > 0) { fill(v.color); doc.roundedRect(x0, y, w, hb, 0.8, 0.8, "F"); }
-              var txt = formateur(v.valeur); doc.setFontSize(8); doc.setFont(undefined, "bold");
+              var txt = formateur(v.valeur); doc.setFontSize(valeurs.length > 2 ? 7.2 : 8); doc.setFont(undefined, "bold");
               if (w > doc.getTextWidth(txt) + 4) { doc.setTextColor(255); doc.text(txt, x0 + w - 2, y + hb * 0.72, { align: "right" }); }
               else { doc.setTextColor(40); doc.text(txt, x0 + w + 2, y + hb * 0.72); }
               y += hb + 1;
@@ -6294,11 +6368,11 @@
             paireBarres("Équivalence en arbres (absorption annuelle)", serie("arbres"), function (v) { return milliersFmt.format(Math.round(v)) + " arbres"; }, true);
             paireBarres("Coût électrique annuel", serie("coutAnnuel"), function (v) { return unEurosFmt.format(v); }, true);
             paireBarres("Coût électrique par patient", serie("coutParPatient"), function (v) { return unRseEurosCent.format(v); }, true);
-            y += 6;
+            y += 3.5;
             titreSection("Hypothèses de ce simulateur");
-            doc.setFontSize(8.5); doc.setTextColor(120); doc.text("Valeurs techniques utilisées", LEFT_X, y); y += 5;
+            doc.setFontSize(8.5); doc.setTextColor(120); doc.text("Valeurs techniques utilisées", LEFT_X, y); y += 3;
             donnees.rseHyp.tech.forEach(function (t) { paireBarres(t.label, t.vals, function (v) { return t.fmt(v); }, true); });
-            y += 4; doc.setFontSize(8.5); doc.setTextColor(120); ensureSpace(8); doc.text("Paramètres saisis avant de lancer la simulation", LEFT_X, y); y += 5;
+            y += 2; doc.setFontSize(8.5); doc.setTextColor(120); ensureSpace(8); doc.text("Paramètres saisis avant de lancer la simulation", LEFT_X, y); y += 5;
             tableDeuxColonnes(donnees.rseHyp.communs.map(function (p) { return { label: p[0], valeur: p[1] }; }));
             y += 2;
             tableMachines(donnees.rseHyp.machines.map(function (m) { return { label: m.label, valA: m.vals[0], valB: m.vals[1] }; }), rse[0].label, rse[1] ? rse[1].label : null);
@@ -6427,11 +6501,13 @@
             if (window.goatcounter && window.goatcounter.count) {
               window.goatcounter.count({ path: "simulateur-unifie-envoye", title: "Simulation unifiée envoyée", event: true });
             }
-          }).catch(function () {
+          }).catch(function (err) {
+            if (window.console) console.error("Export PDF :", err);
             unExportError.hidden = false;
             submitButton.disabled = false;
           });
-        }).catch(function () {
+        }).catch(function (err) {
+          if (window.console) console.error("Export PDF :", err);
           unExportError.hidden = false;
           submitButton.disabled = false;
         });
