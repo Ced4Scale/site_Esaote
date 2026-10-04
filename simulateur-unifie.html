@@ -4190,7 +4190,9 @@
         var plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
         svg.setAttribute("viewBox", "0 0 " + W + " " + H);
         var volume = entrees[0].volume;
-        var xMax = Math.max(15000, Math.ceil(volume * 1.15 / 1000) * 1000);
+        // Axe horizontal calé sur « Votre activité » (05/10/2026, demande de Cédric) : de 0 à 115 % du volume annuel, arrondi
+        // à 500 — plus de minimum de 15.000 qui écrasait la courbe quand l'activité est plus faible.
+        var xMax = Math.max(1000, Math.ceil(volume * 1.15 / 500) * 500);
         var yMax = Math.max.apply(null, entrees.map(function (e) { return e.tranches[0].montant; })) * 1.05;
         function px(x) { return pad.left + x / xMax * plotW; }
         function py(y) { return pad.top + plotH - y / yMax * plotH; }
