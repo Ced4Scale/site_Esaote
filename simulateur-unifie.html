@@ -6133,16 +6133,17 @@
             cadre(x, yy, w, h);
             doc.setFontSize(9.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
             doc.text(titre, x + 5, yy + 8);
-            var base = yy + 8 + 8 + 62, maxH = 56, maxV = Math.max.apply(null, barres.map(function (b) { return isFinite(b.valeur) ? b.valeur : 0; }).concat([0.0001]));
-            doc.setDrawColor(200); doc.line(x + 5, base, x + w - 5, base);
-            var bw = barres.length > 2 ? 16 : 24, gap = barres.length > 2 ? 10 : 16, total = barres.length * bw + (barres.length - 1) * gap, bx = x + (w - total) / 2;
+            // Bâtons HORIZONTAUX (05/10/2026, demande de Cédric) : un bâton par machine, valeur écrite au bout ; la légende reste dessous.
+            var y0 = yy + 14, pasB = 14, hB = 9, maxLarg = w - 10 - 26, maxV = Math.max.apply(null, barres.map(function (b) { return isFinite(b.valeur) ? b.valeur : 0; }).concat([0.0001]));
+            var base = y0 + barres.length * pasB - 2;
+            doc.setDrawColor(200); doc.line(x + 5, y0 - 2, x + 5, base);
             barres.forEach(function (b, i) {
-              var v = isFinite(b.valeur) ? b.valeur : 0, bh = v > 0 ? Math.max(1.5, maxH * v / maxV) : 0;
-              var px = bx + i * (bw + gap);
-              if (bh > 0) { fill(b.color); doc.roundedRect(px, base - bh, bw, bh, 1, 1, "F"); }
-              doc.setFontSize(10.5); doc.setFont(undefined, "bold"); textColor(b.color);
-              doc.text(b.texte, px + bw / 2, base - bh - 2.5, { align: "center" });
+              var v = isFinite(b.valeur) ? b.valeur : 0, lg = v > 0 ? Math.max(1.5, maxLarg * v / maxV) : 0, py = y0 + i * pasB;
+              if (lg > 0) { fill(b.color); doc.roundedRect(x + 5, py, lg, hB, 1, 1, "F"); }
+              doc.setFontSize(10); doc.setFont(undefined, "bold"); textColor(b.color);
+              doc.text(b.texte, x + 5 + lg + 2, py + hB * 0.72);
             });
+            doc.setDrawColor(225); doc.line(x + 5, base + 1.5, x + w - 5, base + 1.5);
             var ly = base + 8; doc.setFontSize(8.6);
             barres.forEach(function (b) {
               fill(b.color); doc.rect(x + 6, ly - 2.7, 2.8, 2.8, "F");
@@ -6155,7 +6156,7 @@
           if (donnees.pointMort.length) {
             nouvellePage();
             titrePage("Seuil de rentabilité — Projet " + donnees.projet);
-            var cw2 = (CW - 8) / 2, ch2 = 108;
+            var cw2 = (CW - 8) / 2, ch2 = 24 + donnees.pointMort.length * 14 + 2 + donnees.pointMort.length * 6;
             function ligneCellules(titreLigne, fnValeur, fnTexte) {
               doc.setFontSize(11); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
               doc.text(titreLigne, LEFT_X, y); y += 4;
