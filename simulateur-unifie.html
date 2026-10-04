@@ -3713,8 +3713,9 @@
         if (!entrees.length) return;
         var NS = "http://www.w3.org/2000/svg";
         function el(tag, a) { var e = document.createElementNS(NS, tag); for (var k in a) e.setAttribute(k, a[k]); return e; }
-        var pad = { left: 62, right: 16, top: 16, bottom: 30 }, W = 640, H = 210;
+        var pad = { left: 62, right: 16, top: 16 + 15 * entrees.length, bottom: 30 }, W = 640, H = 180 + 15 * entrees.length;
         var plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
+        svg.setAttribute("viewBox", "0 0 " + W + " " + H);
         var volume = entrees[0].volume;
         var xMax = Math.max(15000, Math.ceil(volume * 1.15 / 1000) * 1000);
         var yMax = Math.max.apply(null, entrees.map(function (e) { return e.tranches[0].montant; })) * 1.05;
@@ -3757,17 +3758,14 @@
         if (voirRepere) {
           var xr = px(Math.min(volume, xMax));
           svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
-          entrees.forEach(function (e, k) {
-            var tm = unTarifMoyenPourVolume(e.tranches, volume);
-            svg.appendChild(el("circle", { cx: xr, cy: py(tm), r: 4, fill: e.couleur }));
-            var anchor = xr > pad.left + plotW * 0.45 ? "end" : "start";
-            var t = el("text", { x: xr + (anchor === "end" ? -8 : 8), y: py(tm) - 8 - k * 14, "font-size": 11, "font-weight": 800, fill: e.couleur, "text-anchor": anchor, stroke: "#fff", "stroke-width": 3, "paint-order": "stroke" });
-            t.textContent = e.nom + " : " + unEur(tm, 2) + " en moyenne"; svg.appendChild(t);
-          });
+          entrees.forEach(function (e) { svg.appendChild(el("circle", { cx: xr, cy: py(unTarifMoyenPourVolume(e.tranches, volume)), r: 4, fill: e.couleur })); });
         }
-        var yLeg = pad.top + 8;
+        // Textes AU-DESSUS du graphe (dans la marge haute), jamais sur les courbes : une ligne par machine,
+        // nom + tarif moyen au volume « Votre activité » quand le repère est affiché (corrigé le 04/10/2026).
         entrees.forEach(function (e, k) {
-          var t = el("text", { x: pad.left + 10, y: yLeg + k * 14, "font-size": 11, "font-weight": 800, fill: e.couleur }); t.textContent = e.nom; svg.appendChild(t);
+          var t = el("text", { x: pad.left, y: 14 + k * 15, "font-size": 11, "font-weight": 800, fill: e.couleur });
+          t.textContent = e.nom + (voirRepere ? " : " + unEur(unTarifMoyenPourVolume(e.tranches, volume), 2) + " en moyenne" : "");
+          svg.appendChild(t);
         });
       }
       function unDessinerCompo(slots, params) {
@@ -4635,19 +4633,23 @@
         svg.innerHTML = "";
         var NS = "http://www.w3.org/2000/svg";
         function el(tag, attrs) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
-        var pad = { left: 62, right: 16, top: 20, bottom: 46 };
-        var W = 640, H = 300, plotW = W - pad.left - pad.right, plotH = H - pad.top - pad.bottom;
-        var xMax = Math.max(volumeTotal, 1);
-        function px(x) { return pad.left + (x / xMax) * plotW; }
-        var yMax = Math.max(trA[0].montant, trB[0].montant) * 1.05;
-        function py(y) { return pad.top + plotH - (y / yMax) * plotH; }
-
         var afficherA = document.getElementById("unFtMoyAfficheA").checked;
         var afficherB = document.getElementById("unFtMoyAfficheB").checked;
         var afficherReelA = document.getElementById("unFtMoyAfficheReelA").checked;
         var afficherReelB = document.getElementById("unFtMoyAfficheReelB").checked;
         var afficherMoyenne = document.getElementById("unFtMoyAfficheMoyenne").checked;
         var afficherSeuils = document.getElementById("unFtMoyAfficheSeuils").checked;
+
+        // Textes dans la marge HAUTE (une ligne par élément), jamais sur les courbes — corrigé le 04/10/2026.
+        var nLignes = ((afficherA || afficherReelA) ? 1 : 0) + ((afficherB || afficherReelB) ? 1 : 0) + (afficherMoyenne ? 1 : 0);
+        var pad = { left: 62, right: 16, top: Math.max(20, 8 + 15 * nLignes), bottom: 46 };
+        var W = 640, plotW = W - pad.left - pad.right, plotH = 234, H = pad.top + plotH + pad.bottom;
+        svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+
+        var xMax = Math.max(volumeTotal, 1);
+        function px(x) { return pad.left + (x / xMax) * plotW; }
+        var yMax = Math.max(trA[0].montant, trB[0].montant) * 1.05;
+        function py(y) { return pad.top + plotH - (y / yMax) * plotH; }
 
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left, y1: pad.top, y2: pad.top + plotH, class: "simulator__gridline" }));
         svg.appendChild(el("line", { x1: pad.left, x2: pad.left + plotW, y1: pad.top + plotH, y2: pad.top + plotH, class: "simulator__gridline" }));
@@ -4685,7 +4687,7 @@
         if (afficherSeuils && (afficherB || afficherReelB)) collecterSeuils(trB, function (fin) { return volumeTotal - fin; }, "#eb6834", nomB);
         seuilsListe.sort(function (a, b) { return a.x - b.x; });
         seuilsListe.forEach(function (s, i) {
-          var label = el("text", { x: s.x, y: pad.top + (i % 2 === 0 ? 24 : 36), "font-size": 8, "font-weight": 700, fill: s.couleur, "text-anchor": "middle" });
+          var label = el("text", { x: s.x, y: pad.top + plotH - (i % 2 === 0 ? 8 : 20), "font-size": 8, "font-weight": 700, fill: s.couleur, "text-anchor": "middle" });
           label.textContent = s.texte;
           svg.appendChild(label);
         });
@@ -4739,23 +4741,6 @@
           });
           return candidats;
         }
-        if (afficherReelA) placerTexteSansChevauchement(nomA + " (réel)", candidatsLeLongDe(function (x) { return x; }, unTarifReelPourVolume, trA), "#2a78d6");
-        if (afficherReelB) placerTexteSansChevauchement(nomB + " (réel)", candidatsLeLongDe(function (x) { return volumeTotal - x; }, unTarifReelPourVolume, trB), "#eb6834");
-
-        var xDebut = px(0) + 4;
-        if (afficherA) {
-          var yDebutA = py(unTarifMoyenPourVolume(trA, 0));
-          var lblNomA = el("text", { x: xDebut, y: yDebutA - 8, "font-size": 12, "font-weight": 800, fill: "#2a78d6", "text-anchor": "start" });
-          lblNomA.textContent = nomA;
-          svg.appendChild(lblNomA);
-        }
-        if (afficherB) {
-          var yDebutB = py(unTarifMoyenPourVolume(trB, volumeTotal));
-          var lblNomB = el("text", { x: xDebut, y: yDebutB + 16, "font-size": 12, "font-weight": 800, fill: "#eb6834", "text-anchor": "start" });
-          lblNomB.textContent = nomB;
-          svg.appendChild(lblNomB);
-        }
-
         function tarifPondere(x) {
           var vB = volumeTotal - x;
           if (volumeTotal <= 0) return trA[0].montant;
@@ -4771,31 +4756,16 @@
         var xr = px(volAr);
         svg.appendChild(el("line", { x1: xr, x2: xr, y1: pad.top, y2: pad.top + plotH, stroke: "var(--muted)", "stroke-width": 1.2, "stroke-dasharray": "4,3" }));
 
-        if (afficherMoyenne) {
-          var yPondActuel = py(tarifPondere(volAr));
-          svg.appendChild(el("circle", { cx: xr, cy: yPondActuel, r: 4, fill: "#6b5a45" }));
-          var texteAnchor = xr > pad.left + plotW - 70 ? "end" : (xr < pad.left + 70 ? "start" : "middle");
-          var texteBulle = "Moyenne : " + unEur(tarifPondere(volAr), 2);
-          var textesExistants2 = Array.prototype.map.call(svg.querySelectorAll("text"), function (t) { return t.getBBox(); });
-          var candidatsY = [yPondActuel - 10, yPondActuel + 16, yPondActuel - 22, yPondActuel + 28, yPondActuel - 34, yPondActuel + 40];
-          var bulle = null;
-          for (var ci2 = 0; ci2 < candidatsY.length; ci2++) {
-            var yCandidat = candidatsY[ci2];
-            if (yCandidat < pad.top + 6 || yCandidat > pad.top + plotH - 2) continue;
-            var essai2 = el("text", { x: xr, y: yCandidat, "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
-            essai2.textContent = texteBulle;
-            svg.appendChild(essai2);
-            var bbEssai = essai2.getBBox();
-            var libre2 = !textesExistants2.some(function (b) { return seChevauchent(bbEssai, b); });
-            if (libre2) { bulle = essai2; break; }
-            svg.removeChild(essai2);
-          }
-          if (!bulle) {
-            bulle = el("text", { x: xr, y: candidatsY[0], "font-size": 13, "font-weight": 800, fill: "#6b5a45", "text-anchor": texteAnchor });
-            bulle.textContent = texteBulle;
-            svg.appendChild(bulle);
-          }
-        }
+        if (afficherMoyenne) svg.appendChild(el("circle", { cx: xr, cy: py(tarifPondere(volAr)), r: 4, fill: "#6b5a45" }));
+        var lignesTxt = [];
+        function suffixe(moy, reel) { return moy && reel ? " — tarif moyen et tarif réel" : (moy ? " — tarif moyen" : " — tarif réel"); }
+        if (afficherA || afficherReelA) lignesTxt.push({ t: nomA + suffixe(afficherA, afficherReelA), c: "#2a78d6" });
+        if (afficherB || afficherReelB) lignesTxt.push({ t: nomB + suffixe(afficherB, afficherReelB), c: "#eb6834" });
+        if (afficherMoyenne) lignesTxt.push({ t: "Moyenne pondérée (tirets) : " + unEur(tarifPondere(volAr), 2), c: "#6b5a45" });
+        lignesTxt.forEach(function (l, k) {
+          var t = el("text", { x: pad.left, y: 14 + k * 15, "font-size": 11, "font-weight": 800, fill: l.c });
+          t.textContent = l.t; svg.appendChild(t);
+        });
       }
 
       // Boîte à outils 🧰 : wireInfoBtn() suffit pour ouvrir/fermer, mais le
