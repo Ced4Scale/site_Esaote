@@ -239,6 +239,11 @@
     .un-bloc-point-mort { display: flex; flex-direction: column; gap: 1rem; }
     .un-bloc-point-mort:fullscreen { justify-content: flex-start; }
     .un-bloc-point-mort:fullscreen > .un-sous-carte, .un-bloc-point-mort:fullscreen > .un-mixer { width: 100%; box-sizing: border-box; }
+    /* Plein écran (05/10/2026, demande de Cédric) : la table de mixage garde sa taille quel que soit le nombre de
+       curseurs affichés (elle ne grandit plus quand on en retire) et le graphe du dessus garde TOUTE la largeur
+       de l'écran (align-items:stretch : sinon la largeur suivait celle de la table). */
+    .un-bloc-point-mort:fullscreen, #unCompoCard:fullscreen { align-items: stretch; }
+    .un-bloc-point-mort:fullscreen > .un-mixer, #unCompoCard:fullscreen > .un-mixer { flex: 0 0 auto; margin-top: 0; justify-content: center; }
     .un-sous-carte { border: 0; box-shadow: none; background: transparent; padding: 0; margin: 0; }
     .un-compo-source { display: block; margin-top: .35rem; font-size: .5rem; line-height: 1.25; white-space: nowrap; font-weight: 600; text-transform: none; letter-spacing: 0; text-decoration: underline; }
     #unCompoDate { font: inherit; font-size: .82rem; font-weight: 700; padding: .25rem .4rem; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; max-width: 100%; }
@@ -271,6 +276,22 @@
     /* Boîte à outils 🧰 du bloc des points morts (05/10/2026) : seulement « Intégrer l'acte intellectuel » */
     #unBlocPointMort > .un-pm-outils-carte { position: absolute; top: .85rem; right: 3.4rem; z-index: 3; margin: 0; }
     .un-pm-outils-carte #unPmOutilsPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; }
+    /* Icône joker (projet 02, carte Composition) : à gauche de la boîte à outils rouge */
+    #unCompoCard > .un-compo-joker-carte { position: absolute; top: .85rem; right: 6.1rem; z-index: 3; margin: 0; }
+    .un-compo-joker-carte[hidden] { display: none; }
+    .un-joker-btn { padding: 0; width: 2rem; height: 2rem; display: inline-flex; align-items: center; justify-content: center; background: #fff; }
+    .un-joker-btn img { width: 1.15rem; height: auto; display: block; }
+    #unJokerPop { top: 100%; bottom: auto; margin-top: .4rem; margin-bottom: 0; left: auto; right: 0; width: min(27rem, 88vw); }
+    .un-joker-titre { font-weight: 800; font-size: .88rem; margin-bottom: .4rem; }
+    .un-joker-table { width: 100%; font-size: .78rem; border-collapse: collapse; margin-bottom: .5rem; }
+    .un-joker-table td { padding: .12rem 0; } .un-joker-table td:last-child { text-align: right; font-weight: 700; }
+    .un-joker-scen { margin-top: .35rem; }
+    .un-joker-scen__nom { font-size: .74rem; font-weight: 700; color: #444; }
+    .un-joker-scen__barre { display: flex; align-items: center; gap: .5rem; }
+    .un-joker-scen__piste { flex: 1 1 auto; background: #eef1f5; border-radius: 4px; height: 14px; overflow: hidden; }
+    .un-joker-scen__remplissage { height: 100%; border-radius: 4px; }
+    .un-joker-scen__val { min-width: 6.2rem; text-align: right; font-weight: 800; font-size: .8rem; }
+    .un-joker-scen__ecart { font-size: .7rem; color: #555; text-align: right; }
     #unRseCard[hidden] { display: none; }
     #unRseCard.un-rse-seul-couts > details { display: none; }
     #unRseCard details:fullscreen { font-size: 1.05rem; }
@@ -1083,6 +1104,10 @@
              sur laquelle on clique (voir unCompoOutilsBtn2 dans le script). -->
         <span class="un-info-wrap un-compo-outils-carte">
           <button type="button" class="un-info-btn" id="unCompoOutilsBtn2" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes" title="Boîte à outils">🧰</button>
+        </span>
+        <span class="un-info-wrap un-compo-joker-carte" id="unJokerWrap" hidden>
+          <button type="button" class="un-info-btn un-joker-btn" id="unJokerBtn" aria-expanded="false" aria-controls="unJokerPop" aria-label="Joker : et si la seconde IRM attirait plus d'activité ?" title="Joker — capacité restante de la seconde IRM"><img src="assets/joker.png" alt="" aria-hidden="true"></button>
+          <div class="un-info-pop" id="unJokerPop" hidden></div>
         </span>
         <div class="simulator__legend" id="unCompoLegende"></div>
         <div class="un-compo-duo">
@@ -4221,6 +4246,8 @@
         document.getElementById("unCompoMoyenWrap").hidden = vueCompo !== "moyen";
         document.getElementById("unCompoSousTable").hidden = vueCompo !== "table";
         var etatB = unEtatBascule();
+        document.getElementById("unJokerWrap").hidden = !etatB;
+        if (etatB && !document.getElementById("unJokerPop").hidden) unJokerRendre();
         document.getElementById("unCompoMoyenChart").style.display = etatB ? "none" : "";
         document.getElementById("unCompoFtMoyChart").style.display = etatB ? "" : "none";
         document.getElementById("unCompoMoyBoiteSimple").hidden = !!etatB;
@@ -4352,6 +4379,22 @@
         if (bulle.hidden) return; // pas de calcul inutile quand la bulle n'est pas ouverte
         var params = unConstruireParamsPointMort();
         var entrees = unSlotsActifs().map(function (slot) { return unPatientDetailMachine(slot, params); }).filter(Boolean);
+        // Projet 02 « IRM supplémentaire » (05/10/2026, demande de Cédric) : les 2 IRM travaillent ensemble, donc UNE seule
+        // colonne « Les 2 IRM » — chaque valeur par patient est la moyenne des 2 machines pondérée par leur part du volume.
+        if (unEtatBascule() && entrees.length === 2) {
+          var nTot = entrees[0].volume + entrees[1].volume;
+          var pond = function (f) { return nTot > 0 ? (f(entrees[0]) * entrees[0].volume + f(entrees[1]) * entrees[1].volume) / nTot : 0; };
+          var pers = {};
+          Object.keys(entrees[0].personnel).forEach(function (k) { pers[k] = pond(function (e) { return e.personnel[k]; }); });
+          var ftM = pond(function (e) { return e.ftMoyen; });
+          entrees = [{
+            label: "Les 2 IRM", color: UN_COULEUR_ENSEMBLE, volume: nTot, ftMoyen: ftM,
+            tranches: [{ debut: 0, montant: ftM }], acte: pond(function (e) { return e.acte; }),
+            elecFixe: pond(function (e) { return e.elecFixe; }), elecVariable: pond(function (e) { return e.elecVariable; }),
+            personnel: pers, contraste: pond(function (e) { return e.contraste; }), cadreSante: pond(function (e) { return e.cadreSante; }),
+            ris: pond(function (e) { return e.ris; }), loyer: pond(function (e) { return e.loyer; })
+          }];
+        }
         var box = document.getElementById("unPatientContenu");
         box.innerHTML = "";
         if (!entrees.length) { box.textContent = "Choisissez une machine pour voir le détail."; return; }
@@ -4398,7 +4441,7 @@
           var trh2 = document.createElement("tr");
           entrees.forEach(function (e) {
             e.tranchesReached.forEach(function (t, i) {
-              var th = document.createElement("th"); th.className = "un-patient-souscol"; th.style.color = e.color; th.textContent = UN_PATIENT_TRANCHE_LABELS[i]; trh2.appendChild(th);
+              var th = document.createElement("th"); th.className = "un-patient-souscol"; th.style.color = e.color; th.textContent = e.label === "Les 2 IRM" ? "Moyenne pondérée" : UN_PATIENT_TRANCHE_LABELS[i]; trh2.appendChild(th);
             });
           });
           thead.appendChild(trh2);
@@ -5243,6 +5286,48 @@
       // Boîte à outils des points morts : même case que « Intégrer l'acte intellectuel » de la boîte de la Composition
       // (deux cases jumelées : cocher l'une coche l'autre et recalcule tout).
       wireOutilsBtn("unPmOutilsBtn", "unPmOutilsPop");
+      // Joker (projet 02, 05/10/2026, demande de Cédric) : repris du simulateur « Bascule vers un O-scan »
+      // (carte « Capacité restante » + « Résultat selon 3 scénarios »), calculé avec les fonctions de ce fichier.
+      wireOutilsBtn("unJokerBtn", "unJokerPop");
+      function unJokerRendre() {
+        var pop = document.getElementById("unJokerPop"), e = unEtatBascule();
+        if (!e) { pop.textContent = ""; return; }
+        var nomA = e.configA.machine.nomCourt, nomB = e.configB.machine.nomCourt;
+        var volB = e.N - e.volA, pB = unParamsPourSlot(1, e.params);
+        var capAn = Math.max(0, Math.round(e.configB.debitHoraire * pB.heuresParJour * pB.joursParMois * 12));
+        var capRestante = Math.max(0, capAn - volB);
+        var acteB = e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configB) : 0;
+        function resB(v) {
+          if (!(v > 0)) return 0;
+          var d = unDetailCA(v, e.configB.machine, e.params), c = unCoutsDetail(e.configB, pB, v);
+          return d.plein + d.seuil1 + d.seuil2 + d.plafond + acteB * v - (c.loyer + c.personnel + c.elec + c.autres);
+        }
+        var items = unCompoItemsBascule(e);
+        var dS = unDetailCA(e.N, e.configA.machine, e.params), cS = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), e.N);
+        var sansB = dS.plein + dS.seuil1 + dS.seuil2 + dS.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * e.N : 0) - (cS.loyer + cS.personnel + cS.elec + cS.autres);
+        var actuel = items.res.res, plein = actuel + resB(volB + capRestante) - resB(volB);
+        var scen = [
+          { nom: nomA + " seule (sans " + nomB + ")", val: sansB, coul: UN_SLOT_COLORS[0] },
+          { nom: "Les 2 IRM (répartition actuelle)", val: actuel, coul: UN_COULEUR_ENSEMBLE },
+          { nom: nomB + " à 100 % de sa capacité", val: plein, coul: UN_SLOT_COLORS[1] }
+        ];
+        var maxAbs = Math.max(1, Math.abs(scen[0].val), Math.abs(scen[1].val), Math.abs(scen[2].val));
+        function ecart(d) { return (d >= 0 ? "+ " : "− ") + unEurosFmt.format(Math.abs(d)); }
+        var h = '<div class="un-joker-titre">🃏 Capacité restante sur ' + nomB + '</div><table class="un-joker-table"><tbody>' +
+          '<tr><td>Capacité maximale</td><td>' + milliersFmt.format(capAn) + ' ex./an</td></tr>' +
+          '<tr><td>Examens déjà réalisés</td><td>' + milliersFmt.format(Math.round(volB)) + ' ex./an</td></tr>' +
+          '<tr><td>Capacité encore disponible</td><td>' + (capRestante > 0 ? milliersFmt.format(capRestante) + ' ex./an' : 'Déjà à pleine capacité') + '</td></tr></tbody></table>' +
+          '<div class="un-joker-titre" style="margin-bottom:0">Résultat selon 3 scénarios</div>';
+        scen.forEach(function (sc, i) {
+          h += '<div class="un-joker-scen"><div class="un-joker-scen__nom">' + sc.nom + '</div><div class="un-joker-scen__barre"><div class="un-joker-scen__piste"><div class="un-joker-scen__remplissage" style="width:' +
+            Math.max(2, Math.abs(sc.val) / maxAbs * 100) + '%;background:' + (sc.val < 0 ? "#c2334d" : sc.coul) + '"></div></div><div class="un-joker-scen__val" style="color:' + (sc.val < 0 ? "#c2334d" : "#222") + '">' + unEurosFmt.format(sc.val) + '</div></div>';
+          if (i === 1) h += '<div class="un-joker-scen__ecart">' + ecart(scen[1].val - scen[0].val) + ' vs ' + nomA + ' seule</div>';
+          if (i === 2) h += '<div class="un-joker-scen__ecart">' + ecart(scen[2].val - scen[1].val) + ' vs activité actuelle · ' + ecart(scen[2].val - scen[0].val) + ' vs ' + nomA + ' seule</div>';
+          h += '</div>';
+        });
+        pop.innerHTML = h;
+      }
+      document.getElementById("unJokerBtn").addEventListener("click", unJokerRendre, true);
       (function () {
         var maitre = document.getElementById("unActeIntellectuelActif"), miroir = document.getElementById("unPmActe");
         miroir.checked = maitre.checked;
