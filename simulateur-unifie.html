@@ -266,13 +266,20 @@
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
     /* Carte RSE (projet 1) — lignes à barres : titre à GAUCHE des deux barres, valeurs en blanc DANS les barres
        (valeur trop grande pour une barre très courte : à droite de la barre, en noir). Graphe et lignes de faits = même composant. */
-    /* Cadenas « durée d'acquisition » des réglages Machine A / B (06/10/2026) */
-    .un-cad-acq { cursor: pointer; margin-left: .5rem; font-size: 1.1rem; line-height: 1; user-select: none; display: inline-flex; align-items: center; }
+    /* Cadenas (règle de Cédric, 06/10/2026) : FERMÉ = ROUGE, OUVERT = VERT — SVG à deux formes séparées (anse fermée / anse ouverte),
+       mêmes couleurs que les cadenas des boutons Mémoire des autres simulateurs (--red-crimson / --success-bd de styles.css). */
+    .un-lock-svg { overflow: visible; display: block; }
+    .un-lock-ouverte { display: none; }
+    .un-cad-acq { cursor: pointer; margin-left: .5rem; line-height: 1; user-select: none; display: inline-flex; align-items: center; color: var(--red-crimson, #a50025); }
     .un-cad-acq input { position: absolute; opacity: 0; width: 0; height: 0; }
-    .un-cad-acq .un-cad-off { display: none; }
-    .un-cad-acq input:not(:checked) ~ .un-cad-on { display: none; }
-    .un-cad-acq input:not(:checked) ~ .un-cad-off { display: inline; }
-    .un-cad-acq input:focus-visible ~ span { outline: 2px solid var(--red, #cd0000); border-radius: 4px; }
+    .un-cad-acq input:not(:checked) ~ .un-lock-svg { color: var(--success-bd, #58b548); }
+    .un-cad-acq input:not(:checked) ~ .un-lock-svg .un-lock-fermee { display: none; }
+    .un-cad-acq input:not(:checked) ~ .un-lock-svg .un-lock-ouverte { display: inline; }
+    .un-cad-acq input:focus-visible ~ svg { outline: 2px solid var(--red, #cd0000); border-radius: 4px; }
+    .un-mixer__cadenas[aria-pressed="true"] { color: var(--red-crimson, #a50025); }
+    .un-mixer__cadenas:not([aria-pressed="true"]) { color: var(--success-bd, #58b548); }
+    .un-mixer__cadenas:not([aria-pressed="true"]) .un-lock-fermee { display: none; }
+    .un-mixer__cadenas:not([aria-pressed="true"]) .un-lock-ouverte { display: inline; }
     /* Boutons − / + du formulaire Paramètres (04/10/2026) */
     .un-pm-btn { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; padding: 0; border: 1px solid var(--line-2, #d6d6d0); border-radius: 50%; background: #fff; color: var(--ink, #222); font-size: 1.05rem; line-height: 1; cursor: pointer; }
     .un-pm-btn:hover { border-color: var(--red, #cd0000); color: var(--red, #cd0000); }
@@ -375,8 +382,7 @@
     .un-mixer__pm button:hover { color: #0f8f92; }
     /* Cadenas (22/09/2026) — fige un des 3 curseurs Examens par an/Heures d'ouverture/Examens
        par heure ; un seul peut être fermé à la fois (voir unMajCadenas()). */
-    .un-mixer__cadenas { display: block; margin: .2rem auto 0; border: 0; background: transparent; padding: 0; font-size: .95rem; cursor: pointer; opacity: .6; }
-    .un-mixer__cadenas[aria-pressed="true"] { opacity: 1; }
+    .un-mixer__cadenas { display: block; margin: .2rem auto 0; border: 0; background: transparent; padding: 0; cursor: pointer; }
     .un-mixer__cadenas:disabled { cursor: not-allowed; opacity: .3; }
     .un-mixer__fader-value:focus-visible { outline: 2px solid #000; }
     .un-mixer__check-group { display: flex; flex-direction: column; align-items: flex-start; gap: .55rem; justify-content: center; min-width: 12rem; }
@@ -876,7 +882,7 @@
             <div class="simulator__field-suffix">
               <input type="number" id="unAcqA" value="10" min="0.5" step="0.5" />
               <span>min</span>
-              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockA" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><span class="un-cad-on">🔒</span><span class="un-cad-off">🔓</span></label>
+              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockA" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></label>
             </div>
           </div>
           <div class="field">
@@ -1021,7 +1027,7 @@
             <div class="simulator__field-suffix">
               <input type="number" id="unAcqB" value="10" min="0.5" step="0.5" />
               <span>min</span>
-              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockB" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><span class="un-cad-on">🔒</span><span class="un-cad-off">🔓</span></label>
+              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockB" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></label>
             </div>
           </div>
           <div class="field">
@@ -1295,7 +1301,7 @@
                 <button type="button" id="unMixActiviteMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
                 <button type="button" id="unMixActivitePlus" aria-label="Augmenter le nombre d'examens par an">+</button>
               </div>
-              <button type="button" class="un-mixer__cadenas" id="unCadenasActivite" aria-pressed="false" aria-label="Fixer « Examens par an » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
+              <button type="button" class="un-mixer__cadenas" id="unCadenasActivite" aria-pressed="false" aria-label="Fixer « Examens par an » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur"><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </div>
           </div>
         </div>
@@ -1337,7 +1343,7 @@
                 <button type="button" id="unMixHeuresMoins" aria-label="Diminuer les heures d'ouverture — Machine A">−</button>
                 <button type="button" id="unMixHeuresPlus" aria-label="Augmenter les heures d'ouverture — Machine A">+</button>
               </div>
-              <button type="button" class="un-mixer__cadenas" id="unCadenasHeures" aria-pressed="false" aria-label="Fixer « Heures d'ouverture » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
+              <button type="button" class="un-mixer__cadenas" id="unCadenasHeures" aria-pressed="false" aria-label="Fixer « Heures d'ouverture » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur"><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
               <div class="un-mixer__fader-unit">h / jour</div>
             </div>
             <div class="un-mixer__fader-col" id="unMixHeuresBCol" style="--fader-color:#eb6834">
@@ -1405,7 +1411,7 @@
                 <input type="range" id="unMixInstallAFader" min="0.5" max="10" step="0.5" value="4" aria-label="Examens par heure — Machine A" />
               </div>
               <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixInstallAVal" value="4" aria-label="Examens par heure — Machine A, valeur" />
-              <button type="button" class="un-mixer__cadenas" id="unCadenasDebit" aria-pressed="false" aria-label="Fixer « Examens par heure » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur">🔓</button>
+              <button type="button" class="un-mixer__cadenas" id="unCadenasDebit" aria-pressed="false" aria-label="Fixer « Examens par heure » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur"><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </div>
             <div class="un-mixer__fader-col" id="unMixInstallBCol" style="--fader-color:#eb6834">
               <div class="un-mixer__bar">
@@ -3646,7 +3652,7 @@
             else el.disabled = verrouille; // boutons +/-
           });
           var btn = document.getElementById("unCadenas" + cle.charAt(0).toUpperCase() + cle.slice(1));
-          if (btn) { btn.textContent = verrouille ? "🔒" : "🔓"; btn.setAttribute("aria-pressed", String(verrouille)); }
+          if (btn) btn.setAttribute("aria-pressed", String(verrouille)); // couleur et forme du cadenas : voir .un-lock-svg (rouge fermé, vert ouvert)
         });
       }
       ["Activite", "Heures", "Debit"].forEach(function (label) {
