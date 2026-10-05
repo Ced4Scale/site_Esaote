@@ -354,6 +354,7 @@
     #unCompoTableWrap table { table-layout: fixed; width: 100%; }
     .un-compo-duo svg { overflow: visible; }
     #unCompoTableWrap { margin-top: 6px; }
+    #unCompoTableWrap .un-bt-titre { font-weight: 800; font-size: 1rem; color: #1d2a44; margin: .2rem 0 .6rem; }
     /* Tableau du barème dégressif — refonte esthétique (06/10/2026, demande de Cédric) : texte plus grand, en-têtes de machine teintés,
        tranches « plage | tarif | montant » alignées, totaux et résultat en relief, bandeau final, montants alignés à droite sans centimes. */
     #unCompoTableWrap table { font-size: .8rem; border-collapse: separate; border-spacing: 0; }
@@ -377,7 +378,7 @@
     #unCompoTableWrap tr.un-bt-final td:last-child { border-radius: 0 0 .5rem 0; }
     #unCompoTableWrap tr.un-bt-final td:first-child strong, #unCompoTableWrap tr.un-bt-final .un-bareme-ca { color: #fff !important; }
     #unCompoTableWrap th:first-child { vertical-align: bottom; padding-bottom: .5rem; }
-    #unCompoTableWrap .un-compo-source { font-size: .62rem; }
+    #unCompoTableWrap .un-compo-source { font-size: .66rem; color: #3a6ea5; }
     .un-compo-duo { display: flex; gap: .8rem; align-items: flex-start; }
     .un-compo-duo > .simulator__chart-wrap { flex: 1 1 0; min-width: 0; }
     .un-compo-duo > .simulator__chart-wrap[hidden] { display: none; }
@@ -1246,6 +1247,7 @@
           <p class="simulator__hint" id="unCompoFtMoyNote" hidden></p>
         </div>
         <div id="unCompoTableWrap" hidden>
+          <div class="un-bt-titre">Tableau du barème dégressif</div>
           <div style="overflow-x:auto">
             <table class="stats-table simulator__table simulator__table--compare2">
               <thead><tr id="unCompoTableHead"></tr></thead>
@@ -4014,6 +4016,9 @@
           th.className = "un-bt-machine"; th.style.background = e.couleur + "1a"; th.style.borderBottom = "3px solid " + e.couleur;
           th.appendChild(sp); head.appendChild(th);
         });
+        // Palette sobre (06/10/2026, demande de Cédric : couleurs d'écriture peu esthétiques) : chiffres en bleu-nuit, tarifs en gris-bleu,
+        // vert foncé pour les recettes, brique atténué pour les charges ; la couleur de chaque machine reste dans son en-tête.
+        var TB_TEXTE = "#1d2a44", TB_TARIF = "#5b6577";
         var totaux = entrees.map(function () { return 0; });
         ["Tarif plein", "2ᵉ tranche", "3ᵉ tranche", "Au-delà"].forEach(function (label, i) {
           var tr = document.createElement("tr"), tdL = document.createElement("td");
@@ -4029,17 +4034,17 @@
             var ca = examens * t.montant; totaux[k] += ca;
             if (tous) {
               var tarif = document.createElement("span");
-              tarif.className = "un-bareme-tarif"; tarif.style.color = e.couleur; tarif.textContent = unEur(t.montant, 2);
+              tarif.className = "un-bareme-tarif"; tarif.style.color = TB_TARIF; tarif.textContent = unEur(t.montant, 2);
               l1.appendChild(tarif);
             } else {
               var btn = document.createElement("button");
-              btn.type = "button"; btn.className = "un-ca-tranche-btn"; btn.style.color = e.couleur; btn.textContent = unEur(t.montant, 2);
+              btn.type = "button"; btn.className = "un-ca-tranche-btn"; btn.style.color = TB_TARIF; btn.textContent = unEur(t.montant, 2);
               btn.dataset.examens = examens; btn.dataset.montant = t.montant; btn.dataset.label = label; btn.dataset.machine = e.nom;
               l1.appendChild(btn);
             }
             var cell = document.createElement("div"); cell.className = "un-bt-cell"; td.appendChild(cell); cell.appendChild(l1);
             var caSp = document.createElement("span");
-            caSp.className = "un-bareme-ca"; caSp.style.color = e.couleur;
+            caSp.className = "un-bareme-ca"; caSp.style.color = TB_TEXTE;
             caSp.style.display = tous ? "" : "none"; caSp.textContent = unEur(ca, 0);
             cell.appendChild(caSp); tr.appendChild(td);
           });
@@ -4047,14 +4052,14 @@
         });
         // Sous les tranches : montants alignés sous la colonne « CA » (espaceurs vides de même largeur que
         // plage + tarif) et couleur PAR PARTIE (recettes / charges / résultat) au lieu de celle de la machine.
-        var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
+        var COUL_RECETTES = "#1f6f4a", COUL_CHARGES = "#9a4a4a", COUL_RESULTAT = TB_TEXTE;
         function espaceur() { /* conservé pour compatibilité : les montants sont désormais alignés à droite par la feuille de style */ }
         var trT = document.createElement("tr"), tdT = document.createElement("td");
         tdT.innerHTML = "<strong>Total</strong>"; trT.appendChild(tdT); trT.className = "un-bt-total";
         entrees.forEach(function (e, k) {
           var td = document.createElement("td"), sp = document.createElement("span");
           espaceur(td);
-          sp.className = "un-bareme-ca"; sp.style.color = e.couleur; sp.textContent = unEur(totaux[k], 0);
+          sp.className = "un-bareme-ca"; sp.style.color = TB_TEXTE; sp.textContent = unEur(totaux[k], 0);
           td.appendChild(sp); trT.appendChild(td);
         });
         body.appendChild(trT);
@@ -4068,7 +4073,7 @@
             entrees.forEach(function (e, k) {
               var td = document.createElement("td"), sp = document.createElement("span");
               espaceur(td);
-              sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#d33" : couleur; if (!gras) sp.style.fontWeight = "400";
+              sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#b42318" : couleur; if (!gras) sp.style.fontWeight = "400";
               sp.textContent = unEur(valeurs[k], 0); td.appendChild(sp); tr.appendChild(td);
             });
             body.appendChild(tr);
@@ -4091,7 +4096,7 @@
           td2L.innerHTML = projetActuel === 1
             ? "<strong>" + (charges ? "Différence résultats" : "Différence 2 machines") + "</strong>"
             : "<strong>" + (charges ? "Total résultats" : "Total 2 machines") + "</strong>"; tr2.appendChild(td2L);
-          td2.colSpan = 2; espaceur(td2); sp2.className = "un-bareme-ca"; sp2.style.color = charges ? COUL_RESULTAT : COUL_RECETTES;
+          td2.colSpan = 2; espaceur(td2); sp2.className = "un-bareme-ca"; sp2.style.color = "#fff";
           if (projetActuel === 1) {
             // Projet 1 uniquement : l'écart entre les 2 machines (de recette, ou de résultat si les charges sont affichées), en faveur de la plus élevée.
             var ecart = basePour2[1] - basePour2[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
@@ -6971,7 +6976,7 @@
           function tableBareme(liste, difference) {
             // Mise en forme refondue le 06/10/2026 (demande de Cédric) : en-têtes de machine en bandeau teinté avec filet de couleur,
             // tranches en tons discrets, lignes de total sur fond gris, résultat sur fond vert, bandeau marine pour la différence / le total.
-            var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
+            var COUL_RECETTES = "#1f6f4a", COUL_CHARGES = "#9a4a4a", COUL_RESULTAT = "#1d2a44", COUL_TEXTE = "#1d2a44";
             var COL_LABEL_W = 40, colLabelX = LEFT_X + 2, colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length, tableW = RIGHT_X - LEFT_X - 4;
             function teinte(hex, k) { var c = rgbDe(hex); doc.setFillColor(Math.round(255 - (255 - c[0]) * k), Math.round(255 - (255 - c[1]) * k), Math.round(255 - (255 - c[2]) * k)); }
             ensureSpace(14);
@@ -7001,9 +7006,9 @@
               y += h;
             }
             liste[0].lignes.forEach(function (_, k) {
-              ligne(liste[0].lignes[k].label, liste.map(function (b) { var l = b.lignes[k]; return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: b.couleur }; }));
+              ligne(liste[0].lignes[k].label, liste.map(function (b) { var l = b.lignes[k]; return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: COUL_TEXTE }; }));
             });
-            ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: b.couleur }; }), "total");
+            ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: COUL_TEXTE }; }), "total");
             if (liste.some(function (b) { return b.acte > 0; })) {
               ligne("Acte intellectuel", liste.map(function (b) { return { montant: unEurosFmt.format(b.acte), couleur: COUL_RECETTES }; }), null, 2.5);
               ligne("Total des recettes", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalRecettes), couleur: COUL_RECETTES }; }), "total");
