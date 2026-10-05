@@ -5927,10 +5927,11 @@
       // =======================================================================
       var CED4SCALE_CONTACT = {
         nom: "Cédric Goillot",
-        role: "Consultant — Esaote Medical France",
-        email: "cedric.goillot@ced4scale.fr",
+        role: "Esaote Medical France",
+        email: "c.goillot-ced4scale@esaote.com",
         tel: "06 80 73 52 33",
-        site: "ced4scale.fr"
+        site: "ced4scale.fr",
+        siteUrl: "https://ced4scale.fr/simulateurs.html"
       };
       var SIMULATOR_REQUEST_URL = "https://defaulte3db97452a5f463699bb74c08b9066.f5.environment.api.powerplatform.com:443/powerautomate/automations/direct/cu/04/workflows/b550f7b54fdc4bde8279f14653e186e8/triggers/manual/paths/invoke?api-version=1&sp=%2Ftriggers%2Fmanual%2Frun&sv=1.0&sig=w_vP0B2Zr5glMxLdhbIGV1AVseWWJjNy-Oxv8fqdEHk";
 
@@ -6400,7 +6401,11 @@
           doc.setFont(undefined, "normal"); doc.setFontSize(8.5); doc.setTextColor(110);
           doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 18, { align: "right" });
           doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 22, { align: "right" });
-          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 26, { align: "right" });
+          // Site cliquable (06/10/2026, demande de Cédric) : mène directement à la page des simulateurs.
+          doc.setTextColor(32, 96, 200);
+          var wSite = doc.getTextWidth(CED4SCALE_CONTACT.site);
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X - wSite, 26);
+          doc.link(RIGHT_X - wSite, 26 - 3.2, wSite, 4.2, { url: CED4SCALE_CONTACT.siteUrl });
           doc.setDrawColor(210); doc.line(LEFT_X, 30, RIGHT_X, 30);
           y = 40;
           doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]); doc.setFontSize(14); doc.setFont(undefined, "bold");
@@ -6851,7 +6856,7 @@
           var nbPages = doc.getNumberOfPages();
           for (var pg = 1; pg <= nbPages; pg++) {
             doc.setPage(pg); doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(150);
-            doc.text("Simulation IRM — Projet " + donnees.projet + " — Ced4Scale", LEFT_X, 290);
+            doc.text("Simulation IRM — Projet " + donnees.projet + " — Ced4Scale — simulation du " + new Date().toLocaleDateString("fr-FR"), LEFT_X, 290);
             doc.text("Page " + pg + " / " + nbPages, RIGHT_X, 290, { align: "right" });
           }
           return doc.output("datauristring").split(",")[1];
