@@ -3530,10 +3530,11 @@
 
       var CED4SCALE_CONTACT = {
         nom: "Cédric Goillot",
-        role: "Consultant — Esaote Medical France",
-        email: "cedric.goillot@ced4scale.fr",
+        role: "Esaote Medical France",
+        email: "c.goillot-ced4scale@esaote.com",
         tel: "06 80 73 52 33",
-        site: "ced4scale.fr"
+        site: "ced4scale.fr",
+        siteUrl: "https://ced4scale.fr/simulateurs.html"
       };
 
       function genererPdfBase64() {
@@ -3566,7 +3567,11 @@
           doc.setTextColor(110);
           doc.text(CED4SCALE_CONTACT.role, RIGHT_X, 20, { align: "right" });
           doc.text(CED4SCALE_CONTACT.tel + "  ·  " + CED4SCALE_CONTACT.email, RIGHT_X, 24, { align: "right" });
-          doc.text(CED4SCALE_CONTACT.site, RIGHT_X, 28, { align: "right" });
+          // Site cliquable vers la page des simulateurs (06/10/2026, demande de Cédric).
+          doc.setTextColor(32, 96, 200);
+          var wSite = doc.getTextWidth(CED4SCALE_CONTACT.site);
+          doc.text(CED4SCALE_CONTACT.site, RIGHT_X - wSite, 28);
+          doc.link(RIGHT_X - wSite, 28 - 3.2, wSite, 4.2, { url: CED4SCALE_CONTACT.siteUrl });
           doc.setDrawColor(220);
           doc.line(15, 33, RIGHT_X, 33);
 
