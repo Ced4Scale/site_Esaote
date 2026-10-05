@@ -365,6 +365,13 @@
     .un-outils-sous[hidden] { display: none; }
     #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     #unPmOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
+    #unCalPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 340px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+    #unCalPop .un-cal-ligne { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; font-size: .82rem; }
+    #unCalPop .un-cal-ligne input[type="number"] { width: 4.6rem; }
+    #unCalPop .un-cal-ligne label { flex: 1 1 auto; }
+    #unCalPop .un-cal-sous { margin-left: 1.4rem; }
+    #unCalPop .un-cal-titre { font-weight: 800; font-size: .78rem; margin: .55rem 0 .15rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    #unCalPop [hidden] { display: none !important; }
     .un-outils-poignee { cursor: grab; touch-action: none; user-select: none; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-align: center; padding: .15rem 0 .35rem; margin: -.25rem -.4rem .3rem; border-bottom: 1px dashed var(--un-info-bd); color: var(--muted); }
     .un-outils-poignee:active { cursor: grabbing; }
     #unCompoOutilsPop { width: min(calc(100vw - 4.5rem), 400px); max-width: none; overflow-x: hidden; }
@@ -1661,6 +1668,19 @@
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupInfirmiere" /> Infirmière</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixPosteGroupManipAlternance" /> Manip en alternance</label>
               <label class="un-outils-check"><input type="checkbox" checked data-mixgroupe="unMixContrasteGroup" /> % examens injectés</label>
+            </div>
+          </span>
+          <!-- Icône calendrier (06/10/2026, demande de Cédric) : retrouver et modifier ici les réglages de Paramètres > Horaires d'ouverture
+               (lundi-vendredi, coupures, « Autre jour » samedi / dimanche). Les champs ci-dessous sont des COPIES des champs du formulaire,
+               synchronisées dans les deux sens (voir unCalendrierInit). Panneau déplaçable, refermé seulement par un nouveau clic sur l'icône. -->
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unCalBtn" aria-expanded="false" aria-controls="unCalPop" aria-label="Horaires d'ouverture : modifier les jours et les heures" title="Horaires d'ouverture">
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="8.3" cy="14" r="1.2" fill="currentColor"/><circle cx="12" cy="14" r="1.2" fill="currentColor"/><circle cx="15.7" cy="14" r="1.2" fill="currentColor"/><circle cx="8.3" cy="17.3" r="1.2" fill="currentColor"/><circle cx="12" cy="17.3" r="1.2" fill="currentColor"/></svg>
+            </button>
+            <div class="un-info-pop" id="unCalPop" hidden>
+              <div class="un-outils-poignee" id="unCalPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="un-outils-titre">Horaires d'ouverture</div>
+              <div id="unCalCorps"></div>
             </div>
           </span>
           <!-- Bulle « Par patient » (22/09/2026) — icône posée à côté de la boîte à outils
@@ -5509,6 +5529,79 @@
       wireInfoBtn("unFtMoyInfoBtn", "unFtMoyInfoPop");
       ["Tech", "Recap", "Tarif", "Clic", "Etudes"].forEach(function (k) { wireInfoBtn("unRseInfo" + k + "Btn", "unRseInfo" + k + "Pop"); });
       wireOutilsBtn("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
+      // Panneau « Horaires d'ouverture » (icône calendrier de la table de mixage, 06/10/2026) : copies synchronisées des champs de
+      // Paramètres > Horaires d'ouverture. Un changement ici est répercuté sur le champ d'origine (avec ses événements : les
+      // calculs, plafond de 13 h, session… suivent), un changement là-bas ou ailleurs (table de mixage…) est relu ici.
+      (function unCalendrierInit() {
+        var btn = document.getElementById("unCalBtn"), pop = document.getElementById("unCalPop"), corps = document.getElementById("unCalCorps"), poignee = document.getElementById("unCalPoignee");
+        var SPEC = [
+          { t: "titre", txt: "Lundi - vendredi" },
+          { t: "num", id: "unHeuresSemaine", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5 },
+          { t: "chk", id: "unCoupureSemaine", label: "Coupure dans la journée" },
+          { t: "num", id: "unCoupureDureeSemaine", label: "Durée de la coupure", unite: "h", step: 0.25, wrap: "unCoupureDureeSemaineWrap", sous: true },
+          { t: "titre", txt: "Autres jours" },
+          { t: "chk", id: "unOuvertSamedi", label: "Ouvert le samedi" },
+          { t: "num", id: "unHeuresSamedi", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5, wrap: "unHeuresSamediWrap", sous: true },
+          { t: "chk", id: "unCoupureSamedi", label: "Coupure le samedi", wrap: "unCoupureSamediLabel", sous: true },
+          { t: "num", id: "unCoupureDureeSamedi", label: "Durée de la coupure", unite: "h", step: 0.25, wrap: "unCoupureDureeSamediWrap", sous: true },
+          { t: "chk", id: "unOuvertDimanche", label: "Ouvert le dimanche" },
+          { t: "num", id: "unHeuresDimanche", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5, wrap: "unHeuresDimancheWrap", sous: true },
+          { t: "chk", id: "unCoupureDimanche", label: "Coupure le dimanche", wrap: "unCoupureDimancheLabel", sous: true },
+          { t: "num", id: "unCoupureDureeDimanche", label: "Durée de la coupure", unite: "h", step: 0.25, wrap: "unCoupureDureeDimancheWrap", sous: true },
+          { t: "titre", txt: "Plafond" },
+          { t: "chk", id: "unPlafond13Heures", label: "Ne pas dépasser 13 h d'ouverture par jour" }
+        ];
+        var lignes = [];
+        SPEC.forEach(function (sp) {
+          if (sp.t === "titre") { var h = document.createElement("div"); h.className = "un-cal-titre"; h.textContent = sp.txt; corps.appendChild(h); return; }
+          var div = document.createElement("div"); div.className = "un-cal-ligne" + (sp.sous ? " un-cal-sous" : "");
+          var lab = document.createElement("label"), inp = document.createElement("input");
+          inp.id = sp.id + "Cal"; lab.setAttribute("for", inp.id); lab.textContent = sp.label;
+          if (sp.t === "chk") { inp.type = "checkbox"; div.appendChild(inp); div.appendChild(lab); }
+          else { inp.type = "number"; inp.min = 0; inp.max = 24; inp.step = sp.step; div.appendChild(lab); div.appendChild(inp); var u = document.createElement("span"); u.textContent = sp.unite; div.appendChild(u); }
+          corps.appendChild(div);
+          lignes.push({ sp: sp, inp: inp, div: div });
+        });
+        function relire() {
+          lignes.forEach(function (l) {
+            var src = document.getElementById(l.sp.id); if (!src) return;
+            if (l.sp.t === "chk") l.inp.checked = src.checked; else l.inp.value = src.value;
+            var w = l.sp.wrap ? document.getElementById(l.sp.wrap) : null;
+            l.div.hidden = !!(w && w.hidden);
+            if (l.sp.t === "num") l.inp.max = src.max || 24;
+          });
+        }
+        lignes.forEach(function (l) {
+          var src = document.getElementById(l.sp.id);
+          ["input", "change"].forEach(function (t) { src.addEventListener(t, function () { if (!pop.hidden) relire(); }); });
+          l.inp.addEventListener(l.sp.t === "chk" ? "change" : "input", function () {
+            if (l.sp.t === "chk") src.checked = l.inp.checked; else src.value = l.inp.value;
+            src.dispatchEvent(new Event("input", { bubbles: true }));
+            src.dispatchEvent(new Event("change", { bubbles: true }));
+            // Sur l'écran Résultats, mêmes recalculs que le plafond de 13 h : heures/débits recalés, table de mixage et graphes redessinés.
+            if (!screenResultats.hidden) { unRecalerDebitsEtHeures(); unMixSyncTous(); unRenderPointMort(); }
+            relire();
+          });
+        });
+        // Un réglage changé AILLEURS (curseur d'heures de la table de mixage, ajustements automatiques…) est relu ici.
+        ["input", "change", "click"].forEach(function (t) {
+          document.addEventListener(t, function () { if (!pop.hidden) setTimeout(relire, 0); }, true);
+        });
+        var dx = 0, dy = 0, dep = null;
+        function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          pop.hidden = !pop.hidden;
+          btn.setAttribute("aria-expanded", String(!pop.hidden));
+          if (!pop.hidden) relire();
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+        poignee.addEventListener("pointerdown", function (e) { dep = { x: e.clientX - dx, y: e.clientY - dy }; poignee.setPointerCapture(e.pointerId); e.preventDefault(); });
+        poignee.addEventListener("pointermove", function (e) { if (!dep) return; dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer(); });
+        poignee.addEventListener("pointerup", function () { dep = null; });
+        poignee.addEventListener("pointercancel", function () { dep = null; });
+        poignee.addEventListener("dblclick", function () { dx = 0; dy = 0; appliquer(); });
+      })();
       // Boîte à outils des points morts : même case que « Intégrer l'acte intellectuel » de la boîte de la Composition
       // (deux cases jumelées : cocher l'une coche l'autre et recalcule tout).
       // 06/10/2026 (demande de Cédric) : cette boîte à outils est DÉPLAÇABLE (glisser « Déplacer ») et ne se referme que
