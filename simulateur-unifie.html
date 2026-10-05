@@ -864,6 +864,20 @@
               <span>FT/h</span>
             </div>
           </div>
+          <div class="field">
+            <label for="unAcqA">Durée d'acquisition</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unAcqA" value="10" min="0.5" step="0.5" />
+              <span>min</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="unChgA">Temps de changement de patient (ready to scan)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unChgA" value="5" min="1" step="0.5" />
+              <span>min</span>
+            </div>
+          </div>
           <div class="field" id="unMembreFieldA">
             <label for="unMembreA">Part des examens « membre » (épaule, coude, poignet, main, hanche, genou, cheville, pied, sacro-iliaque)</label>
             <div class="simulator__field-suffix">
@@ -992,6 +1006,20 @@
             <div class="simulator__field-suffix">
               <input type="number" id="unInstallB" value="4" min="0" step="0.5" />
               <span>FT/h</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="unAcqB">Durée d'acquisition</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unAcqB" value="10" min="0.5" step="0.5" />
+              <span>min</span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="unChgB">Temps de changement de patient (ready to scan)</label>
+            <div class="simulator__field-suffix">
+              <input type="number" id="unChgB" value="5" min="1" step="0.5" />
+              <span>min</span>
             </div>
           </div>
           <div class="field" id="unMembreFieldB">
@@ -1975,6 +2003,7 @@
         screenProjet.hidden = nom !== "projet";
         screenForm.hidden = nom !== "form";
         screenResultats.hidden = nom !== "resultats";
+        if (nom === "form" && typeof unSyncChangement === "function") { unSyncChangement("A"); unSyncChangement("B"); }
         window.scrollTo(0, 0);
       }
 
@@ -2226,10 +2255,35 @@
         if (!m) return;
         // Débits par défaut imposés par Cédric (21/09/2026), avant le calcul générique.
         var DEBIT_DEFAUT = { "esaote-o-scan": 3, "generique-15t": 4, "generique-3t": 4 };
-        if (DEBIT_DEFAUT[m.key] != null) { input.value = DEBIT_DEFAUT[m.key]; return; }
-        var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
-        input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+        if (DEBIT_DEFAUT[m.key] != null) input.value = DEBIT_DEFAUT[m.key];
+        else {
+          var minutes = m.dureeChangementMinutes + m.dureeAcquisitionMinutes;
+          input.value = minutes > 0 ? Math.round((60 / minutes) * 10) / 10 : 0;
+        }
+        // Durée d'acquisition = celle de la fiche machine ; temps de changement déduit du débit (06/10/2026).
+        document.getElementById("unAcq" + input.id.slice(-1)).value = m.dureeAcquisitionMinutes || 0;
+        unSyncChangement(input.id.slice(-1));
       }
+      // Durée d'acquisition et temps de changement de patient (06/10/2026, demande de Cédric) : réglables par machine dans
+      // les réglages Machine A / B (avant : valeurs de la fiche, visibles seulement dans le PDF). Lien avec « Examens par heure » :
+      // 60 / débit = acquisition + changement. Modifier l'acquisition garde le débit (le changement s'ajuste) ; modifier le changement
+      // recalcule le débit ; modifier le débit recalcule le changement. L'acquisition sert aussi à l'électricité d'un examen.
+      function unSyncChangement(S) {
+        var d = parseFloat(document.getElementById("unInstall" + S).value) || 0, a = parseFloat(document.getElementById("unAcq" + S).value) || 0;
+        document.getElementById("unChg" + S).value = d > 0 ? Math.max(1, Math.round((60 / d - a) * 10) / 10) : 1;
+      }
+      ["A", "B"].forEach(function (S) {
+        document.getElementById("unInstall" + S).addEventListener("input", function () { unSyncChangement(S); });
+        document.getElementById("unAcq" + S).addEventListener("input", function () { unSyncChangement(S); });
+        document.getElementById("unChg" + S).addEventListener("input", function (e) {
+          if (!e.isTrusted) return; // la restauration de session ne doit pas recalculer le débit
+          var a = parseFloat(document.getElementById("unAcq" + S).value) || 0, c = parseFloat(this.value) || 0;
+          if (a + c <= 0) return;
+          var inst = document.getElementById("unInstall" + S);
+          inst.value = Math.round(60 / (a + c) * 100) / 100;
+          inst.dispatchEvent(new Event("input", { bubbles: true }));
+        });
+      });
       var installA = document.getElementById("unInstallA"), installB = document.getElementById("unInstallB");
 
       selectA.addEventListener("change", function () {
@@ -2659,6 +2713,12 @@
       // de l'écran 2 (mêmes champs que point-mort.html, préfixés "un" au lieu de
       // "pm") — jamais de valeur inventée. « Part membre » forcée à 0 si le champ
       // est masqué (scanner du projet 03, qui n'a pas de tarif « membre »). ----
+      // Copie de la fiche machine avec la durée d'acquisition / de changement saisies dans les réglages de la machine (06/10/2026).
+      function unMachineAvecDurees(m, suffix) {
+        if (!m) return m;
+        var a = parseFloat(document.getElementById("unAcq" + suffix).value), c = parseFloat(document.getElementById("unChg" + suffix).value);
+        return Object.assign({}, m, { dureeAcquisitionMinutes: a > 0 ? a : m.dureeAcquisitionMinutes, dureeChangementMinutes: c > 0 ? c : m.dureeChangementMinutes });
+      }
       function unConfigMachinePointMort(slot) {
         var suffix = slot === 0 ? "A" : "B";
         var select = slot === 0 ? selectA : selectB;
@@ -2668,7 +2728,7 @@
         var membreFieldVisible = !document.getElementById("unMembreField" + suffix).hidden;
         return {
           slot: slot,
-          machine: machine,
+          machine: unMachineAvecDurees(machine, suffix),
           loyer: valeurMilliers(document.getElementById("unLoyer" + suffix)),
           // Débit horaire (Examens par heure, valeur brute du champ/fader) —
           // sert au point mort ANNUEL (examensParJour = débit × heuresParJour),
