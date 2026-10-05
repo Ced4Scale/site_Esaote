@@ -391,6 +391,13 @@
     #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     #unPmOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     .un-pop-persistant { translate: var(--dx, 0px) var(--dy, 0px); }
+    #unOsPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 330px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+    #unOsPop .un-os-ligne { display: flex; align-items: center; gap: .5rem; margin: .22rem 0; font-size: .82rem; }
+    #unOsPop .un-os-ligne label { flex: 1 1 auto; }
+    #unOsPop .un-os-ligne input { width: 4.4rem; }
+    #unOsPop .un-os-total { margin-top: .4rem; font-size: .8rem; font-weight: 800; border-top: 1px dashed #d8d2b8; padding-top: .4rem; }
+    #unOsPop .un-os-synthese { margin-top: .4rem; font-size: .8rem; line-height: 1.35; }
+    .un-plafond-note { font-size: .78rem; color: var(--muted, #6b7280); margin: .35rem 0 0; }
     /* L'icône reste cliquable même si un panneau déplacé la recouvre (un panneau ouvert ne se ferme que par son icône). */
     .un-btn-dessus { position: relative; z-index: 6; }
     #unCalPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 340px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
@@ -1356,6 +1363,7 @@
                 <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
               <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
+              <p class="un-plafond-note" id="unMixRepartNote" style="max-width:15rem" hidden></p>
               </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
               <div class="un-mixer__pm">
@@ -1740,6 +1748,22 @@
               <div id="unCalCorps"></div>
             </div>
           </span>
+          <!-- Icône « os » (06/10/2026, demande de Cédric) : répartition des examens MSK par zone (épaule, coude…). L'O-scan ne fait pas l'épaule
+               (réservée à l'IRM tunnel) : la part d'épaule fixe le nombre d'examens que l'O-scan peut prendre (plafond de la répartition,
+               projet 02). Valeurs de départ = estimation Ced4Scale, à ajuster. Panneau déplaçable, refermé par un nouveau clic sur l'icône. -->
+          <span class="un-info-wrap" id="unOsWrap" hidden>
+            <button type="button" class="un-info-btn" id="unOsBtn" aria-expanded="false" aria-controls="unOsPop" aria-label="Répartition des examens MSK par zone" title="Répartition des examens MSK par zone">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7.2 4.2a2.6 2.6 0 0 0-3.5 3.4 2.6 2.6 0 0 0 3.2 3.5l5.9 5.9a2.6 2.6 0 0 0 3.5 3.2 2.6 2.6 0 0 0 3.4-3.5 2.6 2.6 0 0 0-3.4-3.3l-5.9-5.8A2.6 2.6 0 0 0 7.2 4.2Z" fill="currentColor"/></svg>
+            </button>
+            <div class="un-info-pop" id="unOsPop" hidden>
+              <div class="un-outils-poignee" id="unOsPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="un-outils-titre">Examens MSK par zone</div>
+              <p class="simulator__hint" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre » (MSK). Le rachis n'en fait pas partie (acte à 69 €).</p>
+              <div id="unOsZones"></div>
+              <div class="un-os-total" id="unOsTotal"></div>
+              <div class="un-os-synthese" id="unOsSynthese"></div>
+            </div>
+          </span>
           <!-- Bulle « Par patient » (22/09/2026) — icône posée à côté de la boîte à outils
                ci-dessus (demande de Cédric). La bulle elle-même (#unPatientBulle) vit hors des
                3 écrans, plus bas dans le fichier, pour rester affichée si elle est fixée et
@@ -1825,6 +1849,7 @@
             <input type="range" class="un-bascule-curseur" id="unBasculeCurseur" min="0" max="12000" step="10" value="12000" aria-label="Répartition de l'activité entre Machine A et Machine B" />
           </div>
           <div class="un-bascule-ends"><span>0</span><span id="unBasculeEndMax">12.000</span></div>
+          <p class="un-plafond-note" id="unPlafondNote" hidden></p>
 
           <div class="un-bascule-stats">
             <div class="un-bascule-stat" style="border-left-color:#eb6834">
@@ -3529,7 +3554,24 @@
         unDernieresEntreesPointMort = entries;
         if (document.getElementById("unPointMortAnnuelCard").open) unDessinerBarresPointMortAnnuel(entries);
       }
+      // Recalcule le plafond de l'O-scan (curseur de répartition bloqué) après un changement d'horaires, de débit, de part « membre » ou de zones MSK,
+      // sans redessiner toute la Bascule ; ne relance la Bascule que si le curseur a dû être ramené dans ses bornes.
+      function unRafraichirPlafond() {
+        if (projetActuel !== 2) return;
+        var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
+        if (!configA.machine || !configB.machine) return;
+        var params = unConstruireParamsPointMort(), curseur = document.getElementById("unBasculeCurseur");
+        var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
+        var pl = unPlafondOscan(N, configA, configB, params), cur = parseInt(curseur.value, 10) || N;
+        unBasculeBase = N;
+        curseur.step = pl.actif ? 1 : 10;
+        curseur.min = pl.actif ? Math.max(0, N - pl.plafond) : 0;
+        var voulu = Math.max(parseInt(curseur.min, 10) || 0, Math.min(N, cur));
+        unMajPlafondNote(pl, N); unOsVisibilite();
+        if (voulu !== cur) { curseur.value = voulu; if (unBasculeConfigA && unBasculeConfigB) unRecalculerBascule(); }
+      }
       function unRenderPointMort() {
+        unRafraichirPlafond();
         // Resynchronise la table de mixage sur l'état réel des champs de
         // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
         // changé de machine, ce qui réinitialise Examens/h et Manip en poste
@@ -3864,6 +3906,7 @@
         var N = Math.max(0, parseInt(champN.value, 10) || 0), volA = Math.max(0, Math.min(N, parseInt(curseur.value, 10) || 0));
         var pct = N > 0 ? Math.round(volA / N * 100) : 100;
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
+        f.min = Math.max(0, Math.min(100, Math.floor((parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100 + 1e-9))); // plafond de l'O-scan
         f.value = pct; f.parentNode.style.setProperty("--pct", pct);
         if (document.activeElement !== v) v.value = pct;
         var pa = document.getElementById("unMixRepartPctA"), pb = document.getElementById("unMixRepartPctB");
@@ -4341,20 +4384,60 @@
       // repère « Votre activité » ; 4 cases dans la boîte à outils 🧰. Mêmes fonctions de calcul que
       // l'écran Bascule (unTarifMoyenPourVolume / unTarifReelPourVolume).
       wirePersistant("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
+      wirePersistant("unOsBtn", "unOsPop");
+      document.getElementById("unOsBtn").addEventListener("click", function () { unOsSynthese(); });
       // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
       // la répartition de la Bascule progressive — UN SEUL demi-anneau (Recettes / Dépenses / Résultat)
       // pour les deux IRM ensemble, et le graphe « Tarif moyen » de la Bascule. Lit le volume total et le
       // curseur de la Bascule (champs du DOM) ; jamais de 2ᵉ formule : mêmes unDetailCA/unCoutsDetail que
       // la Composition et mêmes tranches que la Bascule. Une machine à 0 examen n'est pas comptée (comme
       // unResultatAnnuelMachine). ----
+      // ---------------------------------------------------------------------
+      // Plafond de l'O-scan (06/10/2026, demandes de Cédric) : l'O-scan ne fait ni l'épaule (réservée à l'IRM tunnel) ni les examens non « membre »
+      // (rachis…). Il peut donc prendre au plus (part « membre » × (1 − part d'épaule)) × nombre d'examens ; la répartition est BLOQUÉE à ce plafond
+      // (et à la capacité de la machine selon ses horaires). Le joker permet de le dépasser en CRÉANT des examens supplémentaires (jamais pris à l'IRM),
+      // dans la limite de la capacité de l'O-scan. Ne s'applique que si la machine B est l'Esaote O-scan (projet 02).
+      // ---------------------------------------------------------------------
+      var UN_OS_ZONES = [["Epaule", "Épaule", 25], ["Coude", "Coude", 4], ["Poignet", "Poignet", 6], ["Main", "Main", 3], ["Hanche", "Hanche", 8],
+        ["Genou", "Genou", 35], ["Cheville", "Cheville", 9], ["Pied", "Pied", 5], ["SacroIliaque", "Sacro-iliaque", 5]];
+      var unJokerDepasse = false, unExtrasB = 0;
+      function unOsPartEpaule() {
+        var tot = 0, ep = 0;
+        UN_OS_ZONES.forEach(function (z) { var v = Math.max(0, parseFloat(document.getElementById("unOs" + z[0]).value) || 0); tot += v; if (z[0] === "Epaule") ep = v; });
+        return tot > 0 ? ep / tot : 0;
+      }
+      function unPlafondOscan(nBase, configA, configB, params) {
+        var pB = unParamsPourSlot(1, params);
+        var cap = Math.max(0, Math.round(configB.debitHoraire * pB.heuresParJour * pB.joursParMois * 12));
+        var actif = projetActuel === 2 && !!configB.machine && configB.machine.key === "esaote-o-scan";
+        if (!actif) return { actif: false, cap: cap, eligibles: nBase, plafond: nBase, m: 0, s: 0 };
+        var m = (configA.pctMembre || 0) / 100, s = unOsPartEpaule(), E = Math.floor(nBase * m * (1 - s));
+        return { actif: true, cap: cap, eligibles: E, plafond: Math.min(E, cap), m: m, s: s };
+      }
+      function unExtrasEffectifs(nBase, volA, configA, configB, params) {
+        if (!unJokerDepasse || !(unExtrasB > 0)) return 0;
+        var pl = unPlafondOscan(nBase, configA, configB, params);
+        if (!pl.actif) return 0;
+        return Math.max(0, Math.min(unExtrasB, pl.cap - (nBase - volA)));
+      }
+      // Actes intellectuels annuels [IRM A, O-scan B] : l'acte dépend du TYPE d'examen (55 € « membre », 69 € les autres), pas de la machine. L'O-scan ne
+      // fait que du « membre » ; l'IRM garde le reste (épaule comprise). Les examens supplémentaires créés sont des examens « membre » à 55 €.
+      function unActesBascule(e) {
+        var nBase = e.nBase != null ? e.nBase : e.N, volB = e.N - e.volA, extras = e.extras || 0, vb0 = Math.max(0, volB - extras);
+        var M = (e.configA.pctMembre || 0) / 100 * nBase;
+        var membreA = Math.max(0, M - vb0), autresA = Math.max(0, e.volA - membreA);
+        return [membreA * TARIF_IRM_MEMBRE + autresA * TARIF_IRM_AUTRES_REGIONS, volB * TARIF_IRM_MEMBRE];
+      }
+      function unBasculeOscActif(e) { return projetActuel === 2 && !!e.configB.machine && e.configB.machine.key === "esaote-o-scan"; }
       function unEtatBascule() {
         if (projetActuel !== 2) return null;
         var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
         if (!configA.machine || !configB.machine) return null;
         var params = unConstruireParamsPointMort();
-        var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
-        var volA = Math.max(0, Math.min(N, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
-        return { N: N, volA: volA, configA: configA, configB: configB, params: params,
+        var nBase = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
+        var volA = Math.max(0, Math.min(nBase, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
+        var extras = unExtrasEffectifs(nBase, volA, configA, configB, params), N = nBase + extras;
+        return { N: N, nBase: nBase, extras: extras, volA: volA, configA: configA, configB: configB, params: params,
           trA: unTranchesAvecMontant(configA.machine, params.dateIso, params.zone, params.amortiKey),
           trB: unTranchesAvecMontant(configB.machine, params.dateIso, params.zone, params.amortiKey) };
       }
@@ -4365,7 +4448,7 @@
           var v = m[2]; if (v <= 0) return;
           var d = unDetailCA(v, m[1].machine, e.params);
           Object.keys(rec).forEach(function (k) { rec[k] += d[k] || 0; recM[m[0]][k] = d[k] || 0; });
-          if (e.params.acteIntellectuelActif) { var ac = unActeIntellectuelConfig(m[1]) * v; rec.acte += ac; recM[m[0]].acte = ac; }
+          if (e.params.acteIntellectuelActif) { var ac = unBasculeOscActif(e) ? unActesBascule(e)[m[0]] : unActeIntellectuelConfig(m[1]) * v; rec.acte += ac; recM[m[0]].acte = ac; }
           var c = unCoutsDetail(m[1], unParamsPourSlot(m[0], e.params), v);
           Object.keys(dep).forEach(function (k) { dep[k] += c[k] || 0; depM[m[0]][k] = c[k] || 0; });
           var recTot = 0; Object.keys(recM[m[0]]).forEach(function (k) { recTot += recM[m[0]][k]; });
@@ -4374,8 +4457,9 @@
         var totRec = rec.plein + rec.seuil1 + rec.seuil2 + rec.plafond + rec.acte;
         // Texte au centre du demi-anneau « Recettes » (05/10/2026) : CA de la seule IRM 1,5 T (A) sur TOUT le volume,
         // CA des 2 IRM selon la répartition, et l'écart entre les deux.
-        var dSeule = unDetailCA(e.N, e.configA.machine, e.params);
-        var totSeule = dSeule.plein + dSeule.seuil1 + dSeule.seuil2 + dSeule.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * e.N : 0);
+        var nSeule = e.nBase != null ? e.nBase : e.N; // « 1,5 T seule » = sur le volume de départ (les examens créés pour l'O-scan n'existent pas sans lui)
+        var dSeule = unDetailCA(nSeule, e.configA.machine, e.params);
+        var totSeule = dSeule.plein + dSeule.seuil1 + dSeule.seuil2 + dSeule.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * nSeule : 0);
         // Idem pour les dépenses et le résultat (même demande, 05/10/2026) : « 1,5 T » = la seule IRM 1,5 T sur tout le volume.
         function centre3(seule, deux, bonSiPlus) {
           var ec = deux - seule, bon = bonSiPlus ? ec >= 0 : ec <= 0;
@@ -4385,7 +4469,7 @@
             { label: "Écart", valeur: (ec >= 0 ? "+" : "−") + unEurosFmt.format(Math.abs(ec)), couleur: bon ? "#1baf7a" : "#c2334d" }
           ];
         }
-        var cSeule = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), e.N), depSeule = cSeule.loyer + cSeule.personnel + cSeule.elec + cSeule.autres;
+        var cSeule = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), nSeule), depSeule = cSeule.loyer + cSeule.personnel + cSeule.elec + cSeule.autres;
         var centreRec = centre3(totSeule, totRec, true);
         var totDep = dep.loyer + dep.personnel + dep.elec + dep.autres, res = totRec - totDep;
         var centreDep = centre3(depSeule, totDep, false), centreRes = centre3(totSeule - depSeule, res, true);
@@ -4521,7 +4605,7 @@
             var slot = slots[k], vol = slot === 0 ? etatRep.volA : etatRep.N - etatRep.volA, config = unConfigMachinePointMort(slot);
             e.volume = Math.max(0, vol);
             e.cout = vol > 0 ? unCoutsDetail(config, unParamsPourSlot(slot, params), vol) : { loyer: 0, personnel: 0, elec: 0, autres: 0 };
-            e.acte = vol > 0 && params.acteIntellectuelActif ? unActeIntellectuelConfig(config) * vol : 0;
+            e.acte = vol > 0 && params.acteIntellectuelActif ? (unBasculeOscActif(etatRep) ? unActesBascule(etatRep)[slot] : unActeIntellectuelConfig(config) * vol) : 0;
           }
           return e;
         });
@@ -5624,6 +5708,34 @@
         wireInfoBtn(btnId, popId);
         document.getElementById(popId).addEventListener("click", function (e) { e.stopPropagation(); });
       }
+      // Panneau « os » : une ligne par zone MSK (champs numériques #unOs<Zone>, mémorisés avec la session), total, part d'épaule et plafond de l'O-scan.
+      (function unOsInit() {
+        var corps = document.getElementById("unOsZones");
+        UN_OS_ZONES.forEach(function (z) {
+          var div = document.createElement("div"); div.className = "un-os-ligne";
+          var lab = document.createElement("label"), inp = document.createElement("input"), u = document.createElement("span");
+          inp.type = "number"; inp.id = "unOs" + z[0]; inp.min = 0; inp.max = 100; inp.step = 1; inp.value = z[2]; lab.setAttribute("for", inp.id); lab.textContent = z[1]; u.textContent = "%";
+          div.appendChild(lab); div.appendChild(inp); div.appendChild(u); corps.appendChild(div);
+          inp.addEventListener("input", function () { unOsSynthese(); unPlafondChange(); });
+        });
+      })();
+      function unOsSynthese() {
+        var tot = 0; UN_OS_ZONES.forEach(function (z) { tot += Math.max(0, parseFloat(document.getElementById("unOs" + z[0]).value) || 0); });
+        var t = document.getElementById("unOsTotal");
+        t.textContent = "Total : " + Math.round(tot * 10) / 10 + " %" + (Math.abs(tot - 100) > 0.05 ? "  (les parts sont ramenées à 100 %)" : "");
+        t.style.color = Math.abs(tot - 100) > 0.05 ? "#b42318" : "";
+        var s = unOsPartEpaule(), el = document.getElementById("unOsSynthese");
+        var texte = "Épaule : " + Math.round(s * 1000) / 10 + " % des examens « membre », réservée à l'IRM tunnel.";
+        if (projetActuel === 2 && unBasculeConfigA && unBasculeConfigB) {
+          var pl = unPlafondOscan(unBasculeBase, unBasculeConfigA, unBasculeConfigB, unBasculeParams);
+          if (pl.actif) texte += "<br>L'Esaote O-scan peut prendre au plus <strong>" + milliersFmt.format(pl.plafond) + "</strong> examens par an (" + milliersFmt.format(pl.eligibles) + " examens « membre » hors épaule" + (pl.cap < pl.eligibles ? ", limités par sa capacité de " + milliersFmt.format(pl.cap) : "") + ").";
+        }
+        el.innerHTML = texte;
+      }
+      function unOsVisibilite() {
+        document.getElementById("unOsWrap").hidden = projetActuel !== 2;
+        if (!document.getElementById("unOsPop").hidden) unOsSynthese();
+      }
       // Boîtes à outils DÉPLAÇABLES (06/10/2026, demande de Cédric, pour tous les icônes de la boîte à outils) : le panneau s'ouvre au clic sur
       // l'icône, se glisse par sa poignée « Déplacer » (double-clic = position d'origine) et ne se referme QUE par un nouveau clic sur l'icône
       // (ni clic ailleurs, ni Échap, ni ouverture d'une autre bulle). `glisse` = faux quand le panneau a déjà sa propre poignée câblée.
@@ -5783,8 +5895,9 @@
           return d.plein + d.seuil1 + d.seuil2 + d.plafond + acteB * v - (c.loyer + c.personnel + c.elec + c.autres);
         }
         var items = unCompoItemsBascule(e);
-        var dS = unDetailCA(e.N, e.configA.machine, e.params), cS = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), e.N);
-        var sansB = dS.plein + dS.seuil1 + dS.seuil2 + dS.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * e.N : 0) - (cS.loyer + cS.personnel + cS.elec + cS.autres);
+        var nSeuleJ = e.nBase != null ? e.nBase : e.N;
+        var dS = unDetailCA(nSeuleJ, e.configA.machine, e.params), cS = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), nSeuleJ);
+        var sansB = dS.plein + dS.seuil1 + dS.seuil2 + dS.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * nSeuleJ : 0) - (cS.loyer + cS.personnel + cS.elec + cS.autres);
         var actuel = items.res.res, plein = actuel + resB(volB + capRestante) - resB(volB);
         var scen = [
           { nom: nomA + " seule (sans " + nomB + ")", val: sansB, coul: UN_SLOT_COLORS[0] },
@@ -5820,8 +5933,30 @@
           if (i === 2) h += '<div class="un-joker-scen__ecart">' + ecart(scen[2].val - scen[1].val) + ' vs activité actuelle · ' + ecart(scen[2].val - scen[0].val) + ' vs ' + nomA + ' seule</div>';
           h += '</div>';
         });
+        // Dépassement du plafond de l'O-scan (06/10/2026, demande de Cédric) : examens supplémentaires CRÉÉS (pas pris à l'IRM), plafonnés à la capacité de l'O-scan.
+        var plJ = unPlafondOscan(e.nBase != null ? e.nBase : e.N, e.configA, e.configB, e.params);
+        if (plJ.actif) {
+          var exMax = Math.max(0, plJ.cap - ((e.nBase != null ? e.nBase : e.N) - e.volA));
+          h += '<div class="un-joker-titre" style="margin-bottom:.3rem;margin-top:.55rem;border-top:1px dashed #d8d2b8;padding-top:.5rem">Dépasser le plafond de l\'' + nomB + '</div>' +
+            '<label class="un-outils-check" style="font-size:.78rem"><input type="checkbox" id="unJokerDepasse"' + (unJokerDepasse ? ' checked' : '') + ' /> Autoriser des examens supplémentaires au-delà du plafond (' + milliersFmt.format(plJ.plafond) + ' examens)</label>' +
+            '<div class="un-plafond-note">Ces examens sont créés (ils ne sont pas pris à ' + nomA + ') et limités à la capacité de ' + nomB + ' selon ses horaires : ' + milliersFmt.format(plJ.cap) + ' examens par an.</div>';
+          if (unJokerDepasse) {
+            var cur = Math.min(unExtrasB, exMax);
+            h += '<div class="un-joker-extras"><label for="unJokerExtras" style="font-size:.78rem;font-weight:700">Examens supplémentaires créés : <span id="unJokerExtrasVal">' + milliersFmt.format(cur) + '</span> (maximum ' + milliersFmt.format(exMax) + ')</label>' +
+              '<input type="range" id="unJokerExtras" min="0" max="' + exMax + '" step="1" value="' + cur + '" style="width:100%" /></div>';
+          }
+        }
         pop.innerHTML = h;
       }
+      function unJokerSauver() { try { localStorage.setItem("ced4scale-unifie-joker-depasse", JSON.stringify({ depasse: unJokerDepasse, extras: unExtrasB })); } catch (e) {} }
+      (function () { try { var j = JSON.parse(localStorage.getItem("ced4scale-unifie-joker-depasse") || "null"); if (j) { unJokerDepasse = !!j.depasse; unExtrasB = parseInt(j.extras, 10) || 0; } } catch (e) {} })();
+      document.getElementById("unJokerPop").addEventListener("change", function (ev) {
+        if (ev.target.id === "unJokerDepasse") { unJokerDepasse = ev.target.checked; if (!unJokerDepasse) unExtrasB = 0; unJokerSauver(); unPlafondChange(); }
+        else if (ev.target.id === "unJokerExtras") { unExtrasB = parseInt(ev.target.value, 10) || 0; unJokerSauver(); unPlafondChange(); }
+      });
+      document.getElementById("unJokerPop").addEventListener("input", function (ev) {
+        if (ev.target.id === "unJokerExtras") document.getElementById("unJokerExtrasVal").textContent = milliersFmt.format(parseInt(ev.target.value, 10) || 0);
+      });
       document.getElementById("unJokerBtn").addEventListener("click", unJokerRendre, true);
       // Panneau déplaçable (pour découvrir le tableau du barème dessous) : glisser le titre ; double-clic = position d'origine.
       (function () {
@@ -5865,7 +6000,7 @@
       // en direct au glisser du curseur ou au clic d'une case 🧰) — la courbe de
       // fond ne dépend que de N/des machines, jamais de la position du curseur.
       // ---------------------------------------------------------------------
-      var unBasculeN = 0, unBasculeConfigA = null, unBasculeConfigB = null, unBasculeParams = null;
+      var unBasculeBase = 0, unBasculeN = 0, unBasculeConfigA = null, unBasculeConfigB = null, unBasculeParams = null;
       var unBasculeTrA = [], unBasculeTrB = [];
       var unVolActuelA = 0, unVolActuelB = 0;
 
@@ -5882,10 +6017,17 @@
         var curseur = document.getElementById("unBasculeCurseur");
         var champN = document.getElementById("unBasculeVolumeTotal");
         var N = Math.max(0, parseInt(champN.value, 10) || 0);
-        unBasculeN = N;
-        var voulu = Math.min(N, parseInt(curseur.value, 10) || N);
+        unBasculeBase = N; unBasculeN = N;
+        // Plafond de l'O-scan : le curseur ne peut pas donner à la machine B plus que son plafond (voir unPlafondOscan).
+        var pl = unPlafondOscan(N, configA, configB, unBasculeParams);
+        var curVoulu = parseInt(curseur.value, 10) || N; // lue AVANT de changer min/pas (le navigateur ré-arrondit la valeur à chaque changement)
+        curseur.step = pl.actif ? 1 : 10; // pas de 1 examen quand le plafond est actif : le curseur atteint exactement le plafond et le volume total
+        curseur.min = pl.actif ? Math.max(0, N - pl.plafond) : 0;
+        var voulu = Math.max(parseInt(curseur.min, 10) || 0, Math.min(N, curVoulu));
         curseur.max = N; curseur.value = voulu;
         document.getElementById("unBasculeEndMax").textContent = milliersFmt.format(N);
+        unMajPlafondNote(pl, N);
+        unOsVisibilite();
 
         unDessinerCourbeBascule(N, configA, configB, unBasculeParams, unBasculeTrA, unBasculeTrB);
         unRecalculerBascule();
@@ -5900,12 +6042,24 @@
         if (projetActuel === 2) document.getElementById("unBasculeVolumeTotal").value = Math.round(unActiviteAnnuelle());
         unBasculeRedessinerTout();
       }
+      // Message sous le curseur de répartition et dans la table de mixage : plafond de l'O-scan.
+      function unMajPlafondNote(pl, N) {
+        var txt = "";
+        if (pl && pl.actif) {
+          txt = "Plafond de l'Esaote O-scan : " + milliersFmt.format(pl.plafond) + " examens par an (examens « membre » hors épaule : " + milliersFmt.format(pl.eligibles) +
+            (pl.cap < pl.eligibles ? " ; limité par sa capacité : " + milliersFmt.format(pl.cap) : "") + ").";
+        }
+        ["unPlafondNote", "unMixRepartNote"].forEach(function (id) { var el = document.getElementById(id); if (el) { el.textContent = txt; el.hidden = !txt; } });
+      }
+      function unPlafondChange() { if (projetActuel === 2) { unRenderBascule(); unRenderPointMort(); } }
 
       function unRecalculerBascule() {
         if (!unBasculeConfigA || !unBasculeConfigB) return;
         var curseur = document.getElementById("unBasculeCurseur");
-        var N = unBasculeN;
-        var volA = Math.max(0, Math.min(N, parseInt(curseur.value, 10) || 0));
+        var nB = unBasculeBase;
+        var volA = Math.max(0, Math.min(nB, parseInt(curseur.value, 10) || 0));
+        var N = nB + unExtrasEffectifs(nB, volA, unBasculeConfigA, unBasculeConfigB, unBasculeParams); // + examens créés pour l'O-scan (joker)
+        unBasculeN = N;
         var volB = N - volA;
         unVolActuelA = volA; unVolActuelB = volB;
 
@@ -6411,6 +6565,14 @@
         parametres.push({ label: "Coût du kWh", valeur: val("unKwh") + " € TTC" });
         parametres.push({ label: "Coût du produit de contraste (partagé)", valeur: val("unContrasteCout") + " €" });
         parametres.push({ label: "Coût RIS + graveur + imprimante (partagé)", valeur: val("unCoutRis") + " € / mois" });
+        if (projetActuel === 2 && unBasculeConfigA && unBasculeConfigB) {
+          // Épaule (réservée à l'IRM tunnel) et plafond de l'O-scan (06/10/2026).
+          var plPdf = unPlafondOscan(unBasculeBase, unBasculeConfigA, unBasculeConfigB, unBasculeParams);
+          if (plPdf.actif) {
+            parametres.push({ label: "Part d'épaule dans les examens membre (IRM tunnel)", valeur: (Math.round(plPdf.s * 1000) / 10).toString().replace(".", ",") + " %" });
+            parametres.push({ label: "Plafond de l'Esaote O-scan", valeur: milliersFmt.format(plPdf.plafond) + " examens / an" + (unJokerDepasse && unExtrasB > 0 ? "  (+ " + milliersFmt.format(unExtrasEffectifs(unBasculeBase, unVolActuelA, unBasculeConfigA, unBasculeConfigB, unBasculeParams)) + " créés)" : "") });
+          }
+        }
 
         var uneSeuleMachine = document.getElementById("unColB").hidden;
         var machines = [];
