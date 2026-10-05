@@ -4361,7 +4361,20 @@
         });
         if (!unCompoVueHisto() && !unCompoVueTable() && !unCompoVueMoyen()) document.getElementById("unCompoVueHistoCb").checked = true; // au moins un affichage (l'histogramme par défaut)
         var histo = unCompoVueHisto();
-        unCompoEntrees = camemberts.map(function (b) { return { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume, cout: b.cout, acte: b.detail.acte || 0 }; });
+        // Projet 02 (06/10/2026, demande de Cédric : « les valeurs du PDF diffèrent d'une page à l'autre ») : le tableau du barème et
+        // le graphe « Tarif moyen » suivent la RÉPARTITION des examens entre les 2 IRM (comme les demi-anneaux et le PDF page Composition),
+        // pas le volume total pour chaque machine. Une machine sans examen n'a ni recette ni charges.
+        var etatRep = unEtatBascule();
+        unCompoEntrees = camemberts.map(function (b, k) {
+          var e = { nom: b.label, couleur: b.color, tranches: b.tranches, volume: b.volume, cout: b.cout, acte: b.detail.acte || 0 };
+          if (etatRep) {
+            var slot = slots[k], vol = slot === 0 ? etatRep.volA : etatRep.N - etatRep.volA, config = unConfigMachinePointMort(slot);
+            e.volume = Math.max(0, vol);
+            e.cout = vol > 0 ? unCoutsDetail(config, unParamsPourSlot(slot, params), vol) : { loyer: 0, personnel: 0, elec: 0, autres: 0 };
+            e.acte = vol > 0 && params.acteIntellectuelActif ? unActeIntellectuelConfig(config) * vol : 0;
+          }
+          return e;
+        });
         if (unCompoVueTable()) unDessinerTableCompo();
         if (!camemberts.length) return;
 
