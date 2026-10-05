@@ -4278,8 +4278,9 @@
         if (!(maxVal > 0)) maxVal = 1;
         items.forEach(function (b, i) {
           var cellX = i * cellW;
-          var rMax = cote ? 100 : 84, cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
-          var baseY = cote ? 176 : 110;
+          // Vue étroite (2 ou 3 graphes côte à côte, 06/10/2026, demande de Cédric) : le demi-anneau prend toute la largeur des barres en dessous.
+          var rMax = cote ? 100 : Math.max(84, (cellW - 16) / 2), cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
+          var baseY = cote ? 176 : 26 + rMax;
           var r = maxTotal > 0 ? Math.max(rMax * 0.5, rMax * Math.sqrt(b.total / maxTotal)) : rMax;
           var ri = r * 0.55, start = -Math.PI;
           cats.forEach(function (p) {
@@ -4289,7 +4290,7 @@
             svgC.appendChild(unSvgEl("path", { d: unDonutPath(cx, baseY, r, ri, start, end), fill: p.color, stroke: "#fcfcfb", "stroke-width": "1.5" }));
             if (fraction >= 0.07) {
               var mid = (start + end) / 2, rm = (r + ri) / 2;
-              var t = unSvgEl("text", { x: cx + rm * Math.cos(mid), y: baseY + rm * Math.sin(mid) + 3, "text-anchor": "middle", fill: "#fff", "font-size": cote ? 9 : 7.5, "font-weight": 800 });
+              var t = unSvgEl("text", { x: cx + rm * Math.cos(mid), y: baseY + rm * Math.sin(mid) + 3, "text-anchor": "middle", fill: "#fff", "font-size": cote ? 9 : Math.min(13, Math.round(7.5 * rMax / 84 * 10) / 10), "font-weight": 800 });
               t.textContent = Math.round(fraction * 100) + " %"; svgC.appendChild(t);
             }
             start = end;
@@ -4320,7 +4321,7 @@
               else if (val > 0) svgC.appendChild(unSvgEl("rect", { x: x0, y: y + 13, width: Math.max(3, val / maxVal * bw), height: 11, fill: p.color, rx: 3, ry: 3 }));
             });
           } else {
-            var xn = cellX + 6, xb = cellX + (cats.some(function (q) { return q.key === "acte"; }) ? 58 : 46), xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = 121, rowS = Math.min(19, (198 - yS) / cats.length);
+            var xn = cellX + 6, xb = cellX + (cats.some(function (q) { return q.key === "acte"; }) ? 58 : 46), xv = cellX + cellW - 6, bwS = xv - 44 - xb, yS = baseY + 12, rowS = 19;
             cats.forEach(function (p, k) {
               var y = yS + k * rowS, val = b.detail[p.key] || 0;
               var nm = unSvgEl("text", { x: xn, y: y + 9, "font-size": p.shortLabel.length > 10 ? 5.9 : 7.5, "font-weight": 700, fill: "#555" }); nm.textContent = p.shortLabel; svgC.appendChild(nm);
@@ -4618,7 +4619,10 @@
         var affRec = document.getElementById("unCompoAffRec"), affDep = document.getElementById("unCompoCouts"), affRes = document.getElementById("unCompoAffRes");
         if (!affRec.checked && !affDep.checked && !affRes.checked) affRec.checked = true; // au moins un affichage
         var nPan = (affRec.checked ? 1 : 0) + (affDep.checked ? 1 : 0) + (affRes.checked ? 1 : 0);
-        var W = nPan === 1 ? 640 : (histo ? 420 : 300), vbH = histo ? (W < 500 ? " 200" : " 188") : " 120";
+        var etatDim = unEtatBascule(), nDim = etatDim ? 1 : Math.max(1, slots.length);
+        var W = nPan === 1 ? 640 : (histo ? 420 : 300);
+        // Vue étroite en histogramme : demi-anneau pleine largeur (voir unDessinerPanneauHisto) → hauteur calculée (légende de 5 lignes au plus).
+        var vbH = histo ? (W < 500 ? " " + Math.round(26 + Math.max(84, (W / nDim - 16) / 2) + 12 + 5 * 19 + 8) : " 188") : " 120";
         document.getElementById("unCompoRecWrap").hidden = !affRec.checked;
         document.getElementById("unCompoCoutsWrap").hidden = !affDep.checked;
         document.getElementById("unCompoResWrap").hidden = !affRes.checked;
