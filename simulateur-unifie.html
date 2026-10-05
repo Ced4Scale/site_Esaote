@@ -1369,6 +1369,34 @@
               </div>
               <div class="un-mixer__fader-unit">h / jour</div>
             </div>
+            <!-- Samedi et dimanche (06/10/2026, demande de Cédric) : visibles seulement si choisis dans Paramètres > Horaires d'ouverture
+                 > « Autre jour » ou via l'icône calendrier ; copies des champs #unHeuresSamedi / #unHeuresDimanche (voir unMixJoursInit). -->
+            <div class="un-mixer__fader-col" id="unMixHeuresSamediCol" style="--fader-color:#7a5cc4" hidden>
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot">Samedi</span>
+                <input type="range" id="unMixHeuresSamediFader" min="0.5" max="24" step="0.5" value="4" aria-label="Heures d'ouverture le samedi" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresSamediVal" aria-label="Heures d'ouverture le samedi, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixHeuresSamediMoins" aria-label="Diminuer les heures d'ouverture du samedi">−</button>
+                <button type="button" id="unMixHeuresSamediPlus" aria-label="Augmenter les heures d'ouverture du samedi">+</button>
+              </div>
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
+            <div class="un-mixer__fader-col" id="unMixHeuresDimancheCol" style="--fader-color:#1f9d78" hidden>
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot">Dimanche</span>
+                <input type="range" id="unMixHeuresDimancheFader" min="0.5" max="24" step="0.5" value="4" aria-label="Heures d'ouverture le dimanche" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresDimancheVal" aria-label="Heures d'ouverture le dimanche, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixHeuresDimancheMoins" aria-label="Diminuer les heures d'ouverture du dimanche">−</button>
+                <button type="button" id="unMixHeuresDimanchePlus" aria-label="Augmenter les heures d'ouverture du dimanche">+</button>
+              </div>
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
           </div>
         </div>
         <!-- Coût du kWh — miroir de #unKwh (écran 2, "Charges partagées"), un
@@ -3631,7 +3659,7 @@
       function unHeuresMax() { var c = document.getElementById("unPlafond13Heures"); return c && !c.checked ? 24 : 13; }
       function unAppliquerPlafondHeures() {
         var mx = unHeuresMax();
-        ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unMixHeuresFader", "unMixHeuresBFader"].forEach(function (id) {
+        ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unMixHeuresFader", "unMixHeuresBFader", "unMixHeuresSamediFader", "unMixHeuresDimancheFader"].forEach(function (id) {
           var el = document.getElementById(id); if (!el) return;
           el.max = mx;
           if ((parseFloat(el.value) || 0) > mx) { el.value = mx; el.dispatchEvent(new Event("input", { bubbles: true })); }
@@ -3639,6 +3667,7 @@
         if (unHeuresB != null && unHeuresB > mx) unHeuresB = mx;
       }
       function unEcrireAmpl(slot, v) {
+        v = Math.min(v, unHeuresMax()); // jamais au-delà du plafond (06/10/2026 : un pas de 0,5 h pouvait donner 13,09 h)
         if (slot === 1 && unHeuresB != null) unHeuresB = v;
         else document.getElementById("unHeuresSemaine").value = v;
       }
@@ -3654,7 +3683,7 @@
         if (!unActiviteRealisable()) unActiverSplit();
         unSlotsActifs().forEach(function (slot) {
           var h = unHeuresAmpl(slot);
-          while (!unRealisableSlot(slot) && h < unHeuresMax()) { h += 0.5; unEcrireAmpl(slot, h); unHeuresGroupeForce = true; }
+          while (!unRealisableSlot(slot) && h < unHeuresMax()) { h = Math.min(unHeuresMax(), Math.round((h + 0.5) * 2) / 2); unEcrireAmpl(slot, h); unHeuresGroupeForce = true; }
         });
         unMajDebitsDepuisHeures();
       }
@@ -3847,6 +3876,7 @@
           if (unMixSaisie !== "unMixHeures" + c[0] + "Val") document.getElementById("unMixHeures" + c[0] + "Val").value = patientsFmt.format(h);
         });
         document.getElementById("unMixHeuresBCol").hidden = unSlotsActifs().length < 2;
+        unMixSyncJours();
         document.getElementById("unMixHeuresGroup").hidden = !unMixerGroupeVoulu("unMixHeuresGroup"); // toujours visible (05/10/2026), sauf si décoché dans 🎚️
       }
       // Demi-anneau (style « jauge » : moitié haute, trou au centre) — remplace le camembert
@@ -4945,7 +4975,37 @@
         var pct = max > min ? Math.max(0, Math.min(100, (v - min) / (max - min) * 100)) : 0;
         fader.parentNode.style.setProperty("--pct", pct);
       }
-      function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); }
+      function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); unMixSyncJours(); }
+      // Samedi / dimanche dans « Heures d'ouverture » de la table de mixage (06/10/2026) : colonne visible si le jour est ouvert, curseur =
+      // copie du champ de Paramètres ; l'écriture passe par le champ d'origine (événements, plafond d'heures, recalage des débits).
+      function unMixSyncJours() {
+        ["Samedi", "Dimanche"].forEach(function (D) {
+          var cb = document.getElementById("unOuvert" + D), src = document.getElementById("unHeures" + D), col = document.getElementById("unMixHeures" + D + "Col");
+          var fader = document.getElementById("unMixHeures" + D + "Fader"), val = document.getElementById("unMixHeures" + D + "Val");
+          col.hidden = !cb.checked;
+          if (!cb.checked) return;
+          fader.max = unHeuresMax();
+          var v = Math.max(parseFloat(fader.min), Math.min(parseFloat(fader.max), parseFloat(src.value) || 0));
+          fader.value = v; unMixMajFill(fader);
+          if (document.activeElement !== val) val.value = patientsFmt.format(v);
+        });
+      }
+      (function unMixJoursInit() {
+        ["Samedi", "Dimanche"].forEach(function (D) {
+          var src = document.getElementById("unHeures" + D), fader = document.getElementById("unMixHeures" + D + "Fader"), val = document.getElementById("unMixHeures" + D + "Val");
+          function ecrire(v) {
+            v = Math.max(parseFloat(fader.min), Math.min(unHeuresMax(), Math.round(v * 2) / 2));
+            src.value = v;
+            src.dispatchEvent(new Event("input", { bubbles: true }));
+            src.dispatchEvent(new Event("change", { bubbles: true }));
+            unRecalerDebitsEtHeures(); unMixSyncTous(); unRenderPointMort();
+          }
+          fader.addEventListener("input", function () { unMixMajFill(fader); ecrire(parseFloat(fader.value) || 0); });
+          val.addEventListener("change", function () { var v = parseFloat(String(val.value).replace(",", ".")); if (isFinite(v)) ecrire(v); else unMixSyncJours(); });
+          document.getElementById("unMixHeures" + D + "Moins").addEventListener("click", function () { ecrire((parseFloat(src.value) || 0) - 0.5); });
+          document.getElementById("unMixHeures" + D + "Plus").addEventListener("click", function () { ecrire((parseFloat(src.value) || 0) + 0.5); });
+        });
+      })();
       // Case « Ne pas dépasser 13 h par jour » : (dé)cocher recale les champs, les curseurs et les débits.
       document.getElementById("unPlafond13Heures").addEventListener("change", function () {
         unAppliquerPlafondHeures();
