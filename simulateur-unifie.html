@@ -2276,7 +2276,8 @@
         document.getElementById("unInstall" + S).addEventListener("input", function () { unSyncChangement(S); });
         document.getElementById("unAcq" + S).addEventListener("input", function () { unSyncChangement(S); });
         document.getElementById("unChg" + S).addEventListener("input", function (e) {
-          if (!e.isTrusted) return; // la restauration de session ne doit pas recalculer le débit
+          if (!e.isTrusted && !this.dataset.pm) return; // la restauration de session ne doit pas recalculer le débit
+          delete this.dataset.pm;
           var a = parseFloat(document.getElementById("unAcq" + S).value) || 0, c = parseFloat(this.value) || 0;
           if (a + c <= 0) return;
           var inst = document.getElementById("unInstall" + S);
@@ -2333,7 +2334,7 @@
           "unMermA", "unSecretaireA", "unCadreSanteA", "unAideManipA", "unInfirmiereA", "unManipAlternanceA", "unInstallA", "unMembreA",
           "unMultiRegionA", "unRseDelaiAllumageA", "unRseDelaiExtinctionA", "unContrastePctA", "unRisA",
           "unMermB", "unSecretaireB", "unCadreSanteB", "unAideManipB", "unInfirmiereB", "unManipAlternanceB", "unInstallB", "unMembreB",
-          "unContrastePctB", "unRisB"]);
+          "unContrastePctB", "unRisB", "unAcqA", "unAcqB", "unChgA", "unChgB"]);
         function pasDe(input) {
           var id = input.id;
           if (input.type !== "number") {
@@ -2356,6 +2357,7 @@
             if (input.max !== "") v = Math.min(parseFloat(input.max), v);
             input.value = (dec > 0 && (input.id === "unKwh" || !Number.isInteger(v))) ? v.toFixed(dec) : String(v);
           }
+          input.dataset.pm = "1"; // clic sur − / + : traité comme une saisie (voir le champ « temps de changement »)
           input.dispatchEvent(new Event("input", { bubbles: true }));
           input.dispatchEvent(new Event("change", { bubbles: true }));
         }
@@ -2371,8 +2373,11 @@
             b.addEventListener("click", function () { bouger(input, sens); });
             return b;
           }
-          input.parentNode.insertBefore(bouton(-1), input);
-          input.parentNode.insertBefore(bouton(1), input.nextSibling);
+          // « − » et « + » côte à côte, à gauche du champ (06/10/2026, demande de Cédric : le + à côté du −).
+          var moins = bouton(-1), plus = bouton(1);
+          plus.style.marginLeft = ".25rem"; plus.style.marginRight = ".5rem";
+          input.parentNode.insertBefore(moins, input);
+          input.parentNode.insertBefore(plus, input);
         });
       })();
 
