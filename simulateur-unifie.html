@@ -354,6 +354,30 @@
     #unCompoTableWrap table { table-layout: fixed; width: 100%; }
     .un-compo-duo svg { overflow: visible; }
     #unCompoTableWrap { margin-top: 6px; }
+    /* Tableau du barème dégressif — refonte esthétique (06/10/2026, demande de Cédric) : texte plus grand, en-têtes de machine teintés,
+       tranches « plage | tarif | montant » alignées, totaux et résultat en relief, bandeau final, montants alignés à droite sans centimes. */
+    #unCompoTableWrap table { font-size: .8rem; border-collapse: separate; border-spacing: 0; }
+    #unCompoTableWrap td, #unCompoTableWrap th { padding: .38rem .6rem; line-height: 1.25; border: 0; border-bottom: 1px solid #eceef2; }
+    #unCompoTableWrap td:first-child { font-weight: 600; color: #3a4252; }
+    #unCompoTableWrap td:first-child strong { font-weight: 600; }
+    #unCompoTableWrap th.un-bt-machine { text-align: center; font-size: .86rem; font-weight: 800; letter-spacing: .02em; border-radius: .5rem .5rem 0 0; }
+    #unCompoTableWrap td:not(:first-child) { text-align: right; font-variant-numeric: tabular-nums; border-left: 1px solid #eceef2; }
+    #unCompoTableWrap .un-bt-cell { display: flex; align-items: baseline; justify-content: flex-end; gap: .7rem; }
+    #unCompoTableWrap .un-bareme-ligne1 { display: contents; }
+    #unCompoTableWrap .un-compo-plage { flex: 1 1 auto; min-width: 0; text-align: left; color: var(--muted, #6b7280); font-size: .9em; font-weight: 400; }
+    #unCompoTableWrap .un-bareme-tarif, #unCompoTableWrap .un-ca-tranche-btn { min-width: 6ch; text-align: right; font-size: .95em; }
+    #unCompoTableWrap .un-bareme-ca { min-width: 9ch; text-align: right; font-weight: 700; }
+    #unCompoTableWrap tr.un-bt-sep td { border-top: 10px solid #fff; }
+    #unCompoTableWrap tr.un-bt-total td { background: #f5f6f8; border-top: 1px solid #cfd4dc; font-weight: 800; }
+    #unCompoTableWrap tr.un-bt-total td:first-child strong { font-weight: 800; }
+    #unCompoTableWrap tr.un-bt-resultat td { background: #eaf3ee; font-size: 1.05em; font-weight: 800; border-top: 2px solid #1d2a44; }
+    #unCompoTableWrap tr.un-bt-resultat td:first-child strong { font-weight: 800; }
+    #unCompoTableWrap tr.un-bt-final td { background: #1d2a44; color: #fff; border: 0; font-weight: 800; padding-top: .55rem; padding-bottom: .55rem; }
+    #unCompoTableWrap tr.un-bt-final td:first-child { border-radius: 0 0 0 .5rem; color: #fff; }
+    #unCompoTableWrap tr.un-bt-final td:last-child { border-radius: 0 0 .5rem 0; }
+    #unCompoTableWrap tr.un-bt-final td:first-child strong, #unCompoTableWrap tr.un-bt-final .un-bareme-ca { color: #fff !important; }
+    #unCompoTableWrap th:first-child { vertical-align: bottom; padding-bottom: .5rem; }
+    #unCompoTableWrap .un-compo-source { font-size: .62rem; }
     .un-compo-duo { display: flex; gap: .8rem; align-items: flex-start; }
     .un-compo-duo > .simulator__chart-wrap { flex: 1 1 0; min-width: 0; }
     .un-compo-duo > .simulator__chart-wrap[hidden] { display: none; }
@@ -3987,6 +4011,7 @@
         entrees.forEach(function (e) {
           var th = document.createElement("th"), sp = document.createElement("span");
           sp.className = "simulator__swatch-text"; sp.style.color = e.couleur; sp.textContent = e.nom;
+          th.className = "un-bt-machine"; th.style.background = e.couleur + "1a"; th.style.borderBottom = "3px solid " + e.couleur;
           th.appendChild(sp); head.appendChild(th);
         });
         var totaux = entrees.map(function () { return 0; });
@@ -4012,61 +4037,57 @@
               btn.dataset.examens = examens; btn.dataset.montant = t.montant; btn.dataset.label = label; btn.dataset.machine = e.nom;
               l1.appendChild(btn);
             }
-            td.appendChild(l1);
+            var cell = document.createElement("div"); cell.className = "un-bt-cell"; td.appendChild(cell); cell.appendChild(l1);
             var caSp = document.createElement("span");
             caSp.className = "un-bareme-ca"; caSp.style.color = e.couleur;
-            caSp.style.display = tous ? "" : "none"; caSp.textContent = unEur(ca, 2);
-            td.appendChild(caSp); tr.appendChild(td);
+            caSp.style.display = tous ? "" : "none"; caSp.textContent = unEur(ca, 0);
+            cell.appendChild(caSp); tr.appendChild(td);
           });
           body.appendChild(tr);
         });
         // Sous les tranches : montants alignés sous la colonne « CA » (espaceurs vides de même largeur que
         // plage + tarif) et couleur PAR PARTIE (recettes / charges / résultat) au lieu de celle de la machine.
         var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
-        function espaceur(td) {
-          var l1 = document.createElement("span"); l1.className = "un-bareme-ligne1";
-          var a = document.createElement("span"); a.className = "un-compo-plage";
-          var b = document.createElement("span"); b.className = "un-bareme-tarif";
-          l1.appendChild(a); l1.appendChild(document.createTextNode(" ")); l1.appendChild(b); td.appendChild(l1);
-        }
+        function espaceur() { /* conservé pour compatibilité : les montants sont désormais alignés à droite par la feuille de style */ }
         var trT = document.createElement("tr"), tdT = document.createElement("td");
-        tdT.innerHTML = "<strong>Total</strong>"; trT.appendChild(tdT);
+        tdT.innerHTML = "<strong>Total</strong>"; trT.appendChild(tdT); trT.className = "un-bt-total";
         entrees.forEach(function (e, k) {
           var td = document.createElement("td"), sp = document.createElement("span");
           espaceur(td);
-          sp.className = "un-bareme-ca"; sp.style.color = e.couleur; sp.textContent = unEur(totaux[k], 2);
+          sp.className = "un-bareme-ca"; sp.style.color = e.couleur; sp.textContent = unEur(totaux[k], 0);
           td.appendChild(sp); trT.appendChild(td);
         });
         body.appendChild(trT);
         var charges = document.getElementById("unCompoTableCharges").checked;
         var basePour2 = totaux.slice();
         if (charges) {
-          function ligneMontants(label, valeurs, gras, couleur) {
+          function ligneMontants(label, valeurs, gras, couleur, classe) {
             var tr = document.createElement("tr"), tdL = document.createElement("td");
+            if (classe) tr.className = classe;
             tdL.innerHTML = "<strong>" + label + "</strong>"; tr.appendChild(tdL);
             entrees.forEach(function (e, k) {
               var td = document.createElement("td"), sp = document.createElement("span");
               espaceur(td);
               sp.className = "un-bareme-ca"; sp.style.color = valeurs[k] < 0 ? "#d33" : couleur; if (!gras) sp.style.fontWeight = "400";
-              sp.textContent = unEur(valeurs[k], 2); td.appendChild(sp); tr.appendChild(td);
+              sp.textContent = unEur(valeurs[k], 0); td.appendChild(sp); tr.appendChild(td);
             });
             body.appendChild(tr);
           }
           if (entrees.some(function (e) { return e.acte > 0; })) {
-            ligneMontants("Acte intellectuel", entrees.map(function (e) { return e.acte; }), false, COUL_RECETTES);
-            ligneMontants("Total des recettes", entrees.map(function (e, k) { return totaux[k] + e.acte; }), true, COUL_RECETTES);
+            ligneMontants("Acte intellectuel", entrees.map(function (e) { return e.acte; }), false, COUL_RECETTES, "un-bt-sep");
+            ligneMontants("Total des recettes", entrees.map(function (e, k) { return totaux[k] + e.acte; }), true, COUL_RECETTES, "un-bt-total");
           }
-          [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c) {
-            ligneMontants(c[0], entrees.map(function (e) { return e.cout[c[1]]; }), false, COUL_CHARGES);
+          [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c, ic) {
+            ligneMontants(c[0], entrees.map(function (e) { return e.cout[c[1]]; }), false, COUL_CHARGES, ic === 0 ? "un-bt-sep" : "");
           });
           var totCharges = entrees.map(function (e) { return e.cout.loyer + e.cout.personnel + e.cout.elec + e.cout.autres; });
-          ligneMontants("Total des charges", totCharges, true, COUL_CHARGES);
+          ligneMontants("Total des charges", totCharges, true, COUL_CHARGES, "un-bt-total");
           var resultats = entrees.map(function (e, k) { return totaux[k] + e.acte - totCharges[k]; });
-          ligneMontants("Résultat", resultats, true, COUL_RESULTAT);
+          ligneMontants("Résultat", resultats, true, COUL_RESULTAT, "un-bt-resultat");
           basePour2 = resultats;
         }
         if (entrees.length === 2) {
-          var tr2 = document.createElement("tr"), td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
+          var tr2 = document.createElement("tr"); tr2.className = "un-bt-final"; var td2L = document.createElement("td"), td2 = document.createElement("td"), sp2 = document.createElement("span");
           td2L.innerHTML = projetActuel === 1
             ? "<strong>" + (charges ? "Différence résultats" : "Différence 2 machines") + "</strong>"
             : "<strong>" + (charges ? "Total résultats" : "Total 2 machines") + "</strong>"; tr2.appendChild(td2L);
@@ -4074,9 +4095,8 @@
           if (projetActuel === 1) {
             // Projet 1 uniquement : l'écart entre les 2 machines (de recette, ou de résultat si les charges sont affichées), en faveur de la plus élevée.
             var ecart = basePour2[1] - basePour2[0], gagnante = ecart >= 0 ? entrees[1] : entrees[0];
-            sp2.textContent = unEur(Math.abs(ecart), 2) + " en faveur de " + gagnante.nom;
-            sp2.style.color = gagnante.couleur;
-          } else sp2.textContent = unEur(basePour2[0] + basePour2[1], 2);
+            sp2.textContent = unEur(Math.abs(ecart), 0) + " en faveur de " + gagnante.nom;
+          } else sp2.textContent = unEur(basePour2[0] + basePour2[1], 0);
           td2.appendChild(sp2); tr2.appendChild(td2); body.appendChild(tr2);
         }
         // Joker ouvert (projet 02) : comme sous « Total des 2 machines » dans « Bascule vers un O-scan », 2 lignes en orange —
@@ -4089,7 +4109,7 @@
           trE.appendChild(tdE); body.appendChild(trE);
           var trC = document.createElement("tr"), tdCL = document.createElement("td"), tdCV = document.createElement("td");
           tdCL.innerHTML = "<strong>CA équivalent</strong>"; trC.appendChild(tdCL);
-          tdCV.colSpan = entrees.length; tdCV.innerHTML = '<span class="un-bareme-ca" style="color:' + UN_SLOT_COLORS[1] + '">+' + unEur(jk.gainCA, 2) + '</span>';
+          tdCV.colSpan = entrees.length; tdCV.innerHTML = '<span class="un-bareme-ca" style="color:' + UN_SLOT_COLORS[1] + '">+' + unEur(jk.gainCA, 0) + '</span>';
           trC.appendChild(tdCV); body.appendChild(trC);
         }
       }
@@ -6949,43 +6969,57 @@
           }
           // ---- Page 4 : Tableau du barème dégressif (+ comparatif CT vs IRM, projet 03) ----
           function tableBareme(liste, difference) {
+            // Mise en forme refondue le 06/10/2026 (demande de Cédric) : en-têtes de machine en bandeau teinté avec filet de couleur,
+            // tranches en tons discrets, lignes de total sur fond gris, résultat sur fond vert, bandeau marine pour la différence / le total.
             var COUL_RECETTES = "#1b8f5a", COUL_CHARGES = "#c2334d", COUL_RESULTAT = "#1d2a44";
-            var COL_LABEL_W = 38, colLabelX = LEFT_X + 2, colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length;
-            ensureSpace(6); doc.setFontSize(9.5); doc.setFont(undefined, "bold");
-            liste.forEach(function (b, i) { textColor(b.couleur); doc.text(b.nom, colLabelX + COL_LABEL_W + i * colW, y); });
-            doc.setFont(undefined, "normal"); doc.setTextColor(0); y += 6;
-            function ligne(label, cellules, gras) {
-              ensureSpace(gras ? 6.4 : 5.8); doc.setFontSize(8.8); doc.setFont(undefined, gras ? "bold" : "normal"); doc.setTextColor(0);
-              doc.text(label, colLabelX, y);
+            var COL_LABEL_W = 40, colLabelX = LEFT_X + 2, colW = ((RIGHT_X - LEFT_X - 4) - COL_LABEL_W) / liste.length, tableW = RIGHT_X - LEFT_X - 4;
+            function teinte(hex, k) { var c = rgbDe(hex); doc.setFillColor(Math.round(255 - (255 - c[0]) * k), Math.round(255 - (255 - c[1]) * k), Math.round(255 - (255 - c[2]) * k)); }
+            ensureSpace(14);
+            liste.forEach(function (b, i) {
+              var x0 = colLabelX + COL_LABEL_W + i * colW + 1;
+              teinte(b.couleur, 0.12); doc.roundedRect(x0, y - 5, colW - 2, 8, 1.2, 1.2, "F");
+              fill(b.couleur); doc.rect(x0, y + 2.1, colW - 2, 0.9, "F");
+              doc.setFontSize(9.5); doc.setFont(undefined, "bold"); textColor(b.couleur);
+              doc.text(b.nom, x0 + (colW - 2) / 2, y, { align: "center" });
+            });
+            doc.setFont(undefined, "normal"); doc.setTextColor(0); y += 8;
+            function ligne(label, cellules, style, espaceAvant) {
+              var h = style ? 7 : 6.2;
+              ensureSpace(h + (espaceAvant || 0)); y += espaceAvant || 0;
+              if (style === "total") { doc.setFillColor(245, 246, 248); doc.rect(colLabelX, y - 4.6, tableW, h - 0.4, "F"); }
+              if (style === "resultat") { doc.setFillColor(234, 243, 238); doc.rect(colLabelX, y - 4.8, tableW, h, "F"); doc.setDrawColor(29, 42, 68); doc.setLineWidth(0.5); doc.line(colLabelX, y - 4.8, colLabelX + tableW, y - 4.8); doc.setLineWidth(0.2); }
+              doc.setFontSize(style === "resultat" ? 9.4 : 8.8); doc.setFont(undefined, style ? "bold" : "normal"); doc.setTextColor(58, 66, 82);
+              doc.text(label, colLabelX + 2, y);
               cellules.forEach(function (c, i) {
-                var x = colLabelX + COL_LABEL_W + i * colW;
-                if (c.detail) { doc.setFontSize(7.2); doc.setFont(undefined, "normal"); doc.setTextColor(110); doc.text(c.detail, x, y); }
-                doc.setFontSize(8.8); doc.setFont(undefined, gras ? "bold" : "normal"); textColor(c.couleur);
-                doc.text(c.montant, x + colW - 2, y, { align: "right" });
+                var x = colLabelX + COL_LABEL_W + i * colW + 1;
+                if (c.detail) { doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(125); doc.text(c.detail, x + 1, y); }
+                doc.setFontSize(style === "resultat" ? 9.4 : 8.8); doc.setFont(undefined, style ? "bold" : "normal"); textColor(c.couleur);
+                doc.text(c.montant, x + colW - 3, y, { align: "right" });
               });
-              doc.setFont(undefined, "normal"); doc.setTextColor(0); doc.setDrawColor(238); doc.line(colLabelX, y + 1.6, RIGHT_X - 2, y + 1.6);
-              y += gras ? 6.4 : 5.8;
+              doc.setFont(undefined, "normal"); doc.setTextColor(0);
+              if (!style) { doc.setDrawColor(236, 238, 242); doc.line(colLabelX, y + 1.7, colLabelX + tableW, y + 1.7); }
+              y += h;
             }
             liste[0].lignes.forEach(function (_, k) {
               ligne(liste[0].lignes[k].label, liste.map(function (b) { var l = b.lignes[k]; return { detail: l.plage + "  " + unEur(l.tarif, 2), montant: unEurosFmt.format(l.ca), couleur: b.couleur }; }));
             });
-            ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: b.couleur }; }), true);
+            ligne("Total", liste.map(function (b) { return { montant: unEurosFmt.format(b.total), couleur: b.couleur }; }), "total");
             if (liste.some(function (b) { return b.acte > 0; })) {
-              ligne("Acte intellectuel", liste.map(function (b) { return { montant: unEurosFmt.format(b.acte), couleur: COUL_RECETTES }; }));
-              ligne("Total des recettes", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalRecettes), couleur: COUL_RECETTES }; }), true);
+              ligne("Acte intellectuel", liste.map(function (b) { return { montant: unEurosFmt.format(b.acte), couleur: COUL_RECETTES }; }), null, 2.5);
+              ligne("Total des recettes", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalRecettes), couleur: COUL_RECETTES }; }), "total");
             }
-            [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c) {
-              ligne(c[0], liste.map(function (b) { return { montant: unEurosFmt.format(b[c[1]]), couleur: COUL_CHARGES }; }));
+            [["Loyer", "loyer"], ["Personnel", "personnel"], ["Électricité", "elec"], ["Autres charges", "autres"]].forEach(function (c, ic) {
+              ligne(c[0], liste.map(function (b) { return { montant: unEurosFmt.format(b[c[1]]), couleur: COUL_CHARGES }; }), null, ic === 0 ? 2.5 : 0);
             });
-            ligne("Total des charges", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalCharges), couleur: COUL_CHARGES }; }), true);
-            ligne("Résultat", liste.map(function (b) { return { montant: unEurosFmt.format(b.resultat), couleur: COUL_RESULTAT }; }), true);
+            ligne("Total des charges", liste.map(function (b) { return { montant: unEurosFmt.format(b.totalCharges), couleur: COUL_CHARGES }; }), "total");
+            ligne("Résultat", liste.map(function (b) { return { montant: unEurosFmt.format(b.resultat), couleur: COUL_RESULTAT }; }), "resultat", 1.5);
             if (difference) {
-              ensureSpace(10); y += 2;
-              doc.setFillColor(244, 245, 247); doc.roundedRect(LEFT_X, y - 4.5, CW, 8, 1, 1, "F");
-              doc.setFontSize(9.2); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
-              doc.text(difference.label, LEFT_X + 3, y);
-              textColor(difference.couleur); doc.text(difference.texte, RIGHT_X - 3, y, { align: "right" });
-              doc.setFont(undefined, "normal"); y += 8;
+              ensureSpace(12); y += 3;
+              doc.setFillColor(29, 42, 68); doc.roundedRect(colLabelX, y - 5, tableW, 9, 1.5, 1.5, "F");
+              doc.setFontSize(9.4); doc.setFont(undefined, "bold"); doc.setTextColor(255);
+              doc.text(difference.label, colLabelX + 3, y + 0.2);
+              doc.text(difference.texte, colLabelX + tableW - 3, y + 0.2, { align: "right" });
+              doc.setFont(undefined, "normal"); doc.setTextColor(0); y += 9;
             }
           }
           if (inclureCompo && donnees.bareme.length) {
