@@ -2356,10 +2356,17 @@
       }
       ["A", "B"].forEach(function (S) {
         document.getElementById("unInstall" + S).addEventListener("input", function () { unSyncChangement(S); });
+        // La durée d'acquisition est PRIORITAIRE (06/10/2026, demande de Cédric) : la modifier change automatiquement le nombre d'examens par
+        // heure (60 / (acquisition + changement)), sans toucher au temps de changement de patient.
         document.getElementById("unAcq" + S).addEventListener("input", function () {
-          var inst = parseFloat(document.getElementById("unInstall" + S).value) || 0, a = parseFloat(this.value) || 0;
-          if (inst > 0 && 60 / inst - a < unChgMin(S) - 1e-9) this.value = unArrondi(Math.max(0.5, 60 / inst - unChgMin(S)), 1); // le changement garde son minimum
-          unSyncChangement(S);
+          var a = parseFloat(this.value) || 0, chgEl = document.getElementById("unChg" + S), c = parseFloat(chgEl.value) || unChgMin(S);
+          if (a <= 0) return;
+          var inst = document.getElementById("unInstall" + S);
+          unSyncEnCours = true; // le débit recalculé ne doit pas relancer la synchronisation du temps de changement
+          try {
+            inst.value = Math.round(60 / (a + c) * 100) / 100;
+            inst.dispatchEvent(new Event("input", { bubbles: true }));
+          } finally { unSyncEnCours = false; }
         });
         document.getElementById("unChg" + S).addEventListener("input", function (e) {
           if (!e.isTrusted && !this.dataset.pm) return; // la restauration de session ne doit pas recalculer le débit
