@@ -2304,12 +2304,12 @@
       // 60 / débit = acquisition + changement. Modifier l'acquisition garde le débit (le changement s'ajuste) ; modifier le changement
       // recalcule le débit ; modifier le débit recalcule le changement. L'acquisition sert aussi à l'électricité d'un examen.
       // Minimum du temps de changement (06/10/2026, demande de Cédric) : 90 secondes (1,5 min) pour l'O-scan, 2,5 min pour toutes
-      // les autres IRM ; scanner (projet 03) : 1 min comme avant.
+      // les autres IRM ; scanner (projet 03) : 2 min.
       function unChgMin(S) {
         var m = machineParKey((S === "A" ? selectA : selectB).value);
         if (!m) return 1;
         if (m.key === "esaote-o-scan") return 1.5;
-        return m.type === "ct" ? 1 : 2.5;
+        return m.type === "ct" ? 2 : 2.5; // scanner (06/10/2026) : 2 min, le changement dépendant de l'injection du patient
       }
       function unArrondi(v, n) { var k = Math.pow(10, n); return Math.round(v * k) / k; }
       var unSyncEnCours = false;
@@ -6530,28 +6530,22 @@
 
       var UN_PROJET_TITRES = { 1: "Première installation d'IRM", 2: "IRM supplémentaire", 3: "Remplacement d'un scanner" };
 
-      // Numéro de simulation (06/10/2026, demande de Cédric) : compteur +1 à chaque simulation envoyée, affiché dans le pied de
-      // page du PDF et dans son titre. Conservé dans ce navigateur (localStorage) ; n'avance qu'une fois l'envoi réussi.
-      var UN_COMPTEUR_CLE = "ced4scale-unifie-compteur-simulations";
-      function unNumeroSimulationSuivant() {
-        try { return (parseInt(localStorage.getItem(UN_COMPTEUR_CLE), 10) || 0) + 1; } catch (e) { return 1; }
-      }
-      function unValiderNumeroSimulation(n) { try { localStorage.setItem(UN_COMPTEUR_CLE, String(n)); } catch (e) {} }
-      function unDateCourte(sep) {
+      // Titre du PDF (06/10/2026, demande de Cédric) : « Simulation-IRM-<société>-JJ-MM-AA-HH-MN-<projet> » où <projet> = « Première
+      // installation d'IRM », « IRM supplémentaire » ou « Remplacement d'un scanner ». Plus de numéro de simulation. Les « / » et « : »
+      // sont impossibles dans un nom de fichier : tirets dans le nom du fichier, « JJ/MM/AA HH-MN » dans le titre interne du PDF.
+      function unDateHeure(sepDate, sepHeure) {
         var d = new Date(), p = function (x) { return String(x).padStart(2, "0"); };
-        return [p(d.getDate()), p(d.getMonth() + 1), p(d.getFullYear() % 100)].join(sep);
+        return [p(d.getDate()), p(d.getMonth() + 1), p(d.getFullYear() % 100)].join(sepDate) + " " + [p(d.getHours()), p(d.getMinutes())].join(sepHeure);
       }
       function unSlug(txt) {
         return String(txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^A-Za-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
       }
-      // « Simulation-IRM-<société>-JJ-MM-AA-Simulateur-unifie-<n> » (les « / » sont impossibles dans un nom de fichier).
-      function unTitrePdf(societe, numero, sep) {
-        var soc = sep === "/" ? (societe || "Sans nom") : (unSlug(societe) || "Sans-nom");
-        return sep === "/" ? "Simulation-IRM-" + soc + "-" + unDateCourte("/") + "-Simulateur unifié-" + numero
-                           : "Simulation-IRM-" + soc + "-" + unDateCourte("-") + "-Simulateur-unifie-" + numero;
+      function unTitrePdf(societe, interne) {
+        var projet = UN_PROJET_TITRES[projetActuel] || "Simulation";
+        if (interne) return "Simulation-IRM-" + (societe || "Sans nom") + "-" + unDateHeure("/", "-") + "-" + projet;
+        return "Simulation-IRM-" + (unSlug(societe) || "Sans-nom") + "-" + unDateHeure("-", "-").replace(" ", "-") + "-" + unSlug(projet);
       }
-      function unGenererPdfBase64(numeroSimulation) {
-        numeroSimulation = numeroSimulation || unNumeroSimulationSuivant();
+      function unGenererPdfBase64() {
         var donnees = unRecapDonnees();
         var inclureCompo = document.getElementById("unExportInclureCompo").checked;
         var inclureRse = donnees.rse && document.getElementById("unExportInclureRse").checked;
@@ -7048,10 +7042,10 @@
           var nbPages = doc.getNumberOfPages();
           for (var pg = 1; pg <= nbPages; pg++) {
             doc.setPage(pg); doc.setFontSize(8); doc.setFont(undefined, "normal"); doc.setTextColor(150);
-            doc.text("Simulation IRM — Projet " + donnees.projet + " — Ced4Scale — simulation du " + new Date().toLocaleDateString("fr-FR") + " — n° " + numeroSimulation, LEFT_X, 290);
+            doc.text("Simulation IRM — Projet " + donnees.projet + " — Ced4Scale — simulation du " + new Date().toLocaleDateString("fr-FR") + " à " + unDateHeure("/", "h").split(" ")[1], LEFT_X, 290);
             doc.text("Page " + pg + " / " + nbPages, RIGHT_X, 290, { align: "right" });
           }
-          doc.setProperties({ title: unTitrePdf(document.getElementById("unExportEtablissement").value.trim(), numeroSimulation, "/") });
+          doc.setProperties({ title: unTitrePdf(document.getElementById("unExportEtablissement").value.trim(), true) });
           return doc.output("datauristring").split(",")[1];
         });
       }
@@ -7087,9 +7081,8 @@
         submitButton.disabled = true;
         unExportError.hidden = true;
 
-        var numeroSimulation = unNumeroSimulationSuivant();
         Promise.resolve().then(function () {
-          return unGenererPdfBase64(numeroSimulation);
+          return unGenererPdfBase64();
         }).then(function (pdfBase64) {
           return fetch(SIMULATOR_REQUEST_URL, {
             method: "POST",
@@ -7101,13 +7094,12 @@
               etablissement: etablissement,
               fonction: fonction,
               commentaire: commentaire,
-              filename: unTitrePdf(etablissement, numeroSimulation, "-") + ".pdf",
+              filename: unTitrePdf(etablissement, false) + ".pdf",
               pdfBase64: pdfBase64,
               volume: "" // volume déjà dans le PDF ; champ conservé pour coller au même contrat JSON que simulateur-recettes.html
             })
           }).then(function (response) {
             if (!response.ok) throw new Error("HTTP " + response.status);
-            unValiderNumeroSimulation(numeroSimulation);
             unExportSuccess.hidden = false;
             unExportForm.hidden = true;
             if (window.goatcounter && window.goatcounter.count) {
