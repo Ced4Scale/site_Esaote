@@ -6080,6 +6080,31 @@
       // ---- Rassemble toutes les données du récapitulatif pour le projet ACTUELLEMENT
       // affiché — recalculées à l'instant de l'envoi (unRenderPointMort() d'abord, pour
       // être sûr que la table de mixage/les cartes reflètent le tout dernier réglage). ----
+      // Synthèse de la table de mixage pour le PDF (06/10/2026, demande de Cédric) : lue directement dans la table de mixage
+      // affichée (mêmes valeurs que les curseurs, mêmes groupes masqués/affichés). Réglages communs d'abord (examens par an,
+      // répartition, coût du kWh), puis un tableau « une ligne par machine ».
+      var UN_MIX_COMMUNS = { unMixGroupActivite: 1, unMixGroupRepart: 1, unMixGroupKwh: 1 };
+      var UN_MIX_UNITES = { unMixHeuresGroup: " (h/j)", unMixLoyerGroup: " (€/mois)", unMixGroupDebit: "", unMixMembreGroup: "", unMixContrasteGroup: "" };
+      function unMixageSynthese(nomA, nomB) {
+        var communs = [], colonnes = [], lignes = [{ nom: nomA, couleur: UN_SLOT_COLORS[0], valeurs: [] }];
+        var deuxMachines = !!nomB;
+        if (deuxMachines) lignes.push({ nom: nomB, couleur: UN_SLOT_COLORS[1], valeurs: [] });
+        Array.prototype.forEach.call(document.querySelectorAll("#unMixerPointMort .un-mixer__group"), function (g) {
+          if (g.hidden) return;
+          var titreEl = g.querySelector(".un-mixer__group-title"), titre = titreEl ? titreEl.textContent.trim() : "";
+          var cols = Array.prototype.filter.call(g.querySelectorAll(".un-mixer__fader-col"), function (c) { return !c.hidden; });
+          var vals = cols.map(function (c) { var v = c.querySelector(".un-mixer__fader-value"); return v ? v.value.trim() : ""; });
+          if (!vals.length) return;
+          if (UN_MIX_COMMUNS[g.id]) {
+            if (g.id === "unMixGroupRepart") { var pa = parseFloat(vals[0]) || 0; communs.push({ label: titre, valeur: nomA + " " + Math.round(pa) + " %  ·  " + nomB + " " + Math.round(100 - pa) + " %" }); }
+            else communs.push({ label: titre, valeur: vals[0] + (g.id === "unMixGroupKwh" ? " €" : "") });
+            return;
+          }
+          colonnes.push(titre + (UN_MIX_UNITES[g.id] || ""));
+          lignes.forEach(function (l, k) { l.valeurs.push(vals[k] != null ? vals[k] : (vals[0] != null ? vals[0] : "")); });
+        });
+        return { communs: communs, colonnes: colonnes, lignes: lignes };
+      }
       function unRecapDonnees() {
         unRenderPointMort();
         if (projetActuel === 3) unRenderCtIrm(); // garantit #unCtIrmChart à jour avant capture PDF
@@ -6257,6 +6282,7 @@
         return {
           projet: projetActuel, volume: volume,
           machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
+          mixage: unMixageSynthese(machineANom, machineBNom),
           pointMort: pointMort, compo: compo, bareme: bareme, baremeDifference: baremeDifference,
           rse: rse, rseHyp: rseHyp, ctIrm: ctIrm, compoGraphAvec: compoGraphAvec, compoGraphSans: compoGraphSans, avecActe: !!params.acteIntellectuelActif
         };
@@ -6339,7 +6365,13 @@
             doc.setFontSize(11.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
             doc.text(txt, LEFT_X, y); y += 6.5; doc.setFont(undefined, "normal");
           }
+          // Pages portant le tableau de synthèse de la table de mixage en bas (06/10/2026) : Seuil, Composition, Barème.
+          // Leur contenu s'arrête plus haut (PAGE_BOTTOM) pour lui laisser la place.
+          var pagesMixage = [];
           function titrePage(txt, sousTxt) {
+            var pageMix = /^(Seuil|Composition|Tableau du bar)/.test(txt);
+            PAGE_BOTTOM = pageMix ? 258 : 280;
+            if (pageMix && pagesMixage.indexOf(doc.getNumberOfPages()) < 0) pagesMixage.push(doc.getNumberOfPages());
             doc.setFontSize(14); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
             doc.text(txt, LEFT_X, y); y += 6; doc.setFont(undefined, "normal");
             if (sousTxt) { doc.setFontSize(8.5); doc.setTextColor(120); doc.text(sousTxt, LEFT_X, y); y += 5; }
@@ -6449,9 +6481,9 @@
             doc.setFont(undefined, "normal");
           }
           function blocComposition(titreBloc, items, cats, cle) {
-            var parts2 = !!(items[0][cle].parts), rowH = parts2 ? 4.3 : 4.5;
+            var parts2 = !!(items[0][cle].parts), rowH = parts2 ? 4 : 4.5;
             // projet 02 resserré le 06/10/2026 : la page « avec l'acte intellectuel » débordait sur une page de plus
-            var R = parts2 ? 26 : 26, colW = items.length > 1 ? CW / 2 : CW;
+            var R = parts2 ? 22 : 24, colW = items.length > 1 ? CW / 2 : CW;
             var nLeg = Math.max.apply(null, items.map(function (it) { return cats.filter(function (p) { return it[cle].detail[p.key] > 0; }).length + 1; }));
             var h = 10 + 8 + R + 6 + (nLeg + (parts2 ? 1 : 0)) * rowH + 3;
             ensureSpace(h + 2);
@@ -6474,7 +6506,7 @@
                 var centreP = unCentreParDefaut(bloc);
                 centreP.forEach(function (li, q) {
                   var yl = yy + 10 + R - 1.6 - (centreP.length - 1 - q) * 3.7;
-                  doc.setFontSize(centreP.length === 1 ? 8.5 : 6.4); doc.setFont(undefined, "normal"); doc.setTextColor(110);
+                  doc.setFontSize(centreP.length === 1 ? 8.5 : 5.6); doc.setFont(undefined, "normal"); doc.setTextColor(110);
                   var w1 = doc.getTextWidth(li.label + " "); doc.setFont(undefined, "bold");
                   var w2 = doc.getTextWidth(li.valeur), x0 = cx - (w1 + w2) / 2;
                   doc.setFont(undefined, "normal"); doc.text(li.label + " ", x0, yl);
@@ -6707,6 +6739,45 @@
             var cy = y + 11.5; lignesCommentaire.forEach(function (l) { doc.text(l, LEFT_X + 4, cy); cy += 4.6; });
             doc.setFont(undefined, "normal"); y += 12 + 4.6 * lignesCommentaire.length;
           }
+
+          // ---- Synthèse de la table de mixage, en bas des pages Seuil / Composition / Barème ----
+          function dessinerMixage(pg) {
+            var m = donnees.mixage;
+            if (!m || !m.colonnes.length) return;
+            doc.setPage(pg);
+            var nCol = m.colonnes.length, wNom = 40, wCol = (CW - 6 - wNom) / nCol;
+            var entetes = m.colonnes.map(function (c) { return doc.splitTextToSize(c, wCol - 1).slice(0, 2); });
+            doc.setFontSize(6.3); doc.setFont(undefined, "bold");
+            var hEntete = 2.8 * Math.max.apply(null, entetes.map(function (e) { return e.length; })) + 1.6;
+            var hCommuns = m.communs.length ? 5 : 0, rowH = 4.6;
+            var h = 6.5 + hCommuns + hEntete + m.lignes.length * rowH + 1.5, top = 286 - h, yy = top;
+            doc.setFillColor(244, 245, 247); doc.roundedRect(LEFT_X, top, CW, h, 1.5, 1.5, "F");
+            doc.setFontSize(8.5); doc.setFont(undefined, "bold"); doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]);
+            doc.text("Réglages de la table de mixage", LEFT_X + 3, top + 4.6); yy = top + 6.5;
+            if (m.communs.length) {
+              var xx = LEFT_X + 3;
+              m.communs.forEach(function (c, k) {
+                doc.setFontSize(7); doc.setFont(undefined, "normal"); doc.setTextColor(110);
+                var t1 = c.label + " : "; doc.text(t1, xx, yy + 2.6); xx += doc.getTextWidth(t1);
+                doc.setFont(undefined, "bold"); doc.setTextColor(30);
+                doc.text(c.valeur, xx, yy + 2.6); xx += doc.getTextWidth(c.valeur) + 6;
+              });
+              yy += hCommuns;
+            }
+            doc.setFontSize(6.3); doc.setFont(undefined, "bold"); doc.setTextColor(90);
+            entetes.forEach(function (e, k) { doc.text(e, LEFT_X + 3 + wNom + wCol * k + wCol / 2, yy + 2.4, { align: "center" }); });
+            yy += hEntete;
+            doc.setDrawColor(210); doc.setLineWidth(0.2); doc.line(LEFT_X + 3, yy - 0.8, RIGHT_X - 3, yy - 0.8);
+            m.lignes.forEach(function (l) {
+              doc.setFontSize(7.2); doc.setFont(undefined, "bold"); textColor(l.color || l.couleur);
+              doc.text(doc.splitTextToSize(l.nom, wNom - 2)[0], LEFT_X + 3, yy + 2.6);
+              doc.setTextColor(30);
+              l.valeurs.forEach(function (v, k) { doc.text(String(v), LEFT_X + 3 + wNom + wCol * k + wCol / 2, yy + 2.6, { align: "center" }); });
+              yy += rowH;
+            });
+            doc.setFont(undefined, "normal");
+          }
+          pagesMixage.forEach(dessinerMixage);
 
           // ---- Pieds de page « Page i / n » sur toutes les pages ----
           var nbPages = doc.getNumberOfPages();
