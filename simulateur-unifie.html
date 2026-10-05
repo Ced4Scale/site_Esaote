@@ -266,6 +266,13 @@
     /* Plein écran : colonne de gauche beaucoup plus large, lien officiel plus lisible. */
     /* Carte RSE (projet 1) — lignes à barres : titre à GAUCHE des deux barres, valeurs en blanc DANS les barres
        (valeur trop grande pour une barre très courte : à droite de la barre, en noir). Graphe et lignes de faits = même composant. */
+    /* Cadenas « durée d'acquisition » des réglages Machine A / B (06/10/2026) */
+    .un-cad-acq { cursor: pointer; margin-left: .5rem; font-size: 1.1rem; line-height: 1; user-select: none; display: inline-flex; align-items: center; }
+    .un-cad-acq input { position: absolute; opacity: 0; width: 0; height: 0; }
+    .un-cad-acq .un-cad-off { display: none; }
+    .un-cad-acq input:not(:checked) ~ .un-cad-on { display: none; }
+    .un-cad-acq input:not(:checked) ~ .un-cad-off { display: inline; }
+    .un-cad-acq input:focus-visible ~ span { outline: 2px solid var(--red, #cd0000); border-radius: 4px; }
     /* Boutons − / + du formulaire Paramètres (04/10/2026) */
     .un-pm-btn { flex: 0 0 auto; width: 1.7rem; height: 1.7rem; padding: 0; border: 1px solid var(--line-2, #d6d6d0); border-radius: 50%; background: #fff; color: var(--ink, #222); font-size: 1.05rem; line-height: 1; cursor: pointer; }
     .un-pm-btn:hover { border-color: var(--red, #cd0000); color: var(--red, #cd0000); }
@@ -869,6 +876,7 @@
             <div class="simulator__field-suffix">
               <input type="number" id="unAcqA" value="10" min="0.5" step="0.5" />
               <span>min</span>
+              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockA" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><span class="un-cad-on">🔒</span><span class="un-cad-off">🔓</span></label>
             </div>
           </div>
           <div class="field">
@@ -1013,6 +1021,7 @@
             <div class="simulator__field-suffix">
               <input type="number" id="unAcqB" value="10" min="0.5" step="0.5" />
               <span>min</span>
+              <label class="un-cad-acq" title="Verrouillé : la durée d'acquisition ne change pas quand on modifie le nombre d'examens par heure (seul le temps de changement s'ajuste)."><input type="checkbox" id="unAcqLockB" checked autocomplete="off" aria-label="Fixer la durée d'acquisition" /><span class="un-cad-on">🔒</span><span class="un-cad-off">🔓</span></label>
             </div>
           </div>
           <div class="field">
@@ -2268,22 +2277,72 @@
       // les réglages Machine A / B (avant : valeurs de la fiche, visibles seulement dans le PDF). Lien avec « Examens par heure » :
       // 60 / débit = acquisition + changement. Modifier l'acquisition garde le débit (le changement s'ajuste) ; modifier le changement
       // recalcule le débit ; modifier le débit recalcule le changement. L'acquisition sert aussi à l'électricité d'un examen.
+      // Minimum du temps de changement (06/10/2026, demande de Cédric) : 90 secondes (1,5 min) pour l'O-scan, 2,5 min pour toutes
+      // les autres IRM ; scanner (projet 03) : 1 min comme avant.
+      function unChgMin(S) {
+        var m = machineParKey((S === "A" ? selectA : selectB).value);
+        if (!m) return 1;
+        if (m.key === "esaote-o-scan") return 1.5;
+        return m.type === "ct" ? 1 : 2.5;
+      }
+      function unArrondi(v, n) { var k = Math.pow(10, n); return Math.round(v * k) / k; }
+      var unSyncEnCours = false;
+      // Cadenas « durée d'acquisition » (#unAcqLockA/B, 06/10/2026) : verrouillé (par défaut), l'acquisition ne bouge pas — changer le
+      // nombre d'examens par heure ne modifie que le temps de changement ; déverrouillé, l'acquisition est modifiable à la main et suit
+      // le débit au prorata du temps de changement. Dans les deux cas le changement ne descend jamais sous son minimum : le débit est
+      // alors plafonné (verrouillé) ou l'acquisition raccourcie (déverrouillé).
       function unSyncChangement(S) {
-        var d = parseFloat(document.getElementById("unInstall" + S).value) || 0, a = parseFloat(document.getElementById("unAcq" + S).value) || 0;
-        document.getElementById("unChg" + S).value = d > 0 ? Math.max(1, Math.round((60 / d - a) * 10) / 10) : 1;
+        if (unSyncEnCours) return;
+        unSyncEnCours = true;
+        var modifieDebit = false;
+        try {
+          var inst = document.getElementById("unInstall" + S), acqEl = document.getElementById("unAcq" + S), chgEl = document.getElementById("unChg" + S);
+          var verrou = document.getElementById("unAcqLock" + S).checked, min = unChgMin(S);
+          var d = parseFloat(inst.value) || 0, a = parseFloat(acqEl.value) || 0;
+          if (d <= 0) { chgEl.value = min; return; }
+          var T = 60 / d, chg;
+          if (verrou) {
+            chg = T - a;
+            if (chg < min - 1e-9) { d = Math.floor(60 / (a + min) * 100) / 100; inst.value = d; chg = min; modifieDebit = true; }
+          } else {
+            var c0 = parseFloat(chgEl.value) || min, part = a + c0 > 0 ? a / (a + c0) : 0.6;
+            a = T * part; chg = T - a;
+            if (chg < min - 1e-9) {
+              chg = min; a = T - min;
+              if (a < 0.5) { a = 0.5; d = Math.floor(60 / (a + min) * 100) / 100; inst.value = d; modifieDebit = true; }
+            }
+            acqEl.value = unArrondi(a, 1);
+          }
+          chgEl.value = unArrondi(Math.max(chg, min), 1);
+        } finally { unSyncEnCours = false; }
+        if (modifieDebit) {
+          document.getElementById("unInstall" + S).dispatchEvent(new Event("input", { bubbles: true }));
+          if (typeof unMixSyncTous === "function") unMixSyncTous();
+        }
+      }
+      function unAppliquerVerrouAcq(S) {
+        var lock = document.getElementById("unAcqLock" + S).checked, acq = document.getElementById("unAcq" + S);
+        acq.disabled = lock;
+        Array.prototype.forEach.call(acq.parentNode.querySelectorAll(".un-pm-btn"), function (b) { b.disabled = lock; });
       }
       ["A", "B"].forEach(function (S) {
         document.getElementById("unInstall" + S).addEventListener("input", function () { unSyncChangement(S); });
-        document.getElementById("unAcq" + S).addEventListener("input", function () { unSyncChangement(S); });
+        document.getElementById("unAcq" + S).addEventListener("input", function () {
+          var inst = parseFloat(document.getElementById("unInstall" + S).value) || 0, a = parseFloat(this.value) || 0;
+          if (inst > 0 && 60 / inst - a < unChgMin(S) - 1e-9) this.value = unArrondi(Math.max(0.5, 60 / inst - unChgMin(S)), 1); // le changement garde son minimum
+          unSyncChangement(S);
+        });
         document.getElementById("unChg" + S).addEventListener("input", function (e) {
           if (!e.isTrusted && !this.dataset.pm) return; // la restauration de session ne doit pas recalculer le débit
           delete this.dataset.pm;
-          var a = parseFloat(document.getElementById("unAcq" + S).value) || 0, c = parseFloat(this.value) || 0;
-          if (a + c <= 0) return;
+          var a = parseFloat(document.getElementById("unAcq" + S).value) || 0, c = Math.max(unChgMin(S), parseFloat(this.value) || 0);
+          this.value = unArrondi(c, 1);
           var inst = document.getElementById("unInstall" + S);
           inst.value = Math.round(60 / (a + c) * 100) / 100;
           inst.dispatchEvent(new Event("input", { bubbles: true }));
         });
+        document.getElementById("unAcqLock" + S).addEventListener("change", function () { unAppliquerVerrouAcq(S); });
+        unAppliquerVerrouAcq(S);
       });
       var installA = document.getElementById("unInstallA"), installB = document.getElementById("unInstallB");
 
