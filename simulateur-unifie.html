@@ -365,6 +365,9 @@
     .un-outils-sous[hidden] { display: none; }
     #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     #unPmOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
+    .un-pop-persistant { translate: var(--dx, 0px) var(--dy, 0px); }
+    /* L'icône reste cliquable même si un panneau déplacé la recouvre (un panneau ouvert ne se ferme que par son icône). */
+    .un-btn-dessus { position: relative; z-index: 6; }
     #unCalPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 340px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     #unCalPop .un-cal-ligne { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; font-size: .82rem; }
     #unCalPop .un-cal-ligne input[type="number"] { width: 4.6rem; }
@@ -816,7 +819,7 @@
           <div class="field">
             <div class="un-col-head">
               <button type="button" class="un-col-toggle" id="unColToggleA" aria-expanded="true" aria-controls="unColBodyA" aria-label="Replier ou déplier les réglages sous le choix de la Machine A">▾</button>
-              <label for="unMachineA" id="unMachineALabel">Choix IRM</label>
+              <label for="unMachineA" id="unMachineALabel">Paramètres</label>
             </div>
             <select id="unMachineA"></select>
           </div>
@@ -981,7 +984,7 @@
           <div class="field">
             <div class="un-col-head">
               <button type="button" class="un-col-toggle" id="unColToggleB" aria-expanded="true" aria-controls="unColBodyB" aria-label="Replier ou déplier les réglages sous le choix de la Machine B">▾</button>
-              <label for="unMachineB" id="unMachineBLabel">Choix IRM</label>
+              <label for="unMachineB" id="unMachineBLabel">Paramètres</label>
             </div>
             <select id="unMachineB"></select>
           </div>
@@ -2115,8 +2118,8 @@
           // documenté n°4/5 en tête de fichier).
           document.getElementById("unTitreA").textContent = "Machine A — scanner en place";
           document.getElementById("unTitreB").textContent = "Machine B — IRM Esaote candidate";
-          document.getElementById("unMachineALabel").textContent = "Choix scanner";
-          document.getElementById("unMachineBLabel").textContent = "Choix IRM Esaote";
+          document.getElementById("unMachineALabel").textContent = "Paramètres"; // 06/10/2026 : ex-« Choix scanner »
+          document.getElementById("unMachineBLabel").textContent = "Paramètres"; // ex-« Choix IRM Esaote »
           document.getElementById("unLoyerALabel").textContent = "Loyer du scanner, SAV inclus";
           document.getElementById("unLoyerBLabel").textContent = "Loyer de l'IRM, SAV inclus";
           document.getElementById("unColB").hidden = false;
@@ -2131,8 +2134,8 @@
           // Projet 1 : A = O-scan, B = IRM 1,5 T générique.
           document.getElementById("unTitreA").textContent = n === 2 ? "Machine A — machine déjà en place" : "Machine A";
           document.getElementById("unTitreB").textContent = n === 2 ? "Machine B — machine complémentaire" : "Machine B";
-          document.getElementById("unMachineALabel").textContent = "Choix IRM";
-          document.getElementById("unMachineBLabel").textContent = "Choix IRM";
+          document.getElementById("unMachineALabel").textContent = "Paramètres"; // 06/10/2026 : ex-« Choix IRM »
+          document.getElementById("unMachineBLabel").textContent = "Paramètres";
           document.getElementById("unLoyerALabel").textContent = "Loyer de l'IRM, SAV inclus";
           document.getElementById("unLoyerBLabel").textContent = "Loyer de l'IRM, SAV inclus";
           document.getElementById("unMembreFieldA").hidden = false;
@@ -4275,7 +4278,7 @@
       // obtenu avec le barème dégressif, trait plein) + tarif réel de la tranche (marches) + seuils +
       // repère « Votre activité » ; 4 cases dans la boîte à outils 🧰. Mêmes fonctions de calcul que
       // l'écran Bascule (unTarifMoyenPourVolume / unTarifReelPourVolume).
-      wireOutilsBtn("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
+      wirePersistant("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
       // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
       // la répartition de la Bascule progressive — UN SEUL demi-anneau (Recettes / Dépenses / Résultat)
       // pour les deux IRM ensemble, et le graphe « Tarif moyen » de la Bascule. Lit le volume total et le
@@ -4806,7 +4809,7 @@
         function annulerMinuteur() { if (minuteur) { clearTimeout(minuteur); minuteur = null; } }
         function relancerMinuteur() {
           annulerMinuteur();
-          if (!fixee) minuteur = setTimeout(function () { bulle.hidden = true; }, 3000);
+          // plus de fermeture automatique (06/10/2026) : la bulle se referme en recliquant sur l'icône
         }
         function clamp(left, top) {
           var w = bulle.offsetWidth || 340, h = bulle.offsetHeight || 200;
@@ -4830,7 +4833,10 @@
           bulle.style.left = p.left + "px"; bulle.style.top = p.top + "px";
           posConnue = true;
         }
+        launcher.classList.add("un-btn-dessus");
+        pinBtn.hidden = true; // l'épingle n'a plus d'objet : la bulle reste ouverte jusqu'au prochain clic sur l'icône
         launcher.addEventListener("click", function () {
+          if (!bulle.hidden) { bulle.hidden = true; return; }
           bulle.hidden = false;
           unPatientRendre(); // AVANT positionner() : le calcul des limites d'écran a besoin de
           // la vraie hauteur de la bulle une fois remplie, jamais de la hauteur vide/réduite.
@@ -5031,7 +5037,7 @@
 
       // « Curseurs affichés » — câblage de l'icône et des cases (la préférence elle-même,
       // unMixerChoixPrefs/unMixerGroupeVoulu, est chargée tout en haut du script).
-      wireOutilsBtn("unMixerChoixBtn", "unMixerChoixPop");
+      wirePersistant("unMixerChoixBtn", "unMixerChoixPop");
       document.querySelectorAll('#unMixerChoixPop input[data-mixgroupe]').forEach(function (cb) {
         cb.checked = unMixerGroupeVoulu(cb.dataset.mixgroupe);
         cb.addEventListener("change", function () {
@@ -5053,12 +5059,12 @@
           unRenderPointMort();
         });
       });
-      wireOutilsBtn("unCompoOutilsBtn", "unCompoOutilsPop");
+      wirePersistant("unCompoOutilsBtn", "unCompoOutilsPop", false); // sa poignée est câblée plus bas
       // Même boîte à outils, deux icônes (table de mixage + carte Composition) : le panneau est amené sous
       // l'icône cliquée ; s'il était ouvert sous l'autre, il se referme d'abord (le clic le rouvre ici).
       (function () {
         var pop = document.getElementById("unCompoOutilsPop"), b1 = document.getElementById("unCompoOutilsBtn"), b2 = document.getElementById("unCompoOutilsBtn2");
-        wireOutilsBtn("unCompoOutilsBtn2", "unCompoOutilsPop");
+        wirePersistant("unCompoOutilsBtn2", "unCompoOutilsPop", false);
         [b1, b2].forEach(function (b) {
           b.addEventListener("click", function () {
             var wrap = b.parentNode;
@@ -5526,13 +5532,43 @@
         wireInfoBtn(btnId, popId);
         document.getElementById(popId).addEventListener("click", function (e) { e.stopPropagation(); });
       }
+      // Boîtes à outils DÉPLAÇABLES (06/10/2026, demande de Cédric, pour tous les icônes de la boîte à outils) : le panneau s'ouvre au clic sur
+      // l'icône, se glisse par sa poignée « Déplacer » (double-clic = position d'origine) et ne se referme QUE par un nouveau clic sur l'icône
+      // (ni clic ailleurs, ni Échap, ni ouverture d'une autre bulle). `glisse` = faux quand le panneau a déjà sa propre poignée câblée.
+      function wirePersistant(btnId, popId, glisse) {
+        var btn = document.getElementById(btnId), pop = document.getElementById(popId);
+        btn.classList.add("un-btn-dessus");
+        pop.classList.add("un-pop-persistant");
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          pop.hidden = !pop.hidden;
+          btn.setAttribute("aria-expanded", String(!pop.hidden));
+          if (pop.hidden) pop.style.transform = "";
+        });
+        pop.addEventListener("click", function (e) { e.stopPropagation(); });
+        if (glisse === false) return;
+        var poignee = pop.querySelector(".un-outils-poignee");
+        if (!poignee) {
+          poignee = document.createElement("div"); poignee.className = "un-outils-poignee"; poignee.textContent = "⠿ Déplacer";
+          poignee.title = "Glisser pour déplacer (double-clic : position d'origine)";
+          pop.insertBefore(poignee, pop.firstChild);
+        }
+        var dx = 0, dy = 0, dep = null;
+        function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
+        poignee.addEventListener("pointerdown", function (e) { dep = { x: e.clientX - dx, y: e.clientY - dy }; poignee.setPointerCapture(e.pointerId); e.preventDefault(); });
+        poignee.addEventListener("pointermove", function (e) { if (!dep) return; dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer(); });
+        poignee.addEventListener("pointerup", function () { dep = null; });
+        poignee.addEventListener("pointercancel", function () { dep = null; });
+        poignee.addEventListener("dblclick", function () { dx = 0; dy = 0; appliquer(); });
+      }
       wireInfoBtn("unFtMoyInfoBtn", "unFtMoyInfoPop");
       ["Tech", "Recap", "Tarif", "Clic", "Etudes"].forEach(function (k) { wireInfoBtn("unRseInfo" + k + "Btn", "unRseInfo" + k + "Pop"); });
-      wireOutilsBtn("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
+      wirePersistant("unFtMoyOutilsBtn", "unFtMoyOutilsPop");
       // Panneau « Horaires d'ouverture » (icône calendrier de la table de mixage, 06/10/2026) : copies synchronisées des champs de
       // Paramètres > Horaires d'ouverture. Un changement ici est répercuté sur le champ d'origine (avec ses événements : les
       // calculs, plafond de 13 h, session… suivent), un changement là-bas ou ailleurs (table de mixage…) est relu ici.
       (function unCalendrierInit() {
+        document.getElementById("unCalBtn").classList.add("un-btn-dessus");
         var btn = document.getElementById("unCalBtn"), pop = document.getElementById("unCalPop"), corps = document.getElementById("unCalCorps"), poignee = document.getElementById("unCalPoignee");
         var SPEC = [
           { t: "titre", txt: "Lundi - vendredi" },
@@ -5609,6 +5645,7 @@
       // (comme le panneau du joker) ; double-clic sur la poignée = position d'origine.
       (function () {
         var btn = document.getElementById("unPmOutilsBtn"), pop = document.getElementById("unPmOutilsPop"), poignee = document.getElementById("unPmOutilsPoignee");
+        btn.classList.add("un-btn-dessus");
         var dx = 0, dy = 0, dep = null;
         function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
         btn.addEventListener("click", function (e) {
