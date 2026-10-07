@@ -3903,7 +3903,8 @@
       // ---- Répartition A / B (projet 02) : miroir du curseur de la Bascule ----
       function unMixRepartSync() {
         var champN = document.getElementById("unBasculeVolumeTotal"), curseur = document.getElementById("unBasculeCurseur");
-        var N = Math.max(0, parseInt(champN.value, 10) || 0), volA = Math.max(0, Math.min(N, parseInt(curseur.value, 10) || 0));
+        var Nb = Math.max(0, parseInt(champN.value, 10) || 0), volA = Math.max(0, Math.min(Nb, parseInt(curseur.value, 10) || 0));
+        var N = Math.max(Nb, unBasculeN || 0); // total réel : examens du joker (créés pour l'O-scan) compris, comme la barre de la Bascule
         var pct = N > 0 ? Math.round(volA / N * 100) : 100;
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
         f.min = Math.max(0, Math.min(100, Math.floor((parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100 + 1e-9))); // plafond de l'O-scan
@@ -3916,8 +3917,12 @@
       }
       function unMixRepartAppliquer(pct) {
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
-        var curseur = document.getElementById("unBasculeCurseur");
-        curseur.value = Math.round(Math.max(0, Math.min(100, pct)) / 100 * N);
+        var curseur = document.getElementById("unBasculeCurseur"), p = Math.max(0, Math.min(100, pct)) / 100;
+        var volA = Math.round(p * N);
+        if (unBasculeConfigA && unBasculeConfigB) { // la part se lit sur le total avec examens du joker : le total dépend de volA, on itère
+          for (var i = 0; i < 6; i++) volA = Math.round(p * (N + unExtrasEffectifs(N, Math.max(0, Math.min(N, volA)), unBasculeConfigA, unBasculeConfigB, unBasculeParams)));
+        }
+        curseur.value = Math.max(0, Math.min(N, volA));
         curseur.dispatchEvent(new Event("input", { bubbles: true })); // même chemin que le curseur de la Bascule
       }
       (function () {
