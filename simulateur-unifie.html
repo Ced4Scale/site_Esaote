@@ -6054,16 +6054,12 @@
         pop.addEventListener("pointerup", function () { dep = null; });
         pop.addEventListener("dblclick", function (ev) { if (ev.target.closest("#unJokerPoignee")) { jx = 0; jy = 0; appliquer(); } });
       })();
-      // Ouvrir le joker affiche aussi le « Tableau du barème dégressif » (avec les 2 lignes orange sous « Total 2 machines »),
-      // comme dans « Bascule vers un O-scan » ; le fermer retire ces 2 lignes.
+      // Ouvrir/fermer le joker redessine le « Tableau du barème dégressif » s'il est affiché (2 lignes orange sous « Total 2 machines » quand le joker est ouvert).
       new MutationObserver(function () {
         var ouvert = !document.getElementById("unJokerPop").hidden;
         if (ouvert === unJokerOuvert) return;
         unJokerOuvert = ouvert;
-        if (ouvert) {
-          var r = document.getElementById("unCompoVueTableCb");
-          if (!r.checked) { r.checked = true; r.dispatchEvent(new Event("change", { bubbles: true })); }
-        }
+        // Ouvrir le joker ne modifie PLUS les cases cochées de la boîte à outils (07/10/2026, demande de Cédric) : le tableau n'est redessiné que s'il est déjà affiché.
         if (unCompoVueTable()) unDessinerTableCompo();
       }).observe(document.getElementById("unJokerPop"), { attributes: true, attributeFilter: ["hidden"] });
       (function () {
