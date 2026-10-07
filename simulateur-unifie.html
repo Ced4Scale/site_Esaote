@@ -1826,7 +1826,7 @@
                mêmes charges fixes (loyer, salle, assurance, entretien, injecteur, part du
                RIS) que le Point mort — seule la RECETTE change (barème dégressif complet au
                lieu du tarif plein seul). -->
-      <div id="unBasculeWrap" hidden>
+      <div id="unBasculeWrap" hidden style="display:none"><!-- MASQUÉ le 07/10/2026 (demande de Cédric) au projet 02 : non supprimé, le curseur #unBasculeCurseur et les graphes cachés alimentent la répartition, la table de mixage et les résultats -->
         <details class="simulator__chart-card simulator__chart-card--collapsible" id="unBasculeCard">
           <summary>Bascule progressive — Machine A ↔ Machine B</summary>
 
@@ -6071,7 +6071,7 @@
         if (projetActuel !== 2) { unBasculeWrap.hidden = true; return; }
         var configA = unConfigMachinePointMort(0), configB = unConfigMachinePointMort(1);
         if (!configA.machine || !configB.machine) { unBasculeWrap.hidden = true; return; }
-        unBasculeWrap.hidden = false;
+        unBasculeWrap.hidden = true; // bloc « Bascule progressive » masqué (07/10/2026) ; les calculs ci-dessous continuent de remplir ses éléments
         unBasculeParams = unConstruireParamsPointMort();
         unBasculeConfigA = configA; unBasculeConfigB = configB;
         unBasculeTrA = unTranchesAvecMontant(configA.machine, unBasculeParams.dateIso, unBasculeParams.zone, unBasculeParams.amortiKey);
