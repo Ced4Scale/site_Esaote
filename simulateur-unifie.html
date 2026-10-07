@@ -4511,6 +4511,17 @@
         var centreRec = centre3(totSeule, totRec, true);
         var totDep = dep.loyer + dep.personnel + dep.elec + dep.autres, res = totRec - totDep;
         var centreDep = centre3(depSeule, totDep, false), centreRes = centre3(totSeule - depSeule, res, true);
+        // Case du joker cochée (07/10/2026, demande de Cédric) : une ligne « Joker » en plus au centre des 3 demi-anneaux = montant des SEULS examens O-scan supplémentaires
+        // (recettes / dépenses / résultat), orange comme le joker.
+        if (unJokerDepasse && unBasculeOscActif(e)) {
+          var exJ = e.extras || 0, vBJ = e.N - e.volA, v0J = Math.max(0, vBJ - exJ), pBJ = unParamsPourSlot(1, e.params);
+          var sD = function (v) { var d = unDetailCA(v, e.configB.machine, e.params); return d.plein + d.seuil1 + d.seuil2 + d.plafond; };
+          var sC = function (v) { if (!(v > 0)) return 0; var c = unCoutsDetail(e.configB, pBJ, v); return c.loyer + c.personnel + c.elec + c.autres; };
+          var recJ = exJ > 0 ? sD(vBJ) - (v0J > 0 ? sD(v0J) : 0) + (e.params.acteIntellectuelActif ? exJ * TARIF_IRM_MEMBRE : 0) : 0;
+          var depJ = exJ > 0 ? sC(vBJ) - sC(v0J) : 0, resJ = recJ - depJ;
+          var ligneJ = function (v, bon) { return { label: "Joker", valeur: (v < 0 ? "−" : "+") + unEurosFmt.format(Math.abs(v)), couleur: bon ? "#eb6834" : "#c2334d" }; };
+          centreRec.push(ligneJ(recJ, true)); centreDep.push(ligneJ(depJ, true)); centreRes.push(ligneJ(resJ, resJ >= 0));
+        }
         var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472";
         var noms = [e.configA.machine.nomCourt, e.configB.machine.nomCourt], couls = [UN_SLOT_COLORS[0], UN_SLOT_COLORS[1]];
         // Résultat par machine : part positive de chacune, remise à l'échelle du résultat total affiché.
