@@ -4422,6 +4422,16 @@
       // repère « Votre activité » ; 4 cases dans la boîte à outils 🧰. Mêmes fonctions de calcul que
       // l'écran Bascule (unTarifMoyenPourVolume / unTarifReelPourVolume).
       wirePersistant("unCompoMoyenOutilsBtn", "unCompoMoyenOutilsPop");
+      // Ouverture de la carte « Composition des recettes » (07/10/2026, demande de Cédric) : seules les cases « Histogramme » et « Recettes » sont cochées
+      // (ni Tableau, ni Tarif moyen, ni Dépenses, ni Résultat), quoi qu'on ait coché avant ; non restauré non plus avec la session mémorisée.
+      var UN_COMPO_COCHES_OUVERTURE = ["unCompoVueHistoCb", "unCompoVueTableCb", "unCompoVueMoyenCb", "unCompoAffRec", "unCompoCouts", "unCompoAffRes"];
+      document.getElementById("unCompoCard").addEventListener("toggle", function () {
+        if (!this.open) return;
+        UN_COMPO_COCHES_OUVERTURE.forEach(function (id) {
+          var el = document.getElementById(id), voulu = id === "unCompoVueHistoCb" || id === "unCompoAffRec";
+          if (el && el.checked !== voulu) { el.checked = voulu; el.dispatchEvent(new Event("change", { bubbles: true })); }
+        });
+      });
       wirePersistant("unOsBtn", "unOsPop");
       document.getElementById("unOsBtn").addEventListener("click", function () { unOsSynthese(); });
       // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
@@ -7539,6 +7549,7 @@
             Object.keys(etat.champs).forEach(function (id) {
               var el = document.getElementById(id);
               if (!el || el.tagName === "SELECT" || id === "unBasculeCurseur") return;
+              if (UN_COMPO_COCHES_OUVERTURE.indexOf(id) >= 0) return; // vue de la Composition : toujours « Histogramme + Recettes » à l'ouverture (07/10/2026)
               if (el.type === "checkbox") { el.checked = !!etat.champs[id]; declencher(el, ["change"]); }
               else if (el.type !== "range") { el.value = etat.champs[id]; declencher(el, ["input", "change"]); }
             });
