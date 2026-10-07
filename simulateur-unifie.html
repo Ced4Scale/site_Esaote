@@ -4328,7 +4328,7 @@
           svgC.appendChild(tl);
         });
       }
-      function unDessinerPanneauHisto(svgC, items, cats, W) {
+      function unDessinerPanneauHisto(svgC, items, cats, W, seulDemi) { // seulDemi : demi-anneau seul, même taille, sans barres (montants × 5 / × 7)
         var n = items.length, cellW = W / n, cote = W >= 500;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
         var maxVal = 0;
@@ -4337,7 +4337,7 @@
         items.forEach(function (b, i) {
           var cellX = i * cellW;
           // Vue étroite (2 ou 3 graphes côte à côte, 06/10/2026, demande de Cédric) : le demi-anneau prend toute la largeur des barres en dessous.
-          var rMax = cote ? 100 : Math.max(84, (cellW - 16) / 2), cx = cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
+          var rMax = cote ? 100 : Math.max(84, (cellW - 16) / 2), cx = seulDemi ? cellX + cellW / 2 : cote ? cellX + (n === 1 ? 130 : 108) : cellX + cellW / 2;
           var baseY = cote ? 176 : 26 + rMax;
           var r = maxTotal > 0 ? Math.max(rMax * 0.5, rMax * Math.sqrt(b.total / maxTotal)) : rMax;
           var ri = r * 0.55, start = -Math.PI;
@@ -4354,12 +4354,13 @@
             start = end;
           });
           unCentreTexte(svgC, b, cx, baseY, ri);
-          var cap = unSvgEl("text", { x: cx, y: cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
+          var cap = unSvgEl("text", { x: cx, y: seulDemi && cote ? 62 : cote ? 16 : 12, class: "simulator__pie-caption", "text-anchor": "middle" });
           var s1 = unSvgEl("tspan", {}); s1.textContent = b.label + (b.captionLabel && W >= 500 ? " — " + b.captionLabel : "") + " : "; cap.appendChild(s1);
           var s2 = unSvgEl("tspan", { class: "simulator__pie-caption-montant" }); if (b.captionColor) s2.style.fill = b.captionColor; s2.textContent = b.captionValue != null ? b.captionValue : unEurosFmt.format(b.volume > 0 ? b.total / b.volume : 0); cap.appendChild(s2);
           var s3 = unSvgEl("tspan", {}); s3.textContent = b.captionSuffix || " / examen"; cap.appendChild(s3);
           svgC.appendChild(cap);
           // Barres horizontales
+          if (seulDemi) return;
           if (cote) {
             var x0 = cx + rMax + 14, bw = cellX + cellW - 8 - x0, y0 = 34, rowH = Math.min(36, (178 - y0) / cats.length);
             if (b.parts) {
@@ -4394,9 +4395,9 @@
           }
         });
       }
-      function unDessinerPanneauCompo(svgC, items, cats, W, histo) {
+      function unDessinerPanneauCompo(svgC, items, cats, W, histo, seulDemi) {
         if (!items.length) return;
-        if (histo) { unDessinerPanneauHisto(svgC, items, cats, W); return; }
+        if (histo) { unDessinerPanneauHisto(svgC, items, cats, W, seulDemi); return; }
         var maxR = W < 500 ? 74 : 70, centerY = 114, n = items.length;
         var centers = n === 1 ? [W / 2] : [W * 0.27, W * 0.73], halfWidth = n === 1 ? W * 0.22 : W * 0.133;
         var maxTotal = Math.max.apply(null, items.map(function (b) { return b.total; }));
@@ -4698,7 +4699,7 @@
       }
       function unAnneesCochees() { return [5, 7].filter(function (n) { var el = document.getElementById("unAnnees" + n); return el && el.checked; }); }
       // Demi-anneaux seuls (sans histogramme) sous l'année 1, une rangée par durée cochée.
-      function unCompoAnneesRendre(pan, W) {
+      function unCompoAnneesRendre(pan, W, vbH, histo) {
         var box = document.getElementById("unCompoAnnees"); if (!box) return;
         box.innerHTML = "";
         unAnneesCochees().forEach(function (n) {
@@ -4709,9 +4710,11 @@
             if (!p.actif) return;
             var wrap = document.createElement("div"); wrap.className = "simulator__chart-wrap";
             var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-            svg.setAttribute("class", "simulator__chart"); svg.setAttribute("viewBox", "0 0 " + W + " 120"); svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+            svg.setAttribute("class", "simulator__chart"); // même largeur de cadre que l'année 1 → le demi-anneau a exactement la même taille ; on ne garde que la hauteur utile (pas de barres sous/à côté)
+            var nIt = p.items.length, hUtile = !histo ? null : W >= 500 ? [46, 142] : [0, 26 + Math.max(84, (W / nIt - 16) / 2) + 8];
+            svg.setAttribute("viewBox", hUtile ? "0 " + hUtile[0] + " " + W + " " + hUtile[1] : "0 0 " + W + vbH); svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
             wrap.appendChild(svg); duo.appendChild(wrap);
-            unDessinerPanneauCompo(svg, p.items.map(function (b) { return unEchelleBloc(b, n); }), p.cats, W, false);
+            unDessinerPanneauCompo(svg, p.items.map(function (b) { return unEchelleBloc(b, n); }), p.cats, W, histo, true);
           });
           bloc.appendChild(duo); box.appendChild(bloc);
         });
@@ -4839,7 +4842,7 @@
           { actif: affRec.checked, items: itemsBascule ? [itemsBascule.rec] : camemberts, cats: catsRec },
           { actif: affDep.checked, items: itemsK, cats: UN_COUTS_CATS },
           { actif: affRes.checked, items: itemsR, cats: UN_RENTA_CATS }
-        ], W);
+        ], W, vbH, histo);
       }
 
       // ---------------------------------------------------------------------
