@@ -217,9 +217,6 @@
     #unMixGroupRepart .un-joker-zone img { width: 28px; height: 28px; flex: none; }
     #unMixGroupRepart #unMixJokerBar { width: 46px; height: 118px; background: #fde4d6; }
     #unMixGroupRepart #unMixJokerBar .un-mixer__bar-fill { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: calc(var(--pct, 0) * 1%); background: #eb6834; }
-    #unMixGroupRepart #unMixJokerBar input[type="range"] { writing-mode: vertical-lr; direction: rtl; }
-    #unMixGroupRepart #unMixJokerBar input[type="range"]::-webkit-slider-thumb { width: 46px; height: 10px; }
-    #unMixGroupRepart #unMixJokerBar input[type="range"]::-moz-range-thumb { width: 46px; height: 10px; }
     #unMixJokerVal { width: 7.2rem; text-align: center; }
     .un-repart-pct { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-size: .8rem; font-weight: 800; color: #fff; pointer-events: none; white-space: nowrap; }
     .un-repart-pct--a { right: calc((100 - var(--pct, 0)) * 1% + 12px); }
@@ -1385,12 +1382,11 @@
             <div class="un-mixer__fader-col" id="unMixJokerCol" style="--fader-color:#eb6834" hidden>
               <div class="un-joker-zone">
                 <img src="assets/joker.png" alt="" aria-hidden="true" />
-                <div class="un-mixer__bar" id="unMixJokerBar">
+                <div class="un-mixer__bar" id="unMixJokerBar" role="img" aria-label="Joker : examens O-scan supplémentaires (affichage seulement, réglés dans le cadre Joker)">
                   <div class="un-mixer__bar-fill"></div>
-                  <input type="range" id="unMixJokerFader" min="0" max="0" step="1" value="0" aria-label="Joker : examens O-scan supplémentaires créés (le montant affiché est leur résultat)" title="Joker : examens O-scan supplémentaires" />
                 </div>
               </div>
-              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Résultat des examens O-scan supplémentaires" />
+              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Nombre d'examens O-scan supplémentaires (réglé dans le cadre Joker)" tabindex="-1" />
             </div>
           </div>
         </div>
@@ -3925,7 +3921,7 @@
       function unMixRepartSync() {
         var champN = document.getElementById("unBasculeVolumeTotal"), curseur = document.getElementById("unBasculeCurseur");
         var Nb = Math.max(0, parseInt(champN.value, 10) || 0), volA = Math.max(0, Math.min(Nb, parseInt(curseur.value, 10) || 0));
-        var N = Math.max(Nb, unBasculeN || 0); // total réel : examens du joker (créés pour l'O-scan) compris, comme la barre de la Bascule
+        var N = Nb; // la répartition A/B ne tient PAS compte des examens supplémentaires du joker (ils s'ajoutent en plus)
         var pct = N > 0 ? Math.round(volA / N * 100) : 100;
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
         f.step = "any"; // pas continu : le bâton s'arrête exactement au plafond de l'O-scan (07/10/2026), pas à l'entier en dessous
@@ -3945,41 +3941,18 @@
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
         var volA = Math.max(0, Math.min(N, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
         var pl = (unBasculeConfigA && unBasculeConfigB) ? unPlafondOscan(N, unBasculeConfigA, unBasculeConfigB, unBasculeParams) : null;
-        col.hidden = !(pl && pl.actif);
+        // Affichage SEUL (07/10/2026) : visible uniquement si la case du joker est cochée ; le nombre se règle dans le cadre Joker et n'agit pas sur la répartition A/B.
+        col.hidden = !(pl && pl.actif && unJokerDepasse);
         if (col.hidden) return;
-        var exMax = Math.max(0, pl.cap - (N - volA)), cur = unJokerDepasse ? Math.min(unExtrasB, exMax) : 0;
-        var f = document.getElementById("unMixJokerFader");
-        f.max = exMax; f.value = cur; f.parentNode.style.setProperty("--pct", exMax > 0 ? cur / exMax * 100 : 0);
-        // Montant = résultat (recettes + acte − charges) des SEULS examens supplémentaires réalisés avec l'O-scan (même formule que le panneau 🃏).
-        var gain = 0;
-        if (cur > 0) {
-          var pB = unParamsPourSlot(1, unBasculeParams), acteB = unBasculeParams.acteIntellectuelActif ? unActeIntellectuelConfig(unBasculeConfigB) : 0;
-          var resB = function (v) {
-            if (!(v > 0)) return 0;
-            var d = unDetailCA(v, unBasculeConfigB.machine, unBasculeParams), c = unCoutsDetail(unBasculeConfigB, pB, v);
-            return d.plein + d.seuil1 + d.seuil2 + d.plafond + acteB * v - (c.loyer + c.personnel + c.elec + c.autres);
-          };
-          var vB = N - volA + cur;
-          gain = resB(vB) - resB(vB - cur);
-        }
-        document.getElementById("unMixJokerVal").value = (gain < 0 ? "− " : "+ ") + unEurosFmt.format(Math.abs(gain));
-        f.title = "Joker : " + milliersFmt.format(cur) + " examens O-scan supplémentaires";
+        var exMax = Math.max(0, pl.cap - (N - volA)), cur = Math.min(unExtrasB, exMax);
+        document.getElementById("unMixJokerBar").style.setProperty("--pct", exMax > 0 ? cur / exMax * 100 : 0);
+        document.getElementById("unMixJokerVal").value = "+ " + milliersFmt.format(cur) + " ex.";
+        document.getElementById("unMixJokerBar").title = "Joker : " + milliersFmt.format(cur) + " examens O-scan supplémentaires sur " + milliersFmt.format(exMax) + " possibles";
       }
-      (function () {
-        var f = document.getElementById("unMixJokerFader");
-        f.addEventListener("input", function () {
-          var v = Math.max(0, parseInt(f.value, 10) || 0);
-          unJokerDepasse = v > 0; unExtrasB = v; unJokerSauver(); unPlafondChange();
-          if (!document.getElementById("unJokerPop").hidden) unJokerRendre();
-        });
-      })();
       function unMixRepartAppliquer(pct) {
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
         var curseur = document.getElementById("unBasculeCurseur"), p = Math.max(0, Math.min(100, pct)) / 100;
         var volA = Math.round(p * N);
-        if (unBasculeConfigA && unBasculeConfigB) { // la part se lit sur le total avec examens du joker : le total dépend de volA, on itère
-          for (var i = 0; i < 6; i++) volA = Math.round(p * (N + unExtrasEffectifs(N, Math.max(0, Math.min(N, volA)), unBasculeConfigA, unBasculeConfigB, unBasculeParams)));
-        }
         curseur.value = Math.max(0, Math.min(N, volA));
         curseur.dispatchEvent(new Event("input", { bubbles: true })); // même chemin que le curseur de la Bascule
       }
