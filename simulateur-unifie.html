@@ -742,8 +742,9 @@
             <details class="bascule-hyp-section" name="unParamAccordion">
               <summary>Horaires d'ouverture</summary>
               <label style="display:flex;align-items:center;gap:.5rem;margin:0 0 .9rem">
-                <input type="checkbox" id="unPlafond13Heures" checked style="width:16px;height:16px;margin:0" />
-                <span>Ne pas dépasser 13 heures d'ouverture par jour <small style="color:var(--ink-soft)">(décochée : jusqu'à 24 h par jour)</small></span>
+                <span>Ouverture maximale par jour</span>
+                <input type="number" id="unPlafond13Heures" value="13" min="1" max="24" step="0.5" inputmode="decimal" style="width:4.5rem;margin:0" />
+                <span>heures <small style="color:var(--ink-soft)">(24 h maximum, 13 h par défaut)</small></span>
               </label>
               <div class="field">
                 <label for="unHeuresSemaine">Amplitude d'ouverture, lundi-vendredi</label>
@@ -3741,7 +3742,7 @@
       // Plafond d'heures d'ouverture par jour (05/10/2026, demande de Cédric) : 13 h par défaut (case cochée dans
       // Paramètres > Horaires d'ouverture), 24 h si elle est décochée. S'applique aux champs du formulaire, aux 2 curseurs
       // « Heures d'ouverture » de la table de mixage et aux ajustements automatiques d'heures.
-      function unHeuresMax() { var c = document.getElementById("unPlafond13Heures"); return c && !c.checked ? 24 : 13; }
+      function unHeuresMax() { var c = document.getElementById("unPlafond13Heures"), v = c ? parseFloat(String(c.value).replace(",", ".")) : NaN; return isFinite(v) ? Math.max(1, Math.min(24, v)) : 13; } // plafond au choix (24 h maximum), 13 h par défaut
       function unAppliquerPlafondHeures() {
         var mx = unHeuresMax();
         ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unMixHeuresFader", "unMixHeuresBFader", "unMixHeuresSamediFader", "unMixHeuresDimancheFader"].forEach(function (id) {
@@ -5166,7 +5167,7 @@
           document.getElementById("unMixHeures" + D + "Plus").addEventListener("click", function () { ecrire((parseFloat(src.value) || 0) + 0.5); });
         });
       })();
-      // Case « Ne pas dépasser 13 h par jour » : (dé)cocher recale les champs, les curseurs et les débits.
+      // Champ « Ouverture maximale par jour » (13 h par défaut, 24 h max) : le modifier recale les champs, les curseurs et les débits.
       document.getElementById("unPlafond13Heures").addEventListener("change", function () {
         unAppliquerPlafondHeures();
         unRecalerDebitsEtHeures();
@@ -5840,7 +5841,7 @@
           { t: "chk", id: "unCoupureDimanche", label: "Coupure le dimanche", wrap: "unCoupureDimancheLabel", sous: true },
           { t: "num", id: "unCoupureDureeDimanche", label: "Durée de la coupure", unite: "h", step: 0.25, wrap: "unCoupureDureeDimancheWrap", sous: true },
           { t: "titre", txt: "Plafond" },
-          { t: "chk", id: "unPlafond13Heures", label: "Ne pas dépasser 13 h d'ouverture par jour" }
+          { t: "num", id: "unPlafond13Heures", label: "Ouverture maximale par jour", unite: "h", step: 0.5 }
         ];
         var lignes = [];
         SPEC.forEach(function (sp) {
