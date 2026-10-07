@@ -3926,7 +3926,8 @@
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
         f.step = "any"; // pas continu : le bâton s'arrête exactement au plafond de l'O-scan (07/10/2026), pas à l'entier en dessous
         var pctExact = N > 0 ? volA / N * 100 : 100;
-        f.min = Math.max(0, Math.min(100, (parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100)); // plafond de l'O-scan
+        // L'échelle du curseur reste 0-100 % (la barre blanche suit la frontière bleu/orange) ; le plafond de l'O-scan est une limite (data-lim) qu'elle ne franchit pas.
+        f.min = 0; f.dataset.lim = Math.max(0, Math.min(100, (parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100)); // plafond de l'O-scan
         f.value = pctExact; f.parentNode.style.setProperty("--pct", pctExact);
         unMixJokerSync();
         if (document.activeElement !== v) v.value = pct;
@@ -3958,7 +3959,7 @@
       }
       (function () {
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
-        f.addEventListener("input", function () { unMixRepartAppliquer(parseFloat(f.value) || 0); });
+        f.addEventListener("input", function () { unMixRepartAppliquer(Math.max(parseFloat(f.dataset.lim) || 0, parseFloat(f.value) || 0)); });
         v.addEventListener("input", function () { var x = parseFloat(String(v.value).replace(",", ".")); if (isFinite(x)) unMixRepartAppliquer(x); });
         v.addEventListener("blur", unMixRepartSync);
         [["unMixRepartMoins", -1], ["unMixRepartPlus", 1]].forEach(function (d) {
