@@ -4530,6 +4530,7 @@
         var centreDep = centre3(depSeule, totDep, false), centreRes = centre3(totSeule - depSeule, res, true);
         // Case du joker cochée (07/10/2026, demande de Cédric) : une ligne « Joker » en plus au centre des 3 demi-anneaux = montant des SEULS examens O-scan supplémentaires
         // (recettes / dépenses / résultat), orange comme le joker.
+        var jokerRes = null; // chiffres des examens supplémentaires (page « joker » du PDF)
         var parJ = null; // détail par seuil / par charge des examens O-scan supplémentaires du joker (null si case non cochée)
         if (unJokerDepasse && unBasculeOscActif(e)) {
           var exJ = e.extras || 0, vBJ = e.N - e.volA, v0J = Math.max(0, vBJ - exJ), pBJ = unParamsPourSlot(1, e.params);
@@ -4546,6 +4547,7 @@
             parJ.rec.acte = e.params.acteIntellectuelActif ? exJ * TARIF_IRM_MEMBRE : 0;
             ["loyer", "personnel", "elec", "autres"].forEach(function (k) { parJ.dep[k] = (cV[k] || 0) - (c0[k] || 0); });
           }
+          jokerRes = { extras: exJ, rec: recJ, dep: depJ, res: resJ };
           centreRec.push(ligneJ(recJ, true)); centreDep.push(ligneJ(depJ, true)); centreRes.push(ligneJ(resJ, resJ >= 0));
         }
         var label = e.configA.machine.nomCourt + " + " + e.configB.machine.nomCourt, color = "#5b6472";
@@ -4561,6 +4563,7 @@
           return base;
         }
         return {
+          joker: jokerRes,
           rec: avecParts({ label: label, color: color, volume: e.N, detail: rec, total: totRec, centre: centreRec }, recM[0], recM[1], parJ ? parJ.rec : null),
           dep: avecParts({ label: label, color: color, volume: e.N, detail: dep, total: totDep, centre: centreDep }, depM[0], depM[1], parJ ? parJ.dep : null),
           res: avecParts({ label: label, color: color, volume: e.N, detail: { loyer: dep.loyer, personnel: dep.personnel, elec: dep.elec, autres: dep.autres, resultat: Math.max(0, res) },
@@ -6825,7 +6828,7 @@
         if (etatB) {
           etatB = Object.assign({}, etatB, { params: params });
           var ib = unCompoItemsBascule(etatB);
-          compoGraph.push({ label: ib.rec.label, color: ib.rec.color, volume: ib.rec.volume, rec: ib.rec, dep: ib.dep, res: ib.res });
+          compoGraph.push({ label: ib.rec.label, color: ib.rec.color, volume: ib.rec.volume, rec: ib.rec, dep: ib.dep, res: ib.res, joker: ib.joker });
         } else {
           slots.forEach(function (slot) {
             var config = unConfigMachinePointMort(slot);
@@ -6896,7 +6899,29 @@
           }
         }
 
+        // Page « joker » du PDF (07/10/2026, demande de Cédric) : seulement si la case du joker est cochée (projet 02, seconde IRM = O-scan).
+        var jokerPage = null;
+        (function () {
+          var jk = projetActuel === 2 && unJokerDepasse ? unJokerCapacite() : null;
+          if (!jk || !unBasculeOscActif(jk.e) || !compoGraphAvec.length || !compoGraphAvec[0].joker) return;
+          var e = jk.e, nomA = e.configA.machine.nomCourt, nomB = jk.nomB, pB = jk.pB, volB = jk.volB, capAn = jk.capAn, capRestante = jk.capRestante;
+          var pl = unPlafondOscan(e.nBase, e.configA, e.configB, e.params);
+          var acteB = e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configB) : 0;
+          function resB(v) {
+            if (!(v > 0)) return 0;
+            var d = unDetailCA(v, e.configB.machine, e.params), c = unCoutsDetail(e.configB, pB, v);
+            return d.plein + d.seuil1 + d.seuil2 + d.plafond + acteB * v - (c.loyer + c.personnel + c.elec + c.autres);
+          }
+          var itemsJ = unCompoItemsBascule(e), actuel = itemsJ.res.res, plein = actuel + resB(volB + capRestante) - resB(volB);
+          var dS = unDetailCA(e.nBase, e.configA.machine, e.params), cS = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), e.nBase);
+          var sansB = dS.plein + dS.seuil1 + dS.seuil2 + dS.plafond + (e.params.acteIntellectuelActif ? unActeIntellectuelConfig(e.configA) * e.nBase : 0) - (cS.loyer + cS.personnel + cS.elec + cS.autres);
+          var hOuv = pB.heuresParJour, hUtil = capAn > 0 ? hOuv * Math.min(1, volB / capAn) : 0;
+          jokerPage = { nomA: nomA, nomB: nomB, extras: e.extras, plafond: pl.plafond, eligibles: pl.eligibles, capAn: capAn, volB: volB, capRestante: capRestante, hOuv: hOuv, hUtil: hUtil,
+            chiffres: compoGraphAvec[0].joker, scenarios: [{ label: nomA + " seule", valeur: sansB, color: UN_SLOT_COLORS[0] }, { label: "Les 2 IRM (actuel)", valeur: actuel, color: UN_COULEUR_ENSEMBLE }, { label: nomB + " à 100 %", valeur: plein, color: UN_SLOT_COLORS[1] }] };
+        })();
+
         return {
+          jokerPage: jokerPage,
           projet: projetActuel, volume: volume,
           machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
           mixage: unMixageSynthese(machineANom, machineBNom),
@@ -7141,8 +7166,9 @@
                 // Texte au centre du demi-anneau : projet 02 = 1,5 T seule / 2 IRM / écart ; sinon total ou résultat (06/10/2026).
                 var centreP = unCentreParDefaut(bloc);
                 centreP.forEach(function (li, q) {
-                  var yl = yy + 10 + R - 1.6 - (centreP.length - 1 - q) * 3.7;
-                  doc.setFontSize(centreP.length === 1 ? 8.5 : 5.6); doc.setFont(undefined, "normal"); doc.setTextColor(110);
+                  var pasL = centreP.length > 3 ? 2.9 : 3.7; // 4 lignes (joker) : plus serrées pour rester dans le blanc du demi-anneau
+                  var yl = yy + 10 + R - 1.4 - (centreP.length - 1 - q) * pasL;
+                  doc.setFontSize(centreP.length === 1 ? 8.5 : centreP.length > 3 ? 4.7 : 5.6); doc.setFont(undefined, "normal"); doc.setTextColor(110);
                   var w1 = doc.getTextWidth(li.label + " "); doc.setFont(undefined, "bold");
                   var w2 = doc.getTextWidth(li.valeur), x0 = cx - (w1 + w2) / 2;
                   doc.setFont(undefined, "normal"); doc.text(li.label + " ", x0, yl);
@@ -7219,6 +7245,35 @@
                 doc.text("Les deux IRM sont regroupées selon la répartition choisie dans la Bascule progressive.", LEFT_X, y + 1);
               }
             });
+          }
+          // ---- Page « joker » : seulement si la case du joker est cochée (projet 02) ----
+          if (inclureCompo && donnees.jokerPage) {
+            var jp = donnees.jokerPage, ch = jp.chiffres;
+            nouvellePage();
+            titrePage("Composition avec le joker — examens supplémentaires de l'" + jp.nomB, "Examens créés en plus de l'activité : ils ne sont pas pris à " + jp.nomA + ".");
+            tableDeuxColonnes([
+              { label: "Plafond de l'" + jp.nomB + " (examens « membre » hors épaule)", valeur: milliersFmt.format(jp.eligibles) + " examens / an" },
+              { label: "Capacité de l'" + jp.nomB + " selon ses horaires", valeur: milliersFmt.format(jp.capAn) + " examens / an" },
+              { label: "Examens supplémentaires choisis (joker)", valeur: "+ " + milliersFmt.format(jp.extras) + " examens / an" },
+              { label: "Recettes de ces examens", valeur: unEurosFmt.format(ch.rec) },
+              { label: "Charges de ces examens", valeur: unEurosFmt.format(ch.dep) },
+              { label: "Résultat de ces examens", valeur: (ch.res < 0 ? "- " : "+ ") + unEurosFmt.format(Math.abs(ch.res)) }
+            ]);
+            y += 2;
+            blocComposition("Recettes", donnees.compoGraphAvec, UN_PALIERS.concat([UN_PALIER_ACTE]), "rec");
+            // Deux demi-anneaux : activité déjà réalisée / réalisable en plus, heures par jour utilisées / disponibles (comme dans le cadre Joker).
+            var hDispo = Math.max(0, jp.hOuv - jp.hUtil), v1 = function (v) { return (Math.round(v * 10) / 10).toString().replace(".", ","); };
+            ensureSpace(46);
+            var RJ = 17, cyJ = y + RJ + 4;
+            [[LEFT_X + CW * 0.25, "Forfaits techniques par an", jp.volB, jp.capRestante, jp.capAn, milliersFmt.format(Math.round(jp.volB)), "+ " + milliersFmt.format(jp.capRestante)],
+             [LEFT_X + CW * 0.75, "Heures par jour", jp.hUtil, hDispo, jp.hOuv, v1(jp.hUtil) + " h", "+ " + v1(hDispo) + " h"]].forEach(function (d) {
+              doc.setFontSize(8.8); doc.setFont(undefined, "bold"); textColor("#1d2a44"); doc.text(d[1], d[0], y + 1, { align: "center" });
+              demiAnneau(d[0], cyJ, RJ, [{ key: "a", color: UN_SLOT_COLORS[0] }, { key: "b", color: UN_SLOT_COLORS[1] }], { a: d[2], b: d[3] }, d[4]);
+              doc.setFontSize(7.8); doc.setFont(undefined, "bold"); textColor(UN_SLOT_COLORS[0]); doc.text("Déjà utilisé : " + d[5], d[0], cyJ + 5, { align: "center" });
+              textColor(UN_SLOT_COLORS[1]); doc.text("Encore possible : " + d[6], d[0], cyJ + 9.2, { align: "center" });
+            });
+            doc.setFont(undefined, "normal"); y = cyJ + 13;
+            paireBarres("Résultat selon 3 scénarios", jp.scenarios.map(function (sc) { return { label: sc.label, valeur: sc.valeur, color: sc.color }; }), function (v) { return unEurosFmt.format(v); }, false);
           }
           // ---- Page 4 : Tableau du barème dégressif (+ comparatif CT vs IRM, projet 03) ----
           function tableBareme(liste, difference) {
