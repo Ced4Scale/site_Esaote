@@ -207,10 +207,19 @@
     /* marges de 53 px = (150 − 44) / 2 : le bâton est centré dans la hauteur des autres faders, la case de valeur est donc au même niveau que celles du coût du kWh, du loyer, etc. */
     #unMixGroupRepart .un-mixer__bar { width: 230px; height: 44px; }
     #unMixRepartUnite { font-size: 1.4rem; font-weight: 800; line-height: 1.1; white-space: nowrap; }
-    #unMixGroupRepart .un-repart-zone { height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
+    #unMixGroupRepart .un-repart-zone { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .5rem; }
     #unMixGroupRepart .un-mixer__bar-fill { left: 0; top: 0; bottom: 0; right: auto; height: auto; width: calc(var(--pct, 0) * 1%); }
     #unMixGroupRepart .un-mixer__bar input[type="range"] { writing-mode: horizontal-tb; direction: ltr; }
     /* % de chaque IRM, de part et d'autre du curseur, dans le bâton */
+    /* Joker (07/10/2026) : bâton des examens O-scan supplémentaires créés, sous la répartition ; seul le nombre y est écrit */
+    #unMixJokerRow { display: flex; align-items: center; gap: .45rem; }
+    #unMixJokerRow[hidden] { display: none; }
+    #unMixJokerRow img { width: 28px; height: 28px; flex: none; }
+    #unMixGroupRepart #unMixJokerBar { width: 196px; height: 30px; background: #fde4d6; }
+    #unMixGroupRepart #unMixJokerBar .un-mixer__bar-fill { background: #eb6834; }
+    #unMixGroupRepart #unMixJokerBar input[type="range"]::-webkit-slider-thumb { height: 30px; }
+    #unMixGroupRepart #unMixJokerBar input[type="range"]::-moz-range-thumb { height: 26px; }
+    #unMixJokerTxt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; color: #1d2a44; pointer-events: none; white-space: nowrap; }
     .un-repart-pct { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-size: .8rem; font-weight: 800; color: #fff; pointer-events: none; white-space: nowrap; }
     .un-repart-pct--a { right: calc((100 - var(--pct, 0)) * 1% + 12px); }
     .un-repart-pct--b { left: calc(var(--pct, 0) * 1% + 12px); }
@@ -1360,9 +1369,17 @@
                 <div class="un-mixer__bar-fill"></div>
                 <span class="un-repart-pct un-repart-pct--a" id="unMixRepartPctA" aria-hidden="true"></span>
                 <span class="un-repart-pct un-repart-pct--b" id="unMixRepartPctB" aria-hidden="true"></span>
-                <input type="range" id="unMixRepartFader" min="0" max="100" step="1" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
+                <input type="range" id="unMixRepartFader" min="0" max="100" step="any" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
               <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
+              <div id="unMixJokerRow" hidden>
+                <img src="assets/joker.png" alt="" aria-hidden="true" />
+                <div class="un-mixer__bar" id="unMixJokerBar" style="--fader-color:#eb6834">
+                  <div class="un-mixer__bar-fill"></div>
+                  <span id="unMixJokerTxt" aria-hidden="true"></span>
+                  <input type="range" id="unMixJokerFader" min="0" max="0" step="1" value="0" aria-label="Joker : examens O-scan supplémentaires créés (en plus de l'activité)" title="Joker : examens O-scan supplémentaires" />
+                </div>
+              </div>
               <p class="un-plafond-note" id="unMixRepartNote" style="max-width:15rem" hidden></p>
               </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
@@ -3907,14 +3924,38 @@
         var N = Math.max(Nb, unBasculeN || 0); // total réel : examens du joker (créés pour l'O-scan) compris, comme la barre de la Bascule
         var pct = N > 0 ? Math.round(volA / N * 100) : 100;
         var f = document.getElementById("unMixRepartFader"), v = document.getElementById("unMixRepartVal");
-        f.min = Math.max(0, Math.min(100, Math.floor((parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100 + 1e-9))); // plafond de l'O-scan
-        f.value = pct; f.parentNode.style.setProperty("--pct", pct);
+        f.step = "any"; // pas continu : le bâton s'arrête exactement au plafond de l'O-scan (07/10/2026), pas à l'entier en dessous
+        var pctExact = N > 0 ? volA / N * 100 : 100;
+        f.min = Math.max(0, Math.min(100, (parseInt(document.getElementById("unBasculeCurseur").min, 10) || 0) / Math.max(1, N) * 100)); // plafond de l'O-scan
+        f.value = pctExact; f.parentNode.style.setProperty("--pct", pctExact);
+        unMixJokerSync();
         if (document.activeElement !== v) v.value = pct;
         var pa = document.getElementById("unMixRepartPctA"), pb = document.getElementById("unMixRepartPctB");
         pa.textContent = pct + " %"; pb.textContent = (100 - pct) + " %";
         pa.style.visibility = pct >= 12 ? "visible" : "hidden"; pb.style.visibility = pct <= 88 ? "visible" : "hidden"; // pas la place sinon
         document.getElementById("unMixRepartUnite").innerHTML = '<span style="color:' + UN_SLOT_COLORS[0] + '">' + milliersFmt.format(volA) + '</span> · <span style="color:' + UN_SLOT_COLORS[1] + '">' + milliersFmt.format(N - volA) + '</span>';
       }
+      // Bâton « joker » de la table de mixage : examens O-scan supplémentaires créés (même état que le panneau 🃏 : unJokerDepasse / unExtrasB).
+      function unMixJokerSync() {
+        var row = document.getElementById("unMixJokerRow"); if (!row) return;
+        var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
+        var volA = Math.max(0, Math.min(N, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
+        var pl = (unBasculeConfigA && unBasculeConfigB) ? unPlafondOscan(N, unBasculeConfigA, unBasculeConfigB, unBasculeParams) : null;
+        row.hidden = !(pl && pl.actif);
+        if (row.hidden) return;
+        var exMax = Math.max(0, pl.cap - (N - volA)), cur = unJokerDepasse ? Math.min(unExtrasB, exMax) : 0;
+        var f = document.getElementById("unMixJokerFader");
+        f.max = exMax; f.value = cur; f.parentNode.style.setProperty("--pct", exMax > 0 ? cur / exMax * 100 : 0);
+        document.getElementById("unMixJokerTxt").textContent = "+ " + milliersFmt.format(cur);
+      }
+      (function () {
+        var f = document.getElementById("unMixJokerFader");
+        f.addEventListener("input", function () {
+          var v = Math.max(0, parseInt(f.value, 10) || 0);
+          unJokerDepasse = v > 0; unExtrasB = v; unJokerSauver(); unPlafondChange();
+          if (!document.getElementById("unJokerPop").hidden) unJokerRendre();
+        });
+      })();
       function unMixRepartAppliquer(pct) {
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
         var curseur = document.getElementById("unBasculeCurseur"), p = Math.max(0, Math.min(100, pct)) / 100;
