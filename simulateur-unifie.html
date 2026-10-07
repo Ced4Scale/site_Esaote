@@ -212,14 +212,15 @@
     #unMixGroupRepart .un-mixer__bar input[type="range"] { writing-mode: horizontal-tb; direction: ltr; }
     /* % de chaque IRM, de part et d'autre du curseur, dans le bâton */
     /* Joker (07/10/2026) : bâton des examens O-scan supplémentaires créés, sous la répartition ; seul le nombre y est écrit */
-    #unMixJokerRow { display: flex; align-items: center; gap: .45rem; }
-    #unMixJokerRow[hidden] { display: none; }
-    #unMixJokerRow img { width: 28px; height: 28px; flex: none; }
-    #unMixGroupRepart #unMixJokerBar { width: 196px; height: 30px; background: #fde4d6; }
-    #unMixGroupRepart #unMixJokerBar .un-mixer__bar-fill { background: #eb6834; }
-    #unMixGroupRepart #unMixJokerBar input[type="range"]::-webkit-slider-thumb { height: 30px; }
-    #unMixGroupRepart #unMixJokerBar input[type="range"]::-moz-range-thumb { height: 26px; }
-    #unMixJokerTxt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: .85rem; font-weight: 800; color: #1d2a44; pointer-events: none; white-space: nowrap; }
+    #unMixJokerCol[hidden] { display: none; }
+    #unMixGroupRepart .un-joker-zone { height: 150px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #unMixGroupRepart .un-joker-zone img { width: 28px; height: 28px; flex: none; }
+    #unMixGroupRepart #unMixJokerBar { width: 46px; height: 118px; background: #fde4d6; }
+    #unMixGroupRepart #unMixJokerBar .un-mixer__bar-fill { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: calc(var(--pct, 0) * 1%); background: #eb6834; }
+    #unMixGroupRepart #unMixJokerBar input[type="range"] { writing-mode: vertical-lr; direction: rtl; }
+    #unMixGroupRepart #unMixJokerBar input[type="range"]::-webkit-slider-thumb { width: 46px; height: 10px; }
+    #unMixGroupRepart #unMixJokerBar input[type="range"]::-moz-range-thumb { width: 46px; height: 10px; }
+    #unMixJokerVal { width: 7.2rem; text-align: center; }
     .un-repart-pct { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-size: .8rem; font-weight: 800; color: #fff; pointer-events: none; white-space: nowrap; }
     .un-repart-pct--a { right: calc((100 - var(--pct, 0)) * 1% + 12px); }
     .un-repart-pct--b { left: calc(var(--pct, 0) * 1% + 12px); }
@@ -1373,14 +1374,6 @@
                 <input type="range" id="unMixRepartFader" min="0" max="100" step="any" value="100" aria-label="Part des examens faite par l'IRM A (le reste va à l'IRM B)" />
               </div>
               <div class="un-mixer__fader-unit" id="unMixRepartUnite"></div>
-              <div id="unMixJokerRow" hidden>
-                <img src="assets/joker.png" alt="" aria-hidden="true" />
-                <div class="un-mixer__bar" id="unMixJokerBar" style="--fader-color:#eb6834">
-                  <div class="un-mixer__bar-fill"></div>
-                  <span id="unMixJokerTxt" aria-hidden="true"></span>
-                  <input type="range" id="unMixJokerFader" min="0" max="0" step="1" value="0" aria-label="Joker : examens O-scan supplémentaires créés (en plus de l'activité)" title="Joker : examens O-scan supplémentaires" />
-                </div>
-              </div>
               <p class="un-plafond-note" id="unMixRepartNote" style="max-width:15rem" hidden></p>
               </div>
               <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixRepartVal" aria-label="Part des examens faite par l'IRM A, en pourcentage" />
@@ -1388,6 +1381,16 @@
                 <button type="button" id="unMixRepartMoins" aria-label="Diminuer la part de l'IRM A">−</button>
                 <button type="button" id="unMixRepartPlus" aria-label="Augmenter la part de l'IRM A">+</button>
               </div>
+            </div>
+            <div class="un-mixer__fader-col" id="unMixJokerCol" style="--fader-color:#eb6834" hidden>
+              <div class="un-joker-zone">
+                <img src="assets/joker.png" alt="" aria-hidden="true" />
+                <div class="un-mixer__bar" id="unMixJokerBar">
+                  <div class="un-mixer__bar-fill"></div>
+                  <input type="range" id="unMixJokerFader" min="0" max="0" step="1" value="0" aria-label="Joker : examens O-scan supplémentaires créés (le montant affiché est leur résultat)" title="Joker : examens O-scan supplémentaires" />
+                </div>
+              </div>
+              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Résultat des examens O-scan supplémentaires" />
             </div>
           </div>
         </div>
@@ -3938,16 +3941,29 @@
       }
       // Bâton « joker » de la table de mixage : examens O-scan supplémentaires créés (même état que le panneau 🃏 : unJokerDepasse / unExtrasB).
       function unMixJokerSync() {
-        var row = document.getElementById("unMixJokerRow"); if (!row) return;
+        var col = document.getElementById("unMixJokerCol"); if (!col) return;
         var N = Math.max(0, parseInt(document.getElementById("unBasculeVolumeTotal").value, 10) || 0);
         var volA = Math.max(0, Math.min(N, parseInt(document.getElementById("unBasculeCurseur").value, 10) || 0));
         var pl = (unBasculeConfigA && unBasculeConfigB) ? unPlafondOscan(N, unBasculeConfigA, unBasculeConfigB, unBasculeParams) : null;
-        row.hidden = !(pl && pl.actif);
-        if (row.hidden) return;
+        col.hidden = !(pl && pl.actif);
+        if (col.hidden) return;
         var exMax = Math.max(0, pl.cap - (N - volA)), cur = unJokerDepasse ? Math.min(unExtrasB, exMax) : 0;
         var f = document.getElementById("unMixJokerFader");
         f.max = exMax; f.value = cur; f.parentNode.style.setProperty("--pct", exMax > 0 ? cur / exMax * 100 : 0);
-        document.getElementById("unMixJokerTxt").textContent = "+ " + milliersFmt.format(cur);
+        // Montant = résultat (recettes + acte − charges) des SEULS examens supplémentaires réalisés avec l'O-scan (même formule que le panneau 🃏).
+        var gain = 0;
+        if (cur > 0) {
+          var pB = unParamsPourSlot(1, unBasculeParams), acteB = unBasculeParams.acteIntellectuelActif ? unActeIntellectuelConfig(unBasculeConfigB) : 0;
+          var resB = function (v) {
+            if (!(v > 0)) return 0;
+            var d = unDetailCA(v, unBasculeConfigB.machine, unBasculeParams), c = unCoutsDetail(unBasculeConfigB, pB, v);
+            return d.plein + d.seuil1 + d.seuil2 + d.plafond + acteB * v - (c.loyer + c.personnel + c.elec + c.autres);
+          };
+          var vB = N - volA + cur;
+          gain = resB(vB) - resB(vB - cur);
+        }
+        document.getElementById("unMixJokerVal").value = (gain < 0 ? "− " : "+ ") + unEurosFmt.format(Math.abs(gain));
+        f.title = "Joker : " + milliersFmt.format(cur) + " examens O-scan supplémentaires";
       }
       (function () {
         var f = document.getElementById("unMixJokerFader");
