@@ -1758,7 +1758,7 @@
             <div class="un-info-pop" id="unOsPop" hidden>
               <div class="un-outils-poignee" id="unOsPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="un-outils-titre">Examens MSK par zone</div>
-              <p class="simulator__hint" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre » (MSK). Le rachis n'en fait pas partie (acte à 69 €).</p>
+              <p class="simulator__hint" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre » (MSK). Le rachis et la hanche n'en font pas partie (acte à 69 €).</p>
               <div id="unOsZones"></div>
               <div class="un-os-total" id="unOsTotal"></div>
               <div class="un-os-synthese" id="unOsSynthese"></div>
@@ -4404,12 +4404,13 @@
       // (et à la capacité de la machine selon ses horaires). Le joker permet de le dépasser en CRÉANT des examens supplémentaires (jamais pris à l'IRM),
       // dans la limite de la capacité de l'O-scan. Ne s'applique que si la machine B est l'Esaote O-scan (projet 02).
       // ---------------------------------------------------------------------
-      var UN_OS_ZONES = [["Epaule", "Épaule", 25], ["Coude", "Coude", 4], ["Poignet", "Poignet", 6], ["Main", "Main", 3], ["Hanche", "Hanche", 8],
-        ["Genou", "Genou", 35], ["Cheville", "Cheville", 9], ["Pied", "Pied", 5], ["SacroIliaque", "Sacro-iliaque", 5]];
+      // 6 zones (07/10/2026, demande de Cédric) ; ids #unMsk<Zone> (nouveau préfixe : les anciennes valeurs mémorisées des 9 zones ne s'appliquent plus).
+      // « Autres » = bras, tibia… (membre, faisable à l'O-scan) ; pas de hanche. Seule l'épaule est réservée à l'IRM tunnel.
+      var UN_OS_ZONES = [["Genou", "Genou", 60], ["Epaule", "Épaule", 10], ["Main", "Main", 10], ["Pied", "Pied", 10], ["Coude", "Coude", 10], ["Autres", "Autres (bras, tibia…)", 0]];
       var unJokerDepasse = false, unExtrasB = 0;
       function unOsPartEpaule() {
         var tot = 0, ep = 0;
-        UN_OS_ZONES.forEach(function (z) { var v = Math.max(0, parseFloat(document.getElementById("unOs" + z[0]).value) || 0); tot += v; if (z[0] === "Epaule") ep = v; });
+        UN_OS_ZONES.forEach(function (z) { var v = Math.max(0, parseFloat(document.getElementById("unMsk" + z[0]).value) || 0); tot += v; if (z[0] === "Epaule") ep = v; });
         return tot > 0 ? ep / tot : 0;
       }
       function unPlafondOscan(nBase, configA, configB, params) {
@@ -5723,13 +5724,13 @@
         UN_OS_ZONES.forEach(function (z) {
           var div = document.createElement("div"); div.className = "un-os-ligne";
           var lab = document.createElement("label"), inp = document.createElement("input"), u = document.createElement("span");
-          inp.type = "number"; inp.id = "unOs" + z[0]; inp.min = 0; inp.max = 100; inp.step = 1; inp.value = z[2]; lab.setAttribute("for", inp.id); lab.textContent = z[1]; u.textContent = "%";
+          inp.type = "number"; inp.id = "unMsk" + z[0]; inp.min = 0; inp.max = 100; inp.step = 1; inp.value = z[2]; lab.setAttribute("for", inp.id); lab.textContent = z[1]; u.textContent = "%";
           div.appendChild(lab); div.appendChild(inp); div.appendChild(u); corps.appendChild(div);
           inp.addEventListener("input", function () { unOsSynthese(); unPlafondChange(); });
         });
       })();
       function unOsSynthese() {
-        var tot = 0; UN_OS_ZONES.forEach(function (z) { tot += Math.max(0, parseFloat(document.getElementById("unOs" + z[0]).value) || 0); });
+        var tot = 0; UN_OS_ZONES.forEach(function (z) { tot += Math.max(0, parseFloat(document.getElementById("unMsk" + z[0]).value) || 0); });
         var t = document.getElementById("unOsTotal");
         t.textContent = "Total : " + Math.round(tot * 10) / 10 + " %" + (Math.abs(tot - 100) > 0.05 ? "  (les parts sont ramenées à 100 %)" : "");
         t.style.color = Math.abs(tot - 100) > 0.05 ? "#b42318" : "";
