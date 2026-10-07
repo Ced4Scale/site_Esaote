@@ -213,10 +213,10 @@
     /* % de chaque IRM, de part et d'autre du curseur, dans le bâton */
     /* Joker (07/10/2026) : bâton des examens O-scan supplémentaires créés, sous la répartition ; seul le nombre y est écrit */
     #unMixJokerCol[hidden] { display: none; }
-    #unMixGroupRepart .un-joker-zone { height: 150px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-    #unMixGroupRepart .un-joker-zone img { width: 28px; height: 28px; flex: none; }
-    #unMixGroupRepart #unMixJokerBar { width: 46px; height: 118px; background: #fde4d6; }
-    #unMixGroupRepart #unMixJokerBar .un-mixer__bar-fill { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: calc(var(--pct, 0) * 1%); background: #eb6834; }
+    #unMixJokerCol .un-joker-zone { height: 150px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    #unMixJokerCol .un-joker-zone img { width: 28px; height: 28px; flex: none; }
+    #unMixJokerCol #unMixJokerBar { width: 46px; height: 118px; background: #fde4d6; }
+    #unMixJokerCol #unMixJokerBar .un-mixer__bar-fill { left: 0; right: 0; top: auto; bottom: 0; width: auto; height: calc(var(--pct, 0) * 1%); background: #eb6834; }
     #unMixJokerVal { width: 7.2rem; text-align: center; }
     .un-repart-pct { position: absolute; top: 0; bottom: 0; display: flex; align-items: center; font-size: .8rem; font-weight: 800; color: #fff; pointer-events: none; white-space: nowrap; }
     .un-repart-pct--a { right: calc((100 - var(--pct, 0)) * 1% + 12px); }
@@ -1354,6 +1354,15 @@
               </div>
               <button type="button" class="un-mixer__cadenas" id="unCadenasActivite" aria-pressed="false" aria-label="Fixer « Examens par an » (les 2 autres curseurs s'ajusteront entre eux)" title="Fixer ce curseur"><svg class="un-lock-svg" viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path class="un-lock-fermee" d="M8 11V7.5a4 4 0 0 1 8 0V11" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path class="un-lock-ouverte" d="M8 11V7a5 5 0 0 1 9.5 -2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="4" y="11" width="16" height="11" rx="3" fill="currentColor"/><circle cx="12" cy="15.4" r="1.5" fill="#fff"/><path d="M11 16.4h2l-.5 2.4h-1z" fill="#fff"/></svg></button>
             </div>
+            <div class="un-mixer__fader-col" id="unMixJokerCol" style="--fader-color:#eb6834" hidden>
+              <div class="un-joker-zone">
+                <img src="assets/joker.png" alt="" aria-hidden="true" />
+                <div class="un-mixer__bar" id="unMixJokerBar" role="img" aria-label="Joker : examens O-scan supplémentaires (affichage seulement, réglés dans le cadre Joker)">
+                  <div class="un-mixer__bar-fill"></div>
+                </div>
+              </div>
+              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Nombre d'examens O-scan supplémentaires (réglé dans le cadre Joker)" tabindex="-1" />
+            </div>
           </div>
         </div>
         <!-- Répartition des examens entre l'IRM A et l'IRM B (projet 02 seulement, 04/10/2026, demande de Cédric) :
@@ -1378,15 +1387,6 @@
                 <button type="button" id="unMixRepartMoins" aria-label="Diminuer la part de l'IRM A">−</button>
                 <button type="button" id="unMixRepartPlus" aria-label="Augmenter la part de l'IRM A">+</button>
               </div>
-            </div>
-            <div class="un-mixer__fader-col" id="unMixJokerCol" style="--fader-color:#eb6834" hidden>
-              <div class="un-joker-zone">
-                <img src="assets/joker.png" alt="" aria-hidden="true" />
-                <div class="un-mixer__bar" id="unMixJokerBar" role="img" aria-label="Joker : examens O-scan supplémentaires (affichage seulement, réglés dans le cadre Joker)">
-                  <div class="un-mixer__bar-fill"></div>
-                </div>
-              </div>
-              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Nombre d'examens O-scan supplémentaires (réglé dans le cadre Joker)" tabindex="-1" />
             </div>
           </div>
         </div>
