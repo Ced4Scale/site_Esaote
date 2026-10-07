@@ -6035,7 +6035,9 @@
           if (unJokerDepasse) {
             var cur = Math.min(unExtrasB, exMax);
             h += '<div class="un-joker-extras"><label for="unJokerExtras" style="font-size:.78rem;font-weight:700">Examens supplémentaires créés : <span id="unJokerExtrasVal">' + milliersFmt.format(cur) + '</span> (maximum ' + milliersFmt.format(exMax) + ')</label>' +
-              '<input type="range" id="unJokerExtras" min="0" max="' + exMax + '" step="1" value="' + cur + '" style="width:100%" /></div>';
+              '<div style="display:flex;align-items:center;gap:.4rem"><button type="button" class="btn btn--sm btn--ghost" id="unJokerExtrasMoins" aria-label="Moins d\'examens supplémentaires" title="− 50 examens (Maj : − 500)">−</button>' +
+              '<input type="range" id="unJokerExtras" min="0" max="' + exMax + '" step="1" value="' + cur + '" style="flex:1 1 auto;min-width:0" />' +
+              '<button type="button" class="btn btn--sm btn--ghost" id="unJokerExtrasPlus" aria-label="Plus d\'examens supplémentaires" title="+ 50 examens (Maj : + 500)">+</button></div></div>';
           }
         }
         pop.innerHTML = h;
@@ -6045,6 +6047,14 @@
       document.getElementById("unJokerPop").addEventListener("change", function (ev) {
         if (ev.target.id === "unJokerDepasse") { unJokerDepasse = ev.target.checked; if (!unJokerDepasse) unExtrasB = 0; unJokerSauver(); unPlafondChange(); }
         else if (ev.target.id === "unJokerExtras") { unExtrasB = parseInt(ev.target.value, 10) || 0; unJokerSauver(); unPlafondChange(); }
+      });
+      // Boutons − / + du nombre d'examens supplémentaires (07/10/2026) : pas de 50 (Maj : 500), borné de 0 au maximum possible.
+      document.getElementById("unJokerPop").addEventListener("click", function (ev) {
+        var b = ev.target.closest("#unJokerExtrasMoins, #unJokerExtrasPlus"); if (!b) return;
+        var f = document.getElementById("unJokerExtras"); if (!f) return;
+        var pas = (ev.shiftKey ? 500 : 50) * (b.id === "unJokerExtrasPlus" ? 1 : -1);
+        unExtrasB = Math.max(0, Math.min(parseInt(f.max, 10) || 0, (parseInt(f.value, 10) || 0) + pas));
+        unJokerSauver(); unPlafondChange(); unJokerRendre();
       });
       document.getElementById("unJokerPop").addEventListener("input", function (ev) {
         if (ev.target.id === "unJokerExtras") document.getElementById("unJokerExtrasVal").textContent = milliersFmt.format(parseInt(ev.target.value, 10) || 0);
