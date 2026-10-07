@@ -398,6 +398,9 @@
     #unCompoOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     #unPmOutilsPop { translate: var(--dx, 0px) var(--dy, 0px); }
     .un-pop-persistant { translate: var(--dx, 0px) var(--dy, 0px); }
+    .un-compo-annee { margin-top: .6rem; border-top: 1px dashed #d8d2b8; padding-top: .4rem; }
+    .un-compo-annee__titre { font-size: .82rem; font-weight: 800; color: #1d2a44; margin-bottom: .2rem; }
+    #unAnneesPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 300px); max-width: none; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     #unOsPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 330px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     #unOsPop .un-os-ligne { display: flex; align-items: center; gap: .5rem; margin: .22rem 0; font-size: .82rem; }
     #unOsPop .un-os-ligne label { flex: 1 1 auto; }
@@ -1227,6 +1230,7 @@
           <svg id="unCompoResChart" class="simulator__chart" viewBox="0 0 420 188" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Rentabilité annuelle : répartition de la recette entre dépenses et résultat, un par machine"></svg>
         </div>
         </div>
+        <div id="unCompoAnnees"></div>
         <!-- Vue « tableau » : même tableau que « Forfait technique - barème dégressif » (écran
              Bascule), au volume de « Votre activité », avec la case « Afficher tous les CA ». -->
         <div id="unCompoMoyenWrap" hidden>
@@ -1706,27 +1710,7 @@
              comportement inchangés, seul son emplacement change). -->
         <div class="un-mixer__check-group">
           <span class="un-mixer__group-title">Boîte à outils</span>
-          <div style="display:flex;align-items:center;gap:.5rem">
-          <span class="un-info-wrap">
-            <button type="button" class="un-info-btn" id="unCompoOutilsBtn" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes">🧰</button>
-            <div class="un-info-pop" id="unCompoOutilsPop" hidden>
-              <div class="un-outils-poignee" id="unCompoOutilsPoignee" title="Glisser pour déplacer la boîte à outils (double-clic : position d'origine)">⠿ Déplacer</div>
-              <div class="un-outils-titre">Affichage</div>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoVueHistoCb" checked /> Histogramme</label>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoVueTableCb" /> Tableau du barème dégressif</label>
-              <div id="unCompoSousTable" class="un-outils-sous" hidden>
-                <label class="un-outils-check"><input type="checkbox" id="unCompoShowAllCa" /> Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)</label>
-                <label class="un-outils-check"><input type="checkbox" id="unCompoTableCharges" /> Afficher les charges en dessous (charges annuelles, total et résultat)</label>
-              </div>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoVueMoyenCb" /> Tarif moyen du F.T. selon le volume</label>
-              <div class="un-outils-titre" style="margin-top:.6rem">Afficher</div>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
-              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRes" /> Résultat</label>
-              <div class="un-outils-titre" style="margin-top:.6rem">Recette</div>
-              <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unActeIntellectuelActif" checked /> Intégrer l'acte intellectuel</label>
-            </div>
-          </span>
+          <div id="unOutilsGrille" style="display:grid;grid-template-columns:repeat(3,auto);justify-content:start;align-items:center;gap:.5rem"><!-- 3 icônes par ligne (07/10/2026) : mixage, calendrier, durée / composition, os, par patient -->
           <!-- Icône « table de mixage » (22/09/2026, demande de Cédric) : choisit quels groupes
                de la table de mixage sont visibles (préférence mémorisée, localStorage) — s'ajoute
                à la visibilité déjà pilotée par le formulaire (un groupe reste caché tant qu'il ne
@@ -1763,6 +1747,40 @@
               <div class="un-outils-poignee" id="unCalPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="un-outils-titre">Horaires d'ouverture</div>
               <div id="unCalCorps"></div>
+            </div>
+          </span>
+          <!-- Icône « durée » (07/10/2026, demande de Cédric) : cases × 5 et × 7 ; cochées, la carte Composition ajoute sous l'année 1 des demi-anneaux dont les
+               montants sont multipliés par 5 / par 7 (résultat d'une année × N), et le PDF ajoute une page par durée cochée. Année 1 toujours affichée. -->
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unAnneesBtn" aria-expanded="false" aria-controls="unAnneesPop" aria-label="Montants des demi-anneaux sur 5 ou 7 ans" title="Montants sur 5 ans / 7 ans">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><text x="12" y="10" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor">×5</text><text x="12" y="21" text-anchor="middle" font-size="9" font-weight="800" fill="currentColor">×7</text></svg>
+            </button>
+            <div class="un-info-pop" id="unAnneesPop" hidden>
+              <div class="un-outils-poignee" id="unAnneesPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="un-outils-titre">Montants sur plusieurs années</div>
+              <p class="simulator__hint" style="margin:.1rem 0 .4rem">L'année 1 reste toujours affichée. Cochez pour ajouter les demi-anneaux (et une page du PDF) avec le résultat d'une année multiplié par 5 ou par 7, à activité et tarifs constants.</p>
+              <label class="un-outils-check"><input type="checkbox" id="unAnnees5" autocomplete="off" /> × 5 — sur 5 ans</label>
+              <label class="un-outils-check"><input type="checkbox" id="unAnnees7" autocomplete="off" /> × 7 — sur 7 ans</label>
+            </div>
+          </span>
+          <span class="un-info-wrap">
+            <button type="button" class="un-info-btn" id="unCompoOutilsBtn" aria-expanded="false" aria-controls="unCompoOutilsPop" aria-label="Choisir l'affichage de la composition des recettes">🧰</button>
+            <div class="un-info-pop" id="unCompoOutilsPop" hidden>
+              <div class="un-outils-poignee" id="unCompoOutilsPoignee" title="Glisser pour déplacer la boîte à outils (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="un-outils-titre">Affichage</div>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueHistoCb" checked /> Histogramme</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueTableCb" /> Tableau du barème dégressif</label>
+              <div id="unCompoSousTable" class="un-outils-sous" hidden>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoShowAllCa" /> Afficher tous les CA en même temps (plutôt que cliquer sur chaque montant)</label>
+                <label class="un-outils-check"><input type="checkbox" id="unCompoTableCharges" /> Afficher les charges en dessous (charges annuelles, total et résultat)</label>
+              </div>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoVueMoyenCb" /> Tarif moyen du F.T. selon le volume</label>
+              <div class="un-outils-titre" style="margin-top:.6rem">Afficher</div>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRec" checked /> Recettes</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoCouts" /> Dépenses</label>
+              <label class="un-outils-check"><input type="checkbox" id="unCompoAffRes" /> Résultat</label>
+              <div class="un-outils-titre" style="margin-top:.6rem">Recette</div>
+              <label class="un-outils-check" title="Ajoute l'acte intellectuel du radiologue (55 € à 69 € selon la répartition membre / autre région) à la recette — à cocher seulement si l'exploitant perçoit aussi cet acte."><input type="checkbox" id="unActeIntellectuelActif" checked /> Intégrer l'acte intellectuel</label>
             </div>
           </span>
           <!-- Icône « os » (06/10/2026, demande de Cédric) : répartition des examens MSK par zone (épaule, coude…). L'O-scan ne fait pas l'épaule
@@ -4439,6 +4457,7 @@
         });
       });
       wirePersistant("unOsBtn", "unOsPop");
+      wirePersistant("unAnneesBtn", "unAnneesPop");
       document.getElementById("unOsBtn").addEventListener("click", function () { unOsSynthese(); });
       // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
       // la répartition de la Bascule progressive — UN SEUL demi-anneau (Recettes / Dépenses / Résultat)
@@ -4519,9 +4538,9 @@
         function centre3(seule, deux, bonSiPlus) {
           var ec = deux - seule, bon = bonSiPlus ? ec >= 0 : ec <= 0;
           return [
-            { label: "1,5 T", valeur: unEurosFmt.format(seule) },
-            { label: "2 IRM", valeur: unEurosFmt.format(deux) },
-            { label: "Écart", valeur: (ec >= 0 ? "+" : "−") + unEurosFmt.format(Math.abs(ec)), couleur: bon ? "#1baf7a" : "#c2334d" }
+            { label: "1,5 T", valeur: unEurosFmt.format(seule), brut: seule },
+            { label: "2 IRM", valeur: unEurosFmt.format(deux), brut: deux },
+            { label: "Écart", valeur: (ec >= 0 ? "+" : "−") + unEurosFmt.format(Math.abs(ec)), couleur: bon ? "#1baf7a" : "#c2334d", brut: ec, signe: true }
           ];
         }
         var cSeule = unCoutsDetail(e.configA, unParamsPourSlot(0, e.params), nSeule), depSeule = cSeule.loyer + cSeule.personnel + cSeule.elec + cSeule.autres;
@@ -4538,7 +4557,7 @@
           var sC = function (v) { if (!(v > 0)) return 0; var c = unCoutsDetail(e.configB, pBJ, v); return c.loyer + c.personnel + c.elec + c.autres; };
           var recJ = exJ > 0 ? sD(vBJ) - (v0J > 0 ? sD(v0J) : 0) + (e.params.acteIntellectuelActif ? exJ * TARIF_IRM_MEMBRE : 0) : 0;
           var depJ = exJ > 0 ? sC(vBJ) - sC(v0J) : 0, resJ = recJ - depJ;
-          var ligneJ = function (v, bon) { return { label: "Joker", valeur: (v < 0 ? "−" : "+") + unEurosFmt.format(Math.abs(v)), couleur: bon ? "#eb6834" : "#c2334d" }; };
+          var ligneJ = function (v, bon) { return { label: "Joker", valeur: (v < 0 ? "−" : "+") + unEurosFmt.format(Math.abs(v)), couleur: bon ? "#eb6834" : "#c2334d", brut: v, signe: true }; };
           var dV = unDetailCA(vBJ, e.configB.machine, e.params), d0 = v0J > 0 ? unDetailCA(v0J, e.configB.machine, e.params) : {};
           var cV = unCoutsDetail(e.configB, pBJ, vBJ), c0 = v0J > 0 ? unCoutsDetail(e.configB, pBJ, v0J) : {};
           parJ = { rec: {}, dep: {} };
@@ -4661,6 +4680,43 @@
           svg.appendChild(t);
         });
       }
+      // Montants × N (07/10/2026, icône « durée ») : résultat d'UNE année multiplié par N, à activité et tarifs constants. Copie d'un bloc de demi-anneau dont tous les
+      // montants (volume, total, détail, morceaux par machine, ligne du centre) sont multipliés ; les valeurs « par examen » restent identiques.
+      function unEchelleBloc(b, n) {
+        var c = Object.assign({}, b);
+        ["volume", "total", "res", "rec"].forEach(function (k) { if (typeof b[k] === "number") c[k] = b[k] * n; });
+        function dét(o) { var r = {}; Object.keys(o || {}).forEach(function (k) { r[k] = (o[k] || 0) * n; }); return r; }
+        if (b.detail) c.detail = dét(b.detail);
+        if (b.parts) c.parts = b.parts.map(dét);
+        if (b.centre) c.centre = b.centre.map(function (li) {
+          if (typeof li.brut !== "number") return li;
+          var v = li.brut * n, o = Object.assign({}, li);
+          o.valeur = li.signe ? (v < 0 ? "−" : "+") + unEurosFmt.format(Math.abs(v)) : unEurosFmt.format(v);
+          return o;
+        });
+        return c;
+      }
+      function unAnneesCochees() { return [5, 7].filter(function (n) { var el = document.getElementById("unAnnees" + n); return el && el.checked; }); }
+      // Demi-anneaux seuls (sans histogramme) sous l'année 1, une rangée par durée cochée.
+      function unCompoAnneesRendre(pan, W) {
+        var box = document.getElementById("unCompoAnnees"); if (!box) return;
+        box.innerHTML = "";
+        unAnneesCochees().forEach(function (n) {
+          var bloc = document.createElement("div"); bloc.className = "un-compo-annee";
+          var t = document.createElement("div"); t.className = "un-compo-annee__titre"; t.textContent = "Montants sur " + n + " ans (résultat d'une année × " + n + ")"; bloc.appendChild(t);
+          var duo = document.createElement("div"); duo.className = "un-compo-duo";
+          pan.forEach(function (p) {
+            if (!p.actif) return;
+            var wrap = document.createElement("div"); wrap.className = "simulator__chart-wrap";
+            var svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.setAttribute("class", "simulator__chart"); svg.setAttribute("viewBox", "0 0 " + W + " 120"); svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+            wrap.appendChild(svg); duo.appendChild(wrap);
+            unDessinerPanneauCompo(svg, p.items.map(function (b) { return unEchelleBloc(b, n); }), p.cats, W, false);
+          });
+          bloc.appendChild(duo); box.appendChild(bloc);
+        });
+      }
+      ["unAnnees5", "unAnnees7"].forEach(function (id) { document.getElementById(id).addEventListener("change", function () { unRenderPointMort(); }); });
       function unDessinerCompo(slots, params) {
         unCompoSyncCurseur();
         var svgC = document.getElementById("unCompoChart");
@@ -4779,6 +4835,11 @@
           unDessinerPanneauCompo(svgR, itemsR, UN_RENTA_CATS, W, histo);
           pastilles("Dépenses et résultat :", UN_RENTA_CATS);
         }
+        unCompoAnneesRendre([
+          { actif: affRec.checked, items: itemsBascule ? [itemsBascule.rec] : camemberts, cats: catsRec },
+          { actif: affDep.checked, items: itemsK, cats: UN_COUTS_CATS },
+          { actif: affRes.checked, items: itemsR, cats: UN_RENTA_CATS }
+        ], W);
       }
 
       // ---------------------------------------------------------------------
@@ -6931,7 +6992,7 @@
         })();
 
         return {
-          jokerPage: jokerPage,
+          jokerPage: jokerPage, annees: unAnneesCochees(),
           projet: projetActuel, volume: volume,
           machineANom: machineANom, machineBNom: machineBNom, formulaire: unParametresFormulaireDonnees(),
           mixage: unMixageSynthese(machineANom, machineBNom),
@@ -7254,6 +7315,18 @@
                 doc.setFontSize(8); doc.setTextColor(120);
                 doc.text("Les deux IRM sont regroupées selon la répartition choisie dans la Bascule progressive.", LEFT_X, y + 1);
               }
+            });
+          }
+          // ---- Pages « sur 5 ans » / « sur 7 ans » (icône durée) : mêmes demi-anneaux que l'année 1, montants × N (celle des 2 variantes, avec ou sans acte, choisie à l'écran) ----
+          if (inclureCompo && donnees.annees && donnees.annees.length && donnees.compoGraphAvec.length) {
+            var baseN = donnees.avecActe ? donnees.compoGraphAvec : donnees.compoGraphSans;
+            donnees.annees.forEach(function (n) {
+              var itemsN = baseN.map(function (it) { return Object.assign({}, it, { volume: it.volume * n, rec: unEchelleBloc(it.rec, n), dep: unEchelleBloc(it.dep, n), res: unEchelleBloc(it.res, n) }); });
+              nouvellePage();
+              titrePage("Composition des recettes sur " + n + " ans — " + (donnees.avecActe ? "avec" : "sans") + " l'acte intellectuel", "Résultat d'une année multiplié par " + n + " (activité et tarifs constants).");
+              blocComposition("Recettes", itemsN, donnees.avecActe ? UN_PALIERS.concat([UN_PALIER_ACTE]) : UN_PALIERS, "rec");
+              blocComposition("Dépenses", itemsN, UN_COUTS_CATS, "dep");
+              blocComposition("Résultat", itemsN, UN_RENTA_CATS, "res");
             });
           }
           // ---- Page « joker » : seulement si la case du joker est cochée (projet 02) ----
@@ -7637,7 +7710,7 @@
             Object.keys(etat.champs).forEach(function (id) {
               var el = document.getElementById(id);
               if (!el || el.tagName === "SELECT" || id === "unBasculeCurseur") return;
-              if (UN_COMPO_COCHES_OUVERTURE.indexOf(id) >= 0) return; // vue de la Composition : toujours « Histogramme + Recettes » à l'ouverture (07/10/2026)
+              if (UN_COMPO_COCHES_OUVERTURE.indexOf(id) >= 0 || id === "unAnnees5" || id === "unAnnees7") return; // vue de la Composition : toujours « Histogramme + Recettes » à l'ouverture (07/10/2026)
               if (el.type === "checkbox") { el.checked = !!etat.champs[id]; declencher(el, ["change"]); }
               else if (el.type !== "range") { el.value = etat.champs[id]; declencher(el, ["input", "change"]); }
             });
