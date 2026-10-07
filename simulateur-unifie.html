@@ -5200,9 +5200,13 @@
         });
       })();
       // Champ « Ouverture maximale par jour » (13 h par défaut, 24 h max) : le modifier recale les champs, les curseurs et les débits.
+      // Le plafond n'est qu'une LIMITE (07/10/2026, demande de Cédric) : c'est « l'amplitude d'ouverture » qui fixe les heures travaillées par jour. Le modifier ne change
+      // donc aucune valeur de la table de mixage, sauf si une amplitude dépasse le nouveau plafond (elle est alors ramenée au plafond et les débits suivent).
       document.getElementById("unPlafond13Heures").addEventListener("change", function () {
+        var avant = [unHeuresAmpl(0), unHeuresAmpl(1), document.getElementById("unHeuresSamedi").value, document.getElementById("unHeuresDimanche").value].join("|");
         unAppliquerPlafondHeures();
-        unRecalerDebitsEtHeures();
+        var apres = [unHeuresAmpl(0), unHeuresAmpl(1), document.getElementById("unHeuresSamedi").value, document.getElementById("unHeuresDimanche").value].join("|");
+        if (apres !== avant) unRecalerDebitsEtHeures();
         unMixSyncTous();
         if (!screenResultats.hidden) unRenderPointMort();
       });
@@ -5903,7 +5907,8 @@
             src.dispatchEvent(new Event("input", { bubbles: true }));
             src.dispatchEvent(new Event("change", { bubbles: true }));
             // Sur l'écran Résultats, mêmes recalculs que le plafond de 13 h : heures/débits recalés, table de mixage et graphes redessinés.
-            if (!screenResultats.hidden) { unRecalerDebitsEtHeures(); unMixSyncTous(); unRenderPointMort(); }
+            // Le plafond d'heures n'est qu'une limite : son propre listener (ci-dessus) ne recale que si une amplitude le dépasse.
+            if (!screenResultats.hidden && l.sp.id !== "unPlafond13Heures") { unRecalerDebitsEtHeures(); unMixSyncTous(); unRenderPointMort(); }
             relire();
           });
         });
