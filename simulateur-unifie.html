@@ -3962,6 +3962,21 @@
         }
         unMixSyncTous();
       }
+      // Affichage « Patients par jour » (07-09/10/2026) : quand « Votre activité » est saisie par JOUR (Paramètres), le curseur de la table de mixage aussi ;
+      // le calcul reste annuel (conversion par le nombre de jours ouverts × 12).
+      function unActiviteEnJour() { return document.getElementById("unActiviteMode").value === "jour"; }
+      function unFacteurJour() { return Math.max(0.0001, unJoursParMois() * 12); }
+      function unActAffiche(annuel) { return unActiviteEnJour() ? Math.round(annuel / unFacteurJour() * 10) / 10 : Math.round(annuel); }
+      function unActDepuisAffiche(x) { return unActiviteEnJour() ? x * unFacteurJour() : x; }
+      function unActPas(maj) { return (unActiviteEnJour() ? 0.5 : 50) * (maj ? 10 : 1); }
+      function unActFormat(annuel) { return unActiviteEnJour() ? patientsFmt.format(unActAffiche(annuel)) : milliersFmt.format(Math.round(annuel)); }
+      // Cale l'échelle du curseur (0 → 15.000 examens par an, ou l'équivalent par jour) et les libellés (titre de groupe, étiquettes) sur le mode choisi.
+      function unActConfigurer(f) {
+        var jour = unActiviteEnJour();
+        f.max = jour ? Math.ceil(15000 / unFacteurJour()) : 15000; f.step = jour ? 0.5 : 50;
+        f.setAttribute("aria-label", jour ? "Nombre de patients par jour" : "Nombre d'examens par an");
+        document.querySelectorAll('#unMixGroupActivite .un-mixer__group-title, #unMixDuo [data-origine="unMixGroupActivite"] .un-mixer__group-title').forEach(function (t) { t.textContent = jour ? "Patients par jour" : "Examens par an"; });
+      }
       function unMixAppliquerActivite(annuel, slotAct) {
         slotAct = slotAct || 0;
         unEcrireActiviteSlot(slotAct, annuel);
@@ -3997,11 +4012,11 @@
       }
       (function () {
         var fA = document.getElementById("unMixActiviteFader"), vA = document.getElementById("unMixActiviteVal");
-        fA.addEventListener("input", function () { unMixAppliquerActivite(parseFloat(fA.value) || 0); });
+        fA.addEventListener("input", function () { unMixAppliquerActivite(unActDepuisAffiche(parseFloat(fA.value) || 0)); });
         vA.addEventListener("input", function () {
-          var v = parseFloat(String(vA.value).replace(/\./g, "").replace(",", "."));
+          var v = parseFloat(unActiviteEnJour() ? String(vA.value).replace(",", ".") : String(vA.value).replace(/\./g, "").replace(",", "."));
           if (!isFinite(v)) return;
-          unMixSaisie = "unMixActiviteVal"; unMixAppliquerActivite(v); unMixSaisie = null;
+          unMixSaisie = "unMixActiviteVal"; unMixAppliquerActivite(unActDepuisAffiche(v)); unMixSaisie = null;
         });
         [["", 0], ["B", 1]].forEach(function (c) {
           var suf = c[0], slot = c[1];
@@ -4020,7 +4035,7 @@
         });
         [["unMixActiviteMoins", -1], ["unMixActivitePlus", 1]].forEach(function (d) {
           document.getElementById(d[0]).addEventListener("click", function (e) {
-            unMixAppliquerActivite(unActiviteAnnuelle() + d[1] * 50 * (e.shiftKey ? 10 : 1));
+            unMixAppliquerActivite(unActiviteAnnuelle() + d[1] * unActDepuisAffiche(unActPas(e.shiftKey)));
           });
         });
       })();
@@ -4078,9 +4093,11 @@
       function unCompoSyncCurseur() {
         var annuel = Math.round(unActiviteAnnuelle());
         var fader = document.getElementById("unMixActiviteFader");
-        fader.value = Math.min(15000, annuel);
-        fader.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
-        if (unMixSaisie !== "unMixActiviteVal") document.getElementById("unMixActiviteVal").value = milliersFmt.format(annuel);
+        unActConfigurer(fader);
+        var aff = unActAffiche(annuel), mx = parseFloat(fader.max);
+        fader.value = Math.min(mx, aff);
+        fader.parentNode.style.setProperty("--pct", Math.min(100, aff / mx * 100));
+        if (unMixSaisie !== "unMixActiviteVal") document.getElementById("unMixActiviteVal").value = unActFormat(annuel);
         [["", 0], ["B", 1]].forEach(function (c) {
           var h = unHeuresAmpl(c[1]);
           var fH = document.getElementById("unMixHeures" + c[0] + "Fader");
@@ -5426,19 +5443,21 @@
       // Curseur « Examens par an » de l'IRM B (valeur dans #unActiviteBH).
       function unSplitSync() {
         var annuel = Math.round(unActiviteAnnuelle(1)), f = document.getElementById("unMixActiviteBFader"), v = document.getElementById("unMixActiviteBVal");
-        f.value = Math.min(15000, annuel); f.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
-        if (unMixSaisie !== "unMixActiviteBVal") v.value = milliersFmt.format(annuel);
+        unActConfigurer(f);
+        var aff = unActAffiche(annuel), mx = parseFloat(f.max);
+        f.value = Math.min(mx, aff); f.parentNode.style.setProperty("--pct", Math.min(100, aff / mx * 100));
+        if (unMixSaisie !== "unMixActiviteBVal") v.value = unActFormat(annuel);
       }
       (function () {
         var f = document.getElementById("unMixActiviteBFader"), v = document.getElementById("unMixActiviteBVal");
-        f.addEventListener("input", function () { unMixAppliquerActivite(parseFloat(f.value) || 0, 1); });
+        f.addEventListener("input", function () { unMixAppliquerActivite(unActDepuisAffiche(parseFloat(f.value) || 0), 1); });
         v.addEventListener("input", function () {
-          var x = parseFloat(String(v.value).replace(/\./g, "").replace(",", "."));
+          var x = parseFloat(unActiviteEnJour() ? String(v.value).replace(",", ".") : String(v.value).replace(/\./g, "").replace(",", "."));
           if (!isFinite(x)) return;
-          unMixSaisie = "unMixActiviteBVal"; unMixAppliquerActivite(x, 1); unMixSaisie = null;
+          unMixSaisie = "unMixActiviteBVal"; unMixAppliquerActivite(unActDepuisAffiche(x), 1); unMixSaisie = null;
         });
         [["unMixActiviteBMoins", -1], ["unMixActiviteBPlus", 1]].forEach(function (d) {
-          document.getElementById(d[0]).addEventListener("click", function (e) { unMixAppliquerActivite(unActiviteAnnuelle(1) + d[1] * 50 * (e.shiftKey ? 10 : 1), 1); });
+          document.getElementById(d[0]).addEventListener("click", function (e) { unMixAppliquerActivite(unActiviteAnnuelle(1) + d[1] * unActDepuisAffiche(unActPas(e.shiftKey)), 1); });
         });
         document.getElementById("unSplitCheck").addEventListener("change", function () { if (this.checked) unSplitActiver(); else unSplitDesactiver(); });
       })();
