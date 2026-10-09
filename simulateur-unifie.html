@@ -400,6 +400,13 @@
     .un-pop-persistant { translate: var(--dx, 0px) var(--dy, 0px); }
     .un-compo-annee { margin-top: .6rem; border-top: 1px dashed #d8d2b8; padding-top: .4rem; }
     .un-compo-annee__titre { font-size: .82rem; font-weight: 800; color: #1d2a44; margin-bottom: .2rem; }
+    #unSplitPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 320px); max-width: none; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
+    #unMixDuo { flex: 1 1 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+    #unMixDuo .un-mixer-table { min-width: 0; border: 1px solid #d9dee5; border-radius: 12px; padding: .7rem .8rem .9rem; background: #fcfcfd; }
+    #unMixDuo .un-mixer-table__titre { font-weight: 800; font-size: .95rem; margin-bottom: .6rem; padding-bottom: .35rem; border-bottom: 3px solid var(--tc, #999); color: var(--tc, #000); }
+    #unMixDuo .un-mixer-table__corps { display: flex; flex-wrap: wrap; gap: 1.2rem 1.4rem; align-items: flex-start; }
+    .un-split-source { display: none !important; }
+    @media (max-width: 1000px) { #unMixDuo { grid-template-columns: 1fr; } }
     #unAnneesPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 300px); max-width: none; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     #unOsPop { translate: var(--dx, 0px) var(--dy, 0px); width: min(calc(100vw - 4.5rem), 330px); max-width: none; overflow-x: hidden; top: auto; bottom: 100%; margin-top: 0; margin-bottom: .4rem; }
     #unOsPop .un-os-ligne { display: flex; align-items: center; gap: .5rem; margin: .22rem 0; font-size: .82rem; }
@@ -1338,6 +1345,60 @@
            ou cocher/décocher recalcule et redessine le graphique EN DIRECT,
            contrairement au reste du formulaire (lu seulement au clic "Voir les
            résultats possibles" sur l'écran 2). -->
+
+      <!-- Colonnes de l'IRM B pour le mode « deux tables de mixage » (07/10/2026) : cachées ici, déplacées dans la table B par unSplitActiver(). Les champs cachés portent les
+           valeurs propres à l'IRM B (examens par an, kWh, heures du samedi / dimanche). -->
+      <div id="unMixBClones" hidden>
+        <input type="hidden" id="unActiviteBH" value="0" />
+        <input type="number" id="unKwhB" value="0.20" step="0.01" hidden />
+        <input type="number" id="unHeuresSamediB" value="4" step="0.5" hidden />
+        <input type="number" id="unHeuresDimancheB" value="4" step="0.5" hidden />
+        <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <input type="range" id="unMixActiviteBFader" min="0" max="15000" step="50" value="0" aria-label="Nombre d'examens par an" />
+              </div>
+              <input type="text" inputmode="numeric" class="un-mixer__fader-value" id="unMixActiviteBVal" aria-label="Nombre d'examens par an, valeur" />
+              <div class="un-mixer__pm">
+                <button type="button" id="unMixActiviteBMoins" aria-label="Diminuer le nombre d'examens par an">−</button>
+                <button type="button" id="unMixActiviteBPlus" aria-label="Augmenter le nombre d'examens par an">+</button>
+              </div>
+            </div>
+            <div class="un-mixer__fader-col" id="unMixJokerCol" style="--fader-color:#eb6834" hidden>
+              <div class="un-joker-zone">
+                <img src="assets/joker.png" alt="" aria-hidden="true" />
+                <div class="un-mixer__bar" id="unMixJokerBar" role="img" aria-label="Joker : examens O-scan supplémentaires (affichage seulement, réglés dans le cadre Joker)">
+                  <div class="un-mixer__bar-fill"></div>
+                </div>
+              </div>
+              <input type="text" class="un-mixer__fader-value" id="unMixJokerVal" readonly aria-label="Nombre d'examens O-scan supplémentaires (réglé dans le cadre Joker)" tabindex="-1" />
+            </div>
+        <div class="un-mixer__fader-col" style="--fader-color:#21c7c1">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <input type="range" id="unMixKwhBFader" min="0" max="1" step="0.01" value="0.20" aria-label="Coût du kWh" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixKwhBVal" value="0,20" aria-label="Coût du kWh, valeur" />
+            </div>
+        <div class="un-mixer__fader-col" id="unMixHeuresSamediBCol" style="--fader-color:#7a5cc4">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot">Samedi</span>
+                <input type="range" id="unMixHeuresSamediBFader" min="0.5" max="24" step="0.5" value="4" aria-label="Heures d'ouverture le samedi" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresSamediBVal" aria-label="Heures d'ouverture le samedi, valeur" />
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
+        <div class="un-mixer__fader-col" id="unMixHeuresDimancheBCol" style="--fader-color:#1f9d78">
+              <div class="un-mixer__bar">
+                <div class="un-mixer__bar-fill"></div>
+                <span class="un-mixer__fader-col-slot">Dimanche</span>
+                <input type="range" id="unMixHeuresDimancheBFader" min="0.5" max="24" step="0.5" value="4" aria-label="Heures d'ouverture le dimanche" />
+              </div>
+              <input type="text" inputmode="decimal" class="un-mixer__fader-value" id="unMixHeuresDimancheBVal" aria-label="Heures d'ouverture le dimanche, valeur" />
+              <div class="un-mixer__fader-unit">h / jour</div>
+            </div>
+      </div>
       <div class="un-mixer" id="unMixerPointMort">
         <!-- Examens par an : miroir de « Votre activité » (Paramètres, quel que soit son mode
              jour/an). Le bouger recalcule aussi « Examens par heure » (= examens par an /
@@ -1810,6 +1871,17 @@
               <path d="M5.5 16.5h13L14 21h-4Z" fill="currentColor" opacity=".55" />
             </svg>
           </button>
+          <!-- Icône ÷ (07/10/2026, demande de Cédric) : projet 1 seulement — passe en « deux tables de mixage », une par IRM, aux réglages indépendants.
+               3ᵉ ligne de la grille, sous la valise 🧰. Non mémorisé d'une visite à l'autre. -->
+          <span class="un-info-wrap" id="unSplitWrap" hidden>
+            <button type="button" class="un-info-btn" id="unSplitBtn" aria-expanded="false" aria-controls="unSplitPop" aria-label="Deux tables de mixage, une par IRM" title="Comparer deux IRM : une table de mixage par IRM" style="font-size:1.25rem;font-weight:800;line-height:1">÷</button>
+            <div class="un-info-pop" id="unSplitPop" hidden>
+              <div class="un-outils-poignee" id="unSplitPoignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="un-outils-titre">Comparer deux IRM</div>
+              <label class="un-outils-check"><input type="checkbox" id="unSplitCheck" autocomplete="off" /> Deux tables de mixage, une par IRM</label>
+              <p class="simulator__hint" style="margin:.3rem 0 0">Chaque IRM a ses propres réglages : examens par an, heures d'ouverture (samedi et dimanche compris), coût du kWh, loyer, examens par heure, personnel… Les tables s'affichent côte à côte ; retirez des bâtons avec l'icône 🎚️.</p>
+            </div>
+          </span>
           </div>
         </div>
       </div>
@@ -2680,7 +2752,13 @@
       // Corrigé le 04/10/2026 : le nombre de jours par mois suit désormais les vraies
       // cases "Ouvert le samedi"/"Ouvert le dimanche" (unJoursParMois()), au lieu d'une
       // hypothèse fixe de 5 jours ouvrés/semaine.
-      function unActiviteAnnuelle() {
+      // Deux tables de mixage indépendantes (07/10/2026, demande de Cédric, projet 1 seulement) : quand `unSplit` est vrai, l'IRM B a SES PROPRES
+      // « examens par an », « coût du kWh », « heures du samedi / dimanche » (champs cachés #unActiviteBH, #unKwhB, #unHeuresSamediB, #unHeuresDimancheB) ;
+      // ses heures du lundi au vendredi (unHeuresB) et tous les autres réglages de la machine B sont déjà indépendants. Sinon : valeurs partagées (celles de l'IRM A).
+      var unSplit = false;
+      function unNombreChamp(id, defaut) { var el = document.getElementById(id), v = el ? parseFloat(el.value) : NaN; return isFinite(v) ? v : defaut; }
+      function unActiviteAnnuelle(slot) {
+        if (slot === 1 && unSplit) return Math.max(0, unNombreChamp("unActiviteBH", 0));
         var mode = document.getElementById("unActiviteMode").value;
         var v = parseFloat(document.getElementById("unActivite").value) || 0;
         return mode === "jour" ? v * unJoursParMois() * 12 : v;
@@ -2779,16 +2857,17 @@
         return 5 + (document.getElementById("unOuvertSamedi").checked ? 1 : 0) + (document.getElementById("unOuvertDimanche").checked ? 1 : 0);
       }
       function unJoursParMois() { return unJoursOuvertsParSemaine() * (52 / 12); }
-      function unHeuresEffectives(segment) {
+      function unHeuresEffectives(segment, slot) {
         var amplitude = Math.max(0, parseFloat(document.getElementById("unHeures" + segment).value) || 0);
+        if (slot === 1 && unSplit && (segment === "Samedi" || segment === "Dimanche")) amplitude = Math.max(0, unNombreChamp("unHeures" + segment + "B", amplitude));
         var coupureCochee = document.getElementById("unCoupure" + segment).checked;
         var duree = coupureCochee ? Math.max(0, parseFloat(document.getElementById("unCoupureDuree" + segment).value) || 0) : 0;
         return Math.max(0, amplitude - duree);
       }
-      function unHeuresParJourMoyen() {
+      function unHeuresParJourMoyen(slot) {
         var samedi = document.getElementById("unOuvertSamedi").checked;
         var dimanche = document.getElementById("unOuvertDimanche").checked;
-        var total = 5 * unHeuresEffectives("Semaine") + (samedi ? unHeuresEffectives("Samedi") : 0) + (dimanche ? unHeuresEffectives("Dimanche") : 0);
+        var total = 5 * unHeuresEffectives("Semaine") + (samedi ? unHeuresEffectives("Samedi", slot) : 0) + (dimanche ? unHeuresEffectives("Dimanche", slot) : 0);
         var jours = unJoursOuvertsParSemaine();
         return jours > 0 ? total / jours : 0;
       }
@@ -3085,7 +3164,7 @@
         // "Votre activité" (patients par jour), plus du débit maximum de la machine.
         var mode = document.getElementById("unActiviteMode").value;
         var v = parseFloat(document.getElementById("unActivite").value) || 0;
-        var patientsParJour = mode === "jour" ? v : v / (params.joursParMois * 12);
+        var patientsParJour = params.activiteAn != null ? params.activiteAn / (params.joursParMois * 12) : mode === "jour" ? v : v / (params.joursParMois * 12);
         var margeParJour = res.margeParPatient * patientsParJour;
         // Même garde-fou que le point mort en examens/jour : marge nulle ou
         // négative => "jamais atteint", jamais une division par zéro/NaN.
@@ -3253,6 +3332,8 @@
           examens: { total: exIRM * (1 + lt) }
         };
       }
+      // Texte « IRM A : … · IRM B : … » quand les deux tables de mixage sont indépendantes, sinon la valeur commune.
+      function unAB(fA, fB) { return unSplit ? "IRM A : " + fA + "  ·  IRM B : " + fB : fA; }
       function unRseResultats() {
         var prix = Math.max(0, parseFloat(document.getElementById("unKwh").value) || 0);
         var patientsAn = unActiviteAnnuelle();
@@ -3264,7 +3345,8 @@
         var paramsPM = projetActuel === 3 ? unConstruireParamsPointMort() : null;
         return unSlotsActifs().map(function (slot) {
           var c = unConfigMachinePointMort(slot), m = c.machine;
-          var patientsMachine = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : patientsAn;
+          var patientsMachine = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : unActiviteAnnuelle(slot);
+          var prixS = slot === 1 && unSplit ? Math.max(0, unNombreChamp("unKwhB", prix)) : prix; // deux tables : kWh propre à l'IRM B
           var heuresSocle = null;
           if (projetActuel === 3 && slot === 0) {
             var sc = unSocleHeuresJoursScanner(paramsPM);
@@ -3276,14 +3358,14 @@
           var total = c.debitHoraire > 0 ? 60 / c.debitHoraire : acq + 1;
           var profil = unRseProfil({
             semBrut: Math.min(24, ampl), semNet: Math.max(0, ampl - coupure),
-            samBrut: samCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresSamedi").value) || 0) : 0, samNet: samCoche ? unHeuresEffectives("Samedi") : 0,
-            dimBrut: dimCoche ? Math.max(0, parseFloat(document.getElementById("unHeuresDimanche").value) || 0) : 0, dimNet: dimCoche ? unHeuresEffectives("Dimanche") : 0,
+            samBrut: samCoche ? Math.max(0, slot === 1 && unSplit ? unNombreChamp("unHeuresSamediB", 0) : parseFloat(document.getElementById("unHeuresSamedi").value) || 0) : 0, samNet: samCoche ? unHeuresEffectives("Samedi", slot) : 0,
+            dimBrut: dimCoche ? Math.max(0, slot === 1 && unSplit ? unNombreChamp("unHeuresDimancheB", 0) : parseFloat(document.getElementById("unHeuresDimanche").value) || 0) : 0, dimNet: dimCoche ? unHeuresEffectives("Dimanche", slot) : 0,
             patientsAn: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq)
           });
           var decomp = unRseDecomposition(m, profil, heuresSocle);
           if (etatB && patientsMachine <= 0) decomp = { socle: { irm: 0, lt: 0, clim: 0, total: 0 }, entrePatients: { total: 0 }, examens: { total: 0 } };
           var kwh = decomp.socle.total + decomp.entrePatients.total + decomp.examens.total;
-          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, patientsMachine: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prix, coutParPatient: patientsMachine > 0 ? kwh * prix / patientsMachine : 0, profil: profil, prix: prix };
+          return { slot: slot, color: UN_SLOT_COLORS[slot], machine: m, patientsMachine: patientsMachine, acqMin: acq, changementMin: Math.max(1, total - acq), kwh: kwh, decomp: decomp, coutAnnuel: kwh * prixS, coutParPatient: patientsMachine > 0 ? kwh * prixS / patientsMachine : 0, profil: profil, prix: prixS };
         });
       }
       // Projet 02 (05/10/2026, demande de Cédric) : une ligne de plus, « Les 2 IRM ensemble » = somme des deux
@@ -3501,11 +3583,11 @@
         var coupure = document.getElementById("unCoupureSemaine").checked ? Math.max(0, parseFloat(document.getElementById("unCoupureDureeSemaine").value) || 0) : 0;
         var ampl = unHeuresAmpl(res[0].slot);
         var communs = [
-          ["Coût du kWh", unRseEurosCent.format(res[0].prix)],
-          ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", Math.max(0, ampl - coupure) + " h/jour"],
-          ["Samedi (coupure déjà déduite)", libJour(0, samCoche ? unHeuresEffectives("Samedi") : 0, samCoche)],
-          ["Dimanche (coupure déjà déduite)", libJour(0, dimCoche ? unHeuresEffectives("Dimanche") : 0, dimCoche)],
-          ["Votre activité", milliersFmt.format(Math.round(unActiviteAnnuelle())) + " patients/an"]
+          ["Coût du kWh", unAB(unRseEurosCent.format(res[0].prix), unRseEurosCent.format(res.length > 1 ? res[1].prix : res[0].prix))],
+          ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", unAB(Math.max(0, ampl - coupure) + " h/jour", Math.max(0, unHeuresAmpl(1) - coupure) + " h/jour")],
+          ["Samedi (coupure déjà déduite)", unAB(libJour(0, samCoche ? unHeuresEffectives("Samedi", 0) : 0, samCoche), libJour(0, samCoche ? unHeuresEffectives("Samedi", 1) : 0, samCoche))],
+          ["Dimanche (coupure déjà déduite)", unAB(libJour(0, dimCoche ? unHeuresEffectives("Dimanche", 0) : 0, dimCoche), libJour(0, dimCoche ? unHeuresEffectives("Dimanche", 1) : 0, dimCoche))],
+          ["Votre activité", unAB(milliersFmt.format(Math.round(unActiviteAnnuelle(0))) + " patients/an", milliersFmt.format(Math.round(unActiviteAnnuelle(1))) + " patients/an")]
         ];
         var tb = document.getElementById("unRseHypCommunsBody"); tb.innerHTML = "";
         communs.forEach(function (pair) {
@@ -3605,7 +3687,8 @@
         unMajPlafondNote(pl, N); unOsVisibilite();
         if (voulu !== cur) { curseur.value = voulu; if (unBasculeConfigA && unBasculeConfigB) unRecalculerBascule(); }
       }
-      function unRenderPointMort() {
+      function unRenderPointMort() { unRenderPointMortBase(); unSplitVisibilite(); unSplitMiroir(); }
+      function unRenderPointMortBase() {
         unRafraichirPlafond();
         // Resynchronise la table de mixage sur l'état réel des champs de
         // l'écran 2 (utile quand on revient sur l'écran Résultats après avoir
@@ -3745,13 +3828,13 @@
       }
       // Heures moyennes par jour ouvert quand l'amplitude lundi-vendredi vaut `ampl`
       // (samedi/dimanche/coupures inchangés).
-      function unMoyenPourAmpl(ampl) {
+      function unMoyenPourAmpl(ampl, slot) {
         var jours = unJoursOuvertsParSemaine();
         var a0 = parseFloat(document.getElementById("unHeuresSemaine").value) || 0;
-        return jours > 0 ? unHeuresParJourMoyen() + (ampl - a0) * 5 / jours : 0;
+        return jours > 0 ? unHeuresParJourMoyen(slot) + (ampl - a0) * 5 / jours : 0;
       }
-      function unHeuresAnPour(slot) { return unMoyenPourAmpl(unHeuresAmpl(slot)) * unJoursParMois() * 12; }
-      function unRealisableSlot(slot) { return unActiviteAnnuelle() <= unDebitMaxMachine(slot) * unHeuresAnPour(slot) + 0.0001; }
+      function unHeuresAnPour(slot) { return unMoyenPourAmpl(unHeuresAmpl(slot), slot) * unJoursParMois() * 12; }
+      function unRealisableSlot(slot) { return unActiviteAnnuelle(slot) <= unDebitMaxMachine(slot) * unHeuresAnPour(slot) + 0.0001; }
       function unActiviteRealisable() { return unSlotsActifs().every(unRealisableSlot); }
       function unActiverSplit() { // fige les heures de la Machine B (elle ne suit plus la A)
         if (unSlotsActifs().length === 2 && unHeuresB == null) unHeuresB = unHeuresAmpl(0);
@@ -3762,7 +3845,7 @@
       function unHeuresMax() { var c = document.getElementById("unPlafond13Heures"), v = c ? parseFloat(String(c.value).replace(",", ".")) : NaN; return isFinite(v) ? Math.max(1, Math.min(24, v)) : 13; } // plafond au choix (24 h maximum), 13 h par défaut
       function unAppliquerPlafondHeures() {
         var mx = unHeuresMax();
-        ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unMixHeuresFader", "unMixHeuresBFader", "unMixHeuresSamediFader", "unMixHeuresDimancheFader"].forEach(function (id) {
+        ["unHeuresSemaine", "unHeuresSamedi", "unHeuresDimanche", "unHeuresSamediB", "unHeuresDimancheB", "unMixHeuresFader", "unMixHeuresBFader", "unMixHeuresSamediFader", "unMixHeuresDimancheFader"].forEach(function (id) {
           var el = document.getElementById(id); if (!el) return;
           el.max = mx;
           if ((parseFloat(el.value) || 0) > mx) { el.value = mx; el.dispatchEvent(new Event("input", { bubbles: true })); }
@@ -3775,9 +3858,9 @@
         else document.getElementById("unHeuresSemaine").value = v;
       }
       function unMajDebitsDepuisHeures() {
-        var annuel = unActiviteAnnuelle();
-        if (!(annuel > 0)) return;
         unSlotsActifs().forEach(function (slot) {
+          var annuel = unActiviteAnnuelle(slot);
+          if (!(annuel > 0)) return;
           var heuresAn = unHeuresAnPour(slot);
           if (heuresAn > 0) document.getElementById(slot === 0 ? "unInstallA" : "unInstallB").value = Math.round(annuel / heuresAn * 100) / 100;
         });
@@ -3799,7 +3882,7 @@
       // le curseur maître). ----
       var unCadenasActif = null; // null | "activite" | "heures" | "debit"
       var UN_CADENAS_CHAMPS = {
-        activite: ["unMixActiviteFader", "unMixActiviteVal", "unMixActiviteMoins", "unMixActivitePlus"],
+        activite: ["unMixActiviteFader", "unMixActiviteVal", "unMixActiviteMoins", "unMixActivitePlus", "unMixActiviteBFader", "unMixActiviteBVal", "unMixActiviteBMoins", "unMixActiviteBPlus"],
         heures: ["unMixHeuresFader", "unMixHeuresVal", "unMixHeuresMoins", "unMixHeuresPlus", "unMixHeuresBFader", "unMixHeuresBVal"],
         debit: ["unMixInstallAFader", "unMixInstallAVal", "unMixInstallBFader", "unMixInstallBVal"]
       };
@@ -3826,6 +3909,11 @@
       });
       unMajCadenasUI();
 
+      // Écrit l'activité annuelle d'UNE machine : en mode « deux tables », celle de l'IRM B est un champ à part ; sinon l'activité est partagée.
+      function unEcrireActiviteSlot(slot, annuel) {
+        if (slot === 1 && unSplit) document.getElementById("unActiviteBH").value = Math.max(0, Math.min(100000, Math.round(annuel)));
+        else unEcrireActivite(annuel);
+      }
       function unEcrireActivite(annuel) {
         annuel = Math.max(0, Math.min(100000, Math.round(annuel)));
         var mode = document.getElementById("unActiviteMode").value;
@@ -3840,7 +3928,7 @@
         var d = unDebitPourSlot(slot);
         if (!(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
         var cible = annuel / (d * unJoursParMois() * 12);
-        var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
+        var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot), slot)) * unJoursOuvertsParSemaine() / 5;
         unEcrireAmpl(slot, Math.max(1, Math.min(unHeuresMax(), Math.round(ampl * 100) / 100)));
       }
       // Le simulateur baisse (ou monte) raisonnablement les examens par heure d'UNE machine :
@@ -3851,7 +3939,7 @@
       // AUTRES machines actives se recalcule à leurs propres heures inchangées.
       function unDebitModifie(d, sourceId) {
         var slot = sourceId === "unInstallB" ? 1 : 0;
-        var annuel = unActiviteAnnuelle();
+        var annuel = unActiviteAnnuelle(slot);
         if (!(annuel > 0) || !(d > 0) || unJoursOuvertsParSemaine() <= 0) return;
         unActiverSplit();
         d = Math.min(d, unDebitMaxMachine(slot));
@@ -3859,26 +3947,27 @@
           var heuresAnSlot = unHeuresAnPour(slot);
           if (!(heuresAnSlot > 0)) return;
           var nouvelleActivite = Math.round(d * heuresAnSlot);
-          unEcrireActivite(nouvelleActivite);
+          unEcrireActiviteSlot(slot, nouvelleActivite);
           unEcrireDebitSlot(slot, d);
           unSlotsActifs().filter(function (s) { return s !== slot; }).forEach(function (s) {
             var heuresAnS = unHeuresAnPour(s);
-            if (heuresAnS > 0) unEcrireDebitSlot(s, unActiviteAnnuelle() / heuresAnS);
+            if (heuresAnS > 0) unEcrireDebitSlot(s, unActiviteAnnuelle(s) / heuresAnS);
           });
         } else {
           var cible = annuel / (d * unJoursParMois() * 12); // heures moyennes par jour ouvert
-          var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot))) * unJoursOuvertsParSemaine() / 5;
+          var ampl = unHeuresAmpl(slot) + (cible - unMoyenPourAmpl(unHeuresAmpl(slot), slot)) * unJoursOuvertsParSemaine() / 5;
           unEcrireAmpl(slot, Math.max(1, Math.min(unHeuresMax(), Math.round(ampl * 100) / 100)));
           unHeuresGroupeForce = true;
           unMajDebitsDepuisHeures();
         }
         unMixSyncTous();
       }
-      function unMixAppliquerActivite(annuel) {
-        unEcrireActivite(annuel);
-        var annuelReel = unActiviteAnnuelle();
+      function unMixAppliquerActivite(annuel, slotAct) {
+        slotAct = slotAct || 0;
+        unEcrireActiviteSlot(slotAct, annuel);
+        var annuelReel = unActiviteAnnuelle(slotAct);
         if (unCadenasActif === "debit") {
-          unSlotsActifs().forEach(function (slot) { unActiverSplit(); unRecalculerHeuresPourDebitFixe(slot, annuelReel); });
+          (unSplit ? [slotAct] : unSlotsActifs()).forEach(function (slot) { unActiverSplit(); unRecalculerHeuresPourDebitFixe(slot, unActiviteAnnuelle(slot)); });
           unHeuresGroupeForce = true;
         } else if (unCadenasActif === "heures") {
           unMajDebitsDepuisHeures(); // débit recalculé, heures strictement inchangées (cadenas fermé)
@@ -3895,8 +3984,8 @@
           var d = unDebitPourSlot(slot);
           if (d > 0) {
             var nouvelleActivite = Math.round(d * unHeuresAnPour(slot));
-            unEcrireActivite(nouvelleActivite);
-            unSlotsActifs().filter(function (s) { return s !== slot; }).forEach(function (s) {
+            unEcrireActiviteSlot(slot, nouvelleActivite);
+            if (!unSplit) unSlotsActifs().filter(function (s) { return s !== slot; }).forEach(function (s) {
               unRecalculerHeuresPourDebitFixe(s, nouvelleActivite);
             });
           }
@@ -4254,8 +4343,11 @@
       // (recette − dépenses, hors acte intellectuel comme le panneau Recettes).
       var UN_RENTA_CATS = UN_COUTS_CATS.concat([{ key: "resultat", label: "Résultat", sideLabel: "Résultat", shortLabel: "Rés.", color: "#1baf7a" }]);
       function unParamsPourSlot(slot, params) {
+        if (slot === 1 && unSplit) // deux tables : heures (samedi/dimanche compris), prix du kWh et activité propres à l'IRM B
+          return Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresAmpl(1), 1)), prixKwh: Math.max(0, unNombreChamp("unKwhB", params.prixKwh)), activiteAn: unActiviteAnnuelle(1) });
+        if (slot === 0 && unSplit) return Object.assign({}, params, { activiteAn: unActiviteAnnuelle(0) });
         return (slot === 1 && unHeuresB != null)
-          ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB)) }) : params;
+          ? Object.assign({}, params, { heuresParJour: Math.max(0, unMoyenPourAmpl(unHeuresB, 1)) }) : params;
       }
       // Coûts ANNUELS d'une machine au volume donné — mêmes éléments que calculerPointMortMachine().
       function unCoutsDetail(m, params, volume) {
@@ -4459,6 +4551,7 @@
       });
       wirePersistant("unOsBtn", "unOsPop");
       wirePersistant("unAnneesBtn", "unAnneesPop");
+      wirePersistant("unSplitBtn", "unSplitPop");
       document.getElementById("unOsBtn").addEventListener("click", function () { unOsSynthese(); });
       // ---- Projet 02 « IRM supplémentaire » (04/10/2026, demande de Cédric) : la carte Composition suit
       // la répartition de la Bascule progressive — UN SEUL demi-anneau (Recettes / Dépenses / Résultat)
@@ -4726,11 +4819,11 @@
         svgC.innerHTML = "";
         var leg = document.getElementById("unCompoLegende");
         leg.innerHTML = "";
-        var volume = Math.max(0, Math.round(unActiviteAnnuelle()));
         var camemberts = [];
         slots.forEach(function (slot) {
           var config = unConfigMachinePointMort(slot);
           if (!config.machine) return;
+          var volume = Math.max(0, Math.round(unActiviteAnnuelle(slot))); // propre à chaque IRM en mode « deux tables »
           var detail = unDetailCA(volume, config.machine, params);
           if (params.acteIntellectuelActif) detail.acte = unActeIntellectuelConfig(config) * volume;
           camemberts.push({ cout: unCoutsDetail(config, unParamsPourSlot(slot, params), volume), label: config.machine.nomCourt, color: UN_SLOT_COLORS[slot], tranches: unTranchesCompo(config.machine, params), volume: volume, detail: detail,
@@ -4811,6 +4904,7 @@
         slots.forEach(function (slot, idx) {
           var config = unConfigMachinePointMort(slot);
           if (!config.machine) return;
+          var volume = Math.max(0, Math.round(unActiviteAnnuelle(slot)));
           var d = unCoutsDetail(config, unParamsPourSlot(slot, params), volume);
           var dep = d.loyer + d.personnel + d.elec + d.autres;
           var cam = camemberts.filter(function (c) { return c.label === config.machine.nomCourt; })[0];
@@ -4872,7 +4966,7 @@
         // Projet 02 : chaque IRM ne fait que SA part des examens (répartition de la Bascule / de la table de
         // mixage) — barème dégressif et charges par patient se calculent sur ce volume-là (04/10/2026).
         var etatB = unEtatBascule();
-        var volume = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : Math.max(0, Math.round(unActiviteAnnuelle()));
+        var volume = etatB ? (slot === 0 ? etatB.volA : etatB.N - etatB.volA) : Math.max(0, Math.round(unActiviteAnnuelle(slot)));
         var d = unDetailCA(volume, config.machine, params);
         var totalFt = d.plein + d.seuil1 + d.seuil2 + d.plafond;
         var acte = params.acteIntellectuelActif ? unActeIntellectuelConfig(config) : 0;
@@ -5191,6 +5285,9 @@
       var kwhFmt = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
       var UN_MIX_FIELDS = [
         { faderId: "unMixKwhFader", valId: "unMixKwhVal", sourceId: "unKwh", fmt: kwhFmt },
+        { faderId: "unMixKwhBFader", valId: "unMixKwhBVal", sourceId: "unKwhB", fmt: kwhFmt },
+        { faderId: "unMixHeuresSamediBFader", valId: "unMixHeuresSamediBVal", sourceId: "unHeuresSamediB" },
+        { faderId: "unMixHeuresDimancheBFader", valId: "unMixHeuresDimancheBVal", sourceId: "unHeuresDimancheB" },
         { faderId: "unMixLoyerAFader", valId: "unMixLoyerAVal", sourceId: "unLoyerA", fmt: milliersFmt, milliers: true },
         { faderId: "unMixLoyerBFader", valId: "unMixLoyerBVal", sourceId: "unLoyerB", fmt: milliersFmt, milliers: true },
         { faderId: "unMixInstallAFader", valId: "unMixInstallAVal", sourceId: "unInstallA" },
@@ -5235,7 +5332,116 @@
         var pct = max > min ? Math.max(0, Math.min(100, (v - min) / (max - min) * 100)) : 0;
         fader.parentNode.style.setProperty("--pct", pct);
       }
-      function unMixSyncTous() { UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); unMixSyncJours(); }
+      function unMixSyncTous() {
+        if (unSplit) ["Samedi", "Dimanche"].forEach(function (D) { document.getElementById("unMixHeures" + D + "BFader").max = unHeuresMax(); });
+        UN_MIX_FIELDS.forEach(unMixSyncDepuisSource); unMixSyncJours();
+        if (unSplit) unSplitSync();
+      }
+
+      // ---------------------------------------------------------------------
+      // Deux tables de mixage indépendantes (07/10/2026, demande de Cédric — projet 1 « Première installation d'IRM » seulement)
+      // ---------------------------------------------------------------------
+      // Principe : on DÉPLACE les colonnes existantes (jamais de copie : mêmes ids, mêmes écouteurs) de chaque groupe de la table de mixage dans deux tables,
+      // A (colonnes de la machine A + valeurs partagées) et B (colonnes de la machine B + colonnes « B » des valeurs jusque-là partagées : examens par an,
+      // kWh, samedi, dimanche — cachées dans #unMixBClones). Les groupes d'origine sont masqués (classe un-split-source) ; la préférence « Curseurs affichés »
+      // (icône 🎚️) continue de s'appliquer à l'original et est recopiée sur les deux tables (unSplitMiroir). Les calculs lisent les valeurs de chaque IRM via
+      // unActiviteAnnuelle(slot) / unParamsPourSlot(slot) / unHeuresEffectives(jour, slot).
+      var unSplitDeplacements = [];
+      function unSplitDeplacer(node, cible) {
+        unSplitDeplacements.push({ node: node, parent: node.parentNode, suivant: node.nextSibling });
+        cible.appendChild(node);
+      }
+      function unSplitColDe(id) { var el = document.getElementById(id); return el ? el.closest(".un-mixer__fader-col") : null; }
+      function unSplitVisibilite() {
+        var possible = projetActuel === 1 && !document.getElementById("unColB").hidden;
+        document.getElementById("unSplitWrap").hidden = !possible;
+        if (!possible && unSplit) unSplitDesactiver();
+      }
+      function unSplitActiver() {
+        if (unSplit || projetActuel !== 1 || document.getElementById("unColB").hidden) return;
+        // Valeurs de départ de l'IRM B = celles de l'IRM A (calculées AVANT de passer le drapeau).
+        document.getElementById("unActiviteBH").value = Math.round(unActiviteAnnuelle(0));
+        document.getElementById("unKwhB").value = document.getElementById("unKwh").value;
+        document.getElementById("unHeuresSamediB").value = document.getElementById("unHeuresSamedi").value;
+        document.getElementById("unHeuresDimancheB").value = document.getElementById("unHeuresDimanche").value;
+        unActiverSplit(); // heures B figées (indépendantes de celles de A)
+        unSplit = true;
+        var mixer = document.getElementById("unMixerPointMort");
+        var duo = document.createElement("div"); duo.id = "unMixDuo";
+        function table(id, slot) {
+          var t = document.createElement("div"); t.className = "un-mixer-table"; t.id = id; t.style.setProperty("--tc", UN_SLOT_COLORS[slot]);
+          var ti = document.createElement("div"); ti.className = "un-mixer-table__titre"; ti.id = "unMixTitre" + (slot === 0 ? "A" : "B"); t.appendChild(ti);
+          var c = document.createElement("div"); c.className = "un-mixer-table__corps"; t.appendChild(c); duo.appendChild(t);
+          return c;
+        }
+        var corpsA = table("unMixTableA", 0), corpsB = table("unMixTableB", 1);
+        var extrasB = { unMixGroupActivite: "unMixActiviteBFader", unMixGroupKwh: "unMixKwhBFader" };
+        Array.prototype.slice.call(mixer.querySelectorAll(":scope > .un-mixer__group")).forEach(function (g) {
+          if (g.id === "unMixGroupRepart") return;
+          var cols = Array.prototype.slice.call(g.querySelectorAll(".un-mixer__fader-col"));
+          function coque() {
+            var sh = document.createElement("div"); sh.className = "un-mixer__group"; sh.setAttribute("data-origine", g.id);
+            var tt = g.querySelector(".un-mixer__group-title"); if (tt) sh.appendChild(tt.cloneNode(true));
+            var f = document.createElement("div"); f.className = "un-mixer__faders"; sh.appendChild(f);
+            return sh;
+          }
+          var shA = coque(), shB = coque(), fA = shA.querySelector(".un-mixer__faders"), fB = shB.querySelector(".un-mixer__faders");
+          cols.forEach(function (c) {
+            var etiq = c.querySelector(".un-mixer__fader-col-slot");
+            unSplitDeplacer(c, etiq && etiq.getAttribute("data-slot") === "1" ? fB : fA);
+          });
+          if (extrasB[g.id]) { var cb = unSplitColDe(extrasB[g.id]); if (cb) unSplitDeplacer(cb, fB); }
+          if (g.id === "unMixHeuresGroup") ["unMixHeuresSamediBCol", "unMixHeuresDimancheBCol"].forEach(function (id) { var cb = document.getElementById(id); if (cb) unSplitDeplacer(cb, fB); });
+          corpsA.appendChild(shA); corpsB.appendChild(shB);
+          g.classList.add("un-split-source");
+        });
+        mixer.insertBefore(duo, mixer.querySelector(".un-mixer__group, .un-mixer__check-group"));
+        document.getElementById("unSplitCheck").checked = true;
+        unRecalerDebitsEtHeures();
+        unRenderPointMort(); unMixSyncTous();
+      }
+      function unSplitDesactiver() {
+        if (!unSplit) return;
+        unSplit = false;
+        for (var i = unSplitDeplacements.length - 1; i >= 0; i--) { var d = unSplitDeplacements[i]; d.parent.insertBefore(d.node, d.suivant && d.suivant.parentNode === d.parent ? d.suivant : null); }
+        unSplitDeplacements = [];
+        var duo = document.getElementById("unMixDuo"); if (duo) duo.remove();
+        Array.prototype.forEach.call(document.querySelectorAll("#unMixerPointMort .un-split-source"), function (g) { g.classList.remove("un-split-source"); });
+        document.getElementById("unSplitCheck").checked = false;
+        unRecalerDebitsEtHeures();
+        unRenderPointMort(); unMixSyncTous();
+      }
+      // Titres des tables, visibilité des groupes (préférence 🎚️) recopiée sur les deux tables, colonnes samedi/dimanche B calées sur celles de A.
+      function unSplitMiroir() {
+        if (!unSplit) return;
+        [0, 1].forEach(function (slot) {
+          var c = unConfigMachinePointMort(slot), t = document.getElementById("unMixTitre" + (slot === 0 ? "A" : "B"));
+          if (t) t.textContent = "IRM " + (slot === 0 ? "A" : "B") + (c.machine ? " — " + c.machine.nomCourt : "");
+        });
+        Array.prototype.forEach.call(document.querySelectorAll("#unMixDuo .un-mixer__group"), function (sh) {
+          var o = document.getElementById(sh.getAttribute("data-origine")); if (o) sh.hidden = o.hidden;
+        });
+        ["Samedi", "Dimanche"].forEach(function (D) { document.getElementById("unMixHeures" + D + "BCol").hidden = !document.getElementById("unOuvert" + D).checked; });
+      }
+      // Curseur « Examens par an » de l'IRM B (valeur dans #unActiviteBH).
+      function unSplitSync() {
+        var annuel = Math.round(unActiviteAnnuelle(1)), f = document.getElementById("unMixActiviteBFader"), v = document.getElementById("unMixActiviteBVal");
+        f.value = Math.min(15000, annuel); f.parentNode.style.setProperty("--pct", Math.min(100, annuel / 150));
+        if (unMixSaisie !== "unMixActiviteBVal") v.value = milliersFmt.format(annuel);
+      }
+      (function () {
+        var f = document.getElementById("unMixActiviteBFader"), v = document.getElementById("unMixActiviteBVal");
+        f.addEventListener("input", function () { unMixAppliquerActivite(parseFloat(f.value) || 0, 1); });
+        v.addEventListener("input", function () {
+          var x = parseFloat(String(v.value).replace(/\./g, "").replace(",", "."));
+          if (!isFinite(x)) return;
+          unMixSaisie = "unMixActiviteBVal"; unMixAppliquerActivite(x, 1); unMixSaisie = null;
+        });
+        [["unMixActiviteBMoins", -1], ["unMixActiviteBPlus", 1]].forEach(function (d) {
+          document.getElementById(d[0]).addEventListener("click", function (e) { unMixAppliquerActivite(unActiviteAnnuelle(1) + d[1] * 50 * (e.shiftKey ? 10 : 1), 1); });
+        });
+        document.getElementById("unSplitCheck").addEventListener("change", function () { if (this.checked) unSplitActiver(); else unSplitDesactiver(); });
+      })();
       // Samedi / dimanche dans « Heures d'ouverture » de la table de mixage (06/10/2026) : colonne visible si le jour est ouvert, curseur =
       // copie du champ de Paramètres ; l'écriture passe par le champ d'origine (événements, plafond d'heures, recalage des débits).
       function unMixSyncJours() {
@@ -5300,6 +5506,7 @@
         document.getElementById(champ.sourceId).value = champ.milliers ? milliersFmt.format(v) : v;
         unMixEcritureProg = false;
         if (champ.sourceId === "unInstallA" || champ.sourceId === "unInstallB") unDebitModifie(v, champ.sourceId);
+        if (champ.sourceId === "unHeuresSamediB" || champ.sourceId === "unHeuresDimancheB") { unRecalerDebitsEtHeures(); unMixSyncTous(); }
         unRenderPointMort();
       }
 
@@ -6783,7 +6990,19 @@
         var communs = [], colonnes = [], lignes = [{ nom: nomA, couleur: UN_SLOT_COLORS[0], valeurs: [] }];
         var deuxMachines = !!nomB;
         if (deuxMachines) lignes.push({ nom: nomB, couleur: UN_SLOT_COLORS[1], valeurs: [] });
-        Array.prototype.forEach.call(document.querySelectorAll("#unMixerPointMort .un-mixer__group"), function (g) {
+        if (unSplit && deuxMachines) { // deux tables de mixage : une valeur par IRM, lue dans sa propre table
+          var tabA = document.querySelectorAll("#unMixTableA .un-mixer__group");
+          Array.prototype.forEach.call(tabA, function (gA) {
+            var origine = gA.getAttribute("data-origine"), gB = document.querySelector('#unMixTableB .un-mixer__group[data-origine="' + origine + '"]');
+            if (gA.hidden || !gB) return;
+            function premier(g) { var c = Array.prototype.filter.call(g.querySelectorAll(".un-mixer__fader-col"), function (x) { return !x.hidden; })[0]; var v = c && c.querySelector(".un-mixer__fader-value"); return v ? v.value.trim() : ""; }
+            var titreEl = gA.querySelector(".un-mixer__group-title"), titre = titreEl ? titreEl.textContent.trim() : "";
+            colonnes.push(titre + (UN_MIX_UNITES[origine] || (origine === "unMixGroupKwh" ? " (€)" : "")));
+            lignes[0].valeurs.push(premier(gA)); lignes[1].valeurs.push(premier(gB));
+          });
+          return { communs: communs, colonnes: colonnes, lignes: lignes };
+        }
+        Array.prototype.forEach.call(document.querySelectorAll("#unMixerPointMort > .un-mixer__group"), function (g) {
           if (g.hidden) return;
           var titreEl = g.querySelector(".un-mixer__group-title"), titre = titreEl ? titreEl.textContent.trim() : "";
           var cols = Array.prototype.filter.call(g.querySelectorAll(".un-mixer__fader-col"), function (c) { return !c.hidden; });
@@ -6907,6 +7126,7 @@
           slots.forEach(function (slot) {
             var config = unConfigMachinePointMort(slot);
             if (!config.machine) return;
+            var volume = Math.max(0, Math.round(unActiviteAnnuelle(slot))); // propre à chaque IRM (deux tables de mixage indépendantes)
             var det = unDetailCA(volume, config.machine, params);
             if (params.acteIntellectuelActif) det.acte = unActeIntellectuelConfig(config) * volume;
             var totRec = det.plein + det.seuil1 + det.seuil2 + det.plafond + (det.acte || 0);
@@ -6946,11 +7166,11 @@
               return { label: t[0], fmt: t[2], vals: rseRes.map(function (r) { return { label: r.machine.nomCourt, color: r.color, valeur: t[1](r.machine) }; }) };
             }),
             communs: [
-              ["Coût du kWh", unRseEurosCent.format(rseRes.length ? rseRes[0].prix : 0)],
-              ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", Math.max(0, unHeuresAmpl(slots[0]) - coupure) + " h/jour"],
-              ["Samedi (coupure déjà déduite)", samCoche ? unHeuresEffectives("Samedi") + " h/jour" : "Fermé"],
-              ["Dimanche (coupure déjà déduite)", dimCoche ? unHeuresEffectives("Dimanche") + " h/jour" : "Fermé"],
-              ["Votre activité", milliersFmt.format(Math.round(unActiviteAnnuelle())) + " patients/an"]
+              ["Coût du kWh", unAB(unRseEurosCent.format(rseRes.length ? rseRes[0].prix : 0), unRseEurosCent.format(rseRes.length > 1 ? rseRes[1].prix : 0))],
+              ["Amplitude par jour, lundi à vendredi (coupure déjà déduite)", unAB(Math.max(0, unHeuresAmpl(slots[0]) - coupure) + " h/jour", Math.max(0, unHeuresAmpl(1) - coupure) + " h/jour")],
+              ["Samedi (coupure déjà déduite)", samCoche ? unAB(unHeuresEffectives("Samedi", 0) + " h/jour", unHeuresEffectives("Samedi", 1) + " h/jour") : "Fermé"],
+              ["Dimanche (coupure déjà déduite)", dimCoche ? unAB(unHeuresEffectives("Dimanche", 0) + " h/jour", unHeuresEffectives("Dimanche", 1) + " h/jour") : "Fermé"],
+              ["Votre activité", unAB(milliersFmt.format(Math.round(unActiviteAnnuelle(0))) + " patients/an", milliersFmt.format(Math.round(unActiviteAnnuelle(1))) + " patients/an")]
             ],
             machines: [
               { label: "Activité traitée par machine", vals: rseRes.map(function (r) { return milliersFmt.format(Math.round(r.patientsMachine)) + " patients/an"; }) },
@@ -7073,7 +7293,7 @@
           doc.setTextColor(NAVY[0], NAVY[1], NAVY[2]); doc.setFontSize(14); doc.setFont(undefined, "bold");
           doc.text("Simulation IRM — Projet " + donnees.projet + " : " + (UN_PROJET_TITRES[donnees.projet] || ""), LEFT_X, y);
           y += 6; doc.setFontSize(9.5); doc.setFont(undefined, "normal"); doc.setTextColor(90);
-          doc.text("Activité : " + milliersFmt.format(donnees.volume) + " examens / an", LEFT_X, y);
+          doc.text("Activité : " + (unSplit ? "IRM A " + milliersFmt.format(Math.round(unActiviteAnnuelle(0))) + "  ·  IRM B " + milliersFmt.format(Math.round(unActiviteAnnuelle(1))) : milliersFmt.format(donnees.volume)) + " examens / an", LEFT_X, y);
           y += 5;
           // Coordonnées du visiteur (saisies dans le formulaire d'envoi) : rappelées en haut de la page 1.
           (function () {
