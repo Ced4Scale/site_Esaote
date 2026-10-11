@@ -92,6 +92,16 @@
     /* ---- Icônes de la table de mixage + panneaux déplaçables (repris du simulateur unifié) ---- */
     .af-info-wrap { position: relative; display: inline-block; --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; }
     .af-info-btn { display: inline-flex; align-items: center; justify-content: center; width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--af-bd); background: #eef1f5; color: var(--af-fg); font-size: .95rem; line-height: 1; cursor: pointer; padding: 0; position: relative; z-index: 6; }
+    .af-pop--large { width: min(calc(100vw - 4.5rem), 500px); }
+    .af-mixer--mini { margin-top: .6rem; padding: .8rem .4rem .6rem; gap: .5rem; justify-content: space-between; flex-wrap: nowrap; align-items: stretch; }
+    .af-mixer--mini .af-mixer__group { justify-content: flex-start; }
+    .af-mixer--mini .af-mixer__group-title { min-height: 2.3em; display: flex; align-items: flex-end; }
+    .af-mixer--mini .af-mixer__bar { height: 100px; width: 40px; }
+    .af-mixer--mini .af-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 40px; }
+    .af-mixer--mini .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 40px; }
+    .af-mixer--mini .af-mixer__value { width: 4rem; }
+    .af-mixer--mini .af-mixer__unit { max-width: 5rem; }
+    .af-mixer--mini .af-mixer__group-title { max-width: 6rem; }
     .af-esaote-btn { width: auto; padding: 0 .55rem; }
     .af-esaote-btn img { display: block; height: 11px; width: auto; }
     .af-opt-ligne { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; font-size: .85rem; font-weight: 600; }
@@ -204,9 +214,10 @@
               <div class="af-pop-titre">Curseurs affichés</div>
               <div id="afOutilsCurseurs"></div>
               <div class="af-pop-sous-titre">Année affichée</div>
-              <label class="af-check"><input type="radio" name="afAnnee" value="2" checked /> Année 2 et suivantes (maintenance comprise)</label>
-              <label class="af-check"><input type="radio" name="afAnnee" value="1" /> Année 1 (maintenance sous garantie : 0)</label>
-              <label class="af-check"><input type="radio" name="afAnnee" value="moy" /> Moyenne sur la durée d'étalement de l'achat</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="1" /> Année 1</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="2" checked /> Année 2</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="3" /> Année 3</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="moy" /> Moyenne sur la durée d'étalement (ou du crédit)</label>
             </div>
           </span>
 
@@ -242,6 +253,21 @@
             </div>
           </span>
 
+          <!-- Financement : crédit (taux, durée), garantie et maintenance — mini table de mixage -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afFinBtn" aria-expanded="false" aria-controls="afFinPop" aria-label="Financement, garantie et maintenance" title="Financement, garantie et maintenance">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><ellipse cx="12" cy="6.5" rx="7" ry="2.8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5 6.5v5.2c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8V6.5M5 11.7v5.3c0 1.5 3.1 2.8 7 2.8s7-1.3 7-2.8v-5.3" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+            </button>
+            <div class="af-pop af-pop--large" id="afFinPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Financement, garantie et maintenance</div>
+              <label class="af-check"><input type="checkbox" id="afFinActif" /> Financer l'achat par un crédit (le loyer du crédit remplace l'étalement du prix)</label>
+              <div class="af-mixer af-mixer--mini" id="afFinMix"></div>
+              <div id="afFinSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
+              <p class="af-aide">Crédit à mensualités constantes sur le prix de l'O-scan et de ses options, sans apport. Pendant les mois de garantie, la maintenance n'est pas comptée ; ensuite, elle coûte le montant annuel choisi.</p>
+            </div>
+          </span>
+
           <!-- Esaote : options de l'O-scan (choix et prix) -->
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn af-esaote-btn" id="afOptBtn" aria-expanded="false" aria-controls="afOptPop" aria-label="Options Esaote : choix et prix" title="Options Esaote (AI, Smart exam, post-traitement)">
@@ -268,7 +294,8 @@
                 <tr><td>Personnel</td><td>MERM × salaire net annuel × coefficient de charges (voir « Hypothèses » sous la table).</td></tr>
                 <tr><td>Électricité</td><td>Consommation de l'O-scan (arrêt, prêt, examen) et de la climatisation de la salle, au prix du kWh.</td></tr>
                 <tr><td>Achat de l'O-scan</td><td>Prix (options Esaote cochées comprises : AI, Smart exam, post-traitement) étalé à parts égales sur la durée choisie, sans intérêts.</td></tr>
-                <tr><td>Maintenance</td><td>Aucune la 1<sup>re</sup> année (garantie), puis le montant annuel du curseur.</td></tr>
+                <tr><td>Maintenance</td><td>Aucune pendant les mois de garantie, puis le montant annuel choisi (icône Financement).</td></tr>
+                <tr><td>Financement</td><td>Si coché (icône Financement) : mensualité du crédit (taux, durée) à la place de l'étalement du prix.</td></tr>
                 <tr><td>Loyer</td><td>Prix au m² par an × surface (icône bâtiment). Rien tant que le prix est à 0.</td></tr>
                 <tr><td>Non compté</td><td>Radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
               </tbody></table>
@@ -365,7 +392,7 @@
     var S = {
       pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 60], ["Épaule", 10], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     var osVal = OS_ZONES.map(function (z) { return z[1]; });
@@ -376,6 +403,9 @@
 
     // ------------------------------------------------------------------ calcul
     function net(h, coup, dur) { return coup ? Math.max(0, h - dur) : h; }
+    function mensualite(P) { var r = S.taux / 1200, n = Math.max(1, S.dureeMois); return r > 0 ? P * r / (1 - Math.pow(1 + r, -n)) : P / n; }
+    function moisPayes(y) { return Math.max(0, Math.min(12, S.dureeMois - 12 * (y - 1))); }
+    function moisMaint(y) { return 12 - Math.max(0, Math.min(12, S.garantie - 12 * (y - 1))); }
     function prixOscan() { return S.achat + (S.optAI ? S.prixAI : 0) + (S.optSmart ? S.prixSmart : 0) + (S.optPost ? S.prixPost : 0); }
     function calculer() {
       var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
@@ -389,20 +419,22 @@
       var kwhAn = (OSCAN.eteint + OSCAN.climSalleKw) * 8760 + (OSCAN.pret - OSCAN.eteint) * Math.max(0, hBrutAn - hMesure) + (OSCAN.mesure - OSCAN.eteint) * hMesure;
       var elec = kwhAn * S.kwh;
       var achatTotal = prixOscan();
-      var achat = achatTotal / Math.max(1, S.amort);
+      var anneeNum = S.annee === "moy" ? 0 : parseInt(S.annee, 10);
+      var horizon = Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort);
+      var mens = mensualite(achatTotal);
+      var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * S.dureeMois / horizon) : achatTotal / Math.max(1, S.amort);
       var loyer = S.loyerM2 * S.surface;
-      var maint = S.annee === "1" ? 0 : S.annee === "moy" ? S.maint * (Math.max(1, S.amort) - 1) / Math.max(1, S.amort) : S.maint;
+      var maint = anneeNum ? S.maint * moisMaint(anneeNum) / 12 : S.maint * Math.max(0, 12 * horizon - S.garantie) / 12 / horizon;
       var depenses = personnel + loyer + elec + achat + maint;
       var joursAn = (5 + (S.ouvSam ? 1 : 0) + (S.ouvDim ? 1 : 0)) * S.semaines;
       var acqH = OSCAN.dureeAcquisitionMinutes / 60;
       var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
       var pmExamens = S.prix > variable ? Math.max(0, depenses - variable * examens) / (S.prix - variable) : Infinity;
       // Retour sur investissement : trésorerie annuelle = recettes - personnel - loyer - électricité (- maintenance dès l'année 2)
-      var cash1 = recettes - personnel - loyer - elec, cashN = cash1 - S.maint, retour;
-      if (cash1 >= achatTotal) retour = achatTotal / cash1 * 12;
-      else if (cashN > 0) retour = (1 + (achatTotal - Math.max(0, cash1)) / cashN) * 12;
-      else retour = Infinity;
-      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, retourMois: retour, cash1: cash1 };
+      var cash1 = recettes - personnel - loyer - elec, cashN = cash1 - S.maint, retour = Infinity;
+      var cashM = cash1 / 12, maintM = S.maint / 12, g = Math.max(0, S.garantie);
+      if (cashM > 0) { var t1 = achatTotal / cashM; if (t1 <= g) retour = t1; else if (cashM > maintM) retour = (achatTotal + maintM * g) / (cashM - maintM); }
+      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, mensualite: mens, interets: mens * Math.max(1, S.dureeMois) - achatTotal, retourMois: retour, cash1: cash1 };
     }
 
     // ------------------------------------------------------------------ demi-anneaux
@@ -484,7 +516,7 @@
       // 1. point mort financier, en durée : combien de temps pour récupérer le prix de l'O-scan
       var fini = isFinite(r.retourMois);
       z.appendChild(carte("Point mort financier (retour sur investissement)", dureeTexte(r.retourMois),
-        fini ? "Durée pour récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " la 1<sup>re</sup> année, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance. Sans intérêts d'emprunt."
+        fini ? "Durée pour récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " par an pendant les " + fmt(S.garantie) + " mois de garantie, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance. Sans intérêts d'emprunt."
           : "La trésorerie annuelle (" + fmtMoney(r.cash1 - S.maint) + " après maintenance) ne permet pas de récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ").",
         fini ? Math.min(1, 84 / Math.max(1, r.retourMois)) : null, r.retourMois <= 84 ? "#1baf7a" : "#c2334d", "Plus la barre est pleine, plus le retour est rapide", "repère : 7 ans"));
       // 2. point mort journalier : examens par jour pour couvrir toutes les dépenses
@@ -497,13 +529,16 @@
     }
     function rendre() {
       var r = calculer(), zone = el("afDemis");
+      CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
       zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes) }));
       zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses) }));
       var positif = r.resultat >= 0;
       zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
         positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d" }));
-      var an = S.annee === "1" ? "Année 1 (maintenance sous garantie)" : S.annee === "moy" ? "Moyenne sur " + fmt(S.amort) + " ans" : "Année 2 et suivantes";
+      var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
+      CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
+      el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
       el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + cur.n + " (" + cur.c + ")";
       rendrePointsMorts(r);
       majOs();
@@ -522,18 +557,24 @@
       { id: "afGPrix", titre: "Prix de l'examen", choix: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 200000, max: 500000, step: 5000, kind: "money" }] },
       { id: "afGKwh", titre: "Coût du kWh", choix: "Coût du kWh", cols: [{ k: "kwh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" }] },
-      { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle (après la 1re année de garantie)", unitG: "après la 1re année de garantie", cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
+      { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle", unitFn: function () { return S.garantie > 0 ? "après " + fmt(S.garantie) + " mois de garantie" : "sans garantie"; }, cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
     ];
+    GROUPES.push(
+      { id: "afGFTaux", ou: "afFinMix", titre: "Taux du crédit", cols: [{ k: "taux", color: "#d1477a", min: 0, max: 15, step: 0.25, kind: "pct", unit: "% par an" }] },
+      { id: "afGFDuree", ou: "afFinMix", titre: "Durée du crédit", cols: [{ k: "dureeMois", color: "#6b5b95", min: 6, max: 120, step: 6, kind: "int", unit: "mois" }] },
+      { id: "afGFGarantie", ou: "afFinMix", titre: "Garantie", cols: [{ k: "garantie", color: "#1f9d78", min: 0, max: 60, step: 1, kind: "int", unit: "mois" }] },
+      { id: "afGFMaint", ou: "afFinMix", titre: "Maintenance annuelle", cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
+    );
     var visibles = {};
     try { visibles = JSON.parse(localStorage.getItem(CLE_GROUPES) || "{}"); } catch (e) {}
     function val(x) { return typeof x === "function" ? x() : x; }
-    function affiche(col, v) { return col.kind === "money" ? fmt(v * cur.r) : col.kind === "kwh" ? fmtKwh(v) : nf1.format(v); }
+    function affiche(col, v) { return col.kind === "money" ? fmt(v * cur.r) : col.kind === "kwh" ? fmtKwh(v) : col.kind === "int" ? fmt(v) : col.kind === "pct" ? nf2.format(v) : nf1.format(v); }
     function uniteCol(col) { return col.unit || (col.kind === "money" ? cur.s : cur.s + " / kWh"); }
 
     var mixer = el("afMixer");
     GROUPES.forEach(function (g) {
       var gd = document.createElement("div"); gd.className = "af-mixer__group"; gd.id = g.id;
-      gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"></div>' + (g.unitG ? '<div class="af-mixer__unit"></div>' : "");
+      gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"></div>' + ((g.unitG || g.unitFn) ? '<div class="af-mixer__unit"></div>' : "");
       gd.querySelector(".af-mixer__group-title").textContent = g.titre;
       if (g.unitG) gd.querySelector(".af-mixer__unit").textContent = g.unitG;
       var fd = gd.querySelector(".af-mixer__faders");
@@ -553,6 +594,7 @@
         function appliquer(v) {
           var mn = val(col.min), mx = val(col.max);
           v = Math.max(mn, Math.min(mx, v));
+          if (col.kind === "int") v = Math.round(v);
           S[col.k] = Math.round(v * 1e6) / 1e6;
           synchroniser(); rendre();
         }
@@ -560,17 +602,18 @@
         col.box.addEventListener("change", function () {
           var n = lire(col.box.value);
           if (n == null) { synchroniser(); return; }
-          appliquer(col.kind === "dec" ? n : n / cur.r);
+          appliquer(col.kind === "money" || col.kind === "kwh" ? n / cur.r : n);
         });
         c.querySelector(".af-moins").addEventListener("click", function () { appliquer(S[col.k] - col.step); });
         c.querySelector(".af-plus").addEventListener("click", function () { appliquer(S[col.k] + col.step); });
       });
-      mixer.appendChild(gd);
+      (g.ou ? el(g.ou) : mixer).appendChild(gd);
     });
 
     function synchroniser() {
       GROUPES.forEach(function (g) {
-        var gd = el(g.id); gd.hidden = visibles[g.id] === false;
+        var gd = el(g.id); gd.hidden = !g.ou && visibles[g.id] === false;
+        if (g.unitFn) gd.lastElementChild.textContent = g.unitFn();
         g.cols.forEach(function (col) {
           var mn = val(col.min), mx = val(col.max);
           if (S[col.k] > mx) S[col.k] = mx;
@@ -630,6 +673,8 @@
       el("afOptListe").appendChild(d);
     });
     brancher("afOptBtn", "afOptPop");
+    brancher("afFinBtn", "afFinPop");
+    el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; rendre(); });
 
     // ------------------------------------------------------------------ loyer
     el("afLoyerM2").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.loyerM2 = n / cur.r; synchroniser(); rendre(); });
@@ -691,7 +736,7 @@
 
     // ------------------------------------------------------------------ boîte à outils
     var oc = el("afOutilsCurseurs");
-    GROUPES.forEach(function (g) {
+    GROUPES.filter(function (g) { return !g.ou; }).forEach(function (g) {
       var l = document.createElement("label"); l.className = "af-check";
       l.innerHTML = '<input type="checkbox" /> <span></span>';
       var cb = l.querySelector("input"); cb.checked = visibles[g.id] !== false; l.querySelector("span").textContent = g.choix;
