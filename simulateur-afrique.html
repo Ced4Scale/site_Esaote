@@ -320,7 +320,7 @@
             <div class="af-pop af-pop--large" id="afImpPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Importation depuis l'Italie</div>
-              <label for="afPays" style="font-size:.8rem;font-weight:700">Pays d'importation</label>
+              <label for="afPays" style="font-size:.8rem;font-weight:700">Pays de destination (l'IRM part toujours d'Italie)</label>
               <select id="afPays" style="width:100%;margin:.2rem 0 .4rem"></select>
               <div id="afImpStatut" class="af-aide" style="margin:0 0 .4rem"></div>
               <label class="af-check"><input type="checkbox" id="afImpTva" checked /> Compter la TVA dans le prix d'achat (à décocher si elle est récupérable)</label>
@@ -860,7 +860,7 @@
     });
     brancher("afOptBtn", "afOptPop");
     brancher("afImpBtn", "afImpPop");
-    var selP = el("afPays"); selP.innerHTML = '<option value="">— Aucun pays (pas de frais d\'importation) —</option>';
+    var selP = el("afPays"); selP.innerHTML = '<option value="">— Aucun pays de destination (pas de frais d\'importation) —</option>';
     PAYS.forEach(function (c) { var o = document.createElement("option"); o.value = c.k; o.textContent = c.nom; selP.appendChild(o); });
     function fmtPct(v) { return nf2.format(v).replace(/,00$/, "") + " %"; }
     selP.addEventListener("change", function () {
@@ -872,7 +872,7 @@
     el("afImpTva").addEventListener("change", function () { S.tvaCompte = this.checked; rendre(); });
     function majImport() {
       var c = PAYS.filter(function (x) { return x.k === S.pays; })[0], ht = prixHT(), d = detailImport(ht);
-      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>Les IRM arrivent d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez un pays : les frais d'importation s'ajoutent alors au prix d'achat de l'IRM.";
+      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>L'IRM part d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez le pays de destination : les frais d'importation depuis l'Italie s'ajoutent alors au prix d'achat de l'IRM.";
       var h = '<tbody><tr><td>Prix de l\'O-scan et options (hors taxes)</td><td></td><td style="text-align:right">' + fmtMoney(ht) + '</td></tr>';
       d.lignes.forEach(function (l) { h += '<tr><td>' + l[0] + '</td><td style="text-align:right;white-space:nowrap">' + fmtPct(l[1]) + '</td><td style="text-align:right;white-space:nowrap">' + fmtMoney(l[2]) + '</td></tr>'; });
       h += '<tr><td><strong>Frais et taxes d\'importation</strong></td><td style="text-align:right">' + (ht > 0 ? fmtPct(d.total / ht * 100) : "") + '</td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(d.total) + '</strong></td></tr>' +
