@@ -28,6 +28,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
+  <script src="assets/afrique-i18n.js?v=20261011a"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -128,6 +129,11 @@
     #afNegPop { width: min(calc(100vw - 4.5rem), 580px); }
     #afOsPop { width: min(calc(100vw - 4.5rem), 580px); }
     #afImpPop { width: min(calc(100vw - 4.5rem), 580px); }
+    .af-lang-btn { width: auto; padding: 0 .45rem; }
+    .af-lang-btn svg, .af-lang-row svg { display: block; width: 22px; height: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 2px; }
+    .af-lang-row { display: flex; align-items: center; gap: .6rem; }
+    html[dir="rtl"] .af-pop, html[dir="rtl"] .af-mixer__header { text-align: right; }
+    html[dir="rtl"] .af-legende b, html[dir="rtl"] .af-pm-valeur, html[dir="rtl"] .af-mixer__value, html[dir="rtl"] .af-demi svg text { direction: ltr; unicode-bidi: isolate; }
     .af-esaote-btn { width: auto; padding: 0 .55rem; }
     .af-esaote-btn img { display: block; height: 11px; width: auto; }
     .af-opt-ligne { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; font-size: .85rem; font-weight: 600; }
@@ -202,6 +208,17 @@
       <div class="af-mixer" id="afMixer">
         <div class="af-mixer__header">
           <span class="af-mixer__title">Table de mixage</span>
+
+          <!-- Langue : le drapeau de la langue choisie -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn af-lang-btn" id="afLangBtn" aria-expanded="false" aria-controls="afLangPop" aria-label="Langue" title="Langue"><span id="afLangFlag"></span></button>
+            <div class="af-pop" id="afLangPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Langue</div>
+              <div class="af-dev-liste" id="afLangListe"></div>
+              <p class="af-aide">Traductions à faire relire par un locuteur avant tout usage client.</p>
+            </div>
+          </span>
 
           <!-- $ : choix de la devise -->
           <span class="af-info-wrap">
@@ -454,7 +471,7 @@
 
     // ------------------------------------------------------------------ état (tout en euros)
     var S = {
-      pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
+      pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
       plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 0, optFar: false, prixFar: 0, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
@@ -1008,7 +1025,92 @@
     document.addEventListener("fullscreenchange", function () { fsBtn.classList.toggle("is-fullscreen", document.fullscreenElement === bloc); });
     el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
 
+    // ------------------------------------------------------------------ langues (le français est la langue source ; tout texte affiché est traduit par dictionnaire)
+    var LANGS = [{ c: "fr", nom: "Français" }, { c: "en", nom: "English" }, { c: "it", nom: "Italiano" }, { c: "pt", nom: "Português" }, { c: "ar", nom: "العربية", dir: "rtl" }, { c: "sw", nom: "Kiswahili" }];
+    var CLE_LANGUE = "ced4scale-afrique-langue", lang = "fr";
+    try { var l0 = localStorage.getItem(CLE_LANGUE); LANGS.forEach(function (x) { if (x.c === l0) lang = l0; }); } catch (e) {}
+    function drapeau(c) {
+      var f = {
+        fr: '<rect width="1" height="2" fill="#0055A4"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#EF4135"/>',
+        it: '<rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#CE2B37"/>',
+        ar: '<rect width="3" height="0.67" fill="#CE1126"/><rect y="0.67" width="3" height="0.66" fill="#fff"/><rect y="1.33" width="3" height="0.67" fill="#000"/><circle cx="1.5" cy="1" r="0.17" fill="#C09300"/>',
+        pt: '<rect width="3" height="2" fill="#FF0000"/><rect width="1.2" height="2" fill="#006600"/><circle cx="1.2" cy="1" r="0.34" fill="#FFD700"/><circle cx="1.2" cy="1" r="0.2" fill="#fff"/>',
+        sw: '<rect width="3" height="2" fill="#00A3DD"/><polygon points="0,0 3,0 0,2" fill="#1EB53A"/><line x1="0" y1="2" x2="3" y2="0" stroke="#FCD116" stroke-width="0.7"/><line x1="0" y1="2" x2="3" y2="0" stroke="#000" stroke-width="0.45"/>',
+        en: '<rect width="3" height="2" fill="#012169"/><path d="M0,0 L3,2 M3,0 L0,2" stroke="#fff" stroke-width="0.4"/><path d="M0,0 L3,2 M3,0 L0,2" stroke="#C8102E" stroke-width="0.14"/><path d="M1.5,0 V2 M0,1 H3" stroke="#fff" stroke-width="0.66"/><path d="M1.5,0 V2 M0,1 H3" stroke="#C8102E" stroke-width="0.4"/>'
+      }[c];
+      return '<svg viewBox="0 0 3 2" preserveAspectRatio="none" aria-hidden="true">' + f + '</svg>';
+    }
+    var I18N = window.AF_I18N || { langs: ["fr"], rows: [] }, MAPS = {};
+    I18N.langs.forEach(function (c, i) { if (i > 0) { MAPS[c] = {}; I18N.rows.forEach(function (r) { if (r[i]) MAPS[c][r[0]] = r[i]; }); } });
+    var codesMonnaie = CURRENCIES.map(function (x) { return x.c; }).join("|");
+    var RE_MONNAIE = new RegExp("[-−]?\\d+(?:[.,]\\d+)*[\\u00a0 ](?:€|\\$|FCFA|(?:" + codesMonnaie + ")(?![A-Za-z]))", "g"), RE_NOMBRE = /\d+(?:[.,]\d+)*/g;
+    window.__afManquants = {};
+    function trad(t, c, haut) {
+      var mons = [], nums = [];
+      var cle = t.replace(RE_MONNAIE, function (m) { mons.push(m); return "¤"; }).replace(RE_NOMBRE, function (m) { nums.push(m); return "§"; });
+      var v = MAPS[c][cle], m;
+      if (v) { var im = 0, inn = 0; return v.replace(/[¤§]/g, function (ch) { return ch === "¤" ? (mons[im++] || "") : (nums[inn++] || ""); }); }
+      if (t.indexOf(" · ") > 0) return t.split(" · ").map(function (x) { return trad(x, c); }).join(" · ");
+      if ((m = /^(Augmenter :|Diminuer :) (.+)$/.exec(t))) return trad(m[1], c) + " " + trad(m[2], c);
+      if ((m = /^(.+)(, valeur)$/.exec(t))) return trad(m[1], c) + trad(m[2], c);
+      if ((m = /^(Option|Prix de l'option) (.+)$/.exec(t))) return trad(m[1], c) + " " + trad(m[2], c);
+      if ((m = /^(.+) \(([A-Z]{3})\)$/.exec(t)) && MAPS[c][m[1]]) return trad(m[1], c) + " (" + m[2] + ")";
+      if ((m = /^— (.+)$/.exec(t))) return "— " + trad(m[1], c);
+      if (t.indexOf(" — ") > 0) return t.split(" — ").map(function (x) { return trad(x, c); }).join(" — ");
+      if (!haut && /[A-Za-zÀ-ÿ]{4,}/.test(cle)) window.__afManquants[cle] = 1;
+      return t;
+    }
+    function trTexte(src, c) {
+      var lead = /^\s*/.exec(src)[0], trail = /\s*$/.exec(src)[0], core = src.trim().replace(/\s+/g, " ");
+      if (!core) return src;
+      return lead + trad(core, c) + trail;
+    }
+    var ATTRS = ["title", "aria-label", "placeholder"];
+    function appliquerLangue() {
+      var c = lang, racine = document.body;
+      var w = document.createTreeWalker(racine, NodeFilter.SHOW_TEXT, null), n, noeuds = [];
+      while ((n = w.nextNode())) { var pt = n.parentNode && n.parentNode.nodeName; if (pt !== "SCRIPT" && pt !== "STYLE") noeuds.push(n); }
+      noeuds.forEach(function (nd) {
+        var cur = nd.nodeValue, src;
+        if (nd.__tr !== undefined && cur === nd.__tr) src = nd.__fr; else { src = cur; nd.__fr = cur; nd.__tr = undefined; }
+        var sortie = c === "fr" ? src : trTexte(src, c);
+        if (sortie !== cur) { nd.nodeValue = sortie; }
+        nd.__tr = sortie === src ? undefined : sortie;
+      });
+      Array.prototype.forEach.call(racine.querySelectorAll("[title],[aria-label],[placeholder]"), function (e) {
+        ATTRS.forEach(function (a) {
+          if (!e.hasAttribute(a)) return;
+          var cur = e.getAttribute(a), kf = "__fr_" + a, kt = "__tr_" + a, src;
+          if (e[kt] !== undefined && cur === e[kt]) src = e[kf]; else { src = cur; e[kf] = cur; e[kt] = undefined; }
+          var sortie = c === "fr" ? src : trTexte(src, c);
+          if (sortie !== cur) e.setAttribute(a, sortie);
+          e[kt] = sortie === src ? undefined : sortie;
+        });
+      });
+      if (document.__frTitre === undefined) document.__frTitre = document.title;
+      document.title = c === "fr" ? document.__frTitre : trTexte(document.__frTitre, c);
+      if (obsLangue) obsLangue.takeRecords();
+    }
+    var obsLangue = null, planifie = false;
+    function planifierLangue() { if (planifie) return; planifie = true; requestAnimationFrame(function () { planifie = false; appliquerLangue(); }); }
+    function majBoutonLangue() {
+      el("afLangFlag").innerHTML = drapeau(lang);
+      var def = LANGS.filter(function (x) { return x.c === lang; })[0];
+      document.documentElement.setAttribute("lang", lang); document.documentElement.setAttribute("dir", def.dir || "ltr");
+      Array.prototype.forEach.call(el("afLangListe").children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.c === lang)); });
+    }
+    LANGS.forEach(function (x) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "af-dev-row af-lang-row"; b.dataset.c = x.c;
+      b.innerHTML = drapeau(x.c) + "<span></span>"; b.querySelector("span").textContent = x.nom; b.setAttribute("lang", x.c);
+      b.addEventListener("click", function () { lang = x.c; try { localStorage.setItem(CLE_LANGUE, lang); } catch (e) {} majBoutonLangue(); appliquerLangue(); });
+      el("afLangListe").appendChild(b);
+    });
+    brancher("afLangBtn", "afLangPop");
+
     majTauxListe(); majDevise(); synchroniser(); rendre();
+    majBoutonLangue(); appliquerLangue();
+    obsLangue = new MutationObserver(planifierLangue);
+    obsLangue.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["title", "aria-label"] });
   })();
   </script>
   <script src="assets/site-gate.js"></script>
