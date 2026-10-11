@@ -338,9 +338,9 @@
             <div class="af-pop" id="afOptPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Options de l'Esaote O-scan</div>
-              <p class="af-aide" style="margin:.1rem 0 .4rem">Cochez les options retenues et ajustez leur prix : elles s'ajoutent au prix de l'O-scan (étalé comme lui). Prix de départ à confirmer avec Esaote.</p>
+              <p class="af-aide" style="margin:.1rem 0 .4rem">Cochez les options retenues et ajustez leur prix : elles s'ajoutent au prix de l'O-scan (étalé comme lui). Prix de départ à confirmer avec Esaote ; travaux et cage de Faraday : prix à renseigner (0 au départ).</p>
               <div id="afOptListe"></div>
-              <div class="af-pop-sous-titre">Prix de l'O-scan avec options</div>
+              <div class="af-pop-sous-titre">Prix de l'O-scan avec options, travaux et cage</div>
               <div id="afOptTotal" style="font-weight:800"></div>
             </div>
           </span>
@@ -456,7 +456,7 @@
     var S = {
       pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 0, optFar: false, prixFar: 0, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
@@ -504,7 +504,8 @@
       d.total = fret + droit + autres + (S.tvaCompte ? tva : 0);
       return d;
     }
-    function prixOscan() { var ht = prixHT(); return ht + detailImport(ht).total; }
+    function prixLocal() { return (S.optTrav ? S.prixTrav : 0) + (S.optFar ? S.prixFar : 0); } // travaux et cage de Faraday : achetés sur place, sans frais d'importation
+    function prixOscan() { var ht = prixHT(); return ht + detailImport(ht).total + prixLocal(); }
     function hNetAnnuel() {
       var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
       return (5 * nS + nSam + nDim) * S.semaines;
@@ -819,7 +820,7 @@
       el("afLoyerM2Unite").textContent = cur.s;
       if (el("afSurface") !== document.activeElement) el("afSurface").value = fmt(S.surface);
       OPTIONS.forEach(function (o) { var b = el("afPrix" + o.k); if (b !== document.activeElement) b.value = fmt(S["prix" + o.k] * cur.r); el("afUnite" + o.k).textContent = cur.s; });
-      el("afOptTotal").textContent = fmtMoney(prixHT());
+      el("afOptTotal").textContent = fmtMoney(prixHT() + prixLocal());
       el("afLoyerTotal").textContent = fmtMoney(S.loyerM2 * S.surface) + " par an";
     }
 
@@ -845,8 +846,9 @@
     ["Dev", "Cal", "Outils", "Info"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
 
     // ------------------------------------------------------------------ options Esaote
-    var OPTIONS = [{ k: "AI", nom: "AI" }, { k: "Smart", nom: "Smart exam" }, { k: "Post", nom: "Post-traitement" }];
+    var OPTIONS = [{ k: "AI", nom: "AI" }, { k: "Smart", nom: "Smart exam" }, { k: "Post", nom: "Post-traitement" }, { k: "Trav", nom: "Travaux" }, { k: "Far", nom: "Cage de Faraday" }];
     OPTIONS.forEach(function (o) {
+      if (o.k === "Trav") { var st = document.createElement("div"); st.className = "af-pop-sous-titre"; st.textContent = "Installation (sans frais d'importation)"; el("afOptListe").appendChild(st); }
       var d = document.createElement("div"); d.className = "af-opt-ligne";
       d.innerHTML = '<label><input type="checkbox" /> <span></span></label><input type="text" inputmode="numeric" /><span class="af-opt-unite"></span>';
       var cb = d.querySelector("input[type=checkbox]"), box = d.querySelector("input[type=text]");
