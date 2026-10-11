@@ -56,8 +56,14 @@
     /* ---- Points morts ---- */
     .af-pm { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; margin-top: 1.2rem; }
     .af-pm-carte { border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1.1rem; background: #fcfcfd; }
-    .af-pm-carte h3 { margin: 0 0 .3rem; font-size: .95rem; }
-    .af-pm-valeur { font-size: 1.5rem; font-weight: 800; line-height: 1.15; }
+    .af-pm-carte > summary { list-style: none; }
+    .af-pm-carte > summary::-webkit-details-marker { display: none; }
+    .af-pm-carte > summary::before { content: "▸"; font-size: 1rem; color: var(--red); flex: none; }
+    .af-pm-carte[open] > summary::before { content: "▾"; }
+    .af-pm-carte > .af-pm-detail { margin-top: .5rem; }
+    .af-pm-carte > summary { display: flex; align-items: baseline; flex-wrap: wrap; gap: .3rem 1rem; cursor: pointer; }
+    .af-pm-carte h3 { margin: 0; font-size: .95rem; }
+    .af-pm-valeur { font-size: 1.3rem; font-weight: 800; line-height: 1.15; }
     .af-pm-detail { font-size: .82rem; color: var(--ink-soft); margin-top: .25rem; }
     .af-pm-piste { position: relative; height: .7rem; border-radius: 999px; background: #e5e7eb; margin-top: .6rem; overflow: hidden; }
     .af-pm-rempli { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
@@ -249,6 +255,7 @@
               <div id="afOsZones"></div>
               <div id="afOsTotal" style="margin-top:.4rem;font-size:.8rem;font-weight:800;border-top:1px dashed #d8d2b8;padding-top:.4rem"></div>
               <label class="af-check" style="margin-top:.5rem"><input type="checkbox" id="afOsRetire" /> Retirer la part d'épaule de l'activité (patients à orienter ailleurs)</label>
+              <label class="af-check"><input type="checkbox" id="afOsRetireHanche" /> Retirer la part de hanche de l'activité (non réalisable à l'O-scan)</label>
               <div id="afOsSynthese" style="font-size:.8rem;line-height:1.35"></div>
             </div>
           </span>
@@ -392,10 +399,12 @@
     var S = {
       pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
-    var OS_ZONES = [["Genou", 60], ["Épaule", 10], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
+    var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     var osVal = OS_ZONES.map(function (z) { return z[1]; });
+    function partZone(i) { var t = 0; osVal.forEach(function (v) { t += Math.max(0, v); }); return t > 0 ? Math.max(0, osVal[i]) / t : 0; }
+    function partHanche() { return partZone(2); }
     function partEpaule() { var t = 0; osVal.forEach(function (v) { t += Math.max(0, v); }); return t > 0 ? Math.max(0, osVal[1]) / t : 0; }
     var OSCAN = null;
     (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "esaote-o-scan") OSCAN = m; });
@@ -411,7 +420,7 @@
       var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
       var hNetAn = (5 * nS + nSam + nDim) * S.semaines;
       var hBrutAn = (5 * S.hS + (S.ouvSam ? S.hSam : 0) + (S.ouvDim ? S.hDim : 0)) * S.semaines;
-      var examens = Math.round(S.pph * hNetAn * (S.retireEpaule ? 1 - partEpaule() : 1));
+      var examens = Math.round(S.pph * hNetAn * Math.max(0, 1 - (S.retireEpaule ? partEpaule() : 0) - (S.retireHanche ? partHanche() : 0)));
       var recettes = examens * S.prix;
       var personnel = S.nMerm * S.salaire * S.coef;
       // Électricité : socle 24 h/24 (machine éteinte + climatisation de la salle) + surcoût « prêt » aux heures ouvertes sans patient + surcoût « examen » aux heures d'acquisition.
@@ -501,9 +510,11 @@
       var m = Math.max(1, Math.round(mois)), a = Math.floor(m / 12), r = m % 12;
       return (a > 0 ? fmt(a) + (a > 1 ? " ans" : " an") + (r ? " et " : "") : "") + (r ? fmt(r) + " mois" : "");
     }
+    var pmOuverts = {}; // état ouvert/fermé de chaque carte, conservé d'un recalcul à l'autre (fermées à l'arrivée)
     function carte(titre, valeur, detail, part, couleur, legG, legD) {
-      var d = document.createElement("div"); d.className = "af-pm-carte";
-      d.innerHTML = '<h3></h3><div class="af-pm-valeur"></div><div class="af-pm-detail"></div>' + (part != null ? '<div class="af-pm-piste"><div class="af-pm-rempli"></div></div><div class="af-pm-legende"><span></span><span></span></div>' : "");
+      var d = document.createElement("details"); d.className = "af-pm-carte"; d.open = !!pmOuverts[titre];
+      d.innerHTML = '<summary><h3></h3><span class="af-pm-valeur"></span></summary><div class="af-pm-detail"></div>' + (part != null ? '<div class="af-pm-piste"><div class="af-pm-rempli"></div></div><div class="af-pm-legende"><span></span><span></span></div>' : "");
+      d.addEventListener("toggle", function () { pmOuverts[titre] = d.open; });
       d.querySelector("h3").textContent = titre; d.querySelector(".af-pm-valeur").textContent = valeur; d.querySelector(".af-pm-detail").innerHTML = detail;
       if (part != null) {
         var f = d.querySelector(".af-pm-rempli"); f.style.width = Math.max(2, Math.min(100, part * 100)) + "%"; f.style.background = couleur;
@@ -688,8 +699,8 @@
       t.textContent = "Total : " + nf1.format(tot).replace(",0", "") + " %" + (Math.abs(tot - 100) > 0.05 ? "  (les parts sont ramenées à 100 %)" : "");
       t.style.color = Math.abs(tot - 100) > 0.05 ? "#b42318" : "";
       var s = partEpaule(), c = calculer();
-      el("afOsSynthese").innerHTML = "Épaule : " + nf1.format(s * 100).replace(",0", "") + " % des examens « membre », réservée à une IRM tunnel." +
-        (S.retireEpaule ? "<br>Activité retenue : <strong>" + fmt(c.examens) + "</strong> examens par an." : "");
+      el("afOsSynthese").innerHTML = "Épaule : " + nf1.format(s * 100).replace(",0", "") + " % des examens « membre », réservée à une IRM tunnel.<br>Hanche : " + nf1.format(partHanche() * 100).replace(",0", "") + " % des examens." +
+        (S.retireEpaule || S.retireHanche ? "<br>Activité retenue : <strong>" + fmt(c.examens) + "</strong> examens par an." : "");
     }
     OS_ZONES.forEach(function (z, i) {
       var div = document.createElement("div"); div.className = "af-cal-ligne";
@@ -699,6 +710,7 @@
       inp.addEventListener("input", function () { osVal[i] = Math.max(0, parseFloat(inp.value) || 0); rendre(); });
     });
     el("afOsRetire").addEventListener("change", function () { S.retireEpaule = this.checked; rendre(); });
+    el("afOsRetireHanche").addEventListener("change", function () { S.retireHanche = this.checked; rendre(); });
 
     // ------------------------------------------------------------------ devise ($)
     var listeDev = el("afDevListe");
