@@ -390,10 +390,11 @@
         <summary>Hypothèses (salaire, charges, durée d'étalement de l'achat)</summary>
         <div class="af-hyp-grille">
           <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /></div>
-          <div><label for="afCoef">Coefficient charges (du net au coût pour l'employeur)</label><input type="text" inputmode="decimal" id="afCoef" /></div>
+          <div><label for="afRetenue">Retenues sur le salaire (du net au brut, en %)</label><input type="text" inputmode="decimal" id="afRetenue" /></div>
+          <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /></div>
           <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /></div>
         </div>
-        <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Le coefficient 1,82 vient des règles françaises : à adapter au pays visé.</p>
+        <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Retenues (22 %) et charges patronales (42 %) : règles françaises tant qu'aucun pays acheteur n'est choisi ; à adapter au pays visé.</p>
       </details>
     </div>
   </main>
@@ -473,7 +474,7 @@
     var S = {
       pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
@@ -491,21 +492,21 @@
     function moisPayes(y) { return Math.max(0, Math.min(12, S.dureeMois - 12 * (y - 1))); }
     function moisMaint(y) { return 12 - Math.max(0, Math.min(12, S.garantie - 12 * (y - 1))); }
     var PAYS = [
-      { k: "ma", nom: "Maroc", droit: 5, tva: 20, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Maroc : droit possiblement nul pour un produit d'origine italienne — à confirmer avec un transitaire." },
-      { k: "dz", nom: "Algérie", droit: 5, tva: 19, taxes: [["TCS", 3], ["PRCT", 2]], statut: "Taux relevés sur le tarif douanier algérien (conformepro.dz, position 9018.13).", note: "Agrément du ministère de la Santé requis pour importer des équipements médicaux." },
-      { k: "tn", nom: "Tunisie", droit: 5, tva: 19, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Tunisie : droit possiblement nul pour un produit d'origine italienne — à confirmer." },
-      { k: "eg", nom: "Égypte", droit: 5, tva: 14, taxes: [], statut: "Droit (taux général) relevé ; TVA standard.", note: "Accord UE–Égypte : droit possiblement nul pour un produit d'origine italienne — à confirmer." },
-      { k: "sn", nom: "Sénégal", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "PCS et RS (UEMOA) relevés ; droit estimé (tarif UEMOA : 0, 5, 10 ou 20 %).", note: "D'autres prélèvements (CEDEAO…) peuvent s'ajouter — à confirmer." },
-      { k: "ci", nom: "Côte d'Ivoire", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "PCS et RS (UEMOA) relevés ; droit estimé (tarif UEMOA : 0, 5, 10 ou 20 %).", note: "D'autres prélèvements (CEDEAO…) peuvent s'ajouter — à confirmer." },
-      { k: "cm", nom: "Cameroun", droit: 5, tva: 19.25, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "Zone CEMAC : taxes communautaires possibles — à confirmer." },
-      { k: "ng", nom: "Nigeria", droit: 5, tva: 7.5, taxes: [], statut: "Droit et TVA relevés ; prélèvements locaux non inclus.", note: "Autorisation NAFDAC probable pour un équipement médical." },
-      { k: "gh", nom: "Ghana", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et prélèvements à confirmer.", note: "Des prélèvements s'ajoutent souvent à la TVA — à confirmer." },
-      { k: "ke", nom: "Kenya", droit: 5, tva: 16, taxes: [], statut: "TVA standard relevée ; droit : bandes EAC de 0, 10 ou 25 % selon le classement.", note: "Frais de déclaration et autres prélèvements possibles — à confirmer." },
-      { k: "za", nom: "Afrique du Sud", droit: 0, tva: 15, taxes: [], statut: "Droit (0 %) relevé ; TVA standard.", note: "Accord UE–SADC : pas de droit attendu." },
-      { k: "et", nom: "Éthiopie", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
-      { k: "tz", nom: "Tanzanie", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
-      { k: "cd", nom: "RD Congo", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
-      { k: "cv", nom: "Cap-Vert", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" }
+      { k: "ma", patro: 21.09, patroRel: 1, nom: "Maroc", droit: 5, tva: 20, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Maroc : droit possiblement nul pour un produit d'origine italienne — à confirmer avec un transitaire." },
+      { k: "dz", patro: 25.5, patroRel: 1, nom: "Algérie", droit: 5, tva: 19, taxes: [["TCS", 3], ["PRCT", 2]], statut: "Taux relevés sur le tarif douanier algérien (conformepro.dz, position 9018.13).", note: "Agrément du ministère de la Santé requis pour importer des équipements médicaux." },
+      { k: "tn", patro: 16.57, patroRel: 1, nom: "Tunisie", droit: 5, tva: 19, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Tunisie : droit possiblement nul pour un produit d'origine italienne — à confirmer." },
+      { k: "eg", patro: 18.75, patroRel: 1, nom: "Égypte", droit: 5, tva: 14, taxes: [], statut: "Droit (taux général) relevé ; TVA standard.", note: "Accord UE–Égypte : droit possiblement nul pour un produit d'origine italienne — à confirmer." },
+      { k: "sn", patro: 16.4, patroRel: 1, nom: "Sénégal", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "PCS et RS (UEMOA) relevés ; droit estimé (tarif UEMOA : 0, 5, 10 ou 20 %).", note: "D'autres prélèvements (CEDEAO…) peuvent s'ajouter — à confirmer." },
+      { k: "ci", patro: 15.45, patroRel: 1, nom: "Côte d'Ivoire", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "PCS et RS (UEMOA) relevés ; droit estimé (tarif UEMOA : 0, 5, 10 ou 20 %).", note: "D'autres prélèvements (CEDEAO…) peuvent s'ajouter — à confirmer." },
+      { k: "cm", patro: 13.95, patroRel: 1, nom: "Cameroun", droit: 5, tva: 19.25, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "Zone CEMAC : taxes communautaires possibles — à confirmer." },
+      { k: "ng", patro: 12, patroRel: 0, nom: "Nigeria", droit: 5, tva: 7.5, taxes: [], statut: "Droit et TVA relevés ; prélèvements locaux non inclus.", note: "Autorisation NAFDAC probable pour un équipement médical." },
+      { k: "gh", patro: 13, patroRel: 0, nom: "Ghana", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et prélèvements à confirmer.", note: "Des prélèvements s'ajoutent souvent à la TVA — à confirmer." },
+      { k: "ke", patro: 7.5, patroRel: 0, nom: "Kenya", droit: 5, tva: 16, taxes: [], statut: "TVA standard relevée ; droit : bandes EAC de 0, 10 ou 25 % selon le classement.", note: "Frais de déclaration et autres prélèvements possibles — à confirmer." },
+      { k: "za", patro: 2, patroRel: 1, nom: "Afrique du Sud", droit: 0, tva: 15, taxes: [], statut: "Droit (0 %) relevé ; TVA standard.", note: "Accord UE–SADC : pas de droit attendu." },
+      { k: "et", patro: 11, patroRel: 1, nom: "Éthiopie", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "tz", patro: 14, patroRel: 0, nom: "Tanzanie", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "cd", patro: 13, patroRel: 0, nom: "RD Congo", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "cv", patro: 15, patroRel: 0, nom: "Cap-Vert", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" }
     ];
     function prixHT() { return S.achat + (S.optAI ? S.prixAI : 0) + (S.optSmart ? S.prixSmart : 0) + (S.optPost ? S.prixPost : 0); }
     // Frais d'importation : valeur en douane = prix HT + transport/assurance ; droits et autres taxes sur la valeur en douane ; TVA sur le tout.
@@ -523,6 +524,8 @@
     }
     function prixLocal() { return (S.optTrav ? S.prixTrav : 0) + (S.optFar ? S.prixFar : 0); } // travaux et cage de Faraday : achetés sur place, sans frais d'importation
     function prixOscan() { var ht = prixHT(); return ht + detailImport(ht).total + prixLocal(); }
+    // Coût employeur / net = (1 ÷ (1 − retenues salariales)) × (1 + charges patronales) ; 22 % et 42 % = règles françaises (coefficient 1,82), tant qu'aucun pays acheteur n'est choisi.
+    function coefSalaire() { return 1 / (1 - S.retenue / 100) * (1 + S.chargesPat / 100); }
     function hNetAnnuel() {
       var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
       return (5 * nS + nSam + nDim) * S.semaines;
@@ -551,7 +554,7 @@
       var hBrutAn = (5 * S.hS + (S.ouvSam ? S.hSam : 0) + (S.ouvDim ? S.hDim : 0)) * S.semaines;
       var examens = Math.round(S.pph * hNetAn * Math.max(0, 1 - (S.retireEpaule ? partEpaule() : 0) - (S.retireHanche ? partHanche() : 0)));
       var recettes = examens * S.prix;
-      var personnel = S.nMerm * S.salaire * S.coef;
+      var personnel = S.nMerm * S.salaire * coefSalaire();
       // Électricité : socle 24 h/24 (machine éteinte + climatisation de la salle) + surcoût « prêt » aux heures ouvertes sans patient + surcoût « examen » aux heures d'acquisition.
       var hMesure = Math.min(examens * acqMoyenne() / 60, hNetAn);
       var kwhAn = (OSCAN.eteint + OSCAN.climSalleKw) * 8760 + (OSCAN.pret - OSCAN.eteint) * Math.max(0, hBrutAn - hMesure) + (OSCAN.mesure - OSCAN.eteint) * hMesure;
@@ -748,6 +751,7 @@
       { id: "afGITax1", ou: "afImpMix", titreFn: function () { return S.nTax1 || "Autre taxe 1"; }, cols: [{ k: "tax1", color: "#8a5ad6", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax2", ou: "afImpMix", titreFn: function () { return S.nTax2 || "Autre taxe 2"; }, cols: [{ k: "tax2", color: "#6b5b95", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax3", ou: "afImpMix", titreFn: function () { return S.nTax3 || "Autre taxe 3"; }, cols: [{ k: "tax3", color: "#8a8f98", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
+      { id: "afGIPatro", ou: "afImpMix", titre: "Charges patronales (salaire MERM)", cols: [{ k: "chargesPat", color: "#d1477a", min: 0, max: 60, step: 0.25, kind: "pct", unit: "% du brut" }] },
       { id: "afGITva", ou: "afImpMix", titre: "TVA", cols: [{ k: "tvaImp", color: "#eb6834", min: 0, max: 30, step: 0.25, kind: "pct", unit: "%" }] }
     );
     var visibles = {};
@@ -833,7 +837,8 @@
       });
       // hypothèses
       el("afSalaire").value = fmt(S.salaire * cur.r);
-      el("afCoef").value = nf2.format(S.coef);
+      if (el("afRetenue") !== document.activeElement) el("afRetenue").value = nf2.format(S.retenue).replace(/,00$/, "");
+      if (el("afPatro") !== document.activeElement) el("afPatro").value = nf2.format(S.chargesPat).replace(/,00$/, "");
       el("afAmort").value = fmt(S.amort);
       relireCalendrier();
       if (el("afLoyerM2") !== document.activeElement) el("afLoyerM2").value = fmt(S.loyerM2 * cur.r);
@@ -846,7 +851,8 @@
 
     // ------------------------------------------------------------------ hypothèses (champs sous la table)
     el("afSalaire").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.salaire = n / cur.r; synchroniser(); rendre(); });
-    el("afCoef").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 1) S.coef = n; synchroniser(); rendre(); });
+    el("afRetenue").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n < 60) S.retenue = n; synchroniser(); rendre(); });
+    el("afPatro").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n <= 100) S.chargesPat = n; synchroniser(); rendre(); });
     el("afAmort").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 1) S.amort = Math.min(30, Math.round(n)); synchroniser(); rendre(); });
 
     // ------------------------------------------------------------------ panneaux déplaçables (clic sur l'icône = ouvrir/fermer, rien d'autre ne les ferme)
@@ -886,13 +892,14 @@
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
+      S.chargesPat = c ? c.patro : 42;
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (i) { S["tax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][1] : 0; S["nTax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][0] : ""; }); }
       synchroniser(); rendre();
     });
     el("afImpTva").addEventListener("change", function () { S.tvaCompte = this.checked; rendre(); });
     function majImport() {
       var c = PAYS.filter(function (x) { return x.k === S.pays; })[0], ht = prixHT(), d = detailImport(ht);
-      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>L'IRM part d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez le pays qui achète l'IRM : les frais d'importation depuis l'Italie s'ajoutent alors au prix d'achat.";
+      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>Charges patronales sur le salaire du MERM : " + nf2.format(c.patro).replace(/,00$/, "") + (c.patroRel ? " % (taux relevés)." : " % (estimation à confirmer).") + "<br>L'IRM part d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez le pays qui achète l'IRM : les frais d'importation depuis l'Italie s'ajoutent alors au prix d'achat.";
       var h = '<tbody><tr><td>Prix de l\'O-scan et options (hors taxes)</td><td></td><td style="text-align:right">' + fmtMoney(ht) + '</td></tr>';
       d.lignes.forEach(function (l) { h += '<tr><td>' + l[0] + '</td><td style="text-align:right;white-space:nowrap">' + fmtPct(l[1]) + '</td><td style="text-align:right;white-space:nowrap">' + fmtMoney(l[2]) + '</td></tr>'; });
       h += '<tr><td><strong>Frais et taxes d\'importation</strong></td><td style="text-align:right">' + (ht > 0 ? fmtPct(d.total / ht * 100) : "") + '</td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(d.total) + '</strong></td></tr>' +

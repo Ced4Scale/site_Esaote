@@ -2433,6 +2433,62 @@ window.AF_I18N = {
 "limite: §",
 "الحد الأقصى: §",
 "kikomo: §"
+],
+[
+"Charges patronales sur le salaire du MERM : § % (taux relevés).",
+"Employer charges on the radiographer's salary: § % (rates noted).",
+"Oneri a carico del datore di lavoro sullo stipendio del TSRM: § % (aliquote rilevate).",
+"Encargos patronais sobre o salário do técnico (MERM): § % (taxas registadas).",
+"الأعباء على صاحب العمل في راتب فني الأشعة: § % (نسب مسجّلة).",
+"Gharama za mwajiri kwenye mshahara wa mtaalamu wa mionzi: § % (viwango vilivyorekodiwa)."
+],
+[
+"Charges patronales sur le salaire du MERM : § % (estimation à confirmer).",
+"Employer charges on the radiographer's salary: § % (estimate to be confirmed).",
+"Oneri a carico del datore di lavoro sullo stipendio del TSRM: § % (stima da confermare).",
+"Encargos patronais sobre o salário do técnico (MERM): § % (estimativa a confirmar).",
+"الأعباء على صاحب العمل في راتب فني الأشعة: § % (تقدير يحتاج إلى تأكيد).",
+"Gharama za mwajiri kwenye mshahara wa mtaalamu wa mionzi: § % (makadirio yathibitishwe)."
+],
+[
+"Charges patronales (salaire MERM)",
+"Employer charges (radiographer salary)",
+"Oneri datore di lavoro (stipendio TSRM)",
+"Encargos patronais (salário MERM)",
+"أعباء صاحب العمل (راتب فني الأشعة)",
+"Gharama za mwajiri (mshahara wa MERM)"
+],
+[
+"% du brut",
+"% of gross",
+"% del lordo",
+"% do bruto",
+"% من الإجمالي",
+"% ya jumla"
+],
+[
+"Retenues sur le salaire (du net au brut, en %)",
+"Deductions from salary (from net to gross, in %)",
+"Trattenute sullo stipendio (dal netto al lordo, in %)",
+"Descontos no salário (do líquido ao bruto, em %)",
+"الاقتطاعات من الراتب (من الصافي إلى الإجمالي، بـ %)",
+"Makato kwenye mshahara (kutoka halisi hadi jumla, kwa %)"
+],
+[
+"Charges patronales (en % du brut)",
+"Employer charges (in % of gross)",
+"Oneri a carico del datore di lavoro (in % del lordo)",
+"Encargos patronais (em % do bruto)",
+"أعباء صاحب العمل (بـ % من الإجمالي)",
+"Gharama za mwajiri (kwa % ya jumla)"
+],
+[
+"Salaire de départ : ¤ net par an (confirmé le §/§/§). Retenues (§ %) et charges patronales (§ %) : règles françaises tant qu'aucun pays acheteur n'est choisi ; à adapter au pays visé.",
+"Starting salary: ¤ net per year (confirmed on §/§/§). Deductions (§ %) and employer charges (§ %): French rules as long as no buying country is chosen; adapt to the target country.",
+"Stipendio iniziale: ¤ netti all'anno (confermato il §/§/§). Trattenute (§ %) e oneri datore di lavoro (§ %): regole francesi finché non si sceglie un paese acquirente; da adattare al paese di destinazione.",
+"Salário inicial: ¤ líquidos por ano (confirmado em §/§/§). Descontos (§ %) e encargos patronais (§ %): regras francesas enquanto nenhum país comprador for escolhido; adaptar ao país visado.",
+"الراتب الابتدائي: ¤ صافية سنويًا (تم تأكيده في §/§/§). الاقتطاعات (§ %) وأعباء صاحب العمل (§ %): قواعد فرنسية ما دام لم يُختر بلد مشترٍ؛ يجب تكييفها مع البلد المستهدف.",
+"Mshahara wa kuanzia: ¤ halisi kwa mwaka (umethibitishwa §/§/§). Makato (§ %) na gharama za mwajiri (§ %): kanuni za Ufaransa mradi hakuna nchi mnunuzi iliyochaguliwa; zirekebishwe kulingana na nchi lengwa."
 ]
 ]
 };
