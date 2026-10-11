@@ -2505,6 +2505,46 @@ window.AF_I18N = {
 "Todos os preços da mesa de mistura são sem impostos. A RM e as suas opções são faturadas por Itália (sem IVA): direitos, impostos e IVA do país comprador somam-se (ícone cargueiro). O transporte e o seguro somam-se ao preço italiano: ponha-os a § se a fatura italiana os incluir. Obras e gaiola de Faraday: contadas sem impostos, sem IVA local.",
 "جميع الأسعار في طاولة المزج دون ضرائب. يُفوتر جهاز الرنين وخياراته من إيطاليا (دون ضريبة القيمة المضافة): تُضاف إليه رسوم وضرائب وضريبة القيمة المضافة للبلد المشتري (أيقونة الشحن). يُضاف النقل والتأمين إلى السعر الإيطالي: اجعلهما § إذا كانت الفاتورة الإيطالية تشملهما. الأشغال وقفص فاراداي: تُحتسب دون ضرائب ودون ضريبة قيمة مضافة محلية.",
 "Bei zote kwenye meza ya kuchanganya hazijajumuisha kodi. MRI na chaguo zake zinatozwa na Italia (bila VAT): ushuru, kodi na VAT za nchi mnunuzi huongezwa (ikoni ya mizigo). Usafiri na bima huongezwa kwenye bei ya Italia: viweke § ikiwa ankara ya Italia inavijumuisha. Kazi za ujenzi na ngome ya Faraday: zinahesabiwa bila kodi, bila VAT ya ndani."
+],
+[
+"Durée d'examen diagnostique",
+"Diagnostic exam duration",
+"Durata dell'esame diagnostico",
+"Duração do exame de diagnóstico",
+"مدة الفحص التشخيصي",
+"Muda wa kipimo cha uchunguzi"
+],
+[
+"Durée d'examen claustrophobie",
+"Claustrophobia exam duration",
+"Durata dell'esame per claustrofobia",
+"Duração do exame de claustrofobia",
+"مدة فحص رهاب الأماكن المغلقة",
+"Muda wa kipimo cha hofu ya nafasi finyu"
+],
+[
+"Durée d'examen consultation",
+"Consultation exam duration",
+"Durata dell'esame di consulto",
+"Duração do exame de consulta",
+"مدة فحص الاستشارة",
+"Muda wa kipimo cha ushauri"
+],
+[
+"dont changement de patient",
+"of which patient changeover",
+"di cui cambio paziente",
+"dos quais troca de paciente",
+"منها تبديل المريض",
+"kati yake kubadilisha mgonjwa"
+],
+[
+"Le changement de patient est inclus dans la durée d'examen ; l'IA ne réduit que le reste (l'acquisition).",
+"Patient changeover is included in the exam duration; AI only reduces the rest (the acquisition).",
+"Il cambio paziente è incluso nella durata dell'esame; l'IA riduce solo il resto (l'acquisizione).",
+"A troca de paciente está incluída na duração do exame; a IA só reduz o resto (a aquisição).",
+"تبديل المريض مُدرج ضمن مدة الفحص؛ ولا يخفّض الذكاء الاصطناعي سوى الباقي (الاكتساب).",
+"Kubadilisha mgonjwa kumejumuishwa kwenye muda wa kipimo; AI hupunguza tu kilichobaki (upigaji picha)."
 ]
 ]
 };

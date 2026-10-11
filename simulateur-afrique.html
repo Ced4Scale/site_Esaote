@@ -324,6 +324,7 @@
               <div class="af-mixer af-mixer--mini" id="afNegMix"></div>
               <div class="af-pop-sous-titre">Temps moyen par type d'examen</div>
               <div class="af-mixer af-mixer--mini" id="afTempsMix"></div>
+              <p class="af-aide" style="margin:.3rem 0 0">Le changement de patient est inclus dans la durée d'examen ; l'IA ne réduit que le reste (l'acquisition).</p>
               <div id="afNegTemps"></div>
               <div id="afNegSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
             </div>
@@ -475,7 +476,7 @@
     var S = {
       pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 3, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 13.5, tAcqClau: 16.5, tAcqOrth: 11.5, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
@@ -533,9 +534,9 @@
     }
     function volumeBrut() { return S.pph * hNetAnnuel(); }
     // Temps d'acquisition moyen (minutes) selon la répartition des examens, avec la réduction de l'option IA si elle est choisie : sert à l'électricité et au surcoût par examen.
-    function acqMoyenne() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * S["tAcq" + t.k] * f; }); return m > 0 ? m : OSCAN.dureeAcquisitionMinutes; }
+    function acqMoyenne() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * Math.max(0, S["tAcq" + t.k] - Math.min(S.tChg, S["tAcq" + t.k])) * f; }); return m > 0 ? m : OSCAN.dureeAcquisitionMinutes; }
     function pphMax() { var m = tempsMoyen(); return m > 0 ? 60 / m : 4.4; } // plafond de patients par heure = 60 / temps moyen par examen (acquisition réduite par l'IA + changement de patient)
-    function tempsMoyen() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * (S["tAcq" + t.k] * f + S.tChg); }); return m; }
+    function tempsMoyen() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { var T = S["tAcq" + t.k], c = Math.min(S.tChg, T); m += S[t.rep] / 100 * ((T - c) * f + c); }); return m; }
     // Cadenas fermé : patients/h = 60 / temps moyen par examen ; heures d'ouverture (lundi-vendredi) recalculées pour garder le volume de référence.
     function appliquerCadenas() {
       S.msgCadenas = "";
@@ -723,8 +724,8 @@
     function majTemps() {
       var f = S.optAI ? 1 - S.reducIA / 100 : 1, moy = 0, h = "";
       TYPES.forEach(function (t) {
-        var tex = S["tAcq" + t.k] * f + S.tChg; moy += S[t.rep] / 100 * tex;
-        h += t.nom + " : <strong>" + nf1.format(tex) + " min</strong> par examen" + (S.optAI ? " (acquisition " + nf1.format(S["tAcq" + t.k] * f) + ")" : "") + "<br>";
+        var T = S["tAcq" + t.k], c = Math.min(S.tChg, T), tex = (T - c) * f + c; moy += S[t.rep] / 100 * tex;
+        h += t.nom + " : <strong>" + nf1.format(tex) + " min</strong> par examen" + (S.optAI ? " (acquisition " + nf1.format((T - c) * f) + ")" : "") + "<br>";
       });
       h += S.optAI ? "IA choisie : acquisition réduite de " + fmt(S.reducIA) + " %." : "IA non choisie (icône Esaote) : la réduction ne s'applique pas.";
       el("afTLignes").innerHTML = h;
@@ -740,10 +741,10 @@
       GROUPES.push({ id: "afGOs" + i, ou: "afOsMix", titre: z[0].replace(/ \(.*$/, ""), cols: [{ k: "os" + i, color: ["#2a78d6", "#d1477a", "#8a5ad6", "#1f9d78", "#eb6834", "#3aa0b5", "#8a8f98"][i], min: 0, max: 100, step: 1, kind: "int", unit: "%" }] });
     });
     GROUPES.push(
-      { id: "afGTDiag", ou: "afTempsMix", titre: "Acquisition diagnostique", cols: [{ k: "tAcqDiag", color: "#2a78d6", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
-      { id: "afGTClau", ou: "afTempsMix", titre: "Acquisition claustrophobie", cols: [{ k: "tAcqClau", color: "#8a5ad6", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
-      { id: "afGTOrth", ou: "afTempsMix", titre: "Acquisition consultation", cols: [{ k: "tAcqOrth", color: "#eb6834", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
-      { id: "afGTChg", ou: "afTempsMix", titre: "Changement de patient", cols: [{ k: "tChg", color: "#6b5b95", min: 0, max: 10, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTDiag", ou: "afTempsMix", titre: "Durée d'examen diagnostique", cols: [{ k: "tAcqDiag", color: "#2a78d6", min: 2, max: 45, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTClau", ou: "afTempsMix", titre: "Durée d'examen claustrophobie", cols: [{ k: "tAcqClau", color: "#8a5ad6", min: 2, max: 45, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTOrth", ou: "afTempsMix", titre: "Durée d'examen consultation", cols: [{ k: "tAcqOrth", color: "#eb6834", min: 2, max: 45, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTChg", ou: "afTempsMix", titre: "dont changement de patient", cols: [{ k: "tChg", color: "#6b5b95", min: 0, max: 10, step: 0.5, kind: "dec", unit: "min" }] },
       { id: "afGTIA", ou: "afTempsMix", titre: "Réduction avec l'IA", cols: [{ k: "reducIA", color: "#1baf7a", min: 0, max: 90, step: 1, kind: "int", unit: "% de l'acquisition" }] }
     );
     GROUPES.push(
