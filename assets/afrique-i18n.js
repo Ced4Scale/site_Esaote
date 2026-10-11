@@ -2417,6 +2417,14 @@ window.AF_I18N = {
 "§ h por dia",
 "§ س في اليوم",
 "saa § kwa siku"
+],
+[
+"Cochez les options retenues et ajustez leur prix : elles s'ajoutent au prix de l'O-scan (étalé comme lui). Prix de départ à confirmer avec Esaote (travaux et cage de Faraday : à confirmer sur devis).",
+"Tick the chosen options and adjust their price: they are added to the O-scan price (spread like it). Starting prices to be confirmed with Esaote (works and Faraday cage: to be confirmed by quotation).",
+"Selezionate le opzioni scelte e regolate il loro prezzo: si aggiungono al prezzo dell'O-scan (ripartito come esso). Prezzi iniziali da confermare con Esaote (lavori e gabbia di Faraday: da confermare con preventivo).",
+"Marque as opções escolhidas e ajuste o preço: somam-se ao preço do O-scan (diluído como ele). Preços iniciais a confirmar com a Esaote (obras e gaiola de Faraday: a confirmar por orçamento).",
+"حدّد الخيارات المعتمدة واضبط أسعارها: تُضاف إلى سعر O-scan (وتُوزَّع مثله). الأسعار الابتدائية تحتاج إلى تأكيد من Esaote (الأشغال وقفص فاراداي: بحسب عرض سعر).",
+"Weka alama kwenye chaguo ulizochagua na urekebishe bei: huongezwa kwenye bei ya O-scan (hugawanywa kama yenyewe). Bei za kuanzia zithibitishwe na Esaote (kazi za ujenzi na ngome ya Faraday: kwa nukuu ya bei)."
 ]
 ]
 };
