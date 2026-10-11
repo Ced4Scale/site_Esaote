@@ -2489,6 +2489,22 @@ window.AF_I18N = {
 "Salário inicial: ¤ líquidos por ano (confirmado em §/§/§). Descontos (§ %) e encargos patronais (§ %): regras francesas enquanto nenhum país comprador for escolhido; adaptar ao país visado.",
 "الراتب الابتدائي: ¤ صافية سنويًا (تم تأكيده في §/§/§). الاقتطاعات (§ %) وأعباء صاحب العمل (§ %): قواعد فرنسية ما دام لم يُختر بلد مشترٍ؛ يجب تكييفها مع البلد المستهدف.",
 "Mshahara wa kuanzia: ¤ halisi kwa mwaka (umethibitishwa §/§/§). Makato (§ %) na gharama za mwajiri (§ %): kanuni za Ufaransa mradi hakuna nchi mnunuzi iliyochaguliwa; zirekebishwe kulingana na nchi lengwa."
+],
+[
+"Prix saisis",
+"Prices entered",
+"Prezzi inseriti",
+"Preços introduzidos",
+"الأسعار المُدخلة",
+"Bei zilizoingizwa"
+],
+[
+"Tous les prix de la table de mixage sont hors taxes. L'IRM et ses options sont facturées par l'Italie (hors TVA) : droits, taxes et TVA du pays acheteur s'y ajoutent (icône cargo). Le transport et l'assurance sont ajoutés au prix italien : mettez-les à 0 si la facture italienne les inclut. Travaux et cage de Faraday : comptés hors taxes, sans TVA locale.",
+"All prices in the mixing table are excluding taxes. The MRI and its options are invoiced by Italy (excluding VAT): duties, taxes and VAT of the buying country are added to it (cargo icon). Transport and insurance are added to the Italian price: set them to 0 if the Italian invoice includes them. Works and Faraday cage: counted excluding taxes, with no local VAT.",
+"Tutti i prezzi della tavola di missaggio sono al netto delle tasse. La RM e le sue opzioni sono fatturate dall'Italia (IVA esclusa): dazi, tasse e IVA del paese acquirente si aggiungono (icona cargo). Trasporto e assicurazione si aggiungono al prezzo italiano: metteteli a 0 se la fattura italiana li include. Lavori e gabbia di Faraday: conteggiati al netto delle tasse, senza IVA locale.",
+"Todos os preços da mesa de mistura são sem impostos. A RM e as suas opções são faturadas por Itália (sem IVA): direitos, impostos e IVA do país comprador somam-se (ícone cargueiro). O transporte e o seguro somam-se ao preço italiano: ponha-os a 0 se a fatura italiana os incluir. Obras e gaiola de Faraday: contadas sem impostos, sem IVA local.",
+"جميع الأسعار في طاولة المزج دون ضرائب. يُفوتر جهاز الرنين وخياراته من إيطاليا (دون ضريبة القيمة المضافة): تُضاف إليه رسوم وضرائب وضريبة القيمة المضافة للبلد المشتري (أيقونة الشحن). يُضاف النقل والتأمين إلى السعر الإيطالي: اجعلهما 0 إذا كانت الفاتورة الإيطالية تشملهما. الأشغال وقفص فاراداي: تُحتسب دون ضرائب ودون ضريبة قيمة مضافة محلية.",
+"Bei zote kwenye meza ya kuchanganya hazijajumuisha kodi. MRI na chaguo zake zinatozwa na Italia (bila VAT): ushuru, kodi na VAT za nchi mnunuzi huongezwa (ikoni ya mizigo). Usafiri na bima huongezwa kwenye bei ya Italia: viweke 0 ikiwa ankara ya Italia inavijumuisha. Kazi za ujenzi na ngome ya Faraday: zinahesabiwa bila kodi, bila VAT ya ndani."
 ]
 ]
 };
