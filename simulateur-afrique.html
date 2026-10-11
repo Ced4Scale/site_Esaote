@@ -113,6 +113,10 @@
     .af-mixer--mini .af-mixer__value { width: 4rem; }
     .af-mixer--mini .af-mixer__unit { max-width: 5rem; }
     .af-mixer--mini .af-mixer__group-title { max-width: 6rem; }
+    .af-table--temps td:first-child { width: 42%; }
+    #afNegPop { width: min(calc(100vw - 4.5rem), 540px); }
+    .af-table--temps input { width: 4.4rem; }
+    .af-table--temps thead td { font-size: .72rem; color: var(--muted); }
     .af-esaote-btn { width: auto; padding: 0 .55rem; }
     .af-esaote-btn img { display: block; height: 11px; width: auto; }
     .af-opt-ligne { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; font-size: .85rem; font-weight: 600; }
@@ -290,6 +294,8 @@
               <div class="af-pop-titre">Répartition des examens</div>
               <p class="af-aide" style="margin:.1rem 0 .2rem">En % de l'activité : le total fait toujours 100 % (en bougeant un bâton, les autres se partagent le reste). Valeurs de départ = estimation, à ajuster.</p>
               <div class="af-mixer af-mixer--mini" id="afNegMix"></div>
+              <div class="af-pop-sous-titre">Temps moyen par type d'examen</div>
+              <div id="afNegTemps"></div>
               <div id="afNegSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
             </div>
           </span>
@@ -419,7 +425,7 @@
     var S = {
       pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     var osVal = OS_ZONES.map(function (z) { return z[1]; });
@@ -572,6 +578,7 @@
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
       el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + cur.n + " (" + cur.c + ")";
       el("afNegSortie").innerHTML = [["Diagnostique", S.repDiag], ["Claustrophobie", S.repClau], ["Consultation d'orthopédiste", S.repOrth]].map(function (l) { return l[0] + " : <strong>" + fmt(r.examens * l[1] / 100) + "</strong> examens par an (" + fmt(l[1]) + " %)"; }).join("<br>");
+      majTemps();
       rendrePointsMorts(r);
       majOs();
     }
@@ -602,6 +609,27 @@
       { id: "afGRClau", ou: "afNegMix", titre: "Claustrophobie", cols: [{ k: "repClau", rep: true, color: "#8a5ad6", min: 0, max: 100, step: 1, kind: "int", unit: "% de l'activité" }] },
       { id: "afGROrth", ou: "afNegMix", titre: "Consultation d'orthopédiste", cols: [{ k: "repOrth", rep: true, color: "#eb6834", min: 0, max: 100, step: 1, kind: "int", unit: "% de l'activité" }] }
     );
+    var TYPES = [{ k: "Diag", nom: "Diagnostique", rep: "repDiag" }, { k: "Clau", nom: "Claustrophobie", rep: "repClau" }, { k: "Orth", nom: "Consultation d'orthopédiste", rep: "repOrth" }];
+    (function () {
+      var h = '<table class="af-table af-table--temps"><thead><tr><td></td><td>Acquisition (min)</td><td>Temps par examen</td></tr></thead><tbody>';
+      TYPES.forEach(function (t) { h += '<tr><td>' + t.nom + '</td><td><input type="number" min="1" max="90" step="0.5" id="afTAcq' + t.k + '" /></td><td id="afTEx' + t.k + '"></td></tr>'; });
+      h += '<tr><td>Changement de patient</td><td><input type="number" min="0" max="30" step="0.5" id="afTChg" /></td><td></td></tr>' +
+        '<tr><td>Réduction de l\'acquisition avec l\'IA (%)</td><td><input type="number" min="0" max="90" step="1" id="afReducIA" /></td><td id="afIAEtat" style="font-size:.76rem"></td></tr></tbody></table>' +
+        '<div id="afTMoy" style="margin-top:.5rem;font-size:.85rem;line-height:1.5"></div>';
+      el("afNegTemps").innerHTML = h;
+      TYPES.forEach(function (t) { var i = el("afTAcq" + t.k); i.value = S["tAcq" + t.k]; i.addEventListener("input", function () { var n = parseFloat(i.value); if (isFinite(n) && n >= 1) { S["tAcq" + t.k] = n; rendre(); } }); });
+      var c = el("afTChg"); c.value = S.tChg; c.addEventListener("input", function () { var n = parseFloat(c.value); if (isFinite(n) && n >= 0) { S.tChg = n; rendre(); } });
+      var r = el("afReducIA"); r.value = S.reducIA; r.addEventListener("input", function () { var n = parseFloat(r.value); if (isFinite(n) && n >= 0) { S.reducIA = Math.min(90, n); rendre(); } });
+    })();
+    function majTemps() {
+      var f = S.optAI ? 1 - S.reducIA / 100 : 1, moy = 0;
+      TYPES.forEach(function (t) {
+        var tex = S["tAcq" + t.k] * f + S.tChg; moy += S[t.rep] / 100 * tex;
+        el("afTEx" + t.k).textContent = nf1.format(tex) + " min" + (S.optAI ? " (acq. " + nf1.format(S["tAcq" + t.k] * f) + ")" : "");
+      });
+      el("afIAEtat").textContent = S.optAI ? "IA choisie : appliquée" : "IA non choisie (icône Esaote)";
+      el("afTMoy").innerHTML = "Temps moyen par examen : <strong>" + nf1.format(moy) + " min</strong>" + (moy > 0 ? " — soit <strong>" + nf1.format(60 / moy) + "</strong> patients par heure possibles (votre réglage : " + nf1.format(S.pph) + ")." : "");
+    }
     var REP_CLES = ["repDiag", "repClau", "repOrth"];
     function repartir(k) { // le total reste à 100 % : les deux autres bâtons se partagent le reste, au prorata de leurs valeurs
       var autres = REP_CLES.filter(function (c) { return c !== k; }), reste = 100 - S[k], somme = S[autres[0]] + S[autres[1]];
