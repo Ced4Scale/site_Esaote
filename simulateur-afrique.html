@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <!--
+    simulateur-afrique.html — « Simulateur Afrique » : rentabilité d'un Esaote O-scan (créé le 11/10/2026, demande de Cédric).
+    ÉTAPE 1 : table de mixage (patients/heure, heures d'ouverture, MERM, prix de l'examen, prix de l'O-scan, kWh, maintenance)
+    + 3 demi-anneaux Recettes / Dépenses / Résultat. Pas de forfait technique, pas d'acte intellectuel, pas de loyer (pour l'instant).
+    Construit sur le modèle du simulateur unifié (mêmes classes visuelles, préfixe af- ; mêmes données O-scan : assets/machines-energie-data.js).
+    Tous les calculs sont faits en EUROS ; la devise choisie (icône $) ne change que l'affichage et la saisie (taux indicatifs, voir CURRENCIES).
+    Page non listée dans simulateurs.html tant que Cédric ne l'a pas validée.
+  -->
+  <script>
+    (function () {
+      try {
+        var v = JSON.parse(localStorage.getItem("ced4scale-site-access") || "null");
+        if (v && v.expiresAt && v.expiresAt > Date.now()) { window.__ced4scaleProfile = v.profile || null; }
+        else { document.documentElement.style.visibility = "hidden"; }
+      } catch (e) { document.documentElement.style.visibility = "hidden"; }
+    })();
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulateur Afrique — Ced4Scale</title>
+  <meta name="robots" content="noindex" />
+  <link rel="icon" href="assets/logo-ced4scale.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
+  <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
+  <style>
+    .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
+    .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
+    .af-titre { margin: 0 0 .2rem; font-size: 1.05rem; }
+    .af-sous-titre { margin: 0 0 1rem; font-size: .85rem; color: var(--ink-soft); }
+    .af-fs-btn { position: absolute; top: .85rem; right: .85rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
+    .af-fs-btn:hover { border-color: var(--red); color: var(--red); }
+    .af-fs-btn .af-fs-reduire { display: none; }
+    .af-fs-btn.is-fullscreen .af-fs-agrandir { display: none; }
+    .af-fs-btn.is-fullscreen .af-fs-reduire { display: inline; }
+
+    /* ---- Demi-anneaux ---- */
+    .af-demis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    @media (max-width: 900px) { .af-demis { grid-template-columns: minmax(0, 1fr); } }
+    .af-demi { text-align: center; min-width: 0; }
+    .af-demi h3 { margin: 0 0 .2rem; font-size: .95rem; }
+    .af-demi svg { width: 100%; height: auto; display: block; }
+    .af-legende { list-style: none; margin: .4rem auto 0; padding: 0; max-width: 20rem; font-size: .8rem; text-align: left; }
+    .af-legende li { display: flex; align-items: center; gap: .45rem; padding: .18rem 0; border-bottom: 1px solid var(--line); }
+    .af-legende li:last-child { border-bottom: 0; }
+    .af-legende i { width: .7rem; height: .7rem; border-radius: 2px; flex: none; }
+    .af-legende span { flex: 1 1 auto; font-weight: 600; }
+    .af-legende b { white-space: nowrap; font-weight: 800; }
+    .af-legende em { font-style: normal; color: var(--muted); width: 2.6rem; text-align: right; flex: none; }
+
+    /* ---- Table de mixage (même rendu que le simulateur unifié) ---- */
+    .af-mixer { margin-top: 1.2rem; border-radius: var(--radius); padding: 1.3rem 1.2rem 1.1rem; background: #fff; border: 1px solid #d9dee5; color: #000; display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start; }
+    .af-bloc:fullscreen .af-mixer { flex: 0 0 auto; justify-content: center; }
+    .af-mixer__header { flex: 1 1 100%; display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: .2rem; }
+    .af-mixer__title { font-weight: 700; font-size: .88rem; margin-right: .3rem; }
+    .af-mixer__group { display: flex; flex-direction: column; align-items: center; gap: .6rem; }
+    .af-mixer__group[hidden] { display: none; }
+    .af-mixer__group-title { font-size: .68rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: center; opacity: .9; }
+    .af-mixer__faders { display: flex; gap: 1.1rem; }
+    .af-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
+    .af-mixer__fader-col[hidden] { display: none; }
+    .af-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: #e5e7eb; background: color-mix(in srgb, var(--fader-color) 16%, #fff); overflow: hidden; }
+    .af-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); }
+    .af-mixer__slot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: .74rem; font-weight: 800; color: #000; }
+    .af-mixer__bar input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; writing-mode: vertical-lr; direction: rtl; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+    .af-mixer__bar input[type="range"]::-webkit-slider-runnable-track { background: transparent; }
+    .af-mixer__bar input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); box-shadow: 0 1px 3px rgba(0,0,0,.4); }
+    .af-mixer__bar input[type="range"]::-moz-range-track { background: transparent; }
+    .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 46px; height: 10px; border-radius: 5px; background: #fff; border: 2px solid var(--fader-color); }
+    .af-mixer__value { width: 5.6rem; text-align: center; font-size: .8rem; font-weight: 600; border-radius: .4rem; border: 1px solid #b8c0cc; background: #fff; color: #000; padding: .18rem .2rem; }
+    .af-mixer__value:focus-visible { outline: 2px solid #000; }
+    .af-mixer__unit { font-size: .7rem; font-weight: 600; text-align: center; max-width: 6.4rem; }
+    .af-mixer__pm { display: flex; gap: .3rem; }
+    .af-mixer__pm button { width: 1.7rem; height: 1.5rem; padding: 0; border: 0; background: transparent; color: #000; font-weight: 800; font-size: 1.2rem; line-height: 1; cursor: pointer; }
+    .af-mixer__pm button:hover { color: #0f8f92; }
+
+    /* ---- Icônes de la table de mixage + panneaux déplaçables (repris du simulateur unifié) ---- */
+    .af-info-wrap { position: relative; display: inline-block; --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; }
+    .af-info-btn { display: inline-flex; align-items: center; justify-content: center; width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--af-bd); background: #eef1f5; color: var(--af-fg); font-size: .95rem; line-height: 1; cursor: pointer; padding: 0; position: relative; z-index: 6; }
+    .af-info-btn:hover, .af-info-btn[aria-expanded="true"] { background: var(--af-bg-hover); }
+    .af-pop { position: absolute; top: 100%; left: 0; margin-top: .4rem; z-index: 5; translate: var(--dx, 0px) var(--dy, 0px); background: var(--af-pop-bg); border: 1px solid var(--af-bd); border-radius: .6rem; box-shadow: 0 4px 14px rgba(0,0,0,.12); padding: .65rem .8rem; font-size: .82rem; line-height: 1.45; color: var(--af-pop-fg); width: min(calc(100vw - 4.5rem), 340px); text-align: left; }
+    .af-pop[hidden] { display: none; }
+    .af-pop [hidden] { display: none !important; }
+    .af-poignee { cursor: grab; touch-action: none; user-select: none; font-size: .72rem; font-weight: 800; letter-spacing: .04em; text-align: center; padding: .15rem 0 .35rem; margin: -.25rem -.4rem .3rem; border-bottom: 1px dashed var(--af-bd); color: var(--muted); }
+    .af-poignee:active { cursor: grabbing; }
+    .af-pop-titre { font-weight: 800; font-size: .8rem; margin-bottom: .5rem; }
+    .af-pop-sous-titre { font-weight: 800; font-size: .76rem; margin: .6rem 0 .3rem; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+    .af-check { display: flex; align-items: flex-start; gap: .5rem; font-size: .85rem; font-weight: 600; margin: 0 0 .45rem; }
+    .af-check input { width: 15px; height: 15px; flex: none; margin: .15rem 0 0; }
+    .af-cal-ligne { display: flex; align-items: center; gap: .5rem; margin: .25rem 0; font-size: .82rem; }
+    .af-cal-ligne input[type="number"] { width: 4.6rem; }
+    .af-cal-ligne label { flex: 1 1 auto; }
+    .af-cal-sous { margin-left: 1.4rem; }
+    .af-dev-liste { max-height: 15rem; overflow-y: auto; border: 1px solid var(--af-bd); border-radius: .4rem; background: #fff; }
+    .af-dev-row { display: flex; width: 100%; gap: .5rem; align-items: baseline; padding: .28rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; font: inherit; font-size: .8rem; color: #222; cursor: pointer; text-align: left; }
+    .af-dev-row:last-child { border-bottom: 0; }
+    .af-dev-row:hover { background: #fff6e0; }
+    .af-dev-row[aria-pressed="true"] { background: #ffe9ad; font-weight: 800; }
+    .af-dev-row b { width: 2.6rem; flex: none; }
+    .af-dev-row span { flex: 1 1 auto; }
+    .af-dev-row em { font-style: normal; color: var(--muted); white-space: nowrap; }
+    .af-table { border-collapse: collapse; width: 100%; table-layout: fixed; }
+    .af-table td { padding: .4rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; overflow-wrap: break-word; }
+    .af-table tr:last-child td { border-bottom: none; }
+    .af-table td:first-child { width: 38%; font-weight: 700; color: var(--ink-soft); }
+
+    /* ---- Hypothèses ---- */
+    .af-hyp { margin-top: 1rem; }
+    .af-hyp > summary { font-size: .85rem; font-weight: 700; cursor: pointer; }
+    .af-hyp-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .8rem 1.4rem; margin-top: .8rem; }
+    .af-hyp-grille label { display: block; font-size: .8rem; font-weight: 700; margin-bottom: .2rem; }
+    .af-hyp-grille input { width: 100%; box-sizing: border-box; }
+    .af-aide { font-size: .78rem; color: var(--muted); margin: .6rem 0 0; }
+  </style>
+</head>
+<body class="tool-page">
+  <header class="document-viewer__bar">
+    <a class="document-viewer__brand" href="index.html" aria-label="Retour au site Esaote">
+      <img src="assets/logo-ced4scale.png" alt="Ced4Scale" />
+    </a>
+    <div class="document-viewer__title">
+      <span>Outil de simulation</span>
+      <strong>Simulateur Afrique</strong>
+    </div>
+    <button class="document-viewer__close" id="afClose" type="button" aria-label="Fermer et revenir à la page précédente">&times;</button>
+  </header>
+
+  <main class="simulator">
+    <div class="simulator__intro">
+      <span class="kicker">Simulateur Afrique</span>
+      <h1>Rentabilité de l'Esaote O-scan</h1>
+      <p>Réglez l'activité, l'équipe et les prix dans la table de mixage : les recettes, les dépenses et le résultat se recalculent aussitôt.</p>
+    </div>
+
+    <div class="af-bloc" id="afBloc">
+      <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
+        <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
+      <p class="af-sous-titre" id="afSousTitre"></p>
+      <div class="af-demis" id="afDemis"></div>
+
+      <!-- Table de mixage : les groupes de curseurs sont construits par le script (liste GROUPES). -->
+      <div class="af-mixer" id="afMixer">
+        <div class="af-mixer__header">
+          <span class="af-mixer__title">Table de mixage</span>
+
+          <!-- $ : choix de la devise -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afDevBtn" aria-expanded="false" aria-controls="afDevPop" aria-label="Choisir la devise" title="Devise">
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14.8 9.2c-.4-1.1-1.5-1.7-2.9-1.7-1.6 0-2.7.8-2.7 2 0 3 5.8 1.4 5.8 4.4 0 1.3-1.2 2.1-2.9 2.1-1.5 0-2.7-.7-3.1-1.9M12 6v1.5M12 16.5V18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <div class="af-pop" id="afDevPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Devise d'affichage</div>
+              <div class="af-dev-liste" id="afDevListe"></div>
+              <p class="af-aide">Les calculs restent faits en euros ; la devise ne change que l'affichage et la saisie. Les taux sont <strong>indicatifs</strong> (ordre de grandeur, sauf le franc CFA, à parité fixe avec l'euro) et à actualiser avant une présentation.</p>
+            </div>
+          </span>
+
+          <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afCalBtn" aria-expanded="false" aria-controls="afCalPop" aria-label="Horaires d'ouverture : modifier les jours et les heures" title="Horaires d'ouverture">
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+            <div class="af-pop" id="afCalPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Horaires d'ouverture</div>
+              <div id="afCalCorps"></div>
+            </div>
+          </span>
+
+          <!-- Boîte à outils -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afOutilsBtn" aria-expanded="false" aria-controls="afOutilsPop" aria-label="Boîte à outils" title="Boîte à outils">🧰</button>
+            <div class="af-pop" id="afOutilsPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Curseurs affichés</div>
+              <div id="afOutilsCurseurs"></div>
+              <div class="af-pop-sous-titre">Année affichée</div>
+              <label class="af-check"><input type="radio" name="afAnnee" value="2" checked /> Année 2 et suivantes (maintenance comprise)</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="1" /> Année 1 (maintenance sous garantie : 0)</label>
+              <label class="af-check"><input type="radio" name="afAnnee" value="moy" /> Moyenne sur la durée d'étalement de l'achat</label>
+            </div>
+          </span>
+
+          <!-- Ampoule : hypothèses -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afInfoBtn" aria-expanded="false" aria-controls="afInfoPop" aria-label="Hypothèses de ce simulateur" title="Hypothèses">💡</button>
+            <div class="af-pop" id="afInfoPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Ce qui est compté</div>
+              <table class="af-table"><tbody>
+                <tr><td>Recettes</td><td>Examens par an × prix de l'examen (pas de forfait technique, pas d'acte intellectuel).</td></tr>
+                <tr><td>Personnel</td><td>MERM × salaire net annuel × coefficient de charges (voir « Hypothèses » sous la table).</td></tr>
+                <tr><td>Électricité</td><td>Consommation de l'O-scan (arrêt, prêt, examen) et de la climatisation de la salle, au prix du kWh.</td></tr>
+                <tr><td>Achat de l'O-scan</td><td>Prix étalé à parts égales sur la durée choisie, sans intérêts.</td></tr>
+                <tr><td>Maintenance</td><td>Aucune la 1<sup>re</sup> année (garantie), puis le montant annuel du curseur.</td></tr>
+                <tr><td>Non compté</td><td>Loyer, radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
+              </tbody></table>
+            </div>
+          </span>
+        </div>
+        <!-- groupes de curseurs insérés ici par le script -->
+      </div>
+
+      <details class="af-hyp">
+        <summary>Hypothèses (salaire, charges, durée d'étalement de l'achat)</summary>
+        <div class="af-hyp-grille">
+          <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /></div>
+          <div><label for="afCoef">Coefficient charges (du net au coût pour l'employeur)</label><input type="text" inputmode="decimal" id="afCoef" /></div>
+          <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /></div>
+        </div>
+        <p class="af-aide">Valeurs de départ reprises du simulateur unifié (salaire net 26.000 €, coefficient 1,82 = règles françaises) : à adapter au pays visé.</p>
+      </details>
+    </div>
+  </main>
+
+  <script>
+  (function () {
+    "use strict";
+
+    // ------------------------------------------------------------------ devises
+    // Taux = nombre d'unités de la devise pour 1 €. INDICATIFS (ordre de grandeur) sauf XOF/XAF (parité fixe 655,957).
+    // À actualiser avant une présentation : c'est le seul endroit à modifier.
+    var CURRENCIES = [
+      { c: "EUR", n: "Euro", s: "€", r: 1 },
+      { c: "USD", n: "Dollar américain", s: "$", r: 1.08 },
+      { c: "XOF", n: "Franc CFA (Afrique de l'Ouest)", s: "FCFA", r: 655.957 },
+      { c: "XAF", n: "Franc CFA (Afrique centrale)", s: "FCFA", r: 655.957 },
+      { c: "MAD", n: "Dirham marocain", s: "MAD", r: 10.8 },
+      { c: "DZD", n: "Dinar algérien", s: "DZD", r: 145 },
+      { c: "TND", n: "Dinar tunisien", s: "TND", r: 3.4 },
+      { c: "EGP", n: "Livre égyptienne", s: "EGP", r: 52 },
+      { c: "NGN", n: "Naira nigérian", s: "NGN", r: 1650 },
+      { c: "GHS", n: "Cédi ghanéen", s: "GHS", r: 16 },
+      { c: "KES", n: "Shilling kényan", s: "KES", r: 140 },
+      { c: "ZAR", n: "Rand sud-africain", s: "ZAR", r: 20 },
+      { c: "ETB", n: "Birr éthiopien", s: "ETB", r: 125 },
+      { c: "TZS", n: "Shilling tanzanien", s: "TZS", r: 2800 },
+      { c: "UGX", n: "Shilling ougandais", s: "UGX", r: 4000 },
+      { c: "RWF", n: "Franc rwandais", s: "RWF", r: 1450 },
+      { c: "MGA", n: "Ariary malgache", s: "MGA", r: 4900 },
+      { c: "MUR", n: "Roupie mauricienne", s: "MUR", r: 50 },
+      { c: "CDF", n: "Franc congolais", s: "CDF", r: 3100 },
+      { c: "GNF", n: "Franc guinéen", s: "GNF", r: 9300 },
+      { c: "ZMW", n: "Kwacha zambien", s: "ZMW", r: 28 }
+    ];
+    var CLE_DEVISE = "ced4scale-afrique-devise", CLE_GROUPES = "ced4scale-afrique-groupes-visibles";
+    var cur = CURRENCIES[0];
+    try { var d0 = localStorage.getItem(CLE_DEVISE); CURRENCIES.forEach(function (x) { if (x.c === d0) cur = x; }); } catch (e) {}
+
+    // ------------------------------------------------------------------ formats (point = séparateur de milliers, partout)
+    var nf0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+    var nf1 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+    var nf2 = new Intl.NumberFormat("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    var NBSP = " ";
+    function fmt(v) { return nf0.format(Math.round(v)); }
+    function fmtMoney(eur) { return fmt(eur * cur.r) + NBSP + cur.s; }
+    function fmtKwh(eur) { var v = eur * cur.r; return v < 10 ? nf2.format(v) : nf0.format(Math.round(v)); }
+    function lire(txt) { // « 12.345,6 » → 12345.6
+      var n = parseFloat(String(txt).replace(/\./g, "").replace(",", ".").replace(/[^0-9.\-]/g, ""));
+      return isFinite(n) ? n : null;
+    }
+    function el(id) { return document.getElementById(id); }
+
+    // ------------------------------------------------------------------ état (tout en euros)
+    var S = {
+      pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
+      coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
+      plafond: 13, semaines: 50, salaire: 26000, coef: 1.82, amort: 7, annee: "2"
+    };
+    var OSCAN = null;
+    (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "esaote-o-scan") OSCAN = m; });
+    if (!OSCAN) OSCAN = { eteint: 0.05, pret: 0.3, mesure: 1.0, dureeAcquisitionMinutes: 12, climSalleKw: 1.0 };
+
+    // ------------------------------------------------------------------ calcul
+    function net(h, coup, dur) { return coup ? Math.max(0, h - dur) : h; }
+    function calculer() {
+      var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
+      var hNetAn = (5 * nS + nSam + nDim) * S.semaines;
+      var hBrutAn = (5 * S.hS + (S.ouvSam ? S.hSam : 0) + (S.ouvDim ? S.hDim : 0)) * S.semaines;
+      var examens = Math.round(S.pph * hNetAn);
+      var recettes = examens * S.prix;
+      var personnel = S.nMerm * S.salaire * S.coef;
+      // Électricité : socle 24 h/24 (machine éteinte + climatisation de la salle) + surcoût « prêt » aux heures ouvertes sans patient + surcoût « examen » aux heures d'acquisition.
+      var hMesure = Math.min(examens * OSCAN.dureeAcquisitionMinutes / 60, hNetAn);
+      var kwhAn = (OSCAN.eteint + OSCAN.climSalleKw) * 8760 + (OSCAN.pret - OSCAN.eteint) * Math.max(0, hBrutAn - hMesure) + (OSCAN.mesure - OSCAN.eteint) * hMesure;
+      var elec = kwhAn * S.kwh;
+      var achat = S.achat / Math.max(1, S.amort);
+      var maint = S.annee === "1" ? 0 : S.annee === "moy" ? S.maint * (Math.max(1, S.amort) - 1) / Math.max(1, S.amort) : S.maint;
+      var depenses = personnel + elec + achat + maint;
+      return { examens: examens, recettes: recettes, personnel: personnel, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn };
+    }
+
+    // ------------------------------------------------------------------ demi-anneaux
+    var SVGNS = "http://www.w3.org/2000/svg";
+    function svgEl(tag, attrs) { var e = document.createElementNS(SVGNS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); return e; }
+    function donutPath(cx, cy, r, ri, a0, a1) {
+      var large = (a1 - a0) > Math.PI ? 1 : 0;
+      return "M" + (cx + r * Math.cos(a0)) + "," + (cy + r * Math.sin(a0)) +
+        " A" + r + "," + r + " 0 " + large + " 1 " + (cx + r * Math.cos(a1)) + "," + (cy + r * Math.sin(a1)) +
+        " L" + (cx + ri * Math.cos(a1)) + "," + (cy + ri * Math.sin(a1)) +
+        " A" + ri + "," + ri + " 0 " + large + " 0 " + (cx + ri * Math.cos(a0)) + "," + (cy + ri * Math.sin(a0)) + " Z";
+    }
+    var CAT_REC = [{ key: "recettes", label: "Examens", color: "#2a78d6" }];
+    var CAT_DEP = [
+      { key: "personnel", label: "Personnel (MERM)", color: "#d1477a" },
+      { key: "elec", label: "Électricité", color: "#3aa0b5" },
+      { key: "achat", label: "Achat de l'O-scan (étalé)", color: "#6b5b95" },
+      { key: "maint", label: "Maintenance", color: "#8a8f98" }
+    ];
+    var CAT_RES = CAT_DEP.concat([{ key: "resultat", label: "Résultat", color: "#1baf7a" }]);
+
+    function demi(titre, cats, vals, total, centre) {
+      var W = 300, H = 160, cx = 150, cy = 150, r = 130, ri = 76;
+      var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": titre });
+      var start = -Math.PI, lignes = [];
+      cats.forEach(function (p) {
+        var part = Math.max(0, vals[p.key] || 0);
+        if (!(part > 0) || !(total > 0)) return;
+        var f = part / total, end = start + f * Math.PI;
+        svg.appendChild(svgEl("path", { d: donutPath(cx, cy, r, ri, start, end), fill: p.color, stroke: "#fff", "stroke-width": "1.5" }));
+        if (f >= 0.07) {
+          var mid = (start + end) / 2, rm = (r + ri) / 2;
+          var t = svgEl("text", { x: cx + rm * Math.cos(mid), y: cy + rm * Math.sin(mid) + 4, "text-anchor": "middle", "font-size": 12, "font-weight": 800, fill: "#fff" });
+          t.textContent = Math.round(f * 100) + " %"; svg.appendChild(t);
+        }
+        lignes.push({ p: p, part: part, f: f });
+        start = end;
+      });
+      if (!(total > 0)) svg.appendChild(svgEl("path", { d: donutPath(cx, cy, r, ri, -Math.PI, 0), fill: "#e5e7eb" }));
+      // montant au centre
+      var t1 = svgEl("text", { x: cx, y: cy - 32, "text-anchor": "middle", "font-size": 12, "font-weight": 600, fill: "#777" }); t1.textContent = centre.label; svg.appendChild(t1);
+      // taille ajustée à la largeur de la zone blanche (le montant ne déborde jamais de l'anneau, même en FCFA)
+      var tailleC = Math.max(8, Math.min(17, 128 / (centre.valeur.length * 0.62)));
+      var t2 = svgEl("text", { x: cx, y: cy - 10, "text-anchor": "middle", "font-size": tailleC.toFixed(1), "font-weight": 800, fill: centre.couleur || "#222" }); t2.textContent = centre.valeur; svg.appendChild(t2);
+      var box = document.createElement("div"); box.className = "af-demi";
+      var h = document.createElement("h3"); h.textContent = titre; box.appendChild(h);
+      box.appendChild(svg);
+      var ul = document.createElement("ul"); ul.className = "af-legende";
+      lignes.forEach(function (l) {
+        var li = document.createElement("li");
+        li.innerHTML = '<i style="background:' + l.p.color + '"></i><span></span><b></b><em></em>';
+        li.querySelector("span").textContent = l.p.label;
+        li.querySelector("b").textContent = fmtMoney(l.part);
+        li.querySelector("em").textContent = Math.round(l.f * 100) + " %";
+        ul.appendChild(li);
+      });
+      box.appendChild(ul);
+      return box;
+    }
+
+    function rendre() {
+      var r = calculer(), zone = el("afDemis");
+      zone.textContent = "";
+      zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes) }));
+      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses) }));
+      var positif = r.resultat >= 0;
+      zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
+        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d" }));
+      var an = S.annee === "1" ? "Année 1 (maintenance sous garantie)" : S.annee === "moy" ? "Moyenne sur " + fmt(S.amort) + " ans" : "Année 2 et suivantes";
+      el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + cur.n + " (" + cur.c + ")";
+    }
+
+    // ------------------------------------------------------------------ table de mixage
+    // kind : "dec" (1 décimale, valeur native) | "money" (euros, affiché en devise) | "kwh" (euros, décimales si petit)
+    function hMax() { return S.plafond; }
+    var GROUPES = [
+      { id: "afGPph", titre: "Patients par heure", choix: "Patients par heure", cols: [{ k: "pph", color: "#eb6834", min: 0.5, max: 4.4, step: 0.1, kind: "dec", unit: "patients / h" }] },
+      { id: "afGHeures", titre: "Heures d'ouverture", choix: "Heures d'ouverture", cols: [
+        { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
+        { k: "hSam", color: "#8a5ad6", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Samedi", si: "ouvSam" },
+        { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
+      { id: "afGMerm", titre: "Nombre de MERM", choix: "Nombre de MERM", cols: [{ k: "nMerm", color: "#d1477a", min: 0.5, max: 6, step: 0.5, kind: "dec", unit: "ETP" }] },
+      { id: "afGPrix", titre: "Prix de l'examen", choix: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
+      { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 200000, max: 500000, step: 5000, kind: "money" }] },
+      { id: "afGKwh", titre: "Coût du kWh", choix: "Coût du kWh", cols: [{ k: "kwh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" }] },
+      { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle (après la 1re année de garantie)", unitG: "après la 1re année de garantie", cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
+    ];
+    var visibles = {};
+    try { visibles = JSON.parse(localStorage.getItem(CLE_GROUPES) || "{}"); } catch (e) {}
+    function val(x) { return typeof x === "function" ? x() : x; }
+    function affiche(col, v) { return col.kind === "money" ? fmt(v * cur.r) : col.kind === "kwh" ? fmtKwh(v) : nf1.format(v); }
+    function uniteCol(col) { return col.unit || (col.kind === "money" ? cur.s : cur.s + " / kWh"); }
+
+    var mixer = el("afMixer");
+    GROUPES.forEach(function (g) {
+      var gd = document.createElement("div"); gd.className = "af-mixer__group"; gd.id = g.id;
+      gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"></div>' + (g.unitG ? '<div class="af-mixer__unit"></div>' : "");
+      gd.querySelector(".af-mixer__group-title").textContent = g.titre;
+      if (g.unitG) gd.querySelector(".af-mixer__unit").textContent = g.unitG;
+      var fd = gd.querySelector(".af-mixer__faders");
+      g.cols.forEach(function (col) {
+        var c = document.createElement("div"); c.className = "af-mixer__fader-col"; c.style.setProperty("--fader-color", col.color);
+        c.innerHTML = '<div class="af-mixer__bar"><div class="af-mixer__bar-fill"></div>' + (col.slot ? '<span class="af-mixer__slot"></span>' : "") +
+          '<input type="range" /></div><input type="text" inputmode="decimal" class="af-mixer__value" /><div class="af-mixer__pm"><button type="button" class="af-moins">−</button><button type="button" class="af-plus">+</button></div><div class="af-mixer__unit"></div>';
+        if (col.slot) c.querySelector(".af-mixer__slot").textContent = col.slot;
+        var lab = g.titre + (col.slot ? " — " + col.slot : "");
+        c.querySelector("input[type=range]").setAttribute("aria-label", lab);
+        c.querySelector(".af-mixer__value").setAttribute("aria-label", lab + ", valeur");
+        c.querySelector(".af-moins").setAttribute("aria-label", "Diminuer : " + lab);
+        c.querySelector(".af-plus").setAttribute("aria-label", "Augmenter : " + lab);
+        col.node = c; col.range = c.querySelector("input[type=range]"); col.box = c.querySelector(".af-mixer__value");
+        col.fill = c.querySelector(".af-mixer__bar-fill"); col.uniteNode = c.querySelector(".af-mixer__unit");
+        fd.appendChild(c);
+        function appliquer(v) {
+          var mn = val(col.min), mx = val(col.max);
+          v = Math.max(mn, Math.min(mx, v));
+          S[col.k] = Math.round(v * 1e6) / 1e6;
+          synchroniser(); rendre();
+        }
+        col.range.addEventListener("input", function () { appliquer(parseFloat(col.range.value)); });
+        col.box.addEventListener("change", function () {
+          var n = lire(col.box.value);
+          if (n == null) { synchroniser(); return; }
+          appliquer(col.kind === "dec" ? n : n / cur.r);
+        });
+        c.querySelector(".af-moins").addEventListener("click", function () { appliquer(S[col.k] - col.step); });
+        c.querySelector(".af-plus").addEventListener("click", function () { appliquer(S[col.k] + col.step); });
+      });
+      mixer.appendChild(gd);
+    });
+
+    function synchroniser() {
+      GROUPES.forEach(function (g) {
+        var gd = el(g.id); gd.hidden = visibles[g.id] === false;
+        g.cols.forEach(function (col) {
+          var mn = val(col.min), mx = val(col.max);
+          if (S[col.k] > mx) S[col.k] = mx;
+          col.range.min = mn; col.range.max = mx; col.range.step = col.step; col.range.value = S[col.k];
+          col.fill.parentNode.style.setProperty("--pct", ((S[col.k] - mn) / (mx - mn) * 100).toFixed(2));
+          col.fill.style.setProperty("--pct", ((S[col.k] - mn) / (mx - mn) * 100).toFixed(2));
+          col.box.value = affiche(col, S[col.k]);
+          col.uniteNode.textContent = uniteCol(col);
+          col.node.hidden = !!(col.si && !S[col.si]);
+        });
+        // le nom du jour (Lun-Ven, Samedi, Dimanche) n'est écrit dans les bâtons que s'il y en a plusieurs
+        var nb = g.cols.filter(function (c) { return !c.node.hidden; }).length;
+        g.cols.forEach(function (col) { var sl = col.node.querySelector(".af-mixer__slot"); if (sl) sl.style.display = nb > 1 ? "" : "none"; });
+      });
+      // hypothèses
+      el("afSalaire").value = fmt(S.salaire * cur.r);
+      el("afCoef").value = nf2.format(S.coef);
+      el("afAmort").value = fmt(S.amort);
+      relireCalendrier();
+    }
+
+    // ------------------------------------------------------------------ hypothèses (champs sous la table)
+    el("afSalaire").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.salaire = n / cur.r; synchroniser(); rendre(); });
+    el("afCoef").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 1) S.coef = n; synchroniser(); rendre(); });
+    el("afAmort").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 1) S.amort = Math.min(30, Math.round(n)); synchroniser(); rendre(); });
+
+    // ------------------------------------------------------------------ panneaux déplaçables (clic sur l'icône = ouvrir/fermer, rien d'autre ne les ferme)
+    function brancher(btnId, popId) {
+      var btn = el(btnId), pop = el(popId), poignee = pop.querySelector(".af-poignee"), dx = 0, dy = 0, dep = null;
+      function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
+      btn.addEventListener("click", function (e) { e.stopPropagation(); pop.hidden = !pop.hidden; btn.setAttribute("aria-expanded", String(!pop.hidden)); });
+      pop.addEventListener("click", function (e) { e.stopPropagation(); });
+      poignee.addEventListener("pointerdown", function (e) { dep = { x: e.clientX - dx, y: e.clientY - dy }; poignee.setPointerCapture(e.pointerId); e.preventDefault(); });
+      poignee.addEventListener("pointermove", function (e) { if (!dep) return; dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer(); });
+      poignee.addEventListener("pointerup", function () { dep = null; });
+      poignee.addEventListener("pointercancel", function () { dep = null; });
+      poignee.addEventListener("dblclick", function () { dx = 0; dy = 0; appliquer(); });
+    }
+    ["Dev", "Cal", "Outils", "Info"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
+
+    // ------------------------------------------------------------------ devise ($)
+    var listeDev = el("afDevListe");
+    CURRENCIES.forEach(function (x) {
+      var b = document.createElement("button"); b.type = "button"; b.className = "af-dev-row"; b.dataset.c = x.c;
+      b.innerHTML = "<b></b><span></span><em></em>";
+      b.querySelector("b").textContent = x.c; b.querySelector("span").textContent = x.n;
+      b.querySelector("em").textContent = x.c === "EUR" ? "référence" : "1 € = " + nf2.format(x.r).replace(/,00$/, "");
+      b.addEventListener("click", function () {
+        cur = x; try { localStorage.setItem(CLE_DEVISE, x.c); } catch (e) {}
+        majDevise(); synchroniser(); rendre();
+      });
+      listeDev.appendChild(b);
+    });
+    function majDevise() { Array.prototype.forEach.call(listeDev.children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.c === cur.c)); }); }
+
+    // ------------------------------------------------------------------ boîte à outils
+    var oc = el("afOutilsCurseurs");
+    GROUPES.forEach(function (g) {
+      var l = document.createElement("label"); l.className = "af-check";
+      l.innerHTML = '<input type="checkbox" /> <span></span>';
+      var cb = l.querySelector("input"); cb.checked = visibles[g.id] !== false; l.querySelector("span").textContent = g.choix;
+      cb.addEventListener("change", function () {
+        visibles[g.id] = cb.checked;
+        try { localStorage.setItem(CLE_GROUPES, JSON.stringify(visibles)); } catch (e) {}
+        synchroniser();
+      });
+      oc.appendChild(l);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("input[name=afAnnee]"), function (r) {
+      r.addEventListener("change", function () { if (r.checked) { S.annee = r.value; rendre(); } });
+    });
+
+    // ------------------------------------------------------------------ agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié + semaines d'ouverture par an)
+    var CAL = [
+      { t: "titre", txt: "Lundi - vendredi" },
+      { t: "num", k: "hS", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5 },
+      { t: "chk", k: "coupS", label: "Coupure dans la journée" },
+      { t: "num", k: "coupSDur", label: "Durée de la coupure", unite: "h", step: 0.25, sous: true, si: "coupS" },
+      { t: "titre", txt: "Autres jours" },
+      { t: "chk", k: "ouvSam", label: "Ouvert le samedi" },
+      { t: "num", k: "hSam", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5, sous: true, si: "ouvSam" },
+      { t: "chk", k: "coupSam", label: "Coupure le samedi", sous: true, si: "ouvSam" },
+      { t: "num", k: "coupSamDur", label: "Durée de la coupure", unite: "h", step: 0.25, sous: true, si: "coupSam", et: "ouvSam" },
+      { t: "chk", k: "ouvDim", label: "Ouvert le dimanche" },
+      { t: "num", k: "hDim", label: "Amplitude d'ouverture", unite: "h/jour", step: 0.5, sous: true, si: "ouvDim" },
+      { t: "chk", k: "coupDim", label: "Coupure le dimanche", sous: true, si: "ouvDim" },
+      { t: "num", k: "coupDimDur", label: "Durée de la coupure", unite: "h", step: 0.25, sous: true, si: "coupDim", et: "ouvDim" },
+      { t: "titre", txt: "Plafond et année" },
+      { t: "num", k: "plafond", label: "Ouverture maximale par jour", unite: "h", step: 0.5 },
+      { t: "num", k: "semaines", label: "Semaines d'ouverture par an", unite: "sem.", step: 1 }
+    ];
+    var calLignes = [], calCorps = el("afCalCorps");
+    CAL.forEach(function (sp) {
+      if (sp.t === "titre") { var h = document.createElement("div"); h.className = "af-pop-sous-titre"; h.textContent = sp.txt; calCorps.appendChild(h); return; }
+      var div = document.createElement("div"); div.className = "af-cal-ligne" + (sp.sous ? " af-cal-sous" : "");
+      var lab = document.createElement("label"), inp = document.createElement("input"); inp.id = "afCal_" + sp.k; lab.setAttribute("for", inp.id); lab.textContent = sp.label;
+      if (sp.t === "chk") { inp.type = "checkbox"; div.appendChild(inp); div.appendChild(lab); }
+      else { inp.type = "number"; inp.min = sp.k === "semaines" ? 1 : 0; inp.max = sp.k === "semaines" ? 52 : 24; inp.step = sp.step; div.appendChild(lab); div.appendChild(inp); var u = document.createElement("span"); u.textContent = sp.unite; div.appendChild(u); }
+      calCorps.appendChild(div);
+      var l = { sp: sp, inp: inp, div: div }; calLignes.push(l);
+      inp.addEventListener(sp.t === "chk" ? "change" : "input", function () {
+        if (sp.t === "chk") S[sp.k] = inp.checked;
+        else { var n = parseFloat(inp.value); if (!isFinite(n)) return; S[sp.k] = Math.max(sp.k === "semaines" ? 1 : 0, Math.min(sp.k === "semaines" ? 52 : sp.k === "plafond" ? 24 : 24, n)); }
+        if (sp.k === "plafond") S.plafond = Math.max(1, S.plafond);
+        ["hS", "hSam", "hDim"].forEach(function (h) { if (S[h] > S.plafond) S[h] = S.plafond; });
+        synchroniser(); rendre();
+      });
+      if (sp.t !== "chk") inp.addEventListener("change", function () { inp.value = S[sp.k]; });
+    });
+    function relireCalendrier() {
+      calLignes.forEach(function (l) {
+        var sp = l.sp;
+        if (sp.t === "chk") l.inp.checked = !!S[sp.k]; else if (document.activeElement !== l.inp) l.inp.value = S[sp.k];
+        l.div.hidden = !!((sp.si && !S[sp.si]) || (sp.et && !S[sp.et]));
+        if (sp.k === "hS" || sp.k === "hSam" || sp.k === "hDim") l.inp.max = S.plafond;
+      });
+    }
+
+    // ------------------------------------------------------------------ plein écran (la table de mixage reste dans le cadre)
+    var bloc = el("afBloc"), fsBtn = el("afFsBtn");
+    fsBtn.addEventListener("click", function () {
+      if (document.fullscreenElement) document.exitFullscreen(); else if (bloc.requestFullscreen) bloc.requestFullscreen();
+    });
+    document.addEventListener("fullscreenchange", function () { fsBtn.classList.toggle("is-fullscreen", document.fullscreenElement === bloc); });
+    el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
+
+    majDevise(); synchroniser(); rendre();
+  })();
+  </script>
+  <script src="assets/site-gate.js"></script>
+</body>
+</html>
