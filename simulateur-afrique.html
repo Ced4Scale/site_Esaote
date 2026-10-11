@@ -528,6 +528,9 @@
       return (5 * nS + nSam + nDim) * S.semaines;
     }
     function volumeBrut() { return S.pph * hNetAnnuel(); }
+    // Temps d'acquisition moyen (minutes) selon la répartition des examens, avec la réduction de l'option IA si elle est choisie : sert à l'électricité et au surcoût par examen.
+    function acqMoyenne() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * S["tAcq" + t.k] * f; }); return m > 0 ? m : OSCAN.dureeAcquisitionMinutes; }
+    function pphMax() { var m = tempsMoyen(); return m > 0 ? 60 / m : 4.4; } // plafond de patients par heure = 60 / temps moyen par examen (acquisition réduite par l'IA + changement de patient)
     function tempsMoyen() { var f = S.optAI ? 1 - S.reducIA / 100 : 1, m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * (S["tAcq" + t.k] * f + S.tChg); }); return m; }
     // Cadenas fermé : patients/h = 60 / temps moyen par examen ; heures d'ouverture (lundi-vendredi) recalculées pour garder le volume de référence.
     function appliquerCadenas() {
@@ -550,7 +553,7 @@
       var recettes = examens * S.prix;
       var personnel = S.nMerm * S.salaire * S.coef;
       // Électricité : socle 24 h/24 (machine éteinte + climatisation de la salle) + surcoût « prêt » aux heures ouvertes sans patient + surcoût « examen » aux heures d'acquisition.
-      var hMesure = Math.min(examens * OSCAN.dureeAcquisitionMinutes / 60, hNetAn);
+      var hMesure = Math.min(examens * acqMoyenne() / 60, hNetAn);
       var kwhAn = (OSCAN.eteint + OSCAN.climSalleKw) * 8760 + (OSCAN.pret - OSCAN.eteint) * Math.max(0, hBrutAn - hMesure) + (OSCAN.mesure - OSCAN.eteint) * hMesure;
       var elec = kwhAn * S.kwh;
       var achatTotal = prixOscan();
@@ -562,7 +565,7 @@
       var maint = anneeNum ? S.maint * moisMaint(anneeNum) / 12 : S.maint * Math.max(0, 12 * horizon - S.garantie) / 12 / horizon;
       var depenses = personnel + loyer + elec + achat + maint;
       var joursAn = (5 + (S.ouvSam ? 1 : 0) + (S.ouvDim ? 1 : 0)) * S.semaines;
-      var acqH = OSCAN.dureeAcquisitionMinutes / 60;
+      var acqH = acqMoyenne() / 60;
       var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
       var pmExamens = S.prix > variable ? Math.max(0, depenses - variable * examens) / (S.prix - variable) : Infinity;
       // Retour sur investissement : trésorerie annuelle = recettes - personnel - loyer - électricité (- maintenance dès l'année 2)
@@ -689,7 +692,7 @@
     // kind : "dec" (1 décimale, valeur native) | "money" (euros, affiché en devise) | "kwh" (euros, décimales si petit)
     function hMax() { return S.plafond; }
     var GROUPES = [
-      { id: "afGPph", titre: "Patients par heure", choix: "Patients par heure", cols: [{ k: "pph", cadenas: true, color: "#eb6834", min: 0.5, max: function () { return S.cadenasPph ? Math.max(4.4, Math.ceil(S.pph * 10) / 10) : 4.4; }, step: 0.1, kind: "dec", unit: "patients / h" }] },
+      { id: "afGPph", titre: "Patients par heure", choix: "Patients par heure", unitFn: function () { return "plafond : " + nf1.format(pphMax()); }, cols: [{ k: "pph", cadenas: true, color: "#eb6834", min: 0.5, max: pphMax, step: 0.1, stepRange: 0.01, kind: "dec", unit: "patients / h" }] },
       { id: "afGHeures", titre: "Heures d'ouverture", choix: "Heures d'ouverture", cols: [
         { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
         { k: "hSam", color: "#8a5ad6", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Samedi", si: "ouvSam" },
@@ -813,7 +816,7 @@
         g.cols.forEach(function (col) {
           var mn = val(col.min), mx = val(col.max);
           if (S[col.k] > mx) S[col.k] = mx;
-          col.range.min = mn; col.range.max = mx; col.range.step = col.step; col.range.value = S[col.k];
+          col.range.min = mn; col.range.max = mx; col.range.step = col.stepRange || col.step; col.range.value = S[col.k];
           col.fill.parentNode.style.setProperty("--pct", ((S[col.k] - mn) / (mx - mn) * 100).toFixed(2));
           col.fill.style.setProperty("--pct", ((S[col.k] - mn) / (mx - mn) * 100).toFixed(2));
           col.box.value = affiche(col, S[col.k]);

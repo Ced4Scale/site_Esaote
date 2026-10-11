@@ -2425,6 +2425,14 @@ window.AF_I18N = {
 "Marque as opções escolhidas e ajuste o preço: somam-se ao preço do O-scan (diluído como ele). Preços iniciais a confirmar com a Esaote (obras e gaiola de Faraday: a confirmar por orçamento).",
 "حدّد الخيارات المعتمدة واضبط أسعارها: تُضاف إلى سعر O-scan (وتُوزَّع مثله). الأسعار الابتدائية تحتاج إلى تأكيد من Esaote (الأشغال وقفص فاراداي: بحسب عرض سعر).",
 "Weka alama kwenye chaguo ulizochagua na urekebishe bei: huongezwa kwenye bei ya O-scan (hugawanywa kama yenyewe). Bei za kuanzia zithibitishwe na Esaote (kazi za ujenzi na ngome ya Faraday: kwa nukuu ya bei)."
+],
+[
+"plafond : §",
+"ceiling: §",
+"massimo: §",
+"limite: §",
+"الحد الأقصى: §",
+"kikomo: §"
 ]
 ]
 };
