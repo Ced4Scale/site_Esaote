@@ -2545,6 +2545,62 @@ window.AF_I18N = {
 "A troca de paciente está incluída na duração do exame; a IA só reduz o resto (a aquisição).",
 "تبديل المريض مُدرج ضمن مدة الفحص؛ ولا يخفّض الذكاء الاصطناعي سوى الباقي (الاكتساب).",
 "Kubadilisha mgonjwa kumejumuishwa kwenye muda wa kipimo; AI hupunguza tu kilichobaki (upigaji picha)."
+],
+[
+"TCO : coût total de possession",
+"TCO: total cost of ownership",
+"TCO: costo totale di possesso",
+"TCO: custo total de propriedade",
+"التكلفة الإجمالية للامتلاك (TCO)",
+"TCO: gharama jumla ya umiliki"
+],
+[
+"Le TCO additionne tout ce que coûtent l'IRM et son exploitation sur la durée (sans les recettes) : achat rendu, intérêts du crédit s'il est activé, maintenance après la garantie, électricité, personnel et loyer, aux réglages actuels.",
+"The TCO adds up everything the MRI and its operation cost over the period (excluding revenue): delivered purchase, loan interest if activated, maintenance after the warranty, electricity, staff and rent, at the current settings.",
+"Il TCO somma tutto ciò che costano la RM e il suo esercizio nel periodo (esclusi i ricavi): acquisto reso, interessi del prestito se attivato, manutenzione dopo la garanzia, elettricità, personale e affitto, con le impostazioni attuali.",
+"O TCO soma tudo o que custam a RM e a sua exploração durante o período (sem as receitas): compra posta no destino, juros do crédito se ativado, manutenção após a garantia, eletricidade, pessoal e renda, com os ajustes atuais.",
+"تجمع التكلفة الإجمالية للامتلاك كل ما يكلّفه جهاز الرنين وتشغيله خلال المدة (دون الإيرادات): الشراء مسلَّمًا، وفوائد القرض إن فُعِّل، والصيانة بعد الضمان، والكهرباء، والموظفون، والإيجار، بالإعدادات الحالية.",
+"TCO inajumlisha kila kinachogharimu MRI na uendeshaji wake katika kipindi (bila mapato): ununuzi uliowasilishwa, riba ya mkopo ikiwa umewashwa, matengenezo baada ya dhamana, umeme, wafanyakazi na kodi ya pango, kwa mipangilio ya sasa."
+],
+[
+"Achat rendu (O-scan, options, importation, travaux, cage)",
+"Delivered purchase (O-scan, options, import, works, cage)",
+"Acquisto reso (O-scan, opzioni, importazione, lavori, gabbia)",
+"Compra posta no destino (O-scan, opções, importação, obras, gaiola)",
+"الشراء مسلَّمًا (O-scan، الخيارات، الاستيراد، الأشغال، القفص)",
+"Ununuzi uliowasilishwa (O-scan, chaguo, uagizaji, kazi, ngome)"
+],
+[
+"Intérêts du crédit",
+"Loan interest",
+"Interessi del prestito",
+"Juros do crédito",
+"فوائد القرض",
+"Riba ya mkopo"
+],
+[
+"TCO total",
+"Total TCO",
+"TCO totale",
+"TCO total",
+"إجمالي TCO",
+"TCO jumla"
+],
+[
+"TCO par an",
+"TCO per year",
+"TCO all'anno",
+"TCO por ano",
+"TCO سنويًا",
+"TCO kwa mwaka"
+],
+[
+"Coût par examen",
+"Cost per exam",
+"Costo per esame",
+"Custo por exame",
+"التكلفة لكل فحص",
+"Gharama kwa kipimo"
 ]
 ]
 };

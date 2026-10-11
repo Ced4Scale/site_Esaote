@@ -134,6 +134,12 @@
     .af-lang-row { display: flex; align-items: center; gap: .6rem; }
     html[dir="rtl"] .af-pop, html[dir="rtl"] .af-mixer__header { text-align: right; }
     html[dir="rtl"] .af-legende b, html[dir="rtl"] .af-pm-valeur, html[dir="rtl"] .af-mixer__value, html[dir="rtl"] .af-demi svg text { direction: ltr; unicode-bidi: isolate; }
+    #afOptPop { width: min(calc(100vw - 4.5rem), 780px); }
+    .af-table--tco { table-layout: auto; font-size: .72rem; }
+    .af-table--tco td { padding: .3rem .55rem; text-align: right; white-space: nowrap; width: auto; }
+    .af-table--tco td:not(:first-child) { min-width: 5.4rem; }
+    .af-table--tco td:first-child { text-align: left; white-space: normal; min-width: 8.5rem; }
+    .af-table--tco thead td { font-weight: 800; color: var(--muted); }
     .af-esaote-btn { width: auto; padding: 0 .55rem; }
     .af-esaote-btn img { display: block; height: 11px; width: auto; }
     .af-opt-ligne { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; font-size: .85rem; font-weight: 600; }
@@ -360,6 +366,9 @@
               <div id="afOptListe"></div>
               <div class="af-pop-sous-titre">Prix de l'O-scan avec options, travaux et cage</div>
               <div id="afOptTotal" style="font-weight:800"></div>
+              <div class="af-pop-sous-titre">TCO : coût total de possession</div>
+              <div style="overflow-x:auto"><table class="af-table af-table--tco" id="afTco"></table></div>
+              <p class="af-aide">Le TCO additionne tout ce que coûtent l'IRM et son exploitation sur la durée (sans les recettes) : achat rendu, intérêts du crédit s'il est activé, maintenance après la garantie, électricité, personnel et loyer, aux réglages actuels.</p>
             </div>
           </span>
 
@@ -656,6 +665,32 @@
       }
       return d;
     }
+    // TCO sur N années : achat rendu + intérêts du crédit payés dans l'horizon + maintenance (après la garantie) + électricité + personnel + loyer (activité et réglages actuels, sans actualisation).
+    function interetsCredit(P, mois) {
+      var r = S.taux / 1200, n = Math.max(1, S.dureeMois), m = mensualite(P), solde = P, tot = 0, k, i;
+      for (k = 1; k <= Math.min(n, mois); k++) { i = solde * r; tot += i; solde -= m - i; }
+      return tot;
+    }
+    function majTco(r) {
+      var ANS = [4, 5, 6, 7, 8, 9, 10], t = el("afTco"), P = r.achatTotal;
+      var h = "<thead><tr><td></td>" + ANS.map(function (n) { return "<td>" + n + " ans</td>"; }).join("") + "</tr></thead><tbody>";
+      var lignes = [
+        ["Achat rendu (O-scan, options, importation, travaux, cage)", function () { return P; }],
+        S.finActif ? ["Intérêts du crédit", function (n) { return interetsCredit(P, 12 * n); }] : null,
+        ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }],
+        ["Électricité", function (n) { return r.elec * n; }],
+        ["Personnel", function (n) { return r.personnel * n; }],
+        ["Loyer", function (n) { return r.loyer * n; }]
+      ].filter(Boolean);
+      var tot = ANS.map(function () { return 0; });
+      lignes.forEach(function (l) {
+        h += "<tr><td>" + l[0] + "</td>" + ANS.map(function (n, i) { var v = l[1](n); tot[i] += v; return "<td>" + fmtMoney(v) + "</td>"; }).join("") + "</tr>";
+      });
+      h += "<tr><td><strong>TCO total</strong></td>" + tot.map(function (v) { return "<td><strong>" + fmtMoney(v) + "</strong></td>"; }).join("") + "</tr>";
+      h += "<tr><td>TCO par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
+      h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / (ANS[i] * r.examens)) : "") + "</td>"; }).join("") + "</tr></tbody>";
+      t.innerHTML = h;
+    }
     function rendrePointsMorts(r) {
       var z = el("afPm"); z.textContent = "";
       // 1. point mort financier, en durée : combien de temps pour récupérer le prix de l'O-scan
@@ -690,6 +725,7 @@
       majTemps();
       majImport();
       rendrePointsMorts(r);
+      majTco(r);
       majOs();
     }
 
