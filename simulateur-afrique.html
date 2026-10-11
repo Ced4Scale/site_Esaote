@@ -876,7 +876,8 @@
       var h = '<tbody><tr><td>Prix de l\'O-scan et options (hors taxes)</td><td></td><td style="text-align:right">' + fmtMoney(ht) + '</td></tr>';
       d.lignes.forEach(function (l) { h += '<tr><td>' + l[0] + '</td><td style="text-align:right;white-space:nowrap">' + fmtPct(l[1]) + '</td><td style="text-align:right;white-space:nowrap">' + fmtMoney(l[2]) + '</td></tr>'; });
       h += '<tr><td><strong>Frais et taxes d\'importation</strong></td><td style="text-align:right">' + (ht > 0 ? fmtPct(d.total / ht * 100) : "") + '</td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(d.total) + '</strong></td></tr>' +
-        '<tr><td><strong>Prix d\'achat rendu</strong></td><td></td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(ht + d.total) + '</strong></td></tr></tbody>';
+        (prixLocal() > 0 ? '<tr><td>Travaux et cage de Faraday (sur place, sans frais d\'importation)</td><td></td><td style="text-align:right;white-space:nowrap">' + fmtMoney(prixLocal()) + '</td></tr>' : '') +
+        '<tr><td><strong>Prix d\'achat rendu</strong></td><td></td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(ht + d.total + prixLocal()) + '</strong></td></tr></tbody>';
       el("afImpTable").innerHTML = h;
     }
     brancher("afFinBtn", "afFinPop");
