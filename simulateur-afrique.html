@@ -125,6 +125,8 @@
     .af-cadenas[aria-pressed="true"] .af-lock-fermee { display: inline; }
     .af-cadenas:focus-visible { outline: 2px solid var(--red, #cd0000); border-radius: 4px; }
     .af-mixer__fader-col.is-verrou .af-mixer__bar { opacity: .6; }
+    #afNegPop { width: min(calc(100vw - 4.5rem), 580px); }
+    #afOsPop { width: min(calc(100vw - 4.5rem), 580px); }
     .af-esaote-btn { width: auto; padding: 0 .55rem; }
     .af-esaote-btn img { display: block; height: 11px; width: auto; }
     .af-opt-ligne { display: flex; align-items: center; gap: .5rem; margin: .3rem 0; font-size: .85rem; font-weight: 600; }
@@ -269,7 +271,7 @@
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Examens MSK par zone</div>
               <p class="af-aide" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre ». L'O-scan ne fait pas l'épaule (réservée à une IRM tunnel). Valeurs de départ = estimation Ced4Scale, à ajuster.</p>
-              <div id="afOsZones"></div>
+              <div class="af-mixer af-mixer--mini" id="afOsMix"></div>
               <div id="afOsTotal" style="margin-top:.4rem;font-size:.8rem;font-weight:800;border-top:1px dashed #d8d2b8;padding-top:.4rem"></div>
               <label class="af-check" style="margin-top:.5rem"><input type="checkbox" id="afOsRetire" /> Retirer la part d'épaule de l'activité (patients à orienter ailleurs)</label>
               <label class="af-check"><input type="checkbox" id="afOsRetireHanche" /> Retirer la part de hanche de l'activité (non réalisable à l'O-scan)</label>
@@ -303,6 +305,7 @@
               <p class="af-aide" style="margin:.1rem 0 .2rem">En % de l'activité : le total fait toujours 100 % (en bougeant un bâton, les autres se partagent le reste). Valeurs de départ = estimation, à ajuster.</p>
               <div class="af-mixer af-mixer--mini" id="afNegMix"></div>
               <div class="af-pop-sous-titre">Temps moyen par type d'examen</div>
+              <div class="af-mixer af-mixer--mini" id="afTempsMix"></div>
               <div id="afNegTemps"></div>
               <div id="afNegSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
             </div>
@@ -436,10 +439,11 @@
       plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 12, tAcqClau: 15, tAcqOrth: 10, tChg: 1.5, reducIA: 30, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
-    var osVal = OS_ZONES.map(function (z) { return z[1]; });
-    function partZone(i) { var t = 0; osVal.forEach(function (v) { t += Math.max(0, v); }); return t > 0 ? Math.max(0, osVal[i]) / t : 0; }
+    OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
+    function osValues() { return OS_ZONES.map(function (z, i) { return S["os" + i]; }); }
+    function partZone(i) { var t = 0, v = osValues(); v.forEach(function (x) { t += Math.max(0, x); }); return t > 0 ? Math.max(0, v[i]) / t : 0; }
     function partHanche() { return partZone(2); }
-    function partEpaule() { var t = 0; osVal.forEach(function (v) { t += Math.max(0, v); }); return t > 0 ? Math.max(0, osVal[1]) / t : 0; }
+    function partEpaule() { return partZone(1); }
     var OSCAN = null;
     (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "esaote-o-scan") OSCAN = m; });
     if (!OSCAN) OSCAN = { eteint: 0.05, pret: 0.3, mesure: 1.0, dureeAcquisitionMinutes: 12, climSalleKw: 1.0 };
@@ -638,24 +642,15 @@
       { id: "afGROrth", ou: "afNegMix", titre: "Consultation d'orthopédiste", cols: [{ k: "repOrth", rep: true, color: "#eb6834", min: 0, max: 100, step: 1, kind: "int", unit: "% de l'activité" }] }
     );
     var TYPES = [{ k: "Diag", nom: "Diagnostique", rep: "repDiag" }, { k: "Clau", nom: "Claustrophobie", rep: "repClau" }, { k: "Orth", nom: "Consultation d'orthopédiste", rep: "repOrth" }];
-    (function () {
-      var h = '<table class="af-table af-table--temps"><thead><tr><td></td><td>Acquisition (min)</td><td>Temps par examen</td></tr></thead><tbody>';
-      TYPES.forEach(function (t) { h += '<tr><td>' + t.nom + '</td><td><input type="number" min="1" max="90" step="0.5" id="afTAcq' + t.k + '" /></td><td id="afTEx' + t.k + '"></td></tr>'; });
-      h += '<tr><td>Changement de patient</td><td><input type="number" min="0" max="30" step="0.5" id="afTChg" /></td><td></td></tr>' +
-        '<tr><td>Réduction de l\'acquisition avec l\'IA (%)</td><td><input type="number" min="0" max="90" step="1" id="afReducIA" /></td><td id="afIAEtat" style="font-size:.76rem"></td></tr></tbody></table>' +
-        '<div id="afTMoy" style="margin-top:.5rem;font-size:.85rem;line-height:1.5"></div>';
-      el("afNegTemps").innerHTML = h;
-      TYPES.forEach(function (t) { var i = el("afTAcq" + t.k); i.value = S["tAcq" + t.k]; i.addEventListener("input", function () { var n = parseFloat(i.value); if (isFinite(n) && n >= 1) { S["tAcq" + t.k] = n; rendre(); } }); });
-      var c = el("afTChg"); c.value = S.tChg; c.addEventListener("input", function () { var n = parseFloat(c.value); if (isFinite(n) && n >= 0) { S.tChg = n; rendre(); } });
-      var r = el("afReducIA"); r.value = S.reducIA; r.addEventListener("input", function () { var n = parseFloat(r.value); if (isFinite(n) && n >= 0) { S.reducIA = Math.min(90, n); rendre(); } });
-    })();
+    el("afNegTemps").innerHTML = '<div id="afTLignes" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div><div id="afTMoy" style="margin-top:.4rem;font-size:.85rem;line-height:1.5"></div>';
     function majTemps() {
-      var f = S.optAI ? 1 - S.reducIA / 100 : 1, moy = 0;
+      var f = S.optAI ? 1 - S.reducIA / 100 : 1, moy = 0, h = "";
       TYPES.forEach(function (t) {
         var tex = S["tAcq" + t.k] * f + S.tChg; moy += S[t.rep] / 100 * tex;
-        el("afTEx" + t.k).textContent = nf1.format(tex) + " min" + (S.optAI ? " (acq. " + nf1.format(S["tAcq" + t.k] * f) + ")" : "");
+        h += t.nom + " : <strong>" + nf1.format(tex) + " min</strong> par examen" + (S.optAI ? " (acquisition " + nf1.format(S["tAcq" + t.k] * f) + ")" : "") + "<br>";
       });
-      el("afIAEtat").textContent = S.optAI ? "IA choisie : appliquée" : "IA non choisie (icône Esaote)";
+      h += S.optAI ? "IA choisie : acquisition réduite de " + fmt(S.reducIA) + " %." : "IA non choisie (icône Esaote) : la réduction ne s'applique pas.";
+      el("afTLignes").innerHTML = h;
       el("afTMoy").innerHTML = "Temps moyen par examen : <strong>" + nf1.format(moy) + " min</strong>" + (moy > 0 ? " — soit <strong>" + nf1.format(60 / moy) + "</strong> patients par heure possibles (votre réglage : " + nf1.format(S.pph) + ")." : "") + (S.msgCadenas ? "<br>" + S.msgCadenas : "");
     }
     var REP_CLES = ["repDiag", "repClau", "repOrth"];
@@ -664,6 +659,16 @@
       var a0 = somme > 0 ? Math.round(S[autres[0]] / somme * reste) : Math.round(reste / 2);
       S[autres[0]] = Math.max(0, Math.min(reste, a0)); S[autres[1]] = reste - S[autres[0]];
     }
+    OS_ZONES.forEach(function (z, i) {
+      GROUPES.push({ id: "afGOs" + i, ou: "afOsMix", titre: z[0].replace(/ \(.*$/, ""), cols: [{ k: "os" + i, color: ["#2a78d6", "#d1477a", "#8a5ad6", "#1f9d78", "#eb6834", "#3aa0b5", "#8a8f98"][i], min: 0, max: 100, step: 1, kind: "int", unit: "%" }] });
+    });
+    GROUPES.push(
+      { id: "afGTDiag", ou: "afTempsMix", titre: "Acquisition diagnostique", cols: [{ k: "tAcqDiag", color: "#2a78d6", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTClau", ou: "afTempsMix", titre: "Acquisition claustrophobie", cols: [{ k: "tAcqClau", color: "#8a5ad6", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTOrth", ou: "afTempsMix", titre: "Acquisition consultation", cols: [{ k: "tAcqOrth", color: "#eb6834", min: 1, max: 40, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTChg", ou: "afTempsMix", titre: "Changement de patient", cols: [{ k: "tChg", color: "#6b5b95", min: 0, max: 10, step: 0.5, kind: "dec", unit: "min" }] },
+      { id: "afGTIA", ou: "afTempsMix", titre: "Réduction avec l'IA", cols: [{ k: "reducIA", color: "#1baf7a", min: 0, max: 90, step: 1, kind: "int", unit: "% de l'acquisition" }] }
+    );
     var visibles = {};
     try { visibles = JSON.parse(localStorage.getItem(CLE_GROUPES) || "{}"); } catch (e) {}
     function val(x) { return typeof x === "function" ? x() : x; }
@@ -802,7 +807,7 @@
 
     // ------------------------------------------------------------------ os : examens par zone
     function majOs() {
-      var tot = 0; osVal.forEach(function (v) { tot += Math.max(0, v); });
+      var tot = 0; osValues().forEach(function (v) { tot += Math.max(0, v); });
       var t = el("afOsTotal");
       t.textContent = "Total : " + nf1.format(tot).replace(",0", "") + " %" + (Math.abs(tot - 100) > 0.05 ? "  (les parts sont ramenées à 100 %)" : "");
       t.style.color = Math.abs(tot - 100) > 0.05 ? "#b42318" : "";
@@ -810,13 +815,6 @@
       el("afOsSynthese").innerHTML = "Épaule : " + nf1.format(s * 100).replace(",0", "") + " % des examens « membre », réservée à une IRM tunnel.<br>Hanche : " + nf1.format(partHanche() * 100).replace(",0", "") + " % des examens." +
         (S.retireEpaule || S.retireHanche ? "<br>Activité retenue : <strong>" + fmt(c.examens) + "</strong> examens par an." : "");
     }
-    OS_ZONES.forEach(function (z, i) {
-      var div = document.createElement("div"); div.className = "af-cal-ligne";
-      var lab = document.createElement("label"), inp = document.createElement("input"), u = document.createElement("span");
-      inp.type = "number"; inp.id = "afOs" + i; inp.min = 0; inp.max = 100; inp.step = 1; inp.value = z[1]; lab.setAttribute("for", inp.id); lab.textContent = z[0]; u.textContent = "%";
-      div.appendChild(lab); div.appendChild(inp); div.appendChild(u); el("afOsZones").appendChild(div);
-      inp.addEventListener("input", function () { osVal[i] = Math.max(0, parseFloat(inp.value) || 0); rendre(); });
-    });
     el("afOsRetire").addEventListener("change", function () { S.retireEpaule = this.checked; rendre(); });
     el("afOsRetireHanche").addEventListener("change", function () { S.retireHanche = this.checked; rendre(); });
 
