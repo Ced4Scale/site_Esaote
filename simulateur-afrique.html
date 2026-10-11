@@ -53,6 +53,16 @@
     .af-legende b { white-space: nowrap; font-weight: 800; }
     .af-legende em { font-style: normal; color: var(--muted); width: 2.6rem; text-align: right; flex: none; }
 
+    /* ---- Points morts ---- */
+    .af-pm { display: grid; grid-template-columns: minmax(0, 1fr); gap: .8rem; margin-top: 1.2rem; }
+    .af-pm-carte { border: 1px solid var(--line); border-radius: var(--radius); padding: .9rem 1.1rem; background: #fcfcfd; }
+    .af-pm-carte h3 { margin: 0 0 .3rem; font-size: .95rem; }
+    .af-pm-valeur { font-size: 1.5rem; font-weight: 800; line-height: 1.15; }
+    .af-pm-detail { font-size: .82rem; color: var(--ink-soft); margin-top: .25rem; }
+    .af-pm-piste { position: relative; height: .7rem; border-radius: 999px; background: #e5e7eb; margin-top: .6rem; overflow: hidden; }
+    .af-pm-rempli { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 999px; }
+    .af-pm-legende { display: flex; justify-content: space-between; font-size: .74rem; color: var(--muted); margin-top: .2rem; }
+
     /* ---- Table de mixage (même rendu que le simulateur unifié) ---- */
     .af-mixer { margin-top: 1.2rem; border-radius: var(--radius); padding: 1.3rem 1.2rem 1.1rem; background: #fff; border: 1px solid #d9dee5; color: #000; display: flex; flex-wrap: wrap; gap: 1.6rem; align-items: flex-start; }
     .af-bloc:fullscreen .af-mixer { flex: 0 0 auto; justify-content: center; }
@@ -145,6 +155,7 @@
       <h2 class="af-titre">Recettes, dépenses et résultat</h2>
       <p class="af-sous-titre" id="afSousTitre"></p>
       <div class="af-demis" id="afDemis"></div>
+      <div class="af-pm" id="afPm"></div>
 
       <!-- Table de mixage : les groupes de curseurs sont construits par le script (liste GROUPES). -->
       <div class="af-mixer" id="afMixer">
@@ -160,7 +171,11 @@
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Devise d'affichage</div>
               <div class="af-dev-liste" id="afDevListe"></div>
-              <p class="af-aide">Les calculs restent faits en euros ; la devise ne change que l'affichage et la saisie. Les taux sont <strong>indicatifs</strong> (ordre de grandeur, sauf le franc CFA, à parité fixe avec l'euro) et à actualiser avant une présentation.</p>
+              <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
+                <button type="button" class="btn btn--sm" id="afTauxMaj">Mettre à jour les taux</button>
+                <span id="afTauxStatut" style="font-size:.78rem"></span>
+              </div>
+              <p class="af-aide">Les calculs restent faits en euros ; la devise ne change que l'affichage et la saisie. Le bouton récupère les taux du jour sur Internet (service gratuit <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> : seule la demande de taux est envoyée, aucune donnée de simulation). Les francs CFA, le Cap-Vert, les Comores et Sao Tomé ont une parité fixe avec l'euro.</p>
             </div>
           </span>
 
@@ -190,6 +205,38 @@
             </div>
           </span>
 
+          <!-- Loyer : prix de location au m² par an -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afLoyerBtn" aria-expanded="false" aria-controls="afLoyerPop" aria-label="Loyer : prix de location au mètre carré par an" title="Loyer (prix au m² par an)">
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 20.5V9.5L12 4l8 5.5v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 20.5v-6h5v6M3 20.5h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <div class="af-pop" id="afLoyerPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Loyer des locaux</div>
+              <div class="af-cal-ligne"><label for="afLoyerM2">Prix de location au m² par an</label><input type="text" inputmode="numeric" id="afLoyerM2" style="width:6.5rem" /><span id="afLoyerM2Unite"></span></div>
+              <div class="af-cal-ligne"><label for="afSurface">Surface louée</label><input type="text" inputmode="numeric" id="afSurface" style="width:6.5rem" /><span>m²</span></div>
+              <div class="af-pop-sous-titre">Loyer annuel</div>
+              <div id="afLoyerTotal" style="font-weight:800"></div>
+              <p class="af-aide">À 0, aucun loyer n'est compté. Surface de départ : 60 m² (valeur à confirmer : salle de l'O-scan, accueil, vestiaire).</p>
+            </div>
+          </span>
+
+          <!-- Os : répartition des examens par zone (l'O-scan ne fait pas l'épaule) -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afOsBtn" aria-expanded="false" aria-controls="afOsPop" aria-label="Répartition des examens MSK par zone" title="Répartition des examens MSK par zone">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7.2 4.2a2.6 2.6 0 0 0-3.5 3.4 2.6 2.6 0 0 0 3.2 3.5l5.9 5.9a2.6 2.6 0 0 0 3.5 3.2 2.6 2.6 0 0 0 3.4-3.5 2.6 2.6 0 0 0-3.4-3.3l-5.9-5.8A2.6 2.6 0 0 0 7.2 4.2Z" fill="currentColor"/></svg>
+            </button>
+            <div class="af-pop" id="afOsPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Examens MSK par zone</div>
+              <p class="af-aide" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre ». L'O-scan ne fait pas l'épaule (réservée à une IRM tunnel). Valeurs de départ = estimation Ced4Scale, à ajuster.</p>
+              <div id="afOsZones"></div>
+              <div id="afOsTotal" style="margin-top:.4rem;font-size:.8rem;font-weight:800;border-top:1px dashed #d8d2b8;padding-top:.4rem"></div>
+              <label class="af-check" style="margin-top:.5rem"><input type="checkbox" id="afOsRetire" /> Retirer la part d'épaule de l'activité (patients à orienter ailleurs)</label>
+              <div id="afOsSynthese" style="font-size:.8rem;line-height:1.35"></div>
+            </div>
+          </span>
+
           <!-- Ampoule : hypothèses -->
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afInfoBtn" aria-expanded="false" aria-controls="afInfoPop" aria-label="Hypothèses de ce simulateur" title="Hypothèses">💡</button>
@@ -202,7 +249,8 @@
                 <tr><td>Électricité</td><td>Consommation de l'O-scan (arrêt, prêt, examen) et de la climatisation de la salle, au prix du kWh.</td></tr>
                 <tr><td>Achat de l'O-scan</td><td>Prix étalé à parts égales sur la durée choisie, sans intérêts.</td></tr>
                 <tr><td>Maintenance</td><td>Aucune la 1<sup>re</sup> année (garantie), puis le montant annuel du curseur.</td></tr>
-                <tr><td>Non compté</td><td>Loyer, radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
+                <tr><td>Loyer</td><td>Prix au m² par an × surface (icône bâtiment). Rien tant que le prix est à 0.</td></tr>
+                <tr><td>Non compté</td><td>Radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
               </tbody></table>
             </div>
           </span>
@@ -217,7 +265,7 @@
           <div><label for="afCoef">Coefficient charges (du net au coût pour l'employeur)</label><input type="text" inputmode="decimal" id="afCoef" /></div>
           <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /></div>
         </div>
-        <p class="af-aide">Valeurs de départ reprises du simulateur unifié (salaire net 26.000 €, coefficient 1,82 = règles françaises) : à adapter au pays visé.</p>
+        <p class="af-aide">Salaire de départ : 5.000 € net par an (demande du 11/10/2026). Le coefficient 1,82 vient des règles françaises : à adapter au pays visé.</p>
       </details>
     </div>
   </main>
@@ -227,33 +275,56 @@
     "use strict";
 
     // ------------------------------------------------------------------ devises
-    // Taux = nombre d'unités de la devise pour 1 €. INDICATIFS (ordre de grandeur) sauf XOF/XAF (parité fixe 655,957).
-    // À actualiser avant une présentation : c'est le seul endroit à modifier.
+    // Taux = nombre d'unités de la devise pour 1 €. Valeurs de départ relevées le 11/10/2026 (open.er-api.com) ; le bouton « Mettre à jour les taux »
+    // de l'icône $ les remplace par les taux du jour (mémorisés dans le navigateur). Parités fixes : FCFA 655,957 ; Cap-Vert 110,265 ; Comores 491,96775 ; Sao Tomé 24,5.
+    var TAUX_DATE = "11/10/2026";
     var CURRENCIES = [
       { c: "EUR", n: "Euro", s: "€", r: 1 },
-      { c: "USD", n: "Dollar américain", s: "$", r: 1.08 },
+      { c: "USD", n: "Dollar américain", s: "$", r: 1.120529 },
       { c: "XOF", n: "Franc CFA (Afrique de l'Ouest)", s: "FCFA", r: 655.957 },
       { c: "XAF", n: "Franc CFA (Afrique centrale)", s: "FCFA", r: 655.957 },
-      { c: "MAD", n: "Dirham marocain", s: "MAD", r: 10.8 },
-      { c: "DZD", n: "Dinar algérien", s: "DZD", r: 145 },
-      { c: "TND", n: "Dinar tunisien", s: "TND", r: 3.4 },
-      { c: "EGP", n: "Livre égyptienne", s: "EGP", r: 52 },
-      { c: "NGN", n: "Naira nigérian", s: "NGN", r: 1650 },
-      { c: "GHS", n: "Cédi ghanéen", s: "GHS", r: 16 },
-      { c: "KES", n: "Shilling kényan", s: "KES", r: 140 },
-      { c: "ZAR", n: "Rand sud-africain", s: "ZAR", r: 20 },
-      { c: "ETB", n: "Birr éthiopien", s: "ETB", r: 125 },
-      { c: "TZS", n: "Shilling tanzanien", s: "TZS", r: 2800 },
-      { c: "UGX", n: "Shilling ougandais", s: "UGX", r: 4000 },
-      { c: "RWF", n: "Franc rwandais", s: "RWF", r: 1450 },
-      { c: "MGA", n: "Ariary malgache", s: "MGA", r: 4900 },
-      { c: "MUR", n: "Roupie mauricienne", s: "MUR", r: 50 },
-      { c: "CDF", n: "Franc congolais", s: "CDF", r: 3100 },
-      { c: "GNF", n: "Franc guinéen", s: "GNF", r: 9300 },
-      { c: "ZMW", n: "Kwacha zambien", s: "ZMW", r: 28 }
+      { c: "ZAR", n: "Rand sud-africain", s: "ZAR", r: 18.513305 },
+      { c: "CVE", n: "Escudo du Cap-Vert", s: "CVE", r: 110.265 },
+      { c: "MAD", n: "Dirham marocain", s: "MAD", r: 10.96295 },
+      { c: "DZD", n: "Dinar algérien", s: "DZD", r: 150.554976 },
+      { c: "TND", n: "Dinar tunisien", s: "TND", r: 3.363902 },
+      { c: "EGP", n: "Livre égyptienne", s: "EGP", r: 58.659768 },
+      { c: "LYD", n: "Dinar libyen", s: "LYD", r: 7.183899 },
+      { c: "NGN", n: "Naira nigérian", s: "NGN", r: 1499.424537 },
+      { c: "GHS", n: "Cédi ghanéen", s: "GHS", r: 13.229755 },
+      { c: "KES", n: "Shilling kényan", s: "KES", r: 145.373062 },
+      { c: "ETB", n: "Birr éthiopien", s: "ETB", r: 188.734485 },
+      { c: "TZS", n: "Shilling tanzanien", s: "TZS", r: 2940.526335 },
+      { c: "UGX", n: "Shilling ougandais", s: "UGX", r: 4474.451266 },
+      { c: "RWF", n: "Franc rwandais", s: "RWF", r: 1658.248262 },
+      { c: "BIF", n: "Franc burundais", s: "BIF", r: 3372.986977 },
+      { c: "CDF", n: "Franc congolais", s: "CDF", r: 2595.87218 },
+      { c: "AOA", n: "Kwanza angolais", s: "AOA", r: 1075.162909 },
+      { c: "MZN", n: "Metical mozambicain", s: "MZN", r: 71.522065 },
+      { c: "ZMW", n: "Kwacha zambien", s: "ZMW", r: 22.248629 },
+      { c: "MWK", n: "Kwacha malawien", s: "MWK", r: 1956.911696 },
+      { c: "BWP", n: "Pula botswanais", s: "BWP", r: 15.937409 },
+      { c: "NAD", n: "Dollar namibien", s: "NAD", r: 18.525098 },
+      { c: "SZL", n: "Lilangeni eswatinien", s: "SZL", r: 18.525098 },
+      { c: "LSL", n: "Loti lésothan", s: "LSL", r: 18.525098 },
+      { c: "MGA", n: "Ariary malgache", s: "MGA", r: 4968.533384 },
+      { c: "MUR", n: "Roupie mauricienne", s: "MUR", r: 52.960507 },
+      { c: "SCR", n: "Roupie des Seychelles", s: "SCR", r: 16.437366 },
+      { c: "KMF", n: "Franc comorien", s: "KMF", r: 491.96775 },
+      { c: "DJF", n: "Franc djiboutien", s: "DJF", r: 199.141112 },
+      { c: "GNF", n: "Franc guinéen", s: "GNF", r: 9850.246613 },
+      { c: "GMD", n: "Dalasi gambien", s: "GMD", r: 83.471131 },
+      { c: "SLE", n: "Leone sierra-léonais", s: "SLE", r: 27.551207 },
+      { c: "LRD", n: "Dollar libérien", s: "LRD", r: 191.313234 },
+      { c: "MRU", n: "Ouguiya mauritanien", s: "MRU", r: 45.119054 },
+      { c: "STN", n: "Dobra de Sao Tomé", s: "STN", r: 24.5 }
     ];
     var CLE_DEVISE = "ced4scale-afrique-devise", CLE_GROUPES = "ced4scale-afrique-groupes-visibles";
-    var cur = CURRENCIES[0];
+    var cur = CURRENCIES[0], CLE_TAUX = "ced4scale-afrique-taux";
+    try {
+      var tm = JSON.parse(localStorage.getItem(CLE_TAUX) || "null");
+      if (tm && tm.rates) { CURRENCIES.forEach(function (x) { if (tm.rates[x.c]) x.r = tm.rates[x.c]; }); TAUX_DATE = tm.date || TAUX_DATE; }
+    } catch (e) {}
     try { var d0 = localStorage.getItem(CLE_DEVISE); CURRENCIES.forEach(function (x) { if (x.c === d0) cur = x; }); } catch (e) {}
 
     // ------------------------------------------------------------------ formats (point = séparateur de milliers, partout)
@@ -274,8 +345,11 @@
     var S = {
       pph: 3.5, hS: 8, hSam: 4, hDim: 4, nMerm: 2, prix: 50, achat: 350000, kwh: 0.20, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 26000, coef: 1.82, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, coef: 1.82, loyerM2: 0, surface: 60, retireEpaule: false, amort: 7, annee: "2"
     };
+    var OS_ZONES = [["Genou", 60], ["Épaule", 10], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
+    var osVal = OS_ZONES.map(function (z) { return z[1]; });
+    function partEpaule() { var t = 0; osVal.forEach(function (v) { t += Math.max(0, v); }); return t > 0 ? Math.max(0, osVal[1]) / t : 0; }
     var OSCAN = null;
     (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "esaote-o-scan") OSCAN = m; });
     if (!OSCAN) OSCAN = { eteint: 0.05, pret: 0.3, mesure: 1.0, dureeAcquisitionMinutes: 12, climSalleKw: 1.0 };
@@ -286,7 +360,7 @@
       var nS = net(S.hS, S.coupS, S.coupSDur), nSam = S.ouvSam ? net(S.hSam, S.coupSam, S.coupSamDur) : 0, nDim = S.ouvDim ? net(S.hDim, S.coupDim, S.coupDimDur) : 0;
       var hNetAn = (5 * nS + nSam + nDim) * S.semaines;
       var hBrutAn = (5 * S.hS + (S.ouvSam ? S.hSam : 0) + (S.ouvDim ? S.hDim : 0)) * S.semaines;
-      var examens = Math.round(S.pph * hNetAn);
+      var examens = Math.round(S.pph * hNetAn * (S.retireEpaule ? 1 - partEpaule() : 1));
       var recettes = examens * S.prix;
       var personnel = S.nMerm * S.salaire * S.coef;
       // Électricité : socle 24 h/24 (machine éteinte + climatisation de la salle) + surcoût « prêt » aux heures ouvertes sans patient + surcoût « examen » aux heures d'acquisition.
@@ -294,9 +368,19 @@
       var kwhAn = (OSCAN.eteint + OSCAN.climSalleKw) * 8760 + (OSCAN.pret - OSCAN.eteint) * Math.max(0, hBrutAn - hMesure) + (OSCAN.mesure - OSCAN.eteint) * hMesure;
       var elec = kwhAn * S.kwh;
       var achat = S.achat / Math.max(1, S.amort);
+      var loyer = S.loyerM2 * S.surface;
       var maint = S.annee === "1" ? 0 : S.annee === "moy" ? S.maint * (Math.max(1, S.amort) - 1) / Math.max(1, S.amort) : S.maint;
-      var depenses = personnel + elec + achat + maint;
-      return { examens: examens, recettes: recettes, personnel: personnel, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn };
+      var depenses = personnel + loyer + elec + achat + maint;
+      var joursAn = (5 + (S.ouvSam ? 1 : 0) + (S.ouvDim ? 1 : 0)) * S.semaines;
+      var acqH = OSCAN.dureeAcquisitionMinutes / 60;
+      var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
+      var pmExamens = S.prix > variable ? Math.max(0, depenses - variable * examens) / (S.prix - variable) : Infinity;
+      // Retour sur investissement : trésorerie annuelle = recettes - personnel - loyer - électricité (- maintenance dès l'année 2)
+      var cash1 = recettes - personnel - loyer - elec, cashN = cash1 - S.maint, retour;
+      if (cash1 >= S.achat) retour = S.achat / cash1 * 12;
+      else if (cashN > 0) retour = (1 + (S.achat - Math.max(0, cash1)) / cashN) * 12;
+      else retour = Infinity;
+      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, retourMois: retour, cash1: cash1 };
     }
 
     // ------------------------------------------------------------------ demi-anneaux
@@ -312,8 +396,9 @@
     var CAT_REC = [{ key: "recettes", label: "Examens", color: "#2a78d6" }];
     var CAT_DEP = [
       { key: "personnel", label: "Personnel (MERM)", color: "#d1477a" },
+      { key: "loyer", label: "Loyer", color: "#6b5b95" },
       { key: "elec", label: "Électricité", color: "#3aa0b5" },
-      { key: "achat", label: "Achat de l'O-scan (étalé)", color: "#6b5b95" },
+      { key: "achat", label: "Achat de l'O-scan (étalé)", color: "#b8782f" },
       { key: "maint", label: "Maintenance", color: "#8a8f98" }
     ];
     var CAT_RES = CAT_DEP.concat([{ key: "resultat", label: "Résultat", color: "#1baf7a" }]);
@@ -357,16 +442,49 @@
       return box;
     }
 
+    function dureeTexte(mois) {
+      if (!isFinite(mois) || mois > 600) return "plus de 50 ans";
+      var m = Math.max(1, Math.round(mois)), a = Math.floor(m / 12), r = m % 12;
+      return (a > 0 ? fmt(a) + (a > 1 ? " ans" : " an") + (r ? " et " : "") : "") + (r ? fmt(r) + " mois" : "");
+    }
+    function carte(titre, valeur, detail, part, couleur, legG, legD) {
+      var d = document.createElement("div"); d.className = "af-pm-carte";
+      d.innerHTML = '<h3></h3><div class="af-pm-valeur"></div><div class="af-pm-detail"></div>' + (part != null ? '<div class="af-pm-piste"><div class="af-pm-rempli"></div></div><div class="af-pm-legende"><span></span><span></span></div>' : "");
+      d.querySelector("h3").textContent = titre; d.querySelector(".af-pm-valeur").textContent = valeur; d.querySelector(".af-pm-detail").innerHTML = detail;
+      if (part != null) {
+        var f = d.querySelector(".af-pm-rempli"); f.style.width = Math.max(2, Math.min(100, part * 100)) + "%"; f.style.background = couleur;
+        var sp = d.querySelectorAll(".af-pm-legende span"); sp[0].textContent = legG; sp[1].textContent = legD;
+      }
+      return d;
+    }
+    function rendrePointsMorts(r) {
+      var z = el("afPm"); z.textContent = "";
+      // 1. point mort financier, en durée : combien de temps pour récupérer le prix de l'O-scan
+      var fini = isFinite(r.retourMois);
+      z.appendChild(carte("Point mort financier (retour sur investissement)", dureeTexte(r.retourMois),
+        fini ? "Durée pour récupérer le prix de l'O-scan (" + fmtMoney(S.achat) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " la 1<sup>re</sup> année, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance. Sans intérêts d'emprunt."
+          : "La trésorerie annuelle (" + fmtMoney(r.cash1 - S.maint) + " après maintenance) ne permet pas de récupérer le prix de l'O-scan (" + fmtMoney(S.achat) + ").",
+        fini ? Math.min(1, 84 / Math.max(1, r.retourMois)) : null, r.retourMois <= 84 ? "#1baf7a" : "#c2334d", "Plus la barre est pleine, plus le retour est rapide", "repère : 7 ans"));
+      // 2. point mort journalier : examens par jour pour couvrir toutes les dépenses
+      var exJour = r.joursAn > 0 ? r.examens / r.joursAn : 0, pmJour = r.joursAn > 0 ? r.pmExamens / r.joursAn : Infinity;
+      var parH = r.examens > 0 && isFinite(pmJour) ? r.pmExamens / (r.examens / S.pph) : Infinity;
+      z.appendChild(carte("Point mort journalier", isFinite(pmJour) ? nf1.format(pmJour) + " examens par jour" : "Jamais atteint",
+        isFinite(pmJour) ? "Nombre d'examens à réaliser chaque jour d'ouverture (" + fmt(r.joursAn) + " jours par an) pour couvrir toutes les dépenses de l'année affichée, soit " + nf1.format(parH) + " patients par heure. Vous en faites " + nf1.format(exJour) + " par jour (" + fmt(r.examens) + " par an ; point mort : " + fmt(r.pmExamens) + " par an)."
+          : "Le prix de l'examen ne couvre pas le surcoût d'électricité d'un examen supplémentaire.",
+        isFinite(pmJour) ? Math.min(1, exJour / (pmJour * 2)) : 0, exJour >= pmJour ? "#1baf7a" : "#c2334d", "0", isFinite(pmJour) ? nf1.format(pmJour * 2) + " examens par jour" : ""));
+    }
     function rendre() {
       var r = calculer(), zone = el("afDemis");
       zone.textContent = "";
       zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes) }));
       zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses) }));
       var positif = r.resultat >= 0;
-      zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
+      zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
         positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d" }));
       var an = S.annee === "1" ? "Année 1 (maintenance sous garantie)" : S.annee === "moy" ? "Moyenne sur " + fmt(S.amort) + " ans" : "Année 2 et suivantes";
       el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + cur.n + " (" + cur.c + ")";
+      rendrePointsMorts(r);
+      majOs();
     }
 
     // ------------------------------------------------------------------ table de mixage
@@ -450,6 +568,10 @@
       el("afCoef").value = nf2.format(S.coef);
       el("afAmort").value = fmt(S.amort);
       relireCalendrier();
+      if (el("afLoyerM2") !== document.activeElement) el("afLoyerM2").value = fmt(S.loyerM2 * cur.r);
+      el("afLoyerM2Unite").textContent = cur.s;
+      if (el("afSurface") !== document.activeElement) el("afSurface").value = fmt(S.surface);
+      el("afLoyerTotal").textContent = fmtMoney(S.loyerM2 * S.surface) + " par an";
     }
 
     // ------------------------------------------------------------------ hypothèses (champs sous la table)
@@ -471,18 +593,61 @@
     }
     ["Dev", "Cal", "Outils", "Info"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
 
+    // ------------------------------------------------------------------ loyer
+    el("afLoyerM2").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.loyerM2 = n / cur.r; synchroniser(); rendre(); });
+    el("afSurface").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.surface = Math.min(5000, Math.round(n)); synchroniser(); rendre(); });
+    ["Loyer", "Os"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
+
+    // ------------------------------------------------------------------ os : examens par zone
+    function majOs() {
+      var tot = 0; osVal.forEach(function (v) { tot += Math.max(0, v); });
+      var t = el("afOsTotal");
+      t.textContent = "Total : " + nf1.format(tot).replace(",0", "") + " %" + (Math.abs(tot - 100) > 0.05 ? "  (les parts sont ramenées à 100 %)" : "");
+      t.style.color = Math.abs(tot - 100) > 0.05 ? "#b42318" : "";
+      var s = partEpaule(), c = calculer();
+      el("afOsSynthese").innerHTML = "Épaule : " + nf1.format(s * 100).replace(",0", "") + " % des examens « membre », réservée à une IRM tunnel." +
+        (S.retireEpaule ? "<br>Activité retenue : <strong>" + fmt(c.examens) + "</strong> examens par an." : "");
+    }
+    OS_ZONES.forEach(function (z, i) {
+      var div = document.createElement("div"); div.className = "af-cal-ligne";
+      var lab = document.createElement("label"), inp = document.createElement("input"), u = document.createElement("span");
+      inp.type = "number"; inp.id = "afOs" + i; inp.min = 0; inp.max = 100; inp.step = 1; inp.value = z[1]; lab.setAttribute("for", inp.id); lab.textContent = z[0]; u.textContent = "%";
+      div.appendChild(lab); div.appendChild(inp); div.appendChild(u); el("afOsZones").appendChild(div);
+      inp.addEventListener("input", function () { osVal[i] = Math.max(0, parseFloat(inp.value) || 0); rendre(); });
+    });
+    el("afOsRetire").addEventListener("change", function () { S.retireEpaule = this.checked; rendre(); });
+
     // ------------------------------------------------------------------ devise ($)
     var listeDev = el("afDevListe");
     CURRENCIES.forEach(function (x) {
       var b = document.createElement("button"); b.type = "button"; b.className = "af-dev-row"; b.dataset.c = x.c;
       b.innerHTML = "<b></b><span></span><em></em>";
       b.querySelector("b").textContent = x.c; b.querySelector("span").textContent = x.n;
-      b.querySelector("em").textContent = x.c === "EUR" ? "référence" : "1 € = " + nf2.format(x.r).replace(/,00$/, "");
+      b.querySelector("em").dataset.c = x.c;
       b.addEventListener("click", function () {
         cur = x; try { localStorage.setItem(CLE_DEVISE, x.c); } catch (e) {}
         majDevise(); synchroniser(); rendre();
       });
       listeDev.appendChild(b);
+    });
+    function majTauxListe() {
+      Array.prototype.forEach.call(listeDev.querySelectorAll("em"), function (e) {
+        var x = CURRENCIES.filter(function (y) { return y.c === e.dataset.c; })[0];
+        e.textContent = x.c === "EUR" ? "référence" : "1 € = " + (x.r >= 100 ? nf0.format(Math.round(x.r)) : nf2.format(x.r));
+      });
+      el("afTauxStatut").textContent = "Taux du " + TAUX_DATE;
+    }
+    el("afTauxMaj").addEventListener("click", function () {
+      var st = el("afTauxStatut"), bt = this; bt.disabled = true; st.textContent = "Mise à jour…";
+      fetch("https://open.er-api.com/v6/latest/EUR").then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || d.result !== "success" || !d.rates) throw new Error("réponse inattendue");
+        var mem = {}; CURRENCIES.forEach(function (x) { if (d.rates[x.c]) { x.r = d.rates[x.c]; mem[x.c] = x.r; } });
+        var dt = new Date(d.time_last_update_utc || Date.now());
+        TAUX_DATE = ("0" + dt.getUTCDate()).slice(-2) + "/" + ("0" + (dt.getUTCMonth() + 1)).slice(-2) + "/" + dt.getUTCFullYear();
+        try { localStorage.setItem(CLE_TAUX, JSON.stringify({ date: TAUX_DATE, rates: mem })); } catch (e) {}
+        majTauxListe(); synchroniser(); rendre();
+      }).catch(function () { st.textContent = "Mise à jour impossible (pas de connexion) : taux du " + TAUX_DATE + " conservés."; })
+        .then(function () { bt.disabled = false; });
     });
     function majDevise() { Array.prototype.forEach.call(listeDev.children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.c === cur.c)); }); }
 
@@ -557,7 +722,7 @@
     document.addEventListener("fullscreenchange", function () { fsBtn.classList.toggle("is-fullscreen", document.fullscreenElement === bloc); });
     el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
 
-    majDevise(); synchroniser(); rendre();
+    majTauxListe(); majDevise(); synchroniser(); rendre();
   })();
   </script>
   <script src="assets/site-gate.js"></script>
