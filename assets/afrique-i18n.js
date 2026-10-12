@@ -2811,13 +2811,13 @@ window.AF_I18N = {
 "Werkgewersheffings (in % van die bruto)"
 ],
 [
-"Salaire de départ : ¤ net par an (confirmé le §/§/§). Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues § %, charges patronales § %).",
-"Starting salary: ¤ net per year (confirmed on §/§/§). When you choose a country, the radiographer's salary, the price per kWh, the deductions and the employer charges are suggested (estimates); you can change them. With no country: French rules (deductions § %, employer charges § %).",
-"Stipendio iniziale: ¤ netti all'anno (confermato il §/§/§). Quando scegliete un paese, lo stipendio del TSRM, il prezzo del kWh, le trattenute e gli oneri a carico del datore di lavoro vengono proposti (stime); potete modificarli. Senza paese: regole francesi (trattenute § %, oneri § %).",
-"Salário inicial: ¤ líquidos por ano (confirmado em §/§/§). Ao escolher um país, o salário do técnico (MERM), o preço do kWh, os descontos e os encargos patronais são propostos (estimativas); pode alterá-los. Sem país: regras francesas (descontos § %, encargos patronais § %).",
-"الراتب الابتدائي: ¤ صافية سنويًا (تم تأكيده في §/§/§). عند اختيار بلد، يُقترح راتب فني الأشعة وسعر الكيلوواط ساعة والاقتطاعات وأعباء صاحب العمل (تقديرات)؛ يمكنكم تعديلها. دون بلد: قواعد فرنسية (اقتطاعات § %، أعباء § %).",
-"Mshahara wa kuanzia: ¤ halisi kwa mwaka (umethibitishwa §/§/§). Ukichagua nchi, mshahara wa mtaalamu wa mionzi, bei ya kWh, makato na gharama za mwajiri hupendekezwa (makadirio); mnaweza kuzirekebisha. Bila nchi: kanuni za Ufaransa (makato § %, gharama § %).",
-"Beginsalaris: ¤ netto per jaar (bevestig op §/§/§). Wanneer u 'n land kies, word die salaris van die MERM, die prys per kWh, die aftrekkings en die werkgewersheffings voorgestel (skattings); u kan dit verander. Sonder land: Franse reëls (aftrekkings § %, heffings § %)."
+"Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues § %, charges patronales § %).",
+"When you choose a country, the radiographer's salary, the price per kWh, the deductions and the employer charges are suggested (estimates); you can change them. With no country: French rules (deductions § %, employer charges § %).",
+"Quando scegliete un paese, lo stipendio del TSRM, il prezzo del kWh, le trattenute e gli oneri a carico del datore di lavoro vengono proposti (stime); potete modificarli. Senza paese: regole francesi (trattenute § %, oneri § %).",
+"Ao escolher um país, o salário do técnico (MERM), o preço do kWh, os descontos e os encargos patronais são propostos (estimativas); pode alterá-los. Sem país: regras francesas (descontos § %, encargos patronais § %).",
+"عند اختيار بلد، يُقترح راتب فني الأشعة وسعر الكيلوواط ساعة والاقتطاعات وأعباء صاحب العمل (تقديرات)؛ يمكنكم تعديلها. دون بلد: قواعد فرنسية (اقتطاعات § %، أعباء § %).",
+"Ukichagua nchi, mshahara wa mtaalamu wa mionzi, bei ya kWh, makato na gharama za mwajiri hupendekezwa (makadirio); mnaweza kuzirekebisha. Bila nchi: kanuni za Ufaransa (makato § %, gharama § %).",
+"Wanneer u 'n land kies, word die salaris van die MERM, die prys per kWh, die aftrekkings en die werkgewersheffings voorgestel (skattings); u kan dit verander. Sonder land: Franse reëls (aftrekkings § %, heffings § %)."
 ],
 [
 "(dont § point de marge pour une petite structure)",
