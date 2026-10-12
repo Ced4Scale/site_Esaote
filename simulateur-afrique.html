@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261012c"></script>
+  <script src="assets/afrique-i18n.js?v=20261012d"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -748,7 +748,8 @@
       });
       h += "<tr><td><strong>TCO total</strong></td>" + tot.map(function (v) { return "<td><strong>" + fmtMoney(v) + "</strong></td>"; }).join("") + "</tr>";
       h += "<tr><td>TCO par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
-      h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / (ANS[i] * r.examens)) : "") + "</td>"; }).join("") + "</tr></tbody>";
+      h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / (ANS[i] * r.examens)) : "") + "</td>"; }).join("") + "</tr>";
+      h += "<tr><td>Nombre de patients (cumulé)</td>" + ANS.map(function (n) { return "<td>" + fmt(Math.round(r.examens * n)) + "</td>"; }).join("") + "</tr></tbody>";
       t.innerHTML = h;
     }
     function rendrePointsMorts(r) {

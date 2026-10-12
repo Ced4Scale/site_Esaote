@@ -2657,6 +2657,14 @@ window.AF_I18N = {
 "Agil Exam não escolhido (ícone Esaote): sem ganho.",
 "لم يتم اختيار Agil Exam (أيقونة Esaote): لا توفير.",
 "Agil Exam haijachaguliwa (ikoni ya Esaote): hakuna muda unaokolewa."
+],
+[
+"Nombre de patients (cumulé)",
+"Number of patients (cumulative)",
+"Numero di pazienti (cumulato)",
+"Número de pacientes (acumulado)",
+"عدد المرضى (تراكمي)",
+"Idadi ya wagonjwa (jumla)"
 ]
 ]
 };
