@@ -3277,6 +3277,24 @@ window.AF_I18N = {
 "سداد ثمن O-scan والخيارات (أصل الدين)",
 "Ulipaji wa O-scan na chaguo (mtaji)",
 "Terugbetaling van die O-scan en opsies (kapitaal)"
+],
+[
+"Moyenne",
+"Average",
+"Media",
+"Média",
+"المتوسط",
+"Wastani",
+"Gemiddeld"
+],
+[
+"après financement",
+"after financing",
+"dopo il finanziamento",
+"após o financiamento",
+"بعد التمويل",
+"baada ya ufadhili",
+"ná finansiering"
 ]
 ]
 };
