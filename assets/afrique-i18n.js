@@ -2865,6 +2865,96 @@ window.AF_I18N = {
 "Salarisaftrekkings"
 ],
 [
+"Prix de vente de l'O-scan : choisir le résultat souhaité",
+"O-scan sale price: choose the desired result",
+"Prezzo di vendita dell'O-scan: scegliere il risultato desiderato",
+"Preço de venda do O-scan: escolher o resultado pretendido",
+"سعر بيع O-scan: اختيار النتيجة المرغوبة",
+"Bei ya kuuza O-scan: chagua matokeo unayotaka",
+"Verkoopprys van die O-scan: kies die gewenste resultaat"
+],
+[
+"Prix de vente de l'O-scan selon le résultat souhaité",
+"O-scan sale price based on the desired result",
+"Prezzo di vendita dell'O-scan in base al risultato desiderato",
+"Preço de venda do O-scan em função do resultado pretendido",
+"سعر بيع O-scan حسب النتيجة المرغوبة",
+"Bei ya kuuza O-scan kulingana na matokeo unayotaka",
+"Verkoopprys van die O-scan volgens die gewenste resultaat"
+],
+[
+"Choisissez le résultat que vous souhaitez, en pourcentage des recettes de l'année affichée : le simulateur calcule le prix de vente de l'O-scan (hors taxes) qui permet de l'atteindre, et l'applique à la table de mixage.",
+"Choose the result you want, as a percentage of the revenue of the year shown: the simulator calculates the O-scan sale price (excluding taxes) that achieves it and applies it to the mixing desk.",
+"Scegliete il risultato desiderato, in percentuale dei ricavi dell'anno visualizzato: il simulatore calcola il prezzo di vendita dell'O-scan (tasse escluse) che permette di raggiungerlo e lo applica al mixer.",
+"Escolha o resultado que pretende, em percentagem das receitas do ano apresentado: o simulador calcula o preço de venda do O-scan (sem impostos) que o permite atingir e aplica-o à mesa de mistura.",
+"اختاروا النتيجة التي تريدونها كنسبة من إيرادات السنة المعروضة: يحسب المحاكي سعر بيع O-scan (دون ضرائب) الذي يحققها ويطبّقه على طاولة المزج.",
+"Chagua matokeo unayotaka, kama asilimia ya mapato ya mwaka ulioonyeshwa: kiigaji huhesabu bei ya kuuza O-scan (bila kodi) inayoyafikia na kuitumia kwenye jedwali la kuchanganya.",
+"Kies die resultaat wat u wil hê, as persentasie van die inkomste van die vertoonde jaar: die simulator bereken die verkoopprys van die O-scan (sonder belasting) wat dit bereik en pas dit op die mengtafel toe."
+],
+[
+"Résultat souhaité",
+"Desired result",
+"Risultato desiderato",
+"Resultado pretendido",
+"النتيجة المرغوبة",
+"Matokeo unayotaka",
+"Gewenste resultaat"
+],
+[
+"% des recettes",
+"% of revenue",
+"% dei ricavi",
+"% das receitas",
+"% من الإيرادات",
+"% ya mapato",
+"% van die inkomste"
+],
+[
+"Prix de vente de l'O-scan (hors taxes) :",
+"O-scan sale price (excluding taxes):",
+"Prezzo di vendita dell'O-scan (tasse escluse):",
+"Preço de venda do O-scan (sem impostos):",
+"سعر بيع O-scan (دون ضرائب):",
+"Bei ya kuuza O-scan (bila kodi):",
+"Verkoopprys van die O-scan (sonder belasting):"
+],
+[
+"Résultat obtenu :",
+"Result obtained:",
+"Risultato ottenuto:",
+"Resultado obtido:",
+"النتيجة المحققة:",
+"Matokeo yaliyopatikana:",
+"Resultaat behaal:"
+],
+[
+"des recettes",
+"of revenue",
+"dei ricavi",
+"das receitas",
+"من الإيرادات",
+"ya mapato",
+"van die inkomste"
+],
+[
+"Objectif hors limites : le prix est bloqué au minimum du bâton « Prix de l'O-scan ».",
+"Target out of range: the price is capped at the minimum of the “O-scan price” bar.",
+"Obiettivo fuori limiti: il prezzo è bloccato al minimo della barra « Prezzo dell'O-scan ».",
+"Objetivo fora dos limites: o preço está bloqueado no mínimo da barra «Preço do O-scan».",
+"الهدف خارج الحدود: السعر مثبت عند الحد الأدنى لشريط « سعر O-scan ».",
+"Lengo liko nje ya mipaka: bei imesimama kwenye kiwango cha chini cha upau wa « Bei ya O-scan ».",
+"Teiken buite perke: die prys is vasgesteek by die minimum van die « Prys van die O-scan »-staaf."
+],
+[
+"Objectif hors limites : le prix est bloqué au maximum du bâton « Prix de l'O-scan ».",
+"Target out of range: the price is capped at the maximum of the “O-scan price” bar.",
+"Obiettivo fuori limiti: il prezzo è bloccato al massimo della barra « Prezzo dell'O-scan ».",
+"Objetivo fora dos limites: o preço está bloqueado no máximo da barra «Preço do O-scan».",
+"الهدف خارج الحدود: السعر مثبت عند الحد الأقصى لشريط « سعر O-scan ».",
+"Lengo liko nje ya mipaka: bei imesimama kwenye kiwango cha juu cha upau wa « Bei ya O-scan ».",
+"Teiken buite perke: die prys is vasgesteek by die maksimum van die « Prys van die O-scan »-staaf."
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",

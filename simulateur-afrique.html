@@ -78,6 +78,12 @@
     .af-bloc:fullscreen .af-pop[data-cote="g"] { left: .8rem; right: auto; }
     .af-bloc:fullscreen .af-pop[data-cote="d"] { right: .8rem; left: auto; }
     .af-fs-btn { position: absolute; top: .85rem; right: .85rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
+    .af-prix-btn { position: absolute; top: .85rem; right: 3.3rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
+    .af-prix-btn:hover, .af-prix-btn[aria-expanded="true"] { border-color: var(--red); }
+    .af-prix-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    #afPrixPop { --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; z-index: 30; top: 3.4rem; right: .85rem; left: auto; width: min(calc(100vw - 4.5rem), 340px); }
+    html[dir="rtl"] #afPrixPop { right: auto; left: .85rem; }
+    html[dir="rtl"] .af-prix-btn { right: auto; left: 3.3rem; }
     .af-fs-btn:hover { border-color: var(--red); color: var(--red); }
     /* Panneau des options Esaote : bouton plein écran (le TCO sur 10 ans y est large) */
     .af-pop-plein { position: absolute; top: .3rem; right: .4rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; border: 1px solid var(--af-bd); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
@@ -378,6 +384,14 @@
         <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
+      <button type="button" class="af-prix-btn" id="afPrixBtn" aria-expanded="false" aria-controls="afPrixPop" aria-label="Prix de vente de l'O-scan : choisir le résultat souhaité" title="Prix de vente de l'O-scan selon le résultat souhaité"><img src="assets/products/o-scan-hero.webp" alt="" /></button>
+      <div class="af-pop" id="afPrixPop" hidden>
+        <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+        <div class="af-pop-titre">Prix de vente de l'O-scan selon le résultat souhaité</div>
+        <p class="af-aide" style="margin:.1rem 0 .4rem">Choisissez le résultat que vous souhaitez, en pourcentage des recettes de l'année affichée : le simulateur calcule le prix de vente de l'O-scan (hors taxes) qui permet de l'atteindre, et l'applique à la table de mixage.</p>
+        <div class="af-mixer af-mixer--mini" id="afPrixMix" style="justify-content:flex-start"></div>
+        <div id="afPrixSortie" class="af-aide" style="margin-top:.4rem"></div>
+      </div>
       <h2 class="af-titre">Recettes, dépenses et résultat</h2>
       <p class="af-sous-titre" id="afSousTitre"></p>
       <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
@@ -684,7 +698,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.1, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, margeCible: 0, msgPrix: "", retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -1342,6 +1356,7 @@
       { id: "afGITax1", ou: "afImpMix", titreFn: function () { return S.nTax1 || "Autre taxe 1"; }, cols: [{ k: "tax1", color: "#8a5ad6", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax2", ou: "afImpMix", titreFn: function () { return S.nTax2 || "Autre taxe 2"; }, cols: [{ k: "tax2", color: "#6b5b95", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax3", ou: "afImpMix", titreFn: function () { return S.nTax3 || "Autre taxe 3"; }, cols: [{ k: "tax3", color: "#8a8f98", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
+      { id: "afGPrixCible", ou: "afPrixMix", titre: "Résultat souhaité", cols: [{ k: "margeCible", color: "#1baf7a", min: -30, max: 80, step: 1, kind: "pct", unit: "% des recettes" }] },
       { id: "afGHSal", ou: "afHypMix", titre: "Salaire net annuel d'un MERM", cols: [{ k: "salaire", color: "#2a78d6", min: 0, max: 30000, step: 100, kind: "money" }] },
       { id: "afGHRet", ou: "afHypMix", titre: "Retenues salariales", cols: [{ k: "retenue", color: "#eb6834", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% du brut" }] },
       { id: "afGHPatro", ou: "afHypMix", titre: "Charges patronales (salaire MERM)", cols: [{ k: "chargesPat", color: "#d1477a", min: 0, max: 60, step: 0.25, kind: "pct", unit: "% du brut" }] },
@@ -1396,6 +1411,7 @@
           S[col.k] = Math.round(v * 1e6) / 1e6;
           if (col.k === "finAns") { if (S.finAns > 0) { S.finActif = true; S.dureeMois = Math.max(6, Math.round(S.finAns * 12)); } else S.finActif = false; }
           if (col.k === "finAns" || col.k === "dureeMois") { ajusterAnneeCredit(); S.tauxAuto = true; majTauxAuto(); }
+          if (col.k === "margeCible") resoudrePrix(S.margeCible); else if (col.k === "achat") S.msgPrix = "";
           if (col.k === "taux") S.tauxAuto = false; // taux réglé à la main : le taux automatique est désactivé
           if (col.k === "patAn") { var vol = volumeParPph(); if (vol > 0 && !S.cadenasPph) S.pph = Math.max(0.1, Math.min(pphMax(), S.patAn / vol)); }
           if (S.cadenasPph && (col.k === "hS" || col.k === "hSam" || col.k === "hDim")) S.volRef = volumeBrut(); // heures changées à la main : nouveau volume de référence
@@ -1413,8 +1429,25 @@
       (g.ou ? el(g.ou) : mixer).appendChild(gd);
     });
 
+    // Prix de vente de l'O-scan déduit du résultat souhaité (en % des recettes de l'année affichée) : recherche par dichotomie, le résultat baisse quand le prix monte
+    var PRIX_MIN = 100000, PRIX_MAX = 500000;
+    function pctResultat() { var r = calculer(); return r.recettes > 0 ? r.resultat / r.recettes * 100 : 0; }
+    function resoudrePrix(cible) {
+      var sv = S.achat, lo = PRIX_MIN, hi = PRIX_MAX, i;
+      S.achat = lo; var pLo = pctResultat(); S.achat = hi; var pHi = pctResultat();
+      S.msgPrix = "";
+      if (pLo < cible) { S.achat = lo; S.msgPrix = "min"; return; }
+      if (pHi > cible) { S.achat = hi; S.msgPrix = "max"; return; }
+      for (i = 0; i < 40; i++) { S.achat = (lo + hi) / 2; if (pctResultat() > cible) lo = S.achat; else hi = S.achat; }
+      S.achat = Math.round((lo + hi) / 2 / 100) * 100;
+    }
     function synchroniser() {
       S.patAn = Math.round(S.pph * volumeParPph());
+      (function () { // panneau « prix selon le résultat souhaité » : le bâton montre toujours le résultat réel
+        var p = pctResultat(); S.margeCible = Math.max(-30, Math.min(80, Math.round(p)));
+        var z = document.getElementById("afPrixSortie"); if (!z) return;
+        z.innerHTML = "Prix de vente de l'O-scan (hors taxes) : <strong>" + fmtMoney(S.achat) + "</strong><br>Résultat obtenu : <strong>" + nf1.format(p).replace(/,0$/, "") + " %</strong> des recettes" + (S.msgPrix === "min" ? "<br>Objectif hors limites : le prix est bloqué au minimum du bâton « Prix de l'O-scan »." : S.msgPrix === "max" ? "<br>Objectif hors limites : le prix est bloqué au maximum du bâton « Prix de l'O-scan »." : "");
+      })();
       Object.keys(OPT_CB).forEach(function (k) { OPT_CB[k].checked = !!S["opt" + k]; }); // cases des options (panneau Esaote et page des pays) = état réel
       Array.prototype.forEach.call(document.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { i.checked = !!S["opt" + i.dataset.opt]; });
       el("afTauxAuto").checked = S.tauxAuto; var cpc = document.getElementById("afCartePaysCouts"); if (cpc) cpc.checked = S.parPays;
@@ -1501,7 +1534,7 @@
       box.addEventListener("change", function () { var n = lire(box.value); if (n != null && n >= 0) S["prix" + o.k] = n / cur.r; synchroniser(); rendre(); });
       el("afOptListe").appendChild(d);
     });
-    brancher("afOptBtn", "afOptPop");
+    brancher("afOptBtn", "afOptPop"); brancher("afPrixBtn", "afPrixPop");
     brancher("afImpBtn", "afImpPop");
     var selP = el("afPays"); selP.innerHTML = '<option value="">— Aucun pays acheteur (pas de frais d\'importation) —</option>';
     PAYS.forEach(function (c) { var o = document.createElement("option"); o.value = c.k; o.textContent = c.nom; selP.appendChild(o); });
