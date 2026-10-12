@@ -2937,22 +2937,22 @@ window.AF_I18N = {
 "van die inkomste"
 ],
 [
-"Objectif inatteignable : même avec un prix de l'O-scan nul, le résultat souhaité ne peut pas être atteint.",
-"Target unreachable: even with a zero O-scan price, the desired result cannot be reached.",
-"Obiettivo irraggiungibile: anche con un prezzo dell'O-scan nullo, il risultato desiderato non può essere raggiunto.",
-"Objetivo inatingível: mesmo com um preço do O-scan nulo, o resultado pretendido não pode ser alcançado.",
-"الهدف غير قابل للتحقيق: حتى مع سعر O-scan معدوم لا يمكن بلوغ النتيجة المرغوبة.",
-"Lengo haliwezi kufikiwa: hata kwa bei ya O-scan sifuri, matokeo unayotaka hayawezi kupatikana.",
-"Teiken onbereikbaar: selfs met 'n nul-prys vir die O-scan kan die gewenste resultaat nie bereik word nie."
+"Objectif hors limites : le prix est bloqué au minimum du bâton « Prix de l'O-scan ».",
+"Target out of range: the price is capped at the minimum of the “O-scan price” bar.",
+"Obiettivo fuori limiti: il prezzo è bloccato al minimo della barra « Prezzo dell'O-scan ».",
+"Objetivo fora dos limites: o preço está bloqueado no mínimo da barra «Preço do O-scan».",
+"الهدف خارج الحدود: السعر مثبت عند الحد الأدنى لشريط « سعر O-scan ».",
+"Lengo liko nje ya mipaka: bei imesimama kwenye kiwango cha chini cha upau wa « Bei ya O-scan ».",
+"Teiken buite perke: die prys is vasgesteek by die minimum van die « Prys van die O-scan »-staaf."
 ],
 [
-"Objectif hors limites : le prix de l'O-scan nécessaire dépasse la limite du simulateur.",
-"Target out of range: the O-scan price required exceeds the simulator's limit.",
-"Obiettivo fuori limiti: il prezzo dell'O-scan necessario supera il limite del simulatore.",
-"Objetivo fora dos limites: o preço do O-scan necessário excede o limite do simulador.",
-"الهدف خارج الحدود: سعر O-scan المطلوب يتجاوز حد المحاكي.",
-"Lengo liko nje ya mipaka: bei ya O-scan inayohitajika inazidi kikomo cha kiigaji.",
-"Teiken buite perke: die vereiste prys van die O-scan oorskry die simulator se limiet."
+"Objectif hors limites : le prix est bloqué au maximum du bâton « Prix de l'O-scan ».",
+"Target out of range: the price is capped at the maximum of the “O-scan price” bar.",
+"Obiettivo fuori limiti: il prezzo è bloccato al massimo della barra « Prezzo dell'O-scan ».",
+"Objetivo fora dos limites: o preço está bloqueado no máximo da barra «Preço do O-scan».",
+"الهدف خارج الحدود: السعر مثبت عند الحد الأقصى لشريط « سعر O-scan ».",
+"Lengo liko nje ya mipaka: bei imesimama kwenye kiwango cha juu cha upau wa « Bei ya O-scan ».",
+"Teiken buite perke: die prys is vasgesteek by die maksimum van die « Prys van die O-scan »-staaf."
 ],
 [
 "Options qui font gagner du temps :",
