@@ -2555,12 +2555,12 @@ window.AF_I18N = {
 "TCO: gharama jumla ya umiliki"
 ],
 [
-"Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Les intérêts ne comptent que si le crédit est activé.",
-"The financial TCO adds up the MRI and its options (import included), the works, the Faraday cage (local VAT included) and maintenance after the warranty, without revenue. Interest only counts if the loan is enabled.",
-"Il TCO finanziario somma la RM e le sue opzioni (importazione inclusa), i lavori, la gabbia di Faraday (IVA locale inclusa) e la manutenzione dopo la garanzia, senza i ricavi. Gli interessi contano solo se il finanziamento è attivo.",
-"O TCO financeiro soma a RM e as suas opções (importação incluída), as obras, a gaiola de Faraday (IVA local incluído) e a manutenção após a garantia, sem as receitas. Os juros só contam se o crédito estiver ativo.",
-"يجمع TCO المالي جهاز الرنين المغناطيسي وخياراته (شاملًا الاستيراد) والأشغال وقفص فاراداي (شاملًا ضريبة القيمة المضافة المحلية) والصيانة بعد الضمان، دون الإيرادات. لا تُحتسب الفوائد إلا إذا كان القرض مفعّلًا.",
-"TCO ya kifedha inajumlisha MRI na chaguo zake (pamoja na uagizaji), kazi za ujenzi, ngome ya Faraday (pamoja na VAT ya ndani) na matengenezo baada ya dhamana, bila mapato. Riba huhesabiwa tu ikiwa mkopo umewashwa."
+"Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).",
+"The financial TCO adds up the MRI and its options (import included), the works, the Faraday cage (local VAT included) and maintenance after the warranty, without revenue. If the loan is enabled (coins icon), the loan payments, interest included, replace the amount invested (works and cage included).",
+"Il TCO finanziario somma la RM e le sue opzioni (importazione inclusa), i lavori, la gabbia di Faraday (IVA locale inclusa) e la manutenzione dopo la garanzia, senza i ricavi. Se il finanziamento è attivo (icona monete), le rate del prestito, interessi compresi, sostituiscono l'importo investito (lavori e gabbia compresi).",
+"O TCO financeiro soma a RM e as suas opções (importação incluída), as obras, a gaiola de Faraday (IVA local incluído) e a manutenção após a garantia, sem as receitas. Se o crédito estiver ativo (ícone de moedas), as mensalidades do crédito, juros incluídos, substituem o montante investido (obras e gaiola incluídas).",
+"يجمع TCO المالي جهاز الرنين المغناطيسي وخياراته (شاملًا الاستيراد) والأشغال وقفص فاراداي (شاملًا ضريبة القيمة المضافة المحلية) والصيانة بعد الضمان، دون الإيرادات. إذا كان القرض مفعّلًا (أيقونة العملات)، تحل أقساط القرض، شاملةً الفوائد، محل المبلغ المستثمر (شاملًا الأشغال والقفص).",
+"TCO ya kifedha inajumlisha MRI na chaguo zake (pamoja na uagizaji), kazi za ujenzi, ngome ya Faraday (pamoja na VAT ya ndani) na matengenezo baada ya dhamana, bila mapato. Ikiwa mkopo umewashwa (ikoni ya sarafu), malipo ya mkopo, pamoja na riba, yanachukua nafasi ya kiasi kilichowekezwa (pamoja na kazi za ujenzi na ngome)."
 ],
 [
 "Achat rendu (O-scan, options, importation, travaux, cage)",
@@ -2665,6 +2665,14 @@ window.AF_I18N = {
 "Número de pacientes (acumulado)",
 "عدد المرضى (تراكمي)",
 "Idadi ya wagonjwa (jumla)"
+],
+[
+"Mensualités du crédit (intérêts compris)",
+"Loan payments (interest included)",
+"Rate del prestito (interessi compresi)",
+"Mensalidades do crédito (juros incluídos)",
+"أقساط القرض (شاملةً الفوائد)",
+"Malipo ya mkopo (pamoja na riba)"
 ]
 ]
 };

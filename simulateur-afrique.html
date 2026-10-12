@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261012d"></script>
+  <script src="assets/afrique-i18n.js?v=20261012e"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -414,11 +414,10 @@
               <summary class="af-pop-sous-titre">TCO : coût total de possession</summary>
               <div style="overflow-x:auto"><table class="af-table af-table--tco" id="afTco"></table></div>
               <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au TCO :</strong></div>
-              <label class="af-check"><input type="checkbox" id="afTcoInt" /> Intérêts du crédit</label>
               <label class="af-check"><input type="checkbox" id="afTcoElec" /> Électricité</label>
               <label class="af-check"><input type="checkbox" id="afTcoPers" /> Personnel</label>
               <label class="af-check"><input type="checkbox" id="afTcoLoyer" /> Loyer</label>
-              <p class="af-aide">Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Les intérêts ne comptent que si le crédit est activé.</p>
+              <p class="af-aide">Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
               </details>
             </div>
           </span>
@@ -536,7 +535,7 @@
     var S = {
       pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoInt: false, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 13.5, tAcqClau: 16.5, tAcqOrth: 11.5, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 13.5, tAcqClau: 16.5, tAcqOrth: 11.5, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
@@ -733,11 +732,11 @@
       var h = "<thead><tr><td></td>" + ANS.map(function (n) { return "<td>" + n + (n === 1 ? " an" : " ans") + "</td>"; }).join("") + "</tr></thead><tbody>";
       var tva = 1 + tvaLocaleTaux(), irm = P - prixLocal();
       var lignes = [
-        ["IRM et options (importation comprise)", function () { return irm; }],
-        prixTravaux() > 0 ? ["Travaux", function () { return prixTravaux() * tva; }] : null,
-        prixCage() > 0 ? ["Cage de Faraday", function () { return prixCage() * tva; }] : null,
+        // Crédit activé (icône pièces) : les mensualités (intérêts compris) remplacent le montant investi, qui comprend ici travaux et cage ; sinon on affiche le montant investi.
+        S.finActif ? ["Mensualités du crédit (intérêts compris)", function (n) { return mensualite(P) * Math.min(12 * n, Math.max(1, S.dureeMois)); }] : ["IRM et options (importation comprise)", function () { return irm; }],
+        !S.finActif && prixTravaux() > 0 ? ["Travaux", function () { return prixTravaux() * tva; }] : null,
+        !S.finActif && prixCage() > 0 ? ["Cage de Faraday", function () { return prixCage() * tva; }] : null,
         ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }],
-        S.tcoInt && S.finActif ? ["Intérêts du crédit", function (n) { return interetsCredit(P, 12 * n); }] : null,
         S.tcoElec ? ["Électricité", function (n) { return r.elec * n; }] : null,
         S.tcoPers ? ["Personnel", function (n) { return r.personnel * n; }] : null,
         S.tcoLoyer ? ["Loyer", function (n) { return r.loyer * n; }] : null
@@ -1010,7 +1009,7 @@
     }
     brancher("afFinBtn", "afFinPop");
     brancher("afNegBtn", "afNegPop");
-    [["afTcoInt", "tcoInt"], ["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
+    [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
     el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; rendre(); });
 
     // ------------------------------------------------------------------ loyer
