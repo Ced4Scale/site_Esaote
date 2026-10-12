@@ -1267,12 +1267,12 @@ window.AF_I18N = {
 "Mgawanyo wa vipimo: uchunguzi, hofu ya nafasi finyu, ushauri wa daktari wa mifupa"
 ],
 [
-"En % de l'activité : le total fait toujours § % (en bougeant un bâton, les autres se partagent le reste). Valeurs de départ = estimation, à ajuster.",
-"In % of activity: the total is always § % (when you move a bar, the others share the rest). Starting values = estimate, to be adjusted.",
-"In % dell'attività: il totale è sempre § % (spostando una barra, le altre si dividono il resto). Valori iniziali = stima, da regolare.",
-"Em % da atividade: o total é sempre § % (ao mexer numa barra, as outras repartem o resto). Valores iniciais = estimativa, a ajustar.",
-"بنسبة % من النشاط: المجموع دائمًا § % (عند تحريك شريط تتقاسم الأشرطة الأخرى الباقي). القيم الابتدائية = تقدير قابل للتعديل.",
-"Kwa % ya shughuli: jumla ni § % daima (ukisogeza upau, mingine hugawana kilichobaki). Thamani za kuanzia = makadirio, yarekebishwe."
+"En % de l'activité : le total fait toujours § %. Faites glisser les deux poignées blanches sur le cercle pour changer les parts. Valeurs de départ = estimation, à ajuster.",
+"As a % of activity: the total is always § %. Drag the two white handles on the circle to change the shares. Starting values = estimate, to be adjusted.",
+"In % dell'attività: il totale fa sempre il § %. Trascinate le due maniglie bianche sul cerchio per cambiare le quote. Valori iniziali = stima, da regolare.",
+"Em % da atividade: o total é sempre § %. Arraste as duas alças brancas no círculo para alterar as partes. Valores iniciais = estimativa, a ajustar.",
+"كنسبة مئوية من النشاط: المجموع يساوي دائمًا § %. اسحبوا المقبضين الأبيضين على الدائرة لتغيير الحصص. القيم الأولية = تقدير قابل للتعديل.",
+"Kwa asilimia ya shughuli: jumla ni § % daima. Buruta vishikio viwili vyeupe kwenye duara ili kubadilisha sehemu. Thamani za kuanzia = makadirio, yarekebishwe."
 ],
 [
 "Diagnostique",
@@ -2681,6 +2681,22 @@ window.AF_I18N = {
 "Renda das instalações",
 "إيجار المحلات",
 "Kodi ya majengo"
+],
+[
+"Frontière diagnostique et claustrophobie",
+"Boundary between diagnostic and claustrophobia",
+"Confine tra diagnostico e claustrofobia",
+"Fronteira entre diagnóstico e claustrofobia",
+"الحد بين التشخيصي ورهاب الأماكن المغلقة",
+"Mpaka kati ya uchunguzi na hofu ya nafasi finyu"
+],
+[
+"Frontière claustrophobie et consultation",
+"Boundary between claustrophobia and consultation",
+"Confine tra claustrofobia e consulto",
+"Fronteira entre claustrofobia e consulta",
+"الحد بين رهاب الأماكن المغلقة والاستشارة",
+"Mpaka kati ya hofu ya nafasi finyu na ushauri"
 ]
 ]
 };
