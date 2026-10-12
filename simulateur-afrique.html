@@ -535,7 +535,7 @@
     var S = {
       pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 13.5, tAcqClau: 16.5, tAcqOrth: 11.5, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 35000, optSmart: false, prixSmart: 15000, optPost: false, prixPost: 12000, optTrav: false, prixTrav: 30000, optFar: false, prixFar: 45000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 13.5, tAcqClau: 16.5, tAcqOrth: 11.5, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     var OS_ZONES = [["Genou", 55], ["Épaule", 10], ["Hanche", 5], ["Main", 10], ["Pied", 10], ["Coude", 10], ["Autres (bras, tibia…)", 0]];
     OS_ZONES.forEach(function (z, i) { S["os" + i] = z[1]; });
@@ -979,7 +979,14 @@
       var cb = d.querySelector("input[type=checkbox]"), box = d.querySelector("input[type=text]");
       d.querySelector("label span").textContent = o.nom; box.id = "afPrix" + o.k; box.setAttribute("aria-label", "Prix de l'option " + o.nom); cb.setAttribute("aria-label", "Option " + o.nom);
       d.querySelector(".af-opt-unite").id = "afUnite" + o.k;
-      cb.addEventListener("change", function () { S["opt" + o.k] = cb.checked; synchroniser(); rendre(); });
+      cb.addEventListener("change", function () {
+        // e-Spades / Agil Exam raccourcissent l'examen : le nombre de patients par heure réglé augmente dans la même proportion (et redescend si on décoche), dans la limite du plafond.
+        var avant = (o.k === "AI" || o.k === "Smart") ? tempsMoyen() : 0;
+        S["opt" + o.k] = cb.checked;
+        var apres = avant ? tempsMoyen() : 0;
+        if (avant > 0 && apres > 0 && !S.cadenasPph) S.pph = Math.min(pphMax(), S.pph * avant / apres);
+        synchroniser(); rendre();
+      });
       box.addEventListener("change", function () { var n = lire(box.value); if (n != null && n >= 0) S["prix" + o.k] = n / cur.r; synchroniser(); rendre(); });
       el("afOptListe").appendChild(d);
     });
