@@ -3160,6 +3160,15 @@ window.AF_I18N = {
 "الافتراضات: ما يُحتسب في الحسابات وما لا يُحتسب.",
 "Dhana: kinachohesabiwa katika mahesabu na kisichohesabiwa.",
 "Aannames: wat in die berekeninge getel word en wat nie."
+],
+[
+"¤ par patient",
+"¤ per patient",
+"¤ per paziente",
+"¤ por paciente",
+"¤ لكل مريض",
+"¤ kwa mgonjwa",
+"¤ per pasiënt"
 ]
 ]
 };
