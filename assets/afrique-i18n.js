@@ -3304,6 +3304,42 @@ window.AF_I18N = {
 "متوسط السنوات من § إلى §",
 "Wastani wa miaka § hadi §",
 "Gemiddelde van jare § tot §"
+],
+[
+"Année par année",
+"Year by year",
+"Anno per anno",
+"Ano a ano",
+"سنة بعد سنة",
+"Mwaka kwa mwaka",
+"Jaar vir jaar"
+],
+[
+"Cumulé",
+"Cumulative",
+"Cumulato",
+"Acumulado",
+"تراكمي",
+"Jumla",
+"Gekumuleer"
+],
+[
+"Cumulé / année par année",
+"Cumulative / year by year",
+"Cumulato / anno per anno",
+"Acumulado / ano a ano",
+"تراكمي / سنة بعد سنة",
+"Jumla / mwaka kwa mwaka",
+"Gekumuleer / jaar vir jaar"
+],
+[
+"Nombre de patients (par an)",
+"Number of patients (per year)",
+"Numero di pazienti (all'anno)",
+"Número de pacientes (por ano)",
+"عدد المرضى (في السنة)",
+"Idadi ya wagonjwa (kwa mwaka)",
+"Aantal pasiënte (per jaar)"
 ]
 ]
 };

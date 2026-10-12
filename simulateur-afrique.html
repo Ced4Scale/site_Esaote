@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014r"></script>
+  <script src="assets/afrique-i18n.js?v=20261014s"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -219,6 +219,17 @@
     html[dir="rtl"] .af-legende b, html[dir="rtl"] .af-pm-valeur, html[dir="rtl"] .af-mixer__value, html[dir="rtl"] .af-demi svg text { direction: ltr; unicode-bidi: isolate; }
     #afOptPop { width: min(calc(100vw - 4.5rem), 400px); } /* étroit quand le TCO est replié, large quand il est ouvert (tableau de 10 années) */
     #afOptPop:has(.af-tco-det[open]) { width: min(calc(100vw - 4.5rem), 920px); }
+    /* Curseur horizontal (interrupteur) : à droite = effectif cumulé, à gauche = année par année */
+    .af-switch-ligne { display: flex; align-items: center; justify-content: flex-end; gap: .55rem; font-size: .76rem; font-weight: 700; margin: .1rem 0 .35rem; }
+    .af-switch { position: relative; display: inline-block; width: 2.6rem; height: 1.35rem; cursor: pointer; }
+    .af-switch input { position: absolute; inset: 0; opacity: 0; margin: 0; cursor: pointer; z-index: 1; }
+    .af-switch__piste { position: absolute; inset: 0; border-radius: 999px; background: #b9bec6; transition: background .15s; }
+    .af-switch__piste::after { content: ""; position: absolute; top: .16rem; left: .18rem; width: 1.03rem; height: 1.03rem; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.35); transition: transform .15s; }
+    .af-switch input:checked + .af-switch__piste { background: var(--red, #cd0000); }
+    .af-switch input:checked + .af-switch__piste::after { transform: translateX(1.2rem); }
+    .af-switch input:focus-visible + .af-switch__piste { outline: 2px solid #282828; outline-offset: 2px; }
+    html[dir="rtl"] .af-switch__piste::after { left: auto; right: .18rem; }
+    html[dir="rtl"] .af-switch input:checked + .af-switch__piste::after { transform: translateX(-1.2rem); }
     .af-tco-det > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .4rem; }
     .af-tco-det > summary::-webkit-details-marker { display: none; }
     .af-tco-det > summary::before { content: "▸"; font-size: 1rem; color: var(--red); flex: none; }
@@ -468,6 +479,7 @@
               <div id="afOptTotal" style="font-weight:800"></div>
               <details class="af-tco-det">
               <summary class="af-pop-sous-titre">Coût total de possession et de fonctionnement</summary>
+              <div class="af-switch-ligne"><span>Année par année</span><label class="af-switch" title="Cumulé / année par année"><input type="checkbox" id="afTcoCumul" role="switch" checked aria-label="Cumulé" /><span class="af-switch__piste"></span></label><span>Cumulé</span></div>
               <div class="af-tco-wrap" style="overflow-x:auto"><table class="af-table af-table--tco" id="afTco"></table></div>
               <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au coût total :</strong></div>
               <label class="af-check"><input type="checkbox" id="afTcoElec" /> Électricité</label>
@@ -592,7 +604,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -802,27 +814,29 @@
       return tot;
     }
     function majTco(r) {
-      var ANS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], t = el("afTco"), P = r.achatTotal;
-      var h = "<thead><tr><td></td>" + ANS.map(function (n) { return "<td>" + n + (n === 1 ? " an" : " ans") + "</td>"; }).join("") + "</tr></thead><tbody>";
+      var ANS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], t = el("afTco"), P = r.achatTotal, cu = S.tcoCumul;
+      var h = "<thead><tr><td></td>" + ANS.map(function (n) { return "<td>" + (cu ? n + (n === 1 ? " an" : " ans") : "Année " + n) + "</td>"; }).join("") + "</tr></thead><tbody>";
       var tva = 1 + tvaLocaleTaux(), irm = P - prixLocal();
+      // chaque ligne : [libellé, valeur cumulée sur n années, valeur de la seule année n]
       var lignes = [
-        // Crédit activé (icône pièces) : les mensualités (intérêts compris) remplacent le montant investi, qui comprend ici travaux et cage ; sinon on affiche le montant investi.
-        S.finActif ? ["Mensualités du crédit (intérêts compris)", function (n) { return mensualite(P) * Math.min(12 * n, Math.max(1, S.dureeMois)); }] : ["IRM et options (importation comprise)", function () { return irm; }],
-        !S.finActif && prixTravaux() > 0 ? ["Travaux", function () { return prixTravaux() * tva; }] : null,
-        !S.finActif && prixCage() > 0 ? ["Cage de Faraday", function () { return prixCage() * tva; }] : null,
-        ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }],
-        S.tcoElec ? ["Électricité", function (n) { return r.elec * n; }] : null,
-        S.tcoPers ? ["Personnel", function (n) { return r.personnel * n; }] : null,
-        S.tcoLoyer ? ["Loyer des locaux", function (n) { return r.loyer * n; }] : null
+        // Crédit activé (icône banque) : les mensualités (intérêts compris) remplacent le montant investi, qui comprend ici travaux et cage ; sinon on affiche le montant investi (payé l'année 1 en vue « année par année »).
+        S.finActif ? ["Mensualités du crédit (intérêts compris)", function (n) { return mensualite(P) * Math.min(12 * n, Math.max(1, S.dureeMois)); }, function (n) { return mensualite(P) * moisPayes(n); }]
+          : ["IRM et options (importation comprise)", function () { return irm; }, function (n) { return n === 1 ? irm : 0; }],
+        !S.finActif && prixTravaux() > 0 ? ["Travaux", function () { return prixTravaux() * tva; }, function (n) { return n === 1 ? prixTravaux() * tva : 0; }] : null,
+        !S.finActif && prixCage() > 0 ? ["Cage de Faraday", function () { return prixCage() * tva; }, function (n) { return n === 1 ? prixCage() * tva : 0; }] : null,
+        ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }, function (n) { return S.maint * moisMaint(n) / 12; }],
+        S.tcoElec ? ["Électricité", function (n) { return r.elec * n; }, function () { return r.elec; }] : null,
+        S.tcoPers ? ["Personnel", function (n) { return r.personnel * n; }, function () { return r.personnel; }] : null,
+        S.tcoLoyer ? ["Loyer des locaux", function (n) { return r.loyer * n; }, function () { return r.loyer; }] : null
       ].filter(Boolean);
       var tot = ANS.map(function () { return 0; });
       lignes.forEach(function (l) {
-        h += "<tr><td>" + l[0] + "</td>" + ANS.map(function (n, i) { var v = l[1](n); tot[i] += v; return "<td>" + fmtMoney(v) + "</td>"; }).join("") + "</tr>";
+        h += "<tr><td>" + l[0] + "</td>" + ANS.map(function (n, i) { var v = cu ? l[1](n) : l[2](n); tot[i] += v; return "<td>" + fmtMoney(v) + "</td>"; }).join("") + "</tr>";
       });
       h += "<tr><td><strong>Coût total</strong></td>" + tot.map(function (v) { return "<td><strong>" + fmtMoney(v) + "</strong></td>"; }).join("") + "</tr>";
-      h += "<tr><td>Coût total par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
-      h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / (ANS[i] * r.examens)) : "") + "</td>"; }).join("") + "</tr>";
-      h += "<tr><td>Nombre de patients (cumulé)</td>" + ANS.map(function (n) { return "<td>" + fmt(Math.round(r.examens * n)) + "</td>"; }).join("") + "</tr></tbody>";
+      if (cu) h += "<tr><td>Coût total par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
+      h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / ((cu ? ANS[i] : 1) * r.examens)) : "") + "</td>"; }).join("") + "</tr>";
+      h += "<tr><td>" + (cu ? "Nombre de patients (cumulé)" : "Nombre de patients (par an)") + "</td>" + ANS.map(function (n) { return "<td>" + fmt(Math.round(r.examens * (cu ? n : 1))) + "</td>"; }).join("") + "</tr></tbody>";
       t.innerHTML = h;
     }
     function rendrePointsMorts(r) {
@@ -1223,6 +1237,7 @@
     }
     brancher("afFinBtn", "afFinPop");
     brancher("afNegBtn", "afNegPop");
+    el("afTcoCumul").addEventListener("change", function () { S.tcoCumul = this.checked; rendre(); });
     [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
     el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; ajusterAnneeCredit(); synchroniser(); rendre(); });
 
