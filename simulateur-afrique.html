@@ -273,13 +273,17 @@
     .af-carte-region { margin-top: .5rem; font: inherit; font-size: .85rem; font-weight: 700; padding: .25rem .5rem; border: 1px solid #b8c0cc; border-radius: .4rem; background: #fff; }
     .af-carte-opts { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem 1.4rem; margin-top: .5rem; font-size: .85rem; }
     .af-carte-fermer { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 0; background: var(--red, #cd0000); color: #fff; font-size: 1.2rem; font-weight: 800; cursor: pointer; }
-    .af-carte-grille { width: 100%; max-width: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
-    .af-carte-carte { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .9rem .8rem; border: 2px solid transparent; border-radius: .8rem; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; font: inherit; color: #222; text-align: center; }
+    .af-carte-grille { width: 100%; max-width: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: .6rem; container-type: inline-size; } /* 12 pays par ligne ; 8 quand une région est choisie */
+    .af-carte-grille[data-region="1"] { grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .8rem; }
+    @media (max-width: 1000px) { .af-carte-grille, .af-carte-grille[data-region="1"] { grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); } }
+    .af-carte-carte { display: flex; flex-direction: column; align-items: center; gap: .3rem; padding: .6rem .35rem; min-width: 0; border: 2px solid transparent; border-radius: .8rem; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; font: inherit; color: #222; text-align: center; }
     .af-carte-carte:hover, .af-carte-carte:focus-visible { border-color: var(--red, #cd0000); }
     .af-carte-carte[aria-current="true"] { border-color: #1baf7a; }
-    .af-carte-carte svg.af-flag { width: 120px; height: 80px; border: 1px solid rgba(0,0,0,.22); border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.18); display: block; }
-    .af-carte-carte .nom { font-size: 1rem; font-weight: 800; }
-    .af-carte-carte .val { font-size: 1.5rem; font-weight: 800; line-height: 1.1; }
+    .af-carte-carte svg.af-flag { width: 100%; max-width: 120px; height: auto; aspect-ratio: 3 / 2; border: 1px solid rgba(0,0,0,.22); border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.18); display: block; }
+    .af-carte-carte .nom { font-size: clamp(.55rem, .8cqw, 1rem); font-weight: 800; overflow-wrap: anywhere; }
+    .af-carte-carte .val { font-size: clamp(.58rem, .85cqw, 1.5rem); font-weight: 800; line-height: 1.1; white-space: nowrap; }
+    .af-carte-grille[data-region="1"] .af-carte-carte .nom { font-size: clamp(.62rem, 1.1cqw, 1rem); }
+    .af-carte-grille[data-region="1"] .af-carte-carte .val { font-size: clamp(.7rem, 1.7cqw, 1.5rem); }
     .af-carte-carte .det { font-size: .76rem; color: #555; line-height: 1.45; }
     .af-carte-carte .rang { font-size: .72rem; font-weight: 800; color: #888; }
     html[dir="rtl"] .af-carte-page { direction: rtl; }
@@ -1094,7 +1098,7 @@
         page.querySelector("h2 > span").textContent = "Comparaison des pays :";
         page.querySelector("p").textContent = "Aux réglages actuels de la table de mixage, avec les droits, taxes, charges et taux bancaire propres à chaque pays. Classés du résultat le plus généreux au moins généreux ; cliquez sur un pays pour le choisir.";
         var res = PAYS.filter(function (c) { return !regionSel.value || REGION_PAYS[c.k] === regionSel.value; }).map(function (c) { return resultat10Pays(c.k); }).sort(function (a, b) { return carteMode === "patient" ? b.parPat - a.parPat : carteMode === "jour" ? b.parJour - a.parJour : b.tot - a.tot; });
-        grille.textContent = "";
+        grille.textContent = ""; grille.dataset.region = regionSel.value ? "1" : "";
         res.forEach(function (x, i) {
           var c = PAYS.filter(function (y) { return y.k === x.k; })[0], b = document.createElement("button"); b.type = "button"; b.className = "af-carte-carte"; b.setAttribute("aria-current", String(x.k === S.pays));
           b.innerHTML = '<span class="rang"></span>' + drapeauPays(x.k) + '<span class="nom"></span><span class="val"></span><span class="det"></span>';
