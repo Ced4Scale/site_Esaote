@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014m"></script>
+  <script src="assets/afrique-i18n.js?v=20261014n"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -567,6 +567,7 @@
     var NBSP = " ";
     function fmt(v) { return nf0.format(Math.round(v)); }
     function fmtMoney(eur) { return fmt(eur * cur.r) + NBSP + cur.s; }
+    function fmtMoney2(eur) { return nf2.format(eur * cur.r) + NBSP + cur.s; } // avec les centimes (valeurs par patient)
     function fmtKwh(eur) { var v = eur * cur.r; return v < 10 ? nf2.format(v) : nf0.format(Math.round(v)); }
     function lire(txt) { // « 12.345,6 » → 12345.6
       var n = parseFloat(String(txt).replace(/\./g, "").replace(",", ".").replace(/[^0-9.\-]/g, ""));
@@ -835,11 +836,11 @@
       var r = calculer(), zone = el("afDemis");
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
-      zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney(r.recettes / r.examens) + " de recette par patient" : ""] }));
-      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney(r.depenses / r.examens) + " de charges par patient" : ""] }));
+      zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney2(r.recettes / r.examens) + " de recette par patient" : ""] }));
+      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney2(r.depenses / r.examens) + " de charges par patient" : ""] }));
       var positif = r.resultat >= 0;
       zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
-        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney(r.resultat / r.examens) + " de résultat par patient" : ""] }));
+        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney2(r.resultat / r.examens) + " de résultat par patient" : ""] }));
       Array.prototype.forEach.call(zone.children, function (bx, i) {
         bx.tabIndex = 0; bx.setAttribute("role", "button"); bx.setAttribute("aria-pressed", String(demiFocus === i)); bx.setAttribute("aria-label", bx.querySelector("h3").textContent);
         bx.classList.toggle("is-focus", demiFocus === i);
