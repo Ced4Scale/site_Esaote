@@ -1254,13 +1254,13 @@ window.AF_I18N = {
 "MSK-ondersoeke volgens sone"
 ],
 [
-"Part de chaque zone dans vos examens « membre ». L'O-scan ne fait pas l'épaule (réservée à une IRM tunnel). Valeurs de départ = estimation Ced§Scale, à ajuster.",
-"Share of each zone in your “limb” exams. The O-scan does not do the shoulder (reserved for a tunnel MRI). Starting values = Ced§Scale estimate, to be adjusted.",
-"Quota di ogni zona nei vostri esami «arti». L'O-scan non esegue la spalla (riservata a una RM tunnel). Valori iniziali = stima Ced§Scale, da regolare.",
-"Parte de cada zona nos seus exames «membros». O O-scan não faz o ombro (reservado a uma RM em túnel). Valores iniciais = estimativa Ced§Scale, a ajustar.",
-"حصة كل منطقة من فحوصات «الأطراف». لا يفحص O-scan الكتف (مخصّص لجهاز رنين نفقي). القيم الابتدائية = تقدير Ced§Scale، قابلة للتعديل.",
-"Sehemu ya kila eneo katika vipimo vyako vya «viungo». O-scan haipimi bega (limetengwa kwa MRI ya handaki). Thamani za kuanzia = makadirio ya Ced§Scale, yarekebishwe.",
-"Aandeel van elke sone in u « ledemaat »-ondersoeke. Die O-scan doen nie die skouer nie (voorbehou vir 'n tonnel-MRI). Beginwaardes = skatting van Ced§Scale, om aan te pas."
+"Part de chaque zone dans vos examens « membre ». L'O-scan ne fait ni l'épaule ni la hanche (réservées à une IRM tunnel) : ces deux zones sont bloquées à § %. Valeurs de départ = estimation Ced§Scale, à ajuster.",
+"Share of each zone in your “limb” exams. The O-scan does not do the shoulder or the hip (reserved for a tunnel MRI): these two zones are locked at § %. Starting values = Ced§Scale estimate, to be adjusted.",
+"Quota di ogni zona nei vostri esami « arti ». L'O-scan non esegue né la spalla né l'anca (riservate a una RM a tunnel): queste due zone sono bloccate al § %. Valori iniziali = stima Ced§Scale, da regolare.",
+"Parte de cada zona nos seus exames « membros ». O O-scan não faz o ombro nem a anca (reservados a uma RM em túnel): estas duas zonas estão bloqueadas a § %. Valores iniciais = estimativa Ced§Scale, a ajustar.",
+"حصة كل منطقة في فحوصات « الأطراف » لديكم. جهاز O-scan لا يفحص الكتف ولا الورك (مخصصان لجهاز رنين نفقي): هاتان المنطقتان مقفلتان عند § %. القيم الأولية = تقدير Ced§Scale، قابلة للتعديل.",
+"Sehemu ya kila eneo katika vipimo vyenu vya « viungo ». O-scan haipimi bega wala nyonga (zimehifadhiwa kwa MRI ya handaki): maeneo haya mawili yamefungwa kwa § %. Thamani za kuanzia = makadirio ya Ced§Scale, yarekebishwe.",
+"Aandeel van elke sone in u « ledemaat »-ondersoeke. Die O-scan doen nie die skouer of die heup nie (voorbehou vir 'n tonnel-MRI): hierdie twee sones is op § % gesluit. Beginwaardes = skatting van Ced§Scale, om aan te pas."
 ],
 [
 "Genou",
