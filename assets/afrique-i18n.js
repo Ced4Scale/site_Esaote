@@ -3430,6 +3430,60 @@ window.AF_I18N = {
 "السنة",
 "Mwaka",
 "Jaar"
+],
+[
+"¤ par patient en moyenne",
+"¤ per patient on average",
+"¤ per paziente in media",
+"¤ por paciente em média",
+"¤ لكل مريض في المتوسط",
+"¤ kwa mgonjwa kwa wastani",
+"¤ per pasiënt gemiddeld"
+],
+[
+"¤ par jour d'ouverture en moyenne",
+"¤ per opening day on average",
+"¤ per giorno di apertura in media",
+"¤ por dia de abertura em média",
+"¤ لكل يوم عمل في المتوسط",
+"¤ kwa siku ya kufunguliwa kwa wastani",
+"¤ per openingsdag gemiddeld"
+],
+[
+"Cumul positif dès l'année §",
+"Cumulative result positive from year §",
+"Cumulato positivo dall'anno §",
+"Acumulado positivo a partir do ano §",
+"التراكمي إيجابي ابتداءً من السنة §",
+"Jumla chanya kuanzia mwaka §",
+"Gekumuleerd positief vanaf jaar §"
+],
+[
+"Résultat sur § ans",
+"Result over § years",
+"Risultato su § anni",
+"Resultado em § anos",
+"النتيجة على § سنوات",
+"Matokeo ya miaka §",
+"Resultaat oor § jaar"
+],
+[
+"§ patients sur § ans",
+"§ patients over § years",
+"§ pazienti in § anni",
+"§ pacientes em § anos",
+"§ مريض على § سنوات",
+"wagonjwa § katika miaka §",
+"§ pasiënte oor § jaar"
+],
+[
+"Cumul jamais positif sur § ans",
+"Cumulative result never positive over § years",
+"Cumulato mai positivo in § anni",
+"Acumulado nunca positivo em § anos",
+"التراكمي لا يصبح إيجابيًا خلال § سنوات",
+"Jumla haiwi chanya katika miaka §",
+"Gekumuleerd nooit positief oor § jaar"
 ]
 ]
 };
