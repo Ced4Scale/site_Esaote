@@ -3034,6 +3034,15 @@ window.AF_I18N = {
 "الحد بين رهاب الأماكن المغلقة والاستشارة",
 "Mpaka kati ya hofu ya nafasi finyu na ushauri",
 "Grens tussen klaustrofobie en konsultasie"
+],
+[
+"ans",
+"years",
+"anni",
+"anos",
+"سنوات",
+"miaka",
+"jaar"
 ]
 ]
 };

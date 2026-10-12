@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261013e"></script>
+  <script src="assets/afrique-i18n.js?v=20261013f"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -233,9 +233,12 @@
     /* ---- Hypothèses ---- */
     .af-hyp { margin-top: 1rem; }
     .af-hyp > summary { font-size: .85rem; font-weight: 700; cursor: pointer; }
-    .af-hyp-grille { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: .8rem 1.4rem; margin-top: .8rem; }
-    .af-hyp-grille label { display: block; font-size: .8rem; font-weight: 700; margin-bottom: .2rem; }
-    .af-hyp-grille input { width: 100%; box-sizing: border-box; }
+    /* Hypothèses : une ligne par réglage — libellé à gauche, montant aligné à droite, unité (devise, %, ans) dans une colonne fixe */
+    .af-hyp-grille { display: grid; gap: .5rem; margin-top: .8rem; max-width: 40rem; }
+    .af-hyp-grille > div { display: flex; align-items: center; gap: .5rem; }
+    .af-hyp-grille label { flex: 1 1 auto; font-size: .8rem; font-weight: 700; margin: 0; }
+    .af-hyp-grille input { flex: 0 0 8rem; width: 8rem; box-sizing: border-box; text-align: right; }
+    .af-hyp-unite { flex: 0 0 3.2rem; font-size: .8rem; font-weight: 700; color: var(--ink-soft); }
     .af-aide { font-size: .78rem; color: var(--muted); margin: .6rem 0 0; }
   </style>
 </head>
@@ -467,10 +470,10 @@
       <details class="af-hyp">
         <summary>Hypothèses (salaire, charges, durée d'étalement de l'achat)</summary>
         <div class="af-hyp-grille">
-          <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /></div>
-          <div><label for="afRetenue">Retenues sur le salaire (du net au brut, en %)</label><input type="text" inputmode="decimal" id="afRetenue" /></div>
-          <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /></div>
-          <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /></div>
+          <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /><span class="af-hyp-unite" id="afSalaireUnite">€</span></div>
+          <div><label for="afRetenue">Retenues sur le salaire (du net au brut, en %)</label><input type="text" inputmode="decimal" id="afRetenue" /><span class="af-hyp-unite">%</span></div>
+          <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /><span class="af-hyp-unite">%</span></div>
+          <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /><span class="af-hyp-unite">ans</span></div>
         </div>
         <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Retenues (22 %) et charges patronales (42 %) : règles françaises tant qu'aucun pays acheteur n'est choisi ; à adapter au pays visé.</p>
       </details>
@@ -1007,7 +1010,7 @@
         g.cols.forEach(function (col) { var sl = col.node.querySelector(".af-mixer__slot"); if (sl) sl.style.display = nb > 1 ? "" : "none"; });
       });
       // hypothèses
-      el("afSalaire").value = fmt(S.salaire * cur.r);
+      el("afSalaire").value = fmt(S.salaire * cur.r); el("afSalaireUnite").textContent = cur.s;
       if (el("afRetenue") !== document.activeElement) el("afRetenue").value = nf2.format(S.retenue).replace(/,00$/, "");
       if (el("afPatro") !== document.activeElement) el("afPatro").value = nf2.format(S.chargesPat).replace(/,00$/, "");
       el("afAmort").value = fmt(S.amort);
