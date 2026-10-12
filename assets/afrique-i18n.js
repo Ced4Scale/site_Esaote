@@ -392,8 +392,8 @@ window.AF_I18N = {
 [
 "ETP",
 "FTE",
-"ETP",
-"ETP",
+"FTE",
+"ETC",
 "ما يعادل دوامًا كاملًا",
 "FTE",
 "VTE"
@@ -2042,7 +2042,7 @@ window.AF_I18N = {
 "Marocco",
 "Marrocos",
 "المغرب",
-"Morocco",
+"Moroko",
 "Marokko"
 ],
 [
