@@ -2673,6 +2673,14 @@ window.AF_I18N = {
 "Mensalidades do crédito (juros incluídos)",
 "أقساط القرض (شاملةً الفوائد)",
 "Malipo ya mkopo (pamoja na riba)"
+],
+[
+"Loyer des locaux",
+"Premises rent",
+"Affitto dei locali",
+"Renda das instalações",
+"إيجار المحلات",
+"Kodi ya majengo"
 ]
 ]
 };

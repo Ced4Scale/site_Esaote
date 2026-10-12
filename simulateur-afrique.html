@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261012f"></script>
+  <script src="assets/afrique-i18n.js?v=20261012g"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -416,7 +416,7 @@
               <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au TCO :</strong></div>
               <label class="af-check"><input type="checkbox" id="afTcoElec" /> Électricité</label>
               <label class="af-check"><input type="checkbox" id="afTcoPers" /> Personnel</label>
-              <label class="af-check"><input type="checkbox" id="afTcoLoyer" /> Loyer</label>
+              <label class="af-check"><input type="checkbox" id="afTcoLoyer" /> Loyer des locaux</label>
               <p class="af-aide">Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
               </details>
             </div>
@@ -437,7 +437,7 @@
                 <tr><td>Achat de l'O-scan</td><td>Prix (options Esaote cochées comprises : e-Spades, Agil Exam, post-traitement) étalé à parts égales sur la durée choisie, sans intérêts.</td></tr>
                 <tr><td>Maintenance</td><td>Aucune pendant les mois de garantie, puis le montant annuel choisi (icône Financement).</td></tr>
                 <tr><td>Financement</td><td>Si coché (icône Financement) : mensualité du crédit (taux, durée) à la place de l'étalement du prix.</td></tr>
-                <tr><td>Loyer</td><td>Prix au m² par an × surface (icône bâtiment). Rien tant que le prix est à 0.</td></tr>
+                <tr><td>Loyer des locaux</td><td>Prix au m² par an × surface (icône bâtiment). Rien tant que le prix est à 0.</td></tr>
                 <tr><td>Répartition</td><td>Diagnostique / claustrophobie / consultation d'orthopédiste (icône négatoscope) : information en % de l'activité, sans effet sur les montants pour l'instant.</td></tr>
                 <tr><td>Non compté</td><td>Radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
               </tbody></table>
@@ -658,7 +658,7 @@
     var CAT_REC = [{ key: "recettes", label: "Examens", color: "#2a78d6" }];
     var CAT_DEP = [
       { key: "personnel", label: "Personnel (MERM)", color: "#d1477a" },
-      { key: "loyer", label: "Loyer", color: "#6b5b95" },
+      { key: "loyer", label: "Loyer des locaux", color: "#6b5b95" },
       { key: "elec", label: "Électricité", color: "#3aa0b5" },
       { key: "achat", label: "Achat de l'O-scan et options (étalé)", color: "#b8782f" },
       { key: "maint", label: "Maintenance", color: "#8a8f98" }
@@ -740,7 +740,7 @@
         ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }],
         S.tcoElec ? ["Électricité", function (n) { return r.elec * n; }] : null,
         S.tcoPers ? ["Personnel", function (n) { return r.personnel * n; }] : null,
-        S.tcoLoyer ? ["Loyer", function (n) { return r.loyer * n; }] : null
+        S.tcoLoyer ? ["Loyer des locaux", function (n) { return r.loyer * n; }] : null
       ].filter(Boolean);
       var tot = ANS.map(function () { return 0; });
       lignes.forEach(function (l) {
