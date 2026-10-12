@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014j"></script>
+  <script src="assets/afrique-i18n.js?v=20261014k"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -685,8 +685,10 @@
       // Retour sur investissement : trésorerie annuelle = recettes - personnel - loyer - électricité (- maintenance dès l'année 2)
       var cash1 = recettes - personnel - loyer - elec, cashN = cash1 - S.maint, retour = Infinity;
       var cashM = cash1 / 12, maintM = S.maint / 12, g = Math.max(0, S.garantie);
-      if (cashM > 0) { var t1 = achatTotal / cashM; if (t1 <= g) retour = t1; else if (cashM > maintM) retour = (achatTotal + maintM * g) / (cashM - maintM); }
-      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, mensualite: mens, interets: mens * Math.max(1, S.dureeMois) - achatTotal, retourMois: retour, cash1: cash1 };
+      // à récupérer : le prix d'achat rendu ; si un crédit est actif, on y ajoute les intérêts du crédit (le financement des deux bâtons durée / taux)
+      var aRecuperer = achatTotal + (S.finActif ? Math.max(0, mens * Math.max(1, S.dureeMois) - achatTotal) : 0);
+      if (cashM > 0) { var t1 = aRecuperer / cashM; if (t1 <= g) retour = t1; else if (cashM > maintM) retour = (aRecuperer + maintM * g) / (cashM - maintM); }
+      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, aRecuperer: aRecuperer, mensualite: mens, interets: mens * Math.max(1, S.dureeMois) - achatTotal, retourMois: retour, cash1: cash1 };
     }
 
     // ------------------------------------------------------------------ demi-anneaux
@@ -804,8 +806,10 @@
       // 1. point mort financier, en durée : combien de temps pour récupérer le prix de l'O-scan
       var fini = isFinite(r.retourMois);
       z.appendChild(carte("Point mort financier (retour sur investissement)", dureeTexte(r.retourMois),
-        fini ? "Durée pour récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " par an pendant les " + fmt(S.garantie) + " mois de garantie, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance. Sans intérêts d'emprunt."
-          : "La trésorerie annuelle (" + fmtMoney(r.cash1 - S.maint) + " après maintenance) ne permet pas de récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ").",
+        fini ? (S.finActif ? "Durée pour récupérer le prix de l'O-scan et les intérêts du crédit (" + fmtMoney(r.aRecuperer) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " par an pendant les " + fmt(S.garantie) + " mois de garantie, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance."
+            : "Durée pour récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ") avec la trésorerie dégagée : " + fmtMoney(r.cash1) + " par an pendant les " + fmt(S.garantie) + " mois de garantie, puis " + fmtMoney(r.cash1 - S.maint) + " par an après la maintenance. Sans intérêts d'emprunt.")
+          : (S.finActif ? "La trésorerie annuelle (" + fmtMoney(r.cash1 - S.maint) + " après maintenance) ne permet pas de récupérer le prix de l'O-scan et les intérêts du crédit (" + fmtMoney(r.aRecuperer) + ")."
+            : "La trésorerie annuelle (" + fmtMoney(r.cash1 - S.maint) + " après maintenance) ne permet pas de récupérer le prix de l'O-scan (" + fmtMoney(r.achatTotal) + ")."),
         fini ? Math.min(1, 84 / Math.max(1, r.retourMois)) : null, r.retourMois <= 84 ? "#1baf7a" : "#c2334d", "Plus la barre est pleine, plus le retour est rapide", "repère : 7 ans"));
       // 2. point mort journalier : examens par jour pour couvrir toutes les dépenses
       var exJour = r.joursAn > 0 ? r.examens / r.joursAn : 0, pmJour = r.joursAn > 0 ? r.pmExamens / r.joursAn : Infinity;
@@ -1055,7 +1059,8 @@
       el("afSalaire").value = fmt(S.salaire * cur.r); el("afSalaireUnite").textContent = cur.s;
       if (el("afRetenue") !== document.activeElement) el("afRetenue").value = nf2.format(S.retenue).replace(/,00$/, "");
       if (el("afPatro") !== document.activeElement) el("afPatro").value = nf2.format(S.chargesPat).replace(/,00$/, "");
-      el("afAmort").value = fmt(S.amort);
+      // crédit actif : la durée d'étalement de l'achat est celle du crédit (bâton durée du financement) — champ grisé, en lecture seule
+      el("afAmort").value = S.finActif ? nf1.format(S.dureeMois / 12) : fmt(S.amort); el("afAmort").readOnly = S.finActif; el("afAmort").style.opacity = S.finActif ? ".55" : "";
       relireCalendrier();
       if (el("afLoyerM2") !== document.activeElement) el("afLoyerM2").value = fmt(S.loyerM2 * cur.r);
       el("afLoyerM2Unite").textContent = cur.s;

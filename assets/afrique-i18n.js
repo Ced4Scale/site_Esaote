@@ -3241,6 +3241,24 @@ window.AF_I18N = {
 "القرض سُدِّد بالفعل",
 "mkopo umeshalipwa tayari",
 "lening reeds terugbetaal"
+],
+[
+"Durée pour récupérer le prix de l'O-scan et les intérêts du crédit (¤) avec la trésorerie dégagée : ¤ par an pendant les § mois de garantie, puis ¤ par an après la maintenance.",
+"Time to recover the O-scan price and the loan interest (¤) with the cash generated: ¤ per year during the § months of warranty, then ¤ per year after maintenance.",
+"Tempo per recuperare il prezzo dell'O-scan e gli interessi del prestito (¤) con la liquidità generata: ¤ all'anno durante i § mesi di garanzia, poi ¤ all'anno dopo la manutenzione.",
+"Tempo para recuperar o preço do O-scan e os juros do crédito (¤) com a tesouraria gerada: ¤ por ano durante os § meses de garantia, depois ¤ por ano após a manutenção.",
+"المدة اللازمة لاسترداد سعر جهاز O-scan وفوائد القرض (¤) بالسيولة المتاحة: ¤ سنويًا خلال § أشهر الضمان، ثم ¤ سنويًا بعد الصيانة.",
+"Muda wa kurudisha bei ya O-scan na riba ya mkopo (¤) kwa fedha taslimu inayopatikana: ¤ kwa mwaka katika miezi § ya dhamana, kisha ¤ kwa mwaka baada ya matengenezo.",
+"Tyd om die prys van die O-scan en die leningrente (¤) terug te verdien met die vrygestelde kontant: ¤ per jaar gedurende die § waarborgmaande, daarna ¤ per jaar ná instandhouding."
+],
+[
+"La trésorerie annuelle (¤ après maintenance) ne permet pas de récupérer le prix de l'O-scan et les intérêts du crédit (¤).",
+"The annual cash (¤ after maintenance) does not allow recovering the O-scan price and the loan interest (¤).",
+"La liquidità annua (¤ dopo la manutenzione) non permette di recuperare il prezzo dell'O-scan e gli interessi del prestito (¤).",
+"A tesouraria anual (¤ após manutenção) não permite recuperar o preço do O-scan e os juros do crédito (¤).",
+"السيولة السنوية (¤ بعد الصيانة) لا تسمح باسترداد سعر جهاز O-scan وفوائد القرض (¤).",
+"Fedha taslimu ya mwaka (¤ baada ya matengenezo) haitoshi kurudisha bei ya O-scan na riba ya mkopo (¤).",
+"Die jaarlikse kontant (¤ ná instandhouding) laat nie toe om die prys van die O-scan en die leningrente (¤) terug te verdien nie."
 ]
 ]
 };
