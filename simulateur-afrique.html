@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014w"></script>
+  <script src="assets/afrique-i18n.js?v=20261014x"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -990,6 +990,10 @@
         { k: "finAns", slot: "Durée", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" },
         { k: "taux", slot: "Taux", si: "finActif", color: "#d1477a", min: 0, max: 15, step: 0.25, kind: "pct", unit: "% par an" }] },
       { id: "afGRPat", ou: "afResMix", titre: "Patients par an", cols: [{ k: "patAn", color: "#2a78d6", min: 0, max: function () { return Math.max(100, Math.round(pphMax() * volumeParPph())); }, step: 50, kind: "int", unit: "patients / an", siCadenas: true }] },
+      { id: "afGRHeures", ou: "afResMix", titre: "Heures d'ouverture", cols: [
+        { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
+        { k: "hSam", color: "#8a5ad6", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Samedi", si: "ouvSam" },
+        { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
       { id: "afGRPrix", ou: "afResMix", titre: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGRAchat", ou: "afResMix", titre: "Prix de base de l'O-scan (avant options)", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
       { id: "afGCroiss", ou: "afResMix", titre: "Croissance annuelle de l'activité", cols: [{ k: "croiss", color: "#1baf7a", min: 0, max: 30, step: 0.5, kind: "pct", unit: "% par an" }] },
