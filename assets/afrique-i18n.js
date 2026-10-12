@@ -3592,6 +3592,24 @@ window.AF_I18N = {
 "النسبة التلقائية تنطلق من نسبة الإقراض للشركات في البلد (قيمة إرشادية لنحو § سنوات: قروض التجهيز في المغرب، أو سعر « برايم » المرجعي أو متوسط المصارف في غيره؛ وليست نسب الأفراد) وتتغير بمقدار § نقطة لكل سنة زيادة أو نقصان في المدة؛ وتعديل النسبة يدويًا يُلغي تفعيل الخانة. يجلب زر « تحديث النسب » آخر النسب التي نشرها البنك الدولي (خدمة مجانية: تُرسَل قائمة البلدان فقط ولا تُرسَل أي بيانات من المحاكاة)؛ وتُتجاهل القيم الأقدم من §.",
 "Riba ya kiotomatiki huanzia riba ya mikopo ya biashara ya nchi (thamani ya kuonyesha kwa takriban miaka §: mikopo ya vifaa nchini Moroko, riba ya marejeo « prime » au wastani wa benki kwingineko; si riba za watu binafsi) na hubadilika kwa pointi § kwa kila mwaka wa muda zaidi au pungufu; kubadilisha riba kwa mkono huzima kisanduku. Kitufe « Sasisha viwango » hupakua viwango vya hivi karibuni vilivyochapishwa na Benki ya Dunia (huduma ya bure: orodha ya nchi pekee hutumwa, hakuna data ya kiigaji); thamani za zamani kuliko § hupuuzwa.",
 "Die outomatiese koers begin by die ondernemingsleningkoers van die land (aanduidingswaarde oor ongeveer § jaar: toerustinglenings in Marokko, verwysingskoers « prima » of gemiddeld van die banke elders; dit is nie koerse vir individue nie) en wissel met § punt per jaar langer of korter termyn; as u die koers met die hand verander, word die blokkie afgeskakel. Die knoppie « Werk die koerse by » haal die jongste koerse wat deur die Wêreldbank gepubliseer is (gratis diens: slegs die lys van lande word gestuur, geen simulasiedata nie); waardes ouer as § word geïgnoreer."
+],
+[
+"Changer de pays",
+"Change country",
+"Cambiare paese",
+"Mudar de país",
+"تغيير البلد",
+"Badilisha nchi",
+"Verander land"
+],
+[
+"Aucun pays",
+"No country",
+"Nessun paese",
+"Nenhum país",
+"بدون بلد",
+"Hakuna nchi",
+"Geen land"
 ]
 ]
 };
