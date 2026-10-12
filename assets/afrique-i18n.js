@@ -3061,6 +3061,105 @@ window.AF_I18N = {
 "ابحث عن بلد (الحروف الأولى)",
 "Tafuta nchi (herufi za kwanza)",
 "Soek 'n land (eerste letters)"
+],
+[
+"Langue : choisir la langue d'affichage du simulateur.",
+"Language: choose the display language of the simulator.",
+"Lingua: scegliere la lingua di visualizzazione del simulatore.",
+"Idioma: escolher o idioma de apresentação do simulador.",
+"اللغة: اختيار لغة عرض المحاكي.",
+"Lugha: chagua lugha ya kuonyesha ya kiigaji.",
+"Taal: kies die vertoontaal van die simulator."
+],
+[
+"Devise : choisir la monnaie d'affichage et de saisie (les calculs restent faits en euros).",
+"Currency: choose the display and input currency (calculations are still made in euros).",
+"Valuta: scegliere la valuta di visualizzazione e di inserimento (i calcoli restano in euro).",
+"Moeda: escolher a moeda de apresentação e de introdução (os cálculos continuam em euros).",
+"العملة: اختيار عملة العرض والإدخال (تبقى الحسابات باليورو).",
+"Sarafu: chagua sarafu ya kuonyesha na kuingiza (hesabu zinabaki kwa euro).",
+"Valuta: kies die vertoon- en invoervaluta (berekeninge bly in euro)."
+],
+[
+"Horaires : jours et heures d'ouverture du centre, coupures, plafond d'heures par jour et semaines d'ouverture par an.",
+"Hours: opening days and hours of the centre, breaks, daily hours limit and opening weeks per year.",
+"Orari: giorni e ore di apertura del centro, pause, limite di ore al giorno e settimane di apertura all'anno.",
+"Horários: dias e horas de abertura do centro, pausas, limite de horas por dia e semanas de abertura por ano.",
+"الدوام: أيام وساعات فتح المركز والاستراحات والحد الأقصى للساعات يوميًا وأسابيع الفتح في السنة.",
+"Saa: siku na saa za kufunguliwa kwa kituo, mapumziko, kikomo cha saa kwa siku na wiki za kufunguliwa kwa mwaka.",
+"Ure: openingsdae en -ure van die sentrum, onderbrekings, maksimum ure per dag en openingsweke per jaar."
+],
+[
+"Boîte à outils : choisir les curseurs affichés dans la table de mixage et l'année des résultats (année §, §, § ou moyenne).",
+"Toolbox: choose which sliders appear in the mixing table and the year of the results (year §, §, § or average).",
+"Cassetta degli attrezzi: scegliere i cursori mostrati nella tabella di missaggio e l'anno dei risultati (anno §, §, § o media).",
+"Caixa de ferramentas: escolher os cursores mostrados na mesa de mistura e o ano dos resultados (ano §, §, § ou média).",
+"صندوق الأدوات: اختيار المنزلقات المعروضة في طاولة المزج وسنة النتائج (السنة § أو § أو § أو المتوسط).",
+"Sanduku la zana: chagua vitelezi vinavyoonyeshwa kwenye meza ya kuchanganya na mwaka wa matokeo (mwaka §, §, § au wastani).",
+"Gereedskapkis: kies die skuiwers wat in die mengtafel gewys word en die jaar van die resultate (jaar §, §, § of gemiddeld)."
+],
+[
+"Loyer des locaux : prix de location au m² par an et surface occupée.",
+"Premises rent: rental price per m² per year and floor area used.",
+"Affitto dei locali: prezzo di locazione al m² all'anno e superficie occupata.",
+"Renda das instalações: preço de arrendamento por m² por ano e área ocupada.",
+"إيجار المحلات: سعر الإيجار للمتر المربع في السنة والمساحة المشغولة.",
+"Kodi ya majengo: bei ya kupangisha kwa m² kwa mwaka na eneo linalotumika.",
+"Huur van die persele: huurprys per m² per jaar en die oppervlakte wat gebruik word."
+],
+[
+"Examens par zone : part de chaque zone du corps (genou, main, pied, coude…) dans l'activité.",
+"Exams by zone: share of each body area (knee, hand, foot, elbow…) in the activity.",
+"Esami per zona: quota di ogni zona del corpo (ginocchio, mano, piede, gomito…) nell'attività.",
+"Exames por zona: parte de cada zona do corpo (joelho, mão, pé, cotovelo…) na atividade.",
+"الفحوصات حسب المنطقة: حصة كل منطقة من الجسم (الركبة واليد والقدم والمرفق…) من النشاط.",
+"Vipimo kwa eneo: sehemu ya kila eneo la mwili (goti, mkono, mguu, kiwiko…) katika shughuli.",
+"Ondersoeke volgens sone: aandeel van elke liggaamsone (knie, hand, voet, elmboog…) in die aktiwiteit."
+],
+[
+"Financement : crédit (taux, durée), garantie et maintenance annuelle de l'O-scan.",
+"Financing: loan (rate, term), warranty and annual maintenance of the O-scan.",
+"Finanziamento: prestito (tasso, durata), garanzia e manutenzione annuale dell'O-scan.",
+"Financiamento: crédito (taxa, duração), garantia e manutenção anual do O-scan.",
+"التمويل: القرض (النسبة والمدة) والضمان والصيانة السنوية لجهاز O-scan.",
+"Ufadhili: mkopo (riba, muda), dhamana na matengenezo ya kila mwaka ya O-scan.",
+"Finansiering: lening (rentekoers, termyn), waarborg en jaarlikse instandhouding van die O-scan."
+],
+[
+"Répartition et durée des examens : part du diagnostique, de la claustrophobie et de la consultation, durées d'examen et gain des options.",
+"Exam split and duration: share of diagnostic, claustrophobia and consultation, exam durations and gain from the options.",
+"Ripartizione e durata degli esami: quota di diagnostico, claustrofobia e consulto, durate degli esami e guadagno delle opzioni.",
+"Repartição e duração dos exames: parte de diagnóstico, claustrofobia e consulta, durações dos exames e ganho das opções.",
+"توزيع الفحوصات ومدتها: حصة التشخيصي ورهاب الأماكن المغلقة والاستشارة، ومدد الفحوصات والوقت الموفَّر بالخيارات.",
+"Mgawanyo na muda wa vipimo: sehemu ya uchunguzi, hofu ya nafasi finyu na ushauri, muda wa vipimo na muda unaookolewa na chaguo.",
+"Verdeling en duur van die ondersoeke: aandeel van diagnosties, klaustrofobie en konsultasie, duur van die ondersoeke en wins van die opsies."
+],
+[
+"Importation : pays acheteur, droits de douane, taxes et TVA ajoutés au prix de l'IRM, qui part toujours d'Italie.",
+"Import: buying country, customs duties, taxes and VAT added to the MRI price; the MRI always ships from Italy.",
+"Importazione: paese acquirente, dazi doganali, imposte e IVA aggiunti al prezzo della RM, che parte sempre dall'Italia.",
+"Importação: país comprador, direitos aduaneiros, impostos e IVA somados ao preço da RM, que parte sempre de Itália.",
+"الاستيراد: البلد المشتري والرسوم الجمركية والضرائب وضريبة القيمة المضافة المضافة إلى سعر الجهاز، الذي يُشحن دائمًا من إيطاليا.",
+"Uagizaji: nchi mnunuzi, ushuru wa forodha, kodi na VAT zinazoongezwa kwenye bei ya MRI, ambayo husafirishwa daima kutoka Italia.",
+"Invoer: kopersland, doeanereg, belastings en BTW wat by die prys van die MRI gevoeg word; die MRI vertrek altyd uit Italië."
+],
+[
+"Options Esaote : e-Spades, Agil Exam, post-traitement, travaux et cage de Faraday, avec le coût total de possession et de fonctionnement.",
+"Esaote options: e-Spades, Agil Exam, post-processing, works and Faraday cage, with the total cost of ownership and operation.",
+"Opzioni Esaote: e-Spades, Agil Exam, post-elaborazione, lavori e gabbia di Faraday, con il costo totale di proprietà e di esercizio.",
+"Opções Esaote: e-Spades, Agil Exam, pós-processamento, obras e gaiola de Faraday, com o custo total de posse e de funcionamento.",
+"خيارات Esaote: e-Spades وAgil Exam والمعالجة اللاحقة والأشغال وقفص فاراداي، مع التكلفة الإجمالية للامتلاك والتشغيل.",
+"Chaguo za Esaote: e-Spades, Agil Exam, uchakataji wa baadaye, kazi za ujenzi na ngome ya Faraday, pamoja na gharama jumla ya umiliki na uendeshaji.",
+"Esaote-opsies: e-Spades, Agil Exam, na-verwerking, werke en Faraday-hok, met die totale koste van eienaarskap en bedryf."
+],
+[
+"Hypothèses : ce qui est compté dans les calculs, et ce qui ne l'est pas.",
+"Assumptions: what is counted in the calculations, and what is not.",
+"Ipotesi: cosa è conteggiato nei calcoli e cosa no.",
+"Hipóteses: o que é contado nos cálculos e o que não é.",
+"الافتراضات: ما يُحتسب في الحسابات وما لا يُحتسب.",
+"Dhana: kinachohesabiwa katika mahesabu na kisichohesabiwa.",
+"Aannames: wat in die berekeninge getel word en wat nie."
 ]
 ]
 };
