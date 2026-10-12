@@ -2982,6 +2982,42 @@ window.AF_I18N = {
 "Sluit die gewenste resultaat vas"
 ],
 [
+"Prix de l'examen :",
+"Exam price:",
+"Prezzo dell'esame:",
+"Preço do exame:",
+"سعر الفحص:",
+"Bei ya uchunguzi:",
+"Prys van die ondersoek:"
+],
+[
+"le même pour tous les pays (bâton ci-dessus)",
+"the same for all countries (bar above)",
+"lo stesso per tutti i paesi (barra qui sopra)",
+"o mesmo para todos os países (barra acima)",
+"نفسه لكل البلدان (الشريط أعلاه)",
+"sawa kwa nchi zote (upau ulio juu)",
+"dieselfde vir alle lande (staaf hierbo)"
+],
+[
+"celui de l'hôpital public de chaque pays (estimations)",
+"that of each country's public hospital (estimates)",
+"quello dell'ospedale pubblico di ciascun paese (stime)",
+"o do hospital público de cada país (estimativas)",
+"سعر المستشفى العمومي في كل بلد (تقديرات)",
+"bei ya hospitali ya umma ya kila nchi (makadirio)",
+"dié van elke land se openbare hospitaal (skattings)"
+],
+[
+"Prix de l'examen : ¤",
+"Exam price: ¤",
+"Prezzo dell'esame: ¤",
+"Preço do exame: ¤",
+"سعر الفحص: ¤",
+"Bei ya uchunguzi: ¤",
+"Prys van die ondersoek: ¤"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
