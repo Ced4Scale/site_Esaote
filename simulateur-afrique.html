@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014b"></script>
+  <script src="assets/afrique-i18n.js?v=20261014c"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -182,6 +182,9 @@
     #afNegPop:has(.af-tps-det[open]) { width: min(calc(100vw - 4.5rem), 580px); }
     #afOsPop { width: min(calc(100vw - 4.5rem), 580px); }
     #afImpPop { width: min(calc(100vw - 4.5rem), 580px); }
+    .af-dev-btn { width: auto; min-width: 1.7rem; padding: 0 .4rem; }
+    .af-dev-sym { font-size: .78rem; font-weight: 800; letter-spacing: .01em; }
+    .af-dev-sym.is-code { font-size: .64rem; }
     .af-lang-btn { width: auto; padding: 0 .45rem; }
     .af-lang-btn svg, .af-lang-row svg { display: block; width: 22px; height: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 2px; }
     .af-imp-btn { width: auto; padding: 0 .45rem; }
@@ -294,8 +297,8 @@
 
           <!-- $ : choix de la devise -->
           <span class="af-info-wrap">
-            <button type="button" class="af-info-btn" id="afDevBtn" aria-expanded="false" aria-controls="afDevPop" aria-label="Choisir la devise" data-tip="Devise : choisir la monnaie d'affichage et de saisie (les calculs restent faits en euros).">
-              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><circle cx="12" cy="12" r="9.2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14.8 9.2c-.4-1.1-1.5-1.7-2.9-1.7-1.6 0-2.7.8-2.7 2 0 3 5.8 1.4 5.8 4.4 0 1.3-1.2 2.1-2.9 2.1-1.5 0-2.7-.7-3.1-1.9M12 6v1.5M12 16.5V18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <button type="button" class="af-info-btn af-dev-btn" id="afDevBtn" aria-expanded="false" aria-controls="afDevPop" aria-label="Choisir la devise" data-tip="Devise : choisir la monnaie d'affichage et de saisie (les calculs restent faits en euros).">
+              <span class="af-dev-sym" id="afDevSym">€</span>
             </button>
             <div class="af-pop" id="afDevPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
@@ -1174,7 +1177,10 @@
       }).catch(function () { st.textContent = "Mise à jour impossible (pas de connexion) : taux du " + TAUX_DATE + " conservés."; })
         .then(function () { bt.disabled = false; });
     });
-    function majDevise() { Array.prototype.forEach.call(listeDev.children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.c === cur.c)); }); }
+    function majDevise() {
+      Array.prototype.forEach.call(listeDev.children, function (b) { b.setAttribute("aria-pressed", String(b.dataset.c === cur.c)); });
+      var sy = el("afDevSym"); sy.textContent = cur.s; sy.classList.toggle("is-code", cur.s.length > 1); // l'icône de la table de mixage affiche le symbole de la devise choisie
+    }
 
     // ------------------------------------------------------------------ boîte à outils
     var oc = el("afOutilsCurseurs");
