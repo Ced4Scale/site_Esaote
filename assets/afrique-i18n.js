@@ -763,12 +763,12 @@ window.AF_I18N = {
 "Matumizi ya O-scan (imezimwa, tayari, kipimo) na ya kiyoyozi cha chumba, kwa bei ya kWh."
 ],
 [
-"Prix (options Esaote cochées comprises : AI, Smart exam, post-traitement) étalé à parts égales sur la durée choisie, sans intérêts.",
-"Price (including the Esaote options ticked: AI, Smart exam, post-processing) spread equally over the chosen period, without interest.",
-"Prezzo (incluse le opzioni Esaote selezionate: AI, Smart exam, post-elaborazione) ripartito in parti uguali sulla durata scelta, senza interessi.",
-"Preço (incluindo as opções Esaote marcadas: AI, Smart exam, pós-processamento) diluído em partes iguais na duração escolhida, sem juros.",
-"السعر (بما فيه خيارات Esaote المحددة: AI وSmart exam والمعالجة اللاحقة) موزَّع بالتساوي على المدة المختارة دون فوائد.",
-"Bei (pamoja na chaguo za Esaote zilizotiwa alama: AI, Smart exam, uchakataji wa baadaye) imegawanywa sawa katika kipindi kilichochaguliwa, bila riba."
+"Prix (options Esaote cochées comprises : e-Spades, Agil Exam, post-traitement) étalé à parts égales sur la durée choisie, sans intérêts.",
+"Price (including the Esaote options ticked: e-Spades, Agil Exam, post-processing) spread equally over the chosen period, without interest.",
+"Prezzo (incluse le opzioni Esaote selezionate: e-Spades, Agil Exam, post-elaborazione) ripartito in parti uguali sulla durata scelta, senza interessi.",
+"Preço (incluindo as opções Esaote marcadas: e-Spades, Agil Exam, pós-processamento) diluído em partes iguais na duração escolhida, sem juros.",
+"السعر (بما فيه خيارات Esaote المحددة: e-Spades وAgil Exam والمعالجة اللاحقة) موزَّع بالتساوي على المدة المختارة دون فوائد.",
+"Bei (pamoja na chaguo za Esaote zilizotiwa alama: e-Spades, Agil Exam, uchakataji wa baadaye) imegawanywa sawa katika kipindi kilichochaguliwa, bila riba."
 ],
 [
 "Aucune pendant les mois de garantie, puis le montant annuel choisi (icône Financement).",
@@ -1347,12 +1347,12 @@ window.AF_I18N = {
 "Kubadilisha mgonjwa"
 ],
 [
-"Réduction avec l'IA",
-"Reduction with AI",
-"Riduzione con l'IA",
-"Redução com a IA",
-"التخفيض مع الذكاء الاصطناعي",
-"Upunguzaji kwa AI"
+"Réduction avec e-Spades",
+"Reduction with e-Spades",
+"Riduzione con e-Spades",
+"Redução com e-Spades",
+"التخفيض مع e-Spades",
+"Upunguzaji kwa e-Spades"
 ],
 [
 "Diagnostique :",
@@ -1411,20 +1411,20 @@ window.AF_I18N = {
 "vipimo kwa mwaka (§ %)"
 ],
 [
-"IA choisie : acquisition réduite de § %.",
-"AI chosen: acquisition reduced by § %.",
-"IA scelta: acquisizione ridotta del § %.",
-"IA escolhida: aquisição reduzida em § %.",
-"تم اختيار الذكاء الاصطناعي: خُفّض زمن الاكتساب بنسبة § %.",
-"AI imechaguliwa: muda wa kupiga picha umepunguzwa kwa § %."
+"e-Spades choisi : acquisition réduite de § %.",
+"e-Spades chosen: acquisition reduced by § %.",
+"e-Spades scelto: acquisizione ridotta del § %.",
+"e-Spades escolhido: aquisição reduzida em § %.",
+"تم اختيار e-Spades: خُفّض زمن الاكتساب بنسبة § %.",
+"e-Spades imechaguliwa: muda wa kupiga picha umepunguzwa kwa § %."
 ],
 [
-"IA non choisie (icône Esaote) : la réduction ne s'applique pas.",
-"AI not chosen (Esaote icon): the reduction does not apply.",
-"IA non scelta (icona Esaote): la riduzione non si applica.",
-"IA não escolhida (ícone Esaote): a redução não se aplica.",
-"لم يتم اختيار الذكاء الاصطناعي (أيقونة Esaote): لا يُطبَّق التخفيض.",
-"AI haijachaguliwa (ikoni ya Esaote): upunguzaji hautumiki."
+"e-Spades non choisi (icône Esaote) : la réduction ne s'applique pas.",
+"e-Spades not chosen (Esaote icon): the reduction does not apply.",
+"e-Spades non scelto (icona Esaote): la riduzione non si applica.",
+"e-Spades não escolhido (ícone Esaote): a redução não se aplica.",
+"لم يتم اختيار e-Spades (أيقونة Esaote): لا يُطبَّق التخفيض.",
+"e-Spades haijachaguliwa (ikoni ya Esaote): upunguzaji hautumiki."
 ],
 [
 "Temps moyen par examen :",
@@ -1459,12 +1459,12 @@ window.AF_I18N = {
 "Chaguo za Esaote: uchaguzi na bei"
 ],
 [
-"Options Esaote (AI, Smart exam, post-traitement)",
-"Esaote options (AI, Smart exam, post-processing)",
-"Opzioni Esaote (AI, Smart exam, post-elaborazione)",
-"Opções Esaote (AI, Smart exam, pós-processamento)",
-"خيارات Esaote (AI وSmart exam والمعالجة اللاحقة)",
-"Chaguo za Esaote (AI, Smart exam, uchakataji wa baadaye)"
+"Options Esaote (e-Spades, Agil Exam, post-traitement)",
+"Esaote options (e-Spades, Agil Exam, post-processing)",
+"Opzioni Esaote (e-Spades, Agil Exam, post-elaborazione)",
+"Opções Esaote (e-Spades, Agil Exam, pós-processamento)",
+"خيارات Esaote (e-Spades وAgil Exam والمعالجة اللاحقة)",
+"Chaguo za Esaote (e-Spades, Agil Exam, uchakataji wa baadaye)"
 ],
 [
 "Options de l'Esaote O-scan",
@@ -1675,12 +1675,12 @@ window.AF_I18N = {
 "Gharama na kodi za kuagiza"
 ],
 [
-"Travaux et cage de Faraday (sur place, sans frais d'importation)",
-"Works and Faraday cage (on site, no import costs)",
-"Lavori e gabbia di Faraday (in loco, senza costi di importazione)",
-"Obras e gaiola de Faraday (no local, sem custos de importação)",
-"الأشغال وقفص فاراداي (في الموقع، دون تكاليف استيراد)",
-"Kazi za ujenzi na ngome ya Faraday (hapo hapo, bila gharama za kuagiza)"
+"Travaux et cage de Faraday (achetés sur place, hors taxes)",
+"Works and Faraday cage (bought locally, excluding taxes)",
+"Lavori e gabbia di Faraday (acquistati in loco, al netto delle imposte)",
+"Obras e gaiola de Faraday (compradas localmente, sem impostos)",
+"الأشغال وقفص فاراداي (تُشترى محليًا، دون ضرائب)",
+"Kazi za ujenzi na ngome ya Faraday (hununuliwa hapa nchini, bila kodi)"
 ],
 [
 "Prix d'achat rendu",
@@ -2499,12 +2499,12 @@ window.AF_I18N = {
 "Bei zilizoingizwa"
 ],
 [
-"Tous les prix de la table de mixage sont hors taxes. L'IRM et ses options sont facturées par l'Italie (hors TVA) : droits, taxes et TVA du pays acheteur s'y ajoutent (icône cargo). Le transport et l'assurance sont ajoutés au prix italien : mettez-les à § si la facture italienne les inclut. Travaux et cage de Faraday : comptés hors taxes, sans TVA locale.",
-"All prices in the mixing table are excluding taxes. The MRI and its options are invoiced by Italy (excluding VAT): duties, taxes and VAT of the buying country are added to it (cargo icon). Transport and insurance are added to the Italian price: set them to § if the Italian invoice includes them. Works and Faraday cage: counted excluding taxes, with no local VAT.",
-"Tutti i prezzi della tavola di missaggio sono al netto delle tasse. La RM e le sue opzioni sono fatturate dall'Italia (IVA esclusa): dazi, tasse e IVA del paese acquirente si aggiungono (icona cargo). Trasporto e assicurazione si aggiungono al prezzo italiano: metteteli a § se la fattura italiana li include. Lavori e gabbia di Faraday: conteggiati al netto delle tasse, senza IVA locale.",
-"Todos os preços da mesa de mistura são sem impostos. A RM e as suas opções são faturadas por Itália (sem IVA): direitos, impostos e IVA do país comprador somam-se (ícone cargueiro). O transporte e o seguro somam-se ao preço italiano: ponha-os a § se a fatura italiana os incluir. Obras e gaiola de Faraday: contadas sem impostos, sem IVA local.",
-"جميع الأسعار في طاولة المزج دون ضرائب. يُفوتر جهاز الرنين وخياراته من إيطاليا (دون ضريبة القيمة المضافة): تُضاف إليه رسوم وضرائب وضريبة القيمة المضافة للبلد المشتري (أيقونة الشحن). يُضاف النقل والتأمين إلى السعر الإيطالي: اجعلهما § إذا كانت الفاتورة الإيطالية تشملهما. الأشغال وقفص فاراداي: تُحتسب دون ضرائب ودون ضريبة قيمة مضافة محلية.",
-"Bei zote kwenye meza ya kuchanganya hazijajumuisha kodi. MRI na chaguo zake zinatozwa na Italia (bila VAT): ushuru, kodi na VAT za nchi mnunuzi huongezwa (ikoni ya mizigo). Usafiri na bima huongezwa kwenye bei ya Italia: viweke § ikiwa ankara ya Italia inavijumuisha. Kazi za ujenzi na ngome ya Faraday: zinahesabiwa bila kodi, bila VAT ya ndani."
+"Tous les prix de la table de mixage sont hors taxes. L'IRM et ses options sont facturées par l'Italie (hors TVA) : droits, taxes et TVA du pays acheteur s'y ajoutent (icône cargo). Le transport et l'assurance sont à § au départ : saisissez-les si la facture italienne ne les inclut pas. Travaux et cage de Faraday : achetés sur place, hors taxes, la TVA du pays s'y ajoute.",
+"All prices in the mixing table are excluding taxes. The MRI and its options are invoiced by Italy (excluding VAT): the buying country's duties, taxes and VAT are added (cargo icon). Transport and insurance start at § : enter them if the Italian invoice does not include them. Works and Faraday cage: bought locally, excluding taxes, the country's VAT is added.",
+"Tutti i prezzi della tabella di missaggio sono al netto delle imposte. La RM e le sue opzioni sono fatturate dall'Italia (IVA esclusa): dazi, imposte e IVA del paese acquirente si aggiungono (icona cargo). Trasporto e assicurazione partono da § : inseriteli se la fattura italiana non li include. Lavori e gabbia di Faraday: acquistati in loco, al netto delle imposte, si aggiunge l'IVA del paese.",
+"Todos os preços da mesa de mistura são sem impostos. A RM e as suas opções são faturadas pela Itália (sem IVA): os direitos, impostos e IVA do país comprador somam-se (ícone de carga). O transporte e o seguro começam em § : introduza-os se a fatura italiana não os incluir. Obras e gaiola de Faraday: comprados localmente, sem impostos, acresce o IVA do país.",
+"جميع الأسعار في طاولة المزج غير شاملة للضرائب. يتم إصدار فاتورة جهاز الرنين المغناطيسي وخياراته من إيطاليا (دون ضريبة القيمة المضافة): وتُضاف رسوم الدولة المشترية وضرائبها وضريبة القيمة المضافة (أيقونة الشحن). النقل والتأمين يبدآن عند § : أدخلهما إذا لم تتضمنهما الفاتورة الإيطالية. الأشغال وقفص فاراداي: تُشترى محليًا دون ضرائب، وتُضاف ضريبة القيمة المضافة للبلد.",
+"Bei bei zote kwenye meza ya kuchanganya hazijajumuisha kodi. MRI na chaguo zake hutolewa ankara na Italia (bila VAT): ushuru, kodi na VAT ya nchi mnunuzi huongezwa (ikoni ya mizigo). Usafirishaji na bima huanza kwa § : viweke ikiwa ankara ya Italia haizijumuishi. Kazi za ujenzi na ngome ya Faraday: hununuliwa hapa nchini, bila kodi, na VAT ya nchi huongezwa."
 ],
 [
 "Durée d'examen diagnostique",
@@ -2539,12 +2539,12 @@ window.AF_I18N = {
 "kati yake kubadilisha mgonjwa"
 ],
 [
-"Le changement de patient est inclus dans la durée d'examen ; l'IA ne réduit que le reste (l'acquisition).",
-"Patient changeover is included in the exam duration; AI only reduces the rest (the acquisition).",
-"Il cambio paziente è incluso nella durata dell'esame; l'IA riduce solo il resto (l'acquisizione).",
-"A troca de paciente está incluída na duração do exame; a IA só reduz o resto (a aquisição).",
-"تبديل المريض مُدرج ضمن مدة الفحص؛ ولا يخفّض الذكاء الاصطناعي سوى الباقي (الاكتساب).",
-"Kubadilisha mgonjwa kumejumuishwa kwenye muda wa kipimo; AI hupunguza tu kilichobaki (upigaji picha)."
+"Le changement de patient est inclus dans la durée d'examen ; e-Spades ne réduit que le reste (l'acquisition).",
+"Patient changeover is included in the exam duration; e-Spades only reduces the rest (the acquisition).",
+"Il cambio paziente è incluso nella durata dell'esame; e-Spades riduce solo il resto (l'acquisizione).",
+"A troca de paciente está incluída na duração do exame; e-Spades só reduz o resto (a aquisição).",
+"تبديل المريض مُدرج ضمن مدة الفحص؛ ولا يخفّض e-Spades سوى الباقي (الاكتساب).",
+"Kubadilisha mgonjwa kumejumuishwa kwenye muda wa kipimo; e-Spades hupunguza tu kilichobaki (upigaji picha)."
 ],
 [
 "TCO : coût total de possession",
@@ -2555,12 +2555,12 @@ window.AF_I18N = {
 "TCO: gharama jumla ya umiliki"
 ],
 [
-"Le TCO additionne tout ce que coûtent l'IRM et son exploitation sur la durée (sans les recettes) : achat rendu, intérêts du crédit s'il est activé, maintenance après la garantie, électricité, personnel et loyer, aux réglages actuels.",
-"The TCO adds up everything the MRI and its operation cost over the period (excluding revenue): delivered purchase, loan interest if activated, maintenance after the warranty, electricity, staff and rent, at the current settings.",
-"Il TCO somma tutto ciò che costano la RM e il suo esercizio nel periodo (esclusi i ricavi): acquisto reso, interessi del prestito se attivato, manutenzione dopo la garanzia, elettricità, personale e affitto, con le impostazioni attuali.",
-"O TCO soma tudo o que custam a RM e a sua exploração durante o período (sem as receitas): compra posta no destino, juros do crédito se ativado, manutenção após a garantia, eletricidade, pessoal e renda, com os ajustes atuais.",
-"تجمع التكلفة الإجمالية للامتلاك كل ما يكلّفه جهاز الرنين وتشغيله خلال المدة (دون الإيرادات): الشراء مسلَّمًا، وفوائد القرض إن فُعِّل، والصيانة بعد الضمان، والكهرباء، والموظفون، والإيجار، بالإعدادات الحالية.",
-"TCO inajumlisha kila kinachogharimu MRI na uendeshaji wake katika kipindi (bila mapato): ununuzi uliowasilishwa, riba ya mkopo ikiwa umewashwa, matengenezo baada ya dhamana, umeme, wafanyakazi na kodi ya pango, kwa mipangilio ya sasa."
+"Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Les intérêts ne comptent que si le crédit est activé.",
+"The financial TCO adds up the MRI and its options (import included), the works, the Faraday cage (local VAT included) and maintenance after the warranty, without revenue. Interest only counts if the loan is enabled.",
+"Il TCO finanziario somma la RM e le sue opzioni (importazione inclusa), i lavori, la gabbia di Faraday (IVA locale inclusa) e la manutenzione dopo la garanzia, senza i ricavi. Gli interessi contano solo se il finanziamento è attivo.",
+"O TCO financeiro soma a RM e as suas opções (importação incluída), as obras, a gaiola de Faraday (IVA local incluído) e a manutenção após a garantia, sem as receitas. Os juros só contam se o crédito estiver ativo.",
+"يجمع TCO المالي جهاز الرنين المغناطيسي وخياراته (شاملًا الاستيراد) والأشغال وقفص فاراداي (شاملًا ضريبة القيمة المضافة المحلية) والصيانة بعد الضمان، دون الإيرادات. لا تُحتسب الفوائد إلا إذا كان القرض مفعّلًا.",
+"TCO ya kifedha inajumlisha MRI na chaguo zake (pamoja na uagizaji), kazi za ujenzi, ngome ya Faraday (pamoja na VAT ya ndani) na matengenezo baada ya dhamana, bila mapato. Riba huhesabiwa tu ikiwa mkopo umewashwa."
 ],
 [
 "Achat rendu (O-scan, options, importation, travaux, cage)",
@@ -2601,6 +2601,62 @@ window.AF_I18N = {
 "Custo por exame",
 "التكلفة لكل فحص",
 "Gharama kwa kipimo"
+],
+[
+"TVA sur travaux et cage de Faraday",
+"VAT on works and Faraday cage",
+"IVA su lavori e gabbia di Faraday",
+"IVA sobre obras e gaiola de Faraday",
+"ضريبة القيمة المضافة على الأشغال وقفص فاراداي",
+"VAT kwenye kazi za ujenzi na ngome ya Faraday"
+],
+[
+"IRM et options (importation comprise)",
+"MRI and options (import included)",
+"RM e opzioni (importazione inclusa)",
+"RM e opções (importação incluída)",
+"جهاز الرنين المغناطيسي والخيارات (شاملًا الاستيراد)",
+"MRI na chaguo (pamoja na uagizaji)"
+],
+[
+"Ajouter au TCO :",
+"Add to the TCO:",
+"Aggiungi al TCO:",
+"Adicionar ao TCO:",
+"أضِف إلى TCO:",
+"Ongeza kwenye TCO:"
+],
+[
+"Gain avec Agil Exam",
+"Gain with Agil Exam",
+"Guadagno con Agil Exam",
+"Ganho com Agil Exam",
+"الوقت الموفَّر مع Agil Exam",
+"Muda unaokolewa na Agil Exam"
+],
+[
+"min par examen",
+"min per exam",
+"min per esame",
+"min por exame",
+"دقيقة لكل فحص",
+"dakika kwa kipimo"
+],
+[
+"Agil Exam choisi : gain de § min par examen.",
+"Agil Exam selected: § min saved per exam.",
+"Agil Exam scelto: guadagno di § min per esame.",
+"Agil Exam escolhido: ganho de § min por exame.",
+"تم اختيار Agil Exam: توفير § دقيقة لكل فحص.",
+"Agil Exam imechaguliwa: dakika § zinaokolewa kwa kila kipimo."
+],
+[
+"Agil Exam non choisi (icône Esaote) : pas de gain.",
+"Agil Exam not selected (Esaote icon): no gain.",
+"Agil Exam non scelto (icona Esaote): nessun guadagno.",
+"Agil Exam não escolhido (ícone Esaote): sem ganho.",
+"لم يتم اختيار Agil Exam (أيقونة Esaote): لا توفير.",
+"Agil Exam haijachaguliwa (ikoni ya Esaote): hakuna muda unaokolewa."
 ]
 ]
 };
