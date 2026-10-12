@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261015p"></script>
+  <script src="assets/afrique-i18n.js?v=20261015q"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -261,6 +261,7 @@
     .af-carte-page header p { margin: 0; font-size: .85rem; color: #666; max-width: 56rem; }
     .af-carte-reglages { position: sticky; bottom: 0; margin: 1.2rem calc(-1 * max(1.2rem, 4vw)) -2rem; padding: .6rem max(1.2rem, 4vw) .8rem; background: rgba(247,247,247,.96); border-top: 1px solid #d9dee5; box-shadow: 0 -4px 14px rgba(0,0,0,.08); }
     .af-carte-reglages .af-mixer { margin-top: 0; }
+    .af-carte-opts { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem 1.4rem; margin-top: .5rem; font-size: .85rem; }
     .af-carte-fermer { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 0; background: var(--red, #cd0000); color: #fff; font-size: 1.2rem; font-weight: 800; cursor: pointer; }
     .af-carte-grille { width: 100%; max-width: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
     .af-carte-carte { display: flex; flex-direction: column; align-items: center; gap: .35rem; padding: .9rem .8rem; border: 2px solid transparent; border-radius: .8rem; background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; font: inherit; color: #222; text-align: center; }
@@ -1019,7 +1020,7 @@
     }
     (function () { // page plein écran « tous les pays » (icône carte de l'Afrique sous le drapeau)
       var page = document.createElement("div"); page.className = "af-carte-page"; page.hidden = true; page.setAttribute("role", "dialog"); page.setAttribute("aria-label", "Comparaison des pays");
-      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option></select></h2><p></p></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div></div>';
+      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option></select></h2><p></p></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div><div class="af-carte-opts"><strong>Options Esaote :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div></div>';
       document.body.appendChild(page);
       var grille = page.querySelector(".af-carte-grille"), mode = page.querySelector(".af-carte-mode"), carteMode = "total"; // critère du classement : résultat sur 10 ans ou résultat par patient
       mode.addEventListener("change", function () { carteMode = mode.value; remplir(); });
@@ -1042,6 +1043,9 @@
       rafraichirCarte = function () { if (!page.hidden) remplir(); };
       function ouvrir() { remplir(); page.hidden = false; document.documentElement.style.overflow = "hidden"; if (page.requestFullscreen) page.requestFullscreen().catch(function () {}); page.querySelector(".af-carte-fermer").focus(); }
       function fermer() { if (page.hidden) return; page.hidden = true; document.documentElement.style.overflow = ""; if (document.fullscreenElement === page) document.exitFullscreen(); }
+      Array.prototype.forEach.call(page.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { // même réglage que les cases du panneau Esaote (recalcul des patients par heure compris)
+        i.addEventListener("change", function () { var cb = OPT_CB[i.dataset.opt]; cb.checked = i.checked; cb.dispatchEvent(new Event("change")); });
+      });
       el("afCarteBtn").addEventListener("click", function (e) { e.stopPropagation(); ouvrir(); });
       page.querySelector(".af-carte-fermer").addEventListener("click", fermer);
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !page.hidden) fermer(); });
@@ -1177,6 +1181,10 @@
       // pas de bâton « taux » ici : chaque pays a son propre taux bancaire
       { id: "afGCFin", ou: "afCarteMix", titre: "Durée du financement", unitFn: function () { return S.finActif ? "" : "sans crédit (achat étalé)"; }, cols: [
         { k: "finAns", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" }] },
+      { id: "afGCHeures", ou: "afCarteMix", titre: "Heures d'ouverture", cols: [
+        { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
+        { k: "hSam", color: "#8a5ad6", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Samedi", si: "ouvSam" },
+        { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
       { id: "afGCPat", ou: "afCarteMix", titre: "Patients par an", cols: [{ k: "patAn", color: "#2a78d6", min: 0, max: function () { return Math.max(100, Math.round(pphMax() * volumeParPph())); }, step: 50, kind: "int", unit: "patients / an", siCadenas: true }] },
       { id: "afGRPrix", ou: "afResMix", titre: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGRAchat", ou: "afResMix", titre: "Prix de base de l'O-scan (avant options)", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
@@ -1349,6 +1357,8 @@
 
     function synchroniser() {
       S.patAn = Math.round(S.pph * volumeParPph());
+      Object.keys(OPT_CB).forEach(function (k) { OPT_CB[k].checked = !!S["opt" + k]; }); // cases des options (panneau Esaote et page des pays) = état réel
+      Array.prototype.forEach.call(document.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { i.checked = !!S["opt" + i.dataset.opt]; });
       el("afTauxAuto").checked = S.tauxAuto;
       (function () { // ligne d'information : taux bancaire du pays pour la durée du crédit
         var z = el("afTauxPays"), t = TAUX_PAYS[S.pays], ans = Math.max(0.5, S.dureeMois / 12), nom = (PAYS.filter(function (x) { return x.k === S.pays; })[0] || {}).nom;
@@ -1422,6 +1432,7 @@
     ["Dev", "Cal", "Outils", "Info"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
 
     // ------------------------------------------------------------------ options Esaote
+    var OPT_CB = {}; // cases à cocher des options (panneau Esaote), pour les synchroniser avec la page des pays
     var OPTIONS = [{ k: "AI", nom: "e-Spades" }, { k: "Smart", nom: "Agil Exam" }, { k: "Post", nom: "Post-traitement" }, { k: "Trav", nom: "Travaux" }, { k: "Far", nom: "Cage de Faraday" }];
     OPTIONS.forEach(function (o) {
       if (o.k === "Trav") { var st = document.createElement("div"); st.className = "af-pop-sous-titre"; st.textContent = "Installation (sans frais d'importation)"; el("afOptListe").appendChild(st); }
@@ -1429,7 +1440,7 @@
       d.innerHTML = '<label><input type="checkbox" /> <span></span></label><input type="text" inputmode="numeric" /><span class="af-opt-unite"></span>';
       var cb = d.querySelector("input[type=checkbox]"), box = d.querySelector("input[type=text]");
       d.querySelector("label span").textContent = o.nom; box.id = "afPrix" + o.k; box.setAttribute("aria-label", "Prix de l'option " + o.nom); cb.setAttribute("aria-label", "Option " + o.nom);
-      d.querySelector(".af-opt-unite").id = "afUnite" + o.k;
+      d.querySelector(".af-opt-unite").id = "afUnite" + o.k; OPT_CB[o.k] = cb;
       cb.addEventListener("change", function () {
         // e-Spades / Agil Exam raccourcissent l'examen : le nombre de patients par heure réglé augmente dans la même proportion (et redescend si on décoche), dans la limite du plafond.
         var avant = (o.k === "AI" || o.k === "Smart") ? tempsMoyen() : 0;

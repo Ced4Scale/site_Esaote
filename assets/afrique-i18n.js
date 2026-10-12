@@ -3682,6 +3682,15 @@ window.AF_I18N = {
 "النتيجة على § سنوات: ¤",
 "Matokeo ya miaka §: ¤",
 "Resultaat oor § jaar: ¤"
+],
+[
+"Options Esaote :",
+"Esaote options:",
+"Opzioni Esaote:",
+"Opções Esaote:",
+"خيارات Esaote:",
+"Chaguo za Esaote:",
+"Esaote-opsies:"
 ]
 ]
 };
