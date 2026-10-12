@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014f"></script>
+  <script src="assets/afrique-i18n.js?v=20261014g"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -97,7 +97,17 @@
     /* ---- Demi-anneaux ---- */
     .af-demis { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
     @media (max-width: 900px) { .af-demis { grid-template-columns: minmax(0, 1fr); } }
-    .af-demi { text-align: center; min-width: 0; }
+    .af-demi { text-align: center; min-width: 0; cursor: zoom-in; border-radius: .6rem; }
+    .af-demi:hover { background: #f7f8fa; }
+    .af-demi:focus-visible { outline: 2px solid var(--red, #cd0000); outline-offset: 2px; }
+    /* Clic sur un demi-anneau : il passe seul en grand, la légende se place à sa droite ; un nouveau clic revient aux trois */
+    .af-demis.af-demis--focus { grid-template-columns: minmax(0, 1fr); }
+    .af-demis--focus .af-demi:not(.is-focus) { display: none; }
+    .af-demi.is-focus { cursor: zoom-out; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "titre titre" "anneau legende"; align-items: center; gap: .4rem 1.8rem; padding: .4rem .6rem; }
+    .af-demi.is-focus h3 { grid-area: titre; font-size: 1.15rem; }
+    .af-demi.is-focus svg { grid-area: anneau; }
+    .af-demi.is-focus .af-legende { grid-area: legende; margin: 0; max-width: none; font-size: .92rem; }
+    @media (max-width: 900px) { .af-demi.is-focus { display: block; } .af-demi.is-focus .af-legende { margin: .4rem auto 0; max-width: 24rem; } }
     .af-demi h3 { margin: 0 0 .2rem; font-size: .95rem; }
     .af-demi svg { width: 100%; height: auto; display: block; }
     .af-legende { list-style: none; margin: .4rem auto 0; padding: 0; max-width: 20rem; font-size: .8rem; text-align: left; }
@@ -805,6 +815,7 @@
           : "Le prix de l'examen ne couvre pas le surcoût d'électricité d'un examen supplémentaire.",
         isFinite(pmJour) ? Math.min(1, exJour / (pmJour * 2)) : 0, exJour >= pmJour ? "#1baf7a" : "#c2334d", "0", isFinite(pmJour) ? nf1.format(pmJour * 2) + " examens par jour" : ""));
     }
+    var demiFocus = -1; // numéro du demi-anneau affiché seul en grand (-1 : les trois)
     function rendre() {
       appliquerCadenas();
       var r = calculer(), zone = el("afDemis");
@@ -815,6 +826,14 @@
       var positif = r.resultat >= 0;
       zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
         positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney(r.resultat / r.examens) + " de résultat par patient" : ""] }));
+      Array.prototype.forEach.call(zone.children, function (bx, i) {
+        bx.tabIndex = 0; bx.setAttribute("role", "button"); bx.setAttribute("aria-pressed", String(demiFocus === i)); bx.setAttribute("aria-label", bx.querySelector("h3").textContent);
+        bx.classList.toggle("is-focus", demiFocus === i);
+        function bascule() { demiFocus = demiFocus === i ? -1 : i; rendre(); }
+        bx.addEventListener("click", bascule);
+        bx.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bascule(); } });
+      });
+      zone.classList.toggle("af-demis--focus", demiFocus >= 0);
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
