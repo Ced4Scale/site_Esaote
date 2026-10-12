@@ -85,6 +85,9 @@
     /* Plein écran depuis l'icône Esaote : le panneau Esaote occupe le centre, les autres panneaux ouverts restent en bandes à gauche et à droite (règles .af-bloc:fullscreen .af-pop) */
     .af-bloc.af-opt-plein:fullscreen::before { content: ""; position: fixed; inset: 0; background: var(--wash, #f7f7f7); z-index: 10; }
     .af-bloc.af-opt-plein:fullscreen #afOptPop { position: fixed; top: 1rem; left: max(var(--gut), 21rem); right: max(var(--gut), 21rem); width: auto !important; max-height: calc(100vh - 2rem) !important; margin: 0; z-index: 21; overflow: auto; padding-top: 1.6rem; }
+    /* Seule l'icône Esaote est ouverte : le panneau prend tout l'écran (pas de bandes latérales) */
+    .af-bloc.af-opt-plein.af-opt-seul:fullscreen #afOptPop { inset: 0; width: 100vw !important; height: 100vh; max-height: none !important; border-radius: 0; box-sizing: border-box; padding: 1.2rem max(1.5rem, 4vw); }
+    .af-bloc.af-opt-plein.af-opt-seul:fullscreen #afOptPop .af-table.af-table--tco { font-size: clamp(.55rem, 1.3cqw, .95rem); }
     .af-bloc.af-opt-plein:fullscreen .af-pop:not(#afOptPop) { width: 300px !important; max-width: calc(max(var(--gut), 21rem) - 1.4rem); }
     .af-bloc.af-opt-plein:fullscreen #afOptPop .af-table.af-table--tco { font-size: clamp(.5rem, 1.3cqw, .85rem); }
     .af-fs-btn .af-fs-reduire { display: none; }
@@ -1257,12 +1260,14 @@
       function etat() { b.classList.toggle("is-fullscreen", bloc.classList.contains("af-opt-plein")); requestAnimationFrame(alignerMixers); }
       b.addEventListener("click", function (e) {
         e.stopPropagation();
-        if (bloc.classList.contains("af-opt-plein")) { bloc.classList.remove("af-opt-plein"); if (!dejaPlein && document.fullscreenElement) document.exitFullscreen(); etat(); return; }
+        if (bloc.classList.contains("af-opt-plein")) { bloc.classList.remove("af-opt-plein"); bloc.classList.remove("af-opt-seul"); if (!dejaPlein && document.fullscreenElement) document.exitFullscreen(); etat(); return; }
         dejaPlein = document.fullscreenElement === bloc;
+        var autres = Array.prototype.filter.call(bloc.querySelectorAll(".af-pop"), function (q) { return q !== pop && !q.hidden; });
+        bloc.classList.toggle("af-opt-seul", autres.length === 0); // aucun autre panneau ouvert : vrai plein écran
         bloc.classList.add("af-opt-plein"); etat();
         if (!dejaPlein && bloc.requestFullscreen) bloc.requestFullscreen().catch(function () { bloc.classList.remove("af-opt-plein"); etat(); });
       });
-      document.addEventListener("fullscreenchange", function () { if (!document.fullscreenElement) bloc.classList.remove("af-opt-plein"); etat(); });
+      document.addEventListener("fullscreenchange", function () { if (!document.fullscreenElement) { bloc.classList.remove("af-opt-plein"); bloc.classList.remove("af-opt-seul"); } etat(); });
     })();
     el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
 
