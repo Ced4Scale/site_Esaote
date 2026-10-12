@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014o"></script>
+  <script src="assets/afrique-i18n.js?v=20261014p"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -110,6 +110,11 @@
     .af-demi-annees button:hover { border-color: var(--red); }
     .af-demi-annees button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
     .af-demi-annees button[aria-pressed="true"] small { color: #ffe0e0; }
+    .af-demis--dual { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 1rem 1.4rem; }
+    .af-demis--focus .af-demi.is-n1 { display: block; cursor: zoom-out; }
+    .af-demi.is-focus.is-dual { display: block; }
+    .af-demi.is-dual .af-legende { margin: .4rem auto 0; max-width: 26rem; font-size: .88rem; }
+    .af-demi-an { font-size: .78rem; font-weight: 700; color: var(--muted); margin: .1rem 0 .3rem; }
     .af-demi.is-focus h3 { grid-area: titre; font-size: 1.15rem; }
     .af-demi.is-focus svg { grid-area: anneau; }
     .af-demi.is-focus .af-legende { grid-area: legende; margin: 0; max-width: none; font-size: .92rem; }
@@ -687,7 +692,7 @@
       var anneeNum = S.annee === "moy" ? 0 : parseInt(S.annee, 10);
       var horizon = Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort);
       var mens = mensualite(achatTotal);
-      var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * S.dureeMois / horizon) : achatTotal / Math.max(1, S.amort);
+      var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * S.dureeMois / horizon) : (anneeNum > S.amort ? 0 : achatTotal / Math.max(1, S.amort)); // sans crédit : plus d'achat à étaler après la durée d'étalement
       // crédit actif : les mensualités se séparent en remboursement du capital (« achat ») et coût du financement (intérêts de l'année affichée ; moyenne = total des intérêts ÷ horizon)
       var interetsAn = 0;
       if (S.finActif) { interetsAn = anneeNum ? interetsCredit(achatTotal, 12 * anneeNum) - interetsCredit(achatTotal, 12 * (anneeNum - 1)) : interetsCredit(achatTotal, S.dureeMois) / horizon; achat = Math.max(0, achat - interetsAn); }
@@ -836,38 +841,50 @@
           : "Le prix de l'examen ne couvre pas le surcoût d'électricité d'un examen supplémentaire.",
         isFinite(pmJour) ? Math.min(1, exJour / (pmJour * 2)) : 0, exJour >= pmJour ? "#1baf7a" : "#c2334d", "0", isFinite(pmJour) ? nf1.format(pmJour * 2) + " examens par jour" : ""));
     }
-    var demiFocus = -1; // numéro du demi-anneau affiché seul en grand (-1 : les trois)
+    var demiFocus = -1, demiN1 = false; // demiFocus : numéro du demi-anneau affiché seul en grand (-1 : les trois) ; demiN1 : second demi-anneau « N+1 » (année après le financement)
+    function demisPour(r) { // les trois demi-anneaux (Recettes, Dépenses, Résultat) d'un jeu de résultats
+      var positif = r.resultat >= 0;
+      return [
+        demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney2(r.recettes / r.examens) + " de recette par patient" : ""] }),
+        demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney2(r.depenses / r.examens) + " de charges par patient" : ""] }),
+        demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
+          positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney2(r.resultat / r.examens) + " de résultat par patient" : ""] })];
+    }
     function rendre() {
       appliquerCadenas();
       var r = calculer(), zone = el("afDemis");
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
-      zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney2(r.recettes / r.examens) + " de recette par patient" : ""] }));
-      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney2(r.depenses / r.examens) + " de charges par patient" : ""] }));
-      var positif = r.resultat >= 0;
-      zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
-        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney2(r.resultat / r.examens) + " de résultat par patient" : ""] }));
-      Array.prototype.forEach.call(zone.children, function (bx, i) {
+      var boxes = demisPour(r), dual = demiFocus >= 0 && demiN1, boxes2 = null, nFin = S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : Math.max(1, S.amort);
+      if (dual) { // second demi-anneau : l'année qui suit la fin du financement (ou de l'étalement), pour voir les gains une fois l'IRM remboursée
+        var anSave = S.annee; S.annee = String(nFin + 1); var r2 = calculer(); S.annee = anSave; boxes2 = demisPour(r2);
+      }
+      boxes.forEach(function (bx, i) {
+        zone.appendChild(bx);
         bx.tabIndex = 0; bx.setAttribute("role", "button"); bx.setAttribute("aria-pressed", String(demiFocus === i)); bx.setAttribute("aria-label", bx.querySelector("h3").textContent);
         bx.classList.toggle("is-focus", demiFocus === i);
-        if (demiFocus === i) { // boutons de choix de l'année : les années du financement, l'année qui suit, et la moyenne
-          var nFin = S.finActif ? Math.min(10, Math.max(1, Math.ceil(S.dureeMois / 12))) : 3, bar = document.createElement("div"), liste = [], y;
-          bar.className = "af-demi-annees"; bar.addEventListener("click", function (e) { e.stopPropagation(); });
-          for (y = 1; y <= nFin; y++) liste.push({ v: String(y), t: "Année " + y, s: "" });
-          if (S.finActif) liste.push({ v: String(nFin + 1), t: "Année " + (nFin + 1), s: "après financement" });
-          liste.push({ v: "moy", t: "Moyenne", s: "" });
-          liste.forEach(function (it) {
-            var bt = document.createElement("button"); bt.type = "button"; bt.setAttribute("aria-pressed", String(S.annee === it.v));
-            bt.innerHTML = "<span></span>" + (it.s ? "<small></small>" : ""); bt.querySelector("span").textContent = it.t; if (it.s) bt.querySelector("small").textContent = it.s;
-            bt.addEventListener("click", function (e) { e.stopPropagation(); S.annee = it.v; Array.prototype.forEach.call(document.querySelectorAll("input[name=afAnnee]"), function (r) { r.checked = r.value === S.annee; }); rendre(); });
-            bar.appendChild(bt);
-          });
-          bx.insertBefore(bar, bx.querySelector("h3").nextSibling);
-        }
         function bascule() { demiFocus = demiFocus === i ? -1 : i; rendre(); }
         bx.addEventListener("click", bascule);
         bx.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bascule(); } });
+        if (demiFocus === i) {
+          var bar = document.createElement("div"), bt = document.createElement("button");
+          bar.className = "af-demi-annees"; bar.addEventListener("click", function (e) { e.stopPropagation(); });
+          bt.type = "button"; bt.setAttribute("aria-pressed", String(demiN1)); bt.innerHTML = "<span>N+1</span><small></small>"; bt.querySelector("small").textContent = "après financement";
+          bt.setAttribute("aria-label", "N+1");
+          bt.addEventListener("click", function (e) { e.stopPropagation(); demiN1 = !demiN1; rendre(); });
+          bar.appendChild(bt); bx.insertBefore(bar, bx.querySelector("h3").nextSibling);
+          if (dual) {
+            bx.classList.add("is-dual");
+            var cap = document.createElement("div"); cap.className = "af-demi-an"; cap.textContent = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, nFin) : S.amort)) + " ans" : "Année " + S.annee; bx.insertBefore(cap, bar.nextSibling);
+            var b2 = boxes2[i]; b2.classList.add("is-n1", "is-dual"); b2.tabIndex = 0; b2.setAttribute("role", "button"); b2.setAttribute("aria-label", b2.querySelector("h3").textContent);
+            var cap2 = document.createElement("div"); cap2.className = "af-demi-an"; cap2.textContent = "Année " + (nFin + 1) + " · après financement"; var ghost = bar.cloneNode(true); ghost.style.visibility = "hidden"; ghost.setAttribute("aria-hidden", "true"); ghost.inert = true; // même hauteur que la barre N+1 de gauche : les deux anneaux restent alignés
+            b2.insertBefore(cap2, b2.querySelector("h3").nextSibling); b2.insertBefore(ghost, cap2);
+            b2.addEventListener("click", bascule); b2.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); bascule(); } });
+            zone.appendChild(b2);
+          }
+        }
       });
+      zone.classList.toggle("af-demis--dual", dual);
       zone.classList.toggle("af-demis--focus", demiFocus >= 0);
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
