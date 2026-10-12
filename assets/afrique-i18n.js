@@ -3691,6 +3691,447 @@ window.AF_I18N = {
 "خيارات Esaote:",
 "Chaguo za Esaote:",
 "Esaote-opsies:"
+],
+[
+"Angola",
+"Angola",
+"Angola",
+"Angola",
+"أنغولا",
+"Angola",
+"Angola"
+],
+[
+"Botswana",
+"Botswana",
+"Botswana",
+"Botsuana",
+"بوتسوانا",
+"Botswana",
+"Botswana"
+],
+[
+"Burkina Faso",
+"Burkina Faso",
+"Burkina Faso",
+"Burquina Faso",
+"بوركينا فاسو",
+"Burkina Faso",
+"Burkina Faso"
+],
+[
+"Burundi",
+"Burundi",
+"Burundi",
+"Burúndi",
+"بوروندي",
+"Burundi",
+"Burundi"
+],
+[
+"Bénin",
+"Benin",
+"Benin",
+"Benim",
+"بنين",
+"Benin",
+"Benin"
+],
+[
+"Comores",
+"Comoros",
+"Comore",
+"Comores",
+"جزر القمر",
+"Komoro",
+"Comore"
+],
+[
+"Congo",
+"Republic of the Congo",
+"Repubblica del Congo",
+"Congo",
+"جمهورية الكونغو",
+"Jamhuri ya Kongo",
+"Republiek van die Kongo"
+],
+[
+"Djibouti",
+"Djibouti",
+"Gibuti",
+"Jibuti",
+"جيبوتي",
+"Djibouti",
+"Djiboeti"
+],
+[
+"Eswatini",
+"Eswatini",
+"Eswatini",
+"Essuatíni",
+"إسواتيني",
+"Eswatini",
+"Eswatini"
+],
+[
+"Gabon",
+"Gabon",
+"Gabon",
+"Gabão",
+"الغابون",
+"Gabon",
+"Gaboen"
+],
+[
+"Gambie",
+"Gambia",
+"Gambia",
+"Gâmbia",
+"غامبيا",
+"Gambia",
+"Gambië"
+],
+[
+"Guinée",
+"Guinea",
+"Guinea",
+"Guiné",
+"غينيا",
+"Guinea",
+"Guinee"
+],
+[
+"Guinée équatoriale",
+"Equatorial Guinea",
+"Guinea Equatoriale",
+"Guiné Equatorial",
+"غينيا الاستوائية",
+"Guinea ya Ikweta",
+"Ekwatoriaal-Guinee"
+],
+[
+"Guinée-Bissau",
+"Guinea-Bissau",
+"Guinea-Bissau",
+"Guiné-Bissau",
+"غينيا بيساو",
+"Guinea-Bisau",
+"Guinee-Bissau"
+],
+[
+"Lesotho",
+"Lesotho",
+"Lesotho",
+"Lesoto",
+"ليسوتو",
+"Lesotho",
+"Lesotho"
+],
+[
+"Libye",
+"Libya",
+"Libia",
+"Líbia",
+"ليبيا",
+"Libya",
+"Libië"
+],
+[
+"Libéria",
+"Liberia",
+"Liberia",
+"Libéria",
+"ليبيريا",
+"Liberia",
+"Liberië"
+],
+[
+"Madagascar",
+"Madagascar",
+"Madagascar",
+"Madagáscar",
+"مدغشقر",
+"Madagaska",
+"Madagaskar"
+],
+[
+"Malawi",
+"Malawi",
+"Malawi",
+"Maláui",
+"مالاوي",
+"Malawi",
+"Malawi"
+],
+[
+"Mali",
+"Mali",
+"Mali",
+"Mali",
+"مالي",
+"Mali",
+"Mali"
+],
+[
+"Maurice",
+"Mauritius",
+"Mauritius",
+"Maurícia",
+"موريشيوس",
+"Mauritius",
+"Mauritius"
+],
+[
+"Mauritanie",
+"Mauritania",
+"Mauritania",
+"Mauritânia",
+"موريتانيا",
+"Mauritania",
+"Mauritanië"
+],
+[
+"Mozambique",
+"Mozambique",
+"Mozambico",
+"Moçambique",
+"موزمبيق",
+"Msumbiji",
+"Mosambiek"
+],
+[
+"Namibie",
+"Namibia",
+"Namibia",
+"Namíbia",
+"ناميبيا",
+"Namibia",
+"Namibië"
+],
+[
+"Niger",
+"Niger",
+"Niger",
+"Níger",
+"النيجر",
+"Niger",
+"Niger"
+],
+[
+"Ouganda",
+"Uganda",
+"Uganda",
+"Uganda",
+"أوغندا",
+"Uganda",
+"Uganda"
+],
+[
+"Rwanda",
+"Rwanda",
+"Ruanda",
+"Ruanda",
+"رواندا",
+"Rwanda",
+"Rwanda"
+],
+[
+"République centrafricaine",
+"Central African Republic",
+"Repubblica Centrafricana",
+"República Centro-Africana",
+"جمهورية أفريقيا الوسطى",
+"Jamhuri ya Afrika ya Kati",
+"Sentraal-Afrikaanse Republiek"
+],
+[
+"Sao Tomé-et-Principe",
+"São Tomé and Príncipe",
+"São Tomé e Príncipe",
+"São Tomé e Príncipe",
+"ساو تومي وبرينسيبي",
+"São Tomé na Príncipe",
+"Sao Tomé en Principe"
+],
+[
+"Seychelles",
+"Seychelles",
+"Seychelles",
+"Seicheles",
+"سيشل",
+"Shelisheli",
+"Seychelle"
+],
+[
+"Sierra Leone",
+"Sierra Leone",
+"Sierra Leone",
+"Serra Leoa",
+"سيراليون",
+"Sierra Leone",
+"Sierra Leone"
+],
+[
+"Somalie",
+"Somalia",
+"Somalia",
+"Somália",
+"الصومال",
+"Somalia",
+"Somalië"
+],
+[
+"Soudan",
+"Sudan",
+"Sudan",
+"Sudão",
+"السودان",
+"Sudan",
+"Soedan"
+],
+[
+"Soudan du Sud",
+"South Sudan",
+"Sud Sudan",
+"Sudão do Sul",
+"جنوب السودان",
+"Sudan Kusini",
+"Suid-Soedan"
+],
+[
+"Tchad",
+"Chad",
+"Ciad",
+"Chade",
+"تشاد",
+"Chad",
+"Tsjad"
+],
+[
+"Togo",
+"Togo",
+"Togo",
+"Togo",
+"توغو",
+"Togo",
+"Togo"
+],
+[
+"Zambie",
+"Zambia",
+"Zambia",
+"Zâmbia",
+"زامبيا",
+"Zambia",
+"Zambië"
+],
+[
+"Zimbabwe",
+"Zimbabwe",
+"Zimbabwe",
+"Zimbabué",
+"زيمبابوي",
+"Zimbabwe",
+"Zimbabwe"
+],
+[
+"Érythrée",
+"Eritrea",
+"Eritrea",
+"Eritreia",
+"إريتريا",
+"Eritrea",
+"Eritrea"
+],
+[
+"Toutes les régions",
+"All regions",
+"Tutte le regioni",
+"Todas as regiões",
+"جميع المناطق",
+"Mikoa yote",
+"Alle streke"
+],
+[
+"Afrique du Nord",
+"North Africa",
+"Nord Africa",
+"Norte de África",
+"شمال أفريقيا",
+"Afrika Kaskazini",
+"Noord-Afrika"
+],
+[
+"Afrique de l'Ouest",
+"West Africa",
+"Africa occidentale",
+"África Ocidental",
+"غرب أفريقيا",
+"Afrika Magharibi",
+"Wes-Afrika"
+],
+[
+"Afrique centrale",
+"Central Africa",
+"Africa centrale",
+"África Central",
+"وسط أفريقيا",
+"Afrika ya Kati",
+"Sentraal-Afrika"
+],
+[
+"Afrique de l'Est",
+"East Africa",
+"Africa orientale",
+"África Oriental",
+"شرق أفريقيا",
+"Afrika Mashariki",
+"Oos-Afrika"
+],
+[
+"Afrique australe",
+"Southern Africa",
+"Africa australe",
+"África Austral",
+"الجنوب الأفريقي",
+"Afrika Kusini",
+"Suider-Afrika"
+],
+[
+"Îles",
+"Islands",
+"Isole",
+"Ilhas",
+"الجزر",
+"Visiwa",
+"Eilande"
+],
+[
+"Salaire du MERM et prix du kWh propres à chaque pays (estimations)",
+"MERM salary and kWh price specific to each country (estimates)",
+"Stipendio del TSRM e prezzo del kWh propri di ogni paese (stime)",
+"Salário do TSRM e preço do kWh próprios de cada país (estimativas)",
+"راتب فني الأشعة وسعر الكيلوواط ساعة الخاصان بكل بلد (تقديرات)",
+"Mshahara wa MERM na bei ya kWh kwa kila nchi (makadirio)",
+"Salaris van die MERM en prys van die kWh eie aan elke land (skattings)"
+],
+[
+"Régions",
+"Regions",
+"Regioni",
+"Regiões",
+"المناطق",
+"Mikoa",
+"Streke"
+],
+[
+"MERM : ¤ net par an · ¤ le kWh",
+"MERM: ¤ net per year · ¤ per kWh",
+"TSRM: ¤ netti all'anno · ¤ al kWh",
+"TSRM: ¤ líquidos por ano · ¤ por kWh",
+"فني الأشعة: ¤ صافي سنويًا · ¤ للكيلوواط ساعة",
+"MERM: ¤ halisi kwa mwaka · ¤ kwa kWh",
+"MERM: ¤ netto per jaar · ¤ per kWh"
 ]
 ]
 };

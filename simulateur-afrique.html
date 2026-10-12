@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261015q"></script>
+  <script src="assets/afrique-i18n.js?v=20261016d"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -261,6 +261,7 @@
     .af-carte-page header p { margin: 0; font-size: .85rem; color: #666; max-width: 56rem; }
     .af-carte-reglages { position: sticky; bottom: 0; margin: 1.2rem calc(-1 * max(1.2rem, 4vw)) -2rem; padding: .6rem max(1.2rem, 4vw) .8rem; background: rgba(247,247,247,.96); border-top: 1px solid #d9dee5; box-shadow: 0 -4px 14px rgba(0,0,0,.08); }
     .af-carte-reglages .af-mixer { margin-top: 0; }
+    .af-carte-region { margin-top: .5rem; font: inherit; font-size: .85rem; font-weight: 700; padding: .25rem .5rem; border: 1px solid #b8c0cc; border-radius: .4rem; background: #fff; }
     .af-carte-opts { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem 1.4rem; margin-top: .5rem; font-size: .85rem; }
     .af-carte-fermer { flex: none; width: 2.4rem; height: 2.4rem; border-radius: 50%; border: 0; background: var(--red, #cd0000); color: #fff; font-size: 1.2rem; font-weight: 800; cursor: pointer; }
     .af-carte-grille { width: 100%; max-width: none; box-sizing: border-box; display: grid; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); gap: 1rem; }
@@ -562,7 +563,7 @@
               <summary class="af-pop-sous-titre">Résultat</summary>
               <div class="af-res-haut"><div class="af-mixer af-mixer--mini" id="afResMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.2rem;flex:0 1 auto"></div><div class="af-histo" id="afResHisto"></div><div class="af-res10" id="afRes10"></div><div class="af-res-pays" id="afResPays">
               <button type="button" id="afResPaysBtn" aria-haspopup="listbox" aria-expanded="false" title="Changer de pays"><span id="afResPaysFlag"></span><span id="afResPaysNom"></span></button>
-              <button type="button" class="af-carte-btn" id="afCarteBtn" title="Voir tous les pays" aria-label="Voir tous les pays"><svg viewBox="0 0 100 110" width="34" height="38" aria-hidden="true"><path d="M38 6 L50 4 L57 9 L70 9 L79 14 L85 25 L91 33 L95 43 L100 54 L91 66 L83 76 L79 89 L71 99 L60 105 L50 106 L44 98 L40 84 L38 74 L35 62 L23 58 L18 50 L7 48 L3 38 L9 30 L12 21 L20 14 L30 10 Z" fill="currentColor" opacity=".85" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
+              <button type="button" class="af-carte-btn" id="afCarteBtn" title="Voir tous les pays" aria-label="Voir tous les pays"><svg viewBox="0 0 100 110" width="68" height="76" aria-hidden="true"><path d="M38 6 L50 4 L57 9 L70 9 L79 14 L85 25 L91 33 L95 43 L100 54 L91 66 L83 76 L79 89 L71 99 L60 105 L50 106 L44 98 L40 84 L38 74 L35 62 L23 58 L18 50 L7 48 L3 38 L9 30 L12 21 L20 14 L30 10 Z" fill="currentColor" opacity=".85" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></button>
               <div class="af-pays-pop" id="afResPaysPop" hidden><input type="search" class="af-filtre" id="afResPaysFiltre" autocomplete="off" placeholder="Rechercher un pays (premières lettres)" aria-label="Rechercher un pays (premières lettres)" /><div class="af-pays-liste" id="afResPaysListe" role="listbox"></div></div>
             </div></div>
               <div class="af-tco-wrap" style="overflow-x:auto"><table class="af-table af-table--tco" id="afRes"></table></div>
@@ -685,7 +686,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, croiss: 0, patAn: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: false, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -716,10 +717,16 @@
       et: [16, 0, ""], tz: [12.25, 1, "taux débiteur, janvier 2026"], cd: [15, 0, ""], cv: [8, 0, ""]
     };
     var TAUX_DEFAUT = 4;
+    // Pays ajoutés le 12/10/2026 : taux bancaires (Banque mondiale si 2023 ou plus récent, sinon estimation)
+    Object.assign(TAUX_PAYS, { ao: [19.37, 1, "Banque mondiale, 2025"], bw: [6.26, 1, "Banque mondiale, 2024"], bf: [7, 0, ""], bi: [12.37, 1, "Banque mondiale, 2025"], bj: [7, 0, ""], km: [8, 0, ""], cg: [8, 0, ""], dj: [8, 0, ""], sz: [11, 0, ""], ga: [7, 0, ""], gm: [24, 0, ""], gn: [20, 0, ""], gq: [9, 0, ""], gw: [7, 0, ""], ls: [11, 0, ""], ly: [7, 0, ""], lr: [13, 0, ""], mg: [18, 0, ""], mw: [37.06, 1, "Banque mondiale, 2024"], ml: [7, 0, ""], mu: [9, 1, "Banque mondiale, 2025"], mr: [16, 0, ""], mz: [17.53, 1, "Banque mondiale, 2025"], na: [10.96, 1, "Banque mondiale, 2024"], ne: [7, 0, ""], ug: [19, 0, ""], rw: [16.02, 1, "Banque mondiale, 2024"], cf: [8, 0, ""], st: [17.74, 1, "Banque mondiale, 2025"], sc: [9.85, 1, "Banque mondiale, 2025"], sl: [21.44, 1, "Banque mondiale, 2025"], so: [12, 0, ""], sd: [25, 0, ""], ss: [14.29, 1, "Banque mondiale, 2025"], td: [8, 0, ""], tg: [7, 0, ""], zm: [25, 0, ""], zw: [40, 0, ""], er: [10, 0, ""] });
+    // Salaire net annuel d'un MERM (€) et prix du kWh (€) PAR PAYS : ESTIMATIONS INDICATIVES de Claude (non sourcées), à remplacer par vos valeurs
+    var COUTS_PAYS = { ma: [6000, 0.11], dz: [4000, 0.04], tn: [5000, 0.1], eg: [2500, 0.05], sn: [4000, 0.18], ci: [4200, 0.12], cm: [3500, 0.1], ng: [2800, 0.07], gh: [3000, 0.12], ke: [4200, 0.16], za: [11000, 0.11], et: [1800, 0.03], tz: [3000, 0.12], cd: [3000, 0.08], cv: [5500, 0.28], ao: [5000, 0.03], bw: [9000, 0.1], bf: [3000, 0.17], bi: [1500, 0.12], bj: [3000, 0.15], km: [3500, 0.25], cg: [4000, 0.1], dj: [6000, 0.2], sz: [8000, 0.11], ga: [6500, 0.14], gm: [2000, 0.2], gn: [2000, 0.08], gq: [6000, 0.08], gw: [2000, 0.2], ls: [6500, 0.1], ly: [5000, 0.01], lr: [2500, 0.25], mg: [2200, 0.2], mw: [2500, 0.1], ml: [3000, 0.18], mu: [9000, 0.15], mr: [4000, 0.15], mz: [4500, 0.1], na: [11000, 0.11], ne: [3000, 0.14], ug: [3200, 0.15], rw: [4000, 0.12], cf: [2000, 0.15], st: [3500, 0.2], sc: [12000, 0.25], sl: [2200, 0.2], so: [2500, 0.3], sd: [2500, 0.02], ss: [2500, 0.2], td: [2500, 0.15], tg: [3000, 0.17], zm: [5500, 0.09], zw: [4000, 0.12], er: [1500, 0.05] };
+    var REGION_PAYS = { ma: "N", dz: "N", tn: "N", eg: "N", ly: "N", sd: "N", sn: "O", ci: "O", ng: "O", gh: "O", bj: "O", bf: "O", gm: "O", gn: "O", gw: "O", lr: "O", ml: "O", mr: "O", ne: "O", sl: "O", tg: "O", cm: "C", cf: "C", td: "C", cg: "C", cd: "C", gq: "C", ga: "C", et: "E", ke: "E", tz: "E", ug: "E", rw: "E", bi: "E", dj: "E", er: "E", so: "E", ss: "E", za: "S", bw: "S", sz: "S", ls: "S", na: "S", mz: "S", zm: "S", zw: "S", mw: "S", ao: "S", cv: "I", st: "I", km: "I", mg: "I", mu: "I", sc: "I" };
     // taux du pays pour une durée donnée : taux de base (vers 5 ans) ± 0,15 point par année d'écart ; sans pays, taux de départ
     function tauxPays(annees) { var t = TAUX_PAYS[S.pays]; if (!t) return TAUX_DEFAUT; return Math.max(0.5, Math.round((t[0] + 0.15 * (annees - 5)) * 100) / 100); }
     var CLE_TAUX_BANQUE = "ced4scale-afrique-taux-banque", TAUX_BANQUE_DATE = "12/10/2026";
     try { var tb = JSON.parse(localStorage.getItem(CLE_TAUX_BANQUE) || "null"); if (tb && tb.taux) { Object.keys(tb.taux).forEach(function (k) { if (TAUX_PAYS[k]) TAUX_PAYS[k] = tb.taux[k]; }); TAUX_BANQUE_DATE = tb.date || TAUX_BANQUE_DATE; } } catch (e) {}
+    function appliquerCoutsPays() { if (!S.parPays) return; var t = COUTS_PAYS[S.pays]; if (t) { S.salaire = t[0]; S.kwh = t[1]; } }
     function majTauxAuto() { if (S.tauxAuto) S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); }
     var PAYS = [
       { k: "ma", patro: 21.09, patroRel: 1, nom: "Maroc", droit: 5, tva: 20, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Maroc : droit possiblement nul pour un produit d'origine italienne — à confirmer avec un transitaire." },
@@ -736,7 +743,46 @@
       { k: "et", patro: 11, patroRel: 1, nom: "Éthiopie", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
       { k: "tz", patro: 14, patroRel: 0, nom: "Tanzanie", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
       { k: "cd", patro: 13, patroRel: 0, nom: "RD Congo", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
-      { k: "cv", patro: 15, patroRel: 0, nom: "Cap-Vert", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" }
+      { k: "cv", patro: 15, patroRel: 0, nom: "Cap-Vert", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ao", patro: 8, patroRel: 0, nom: "Angola", droit: 5, tva: 14, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "bw", patro: 0, patroRel: 0, nom: "Botswana", droit: 0, tva: 14, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "bf", patro: 16.4, patroRel: 0, nom: "Burkina Faso", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "bi", patro: 6, patroRel: 0, nom: "Burundi", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "bj", patro: 15.4, patroRel: 0, nom: "Bénin", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "km", patro: 9, patroRel: 0, nom: "Comores", droit: 5, tva: 10, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "cg", patro: 20.3, patroRel: 0, nom: "Congo", droit: 5, tva: 18.9, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "dj", patro: 15.7, patroRel: 0, nom: "Djibouti", droit: 5, tva: 10, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "sz", patro: 5, patroRel: 0, nom: "Eswatini", droit: 0, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ga", patro: 20.1, patroRel: 0, nom: "Gabon", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "gm", patro: 10, patroRel: 0, nom: "Gambie", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "gn", patro: 18, patroRel: 0, nom: "Guinée", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "gq", patro: 21.5, patroRel: 0, nom: "Guinée équatoriale", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "gw", patro: 8, patroRel: 0, nom: "Guinée-Bissau", droit: 5, tva: 15, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ls", patro: 0, patroRel: 0, nom: "Lesotho", droit: 0, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ly", patro: 11.25, patroRel: 0, nom: "Libye", droit: 5, tva: 0, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "lr", patro: 4, patroRel: 0, nom: "Libéria", droit: 5, tva: 10, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "mg", patro: 13, patroRel: 0, nom: "Madagascar", droit: 5, tva: 20, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "mw", patro: 10, patroRel: 0, nom: "Malawi", droit: 5, tva: 16.5, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ml", patro: 18.4, patroRel: 0, nom: "Mali", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "mu", patro: 12, patroRel: 0, nom: "Maurice", droit: 0, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "mr", patro: 15, patroRel: 0, nom: "Mauritanie", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "mz", patro: 4, patroRel: 0, nom: "Mozambique", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "na", patro: 0.9, patroRel: 0, nom: "Namibie", droit: 0, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ne", patro: 16.4, patroRel: 0, nom: "Niger", droit: 5, tva: 19, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ug", patro: 10, patroRel: 0, nom: "Ouganda", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "rw", patro: 5, patroRel: 0, nom: "Rwanda", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "cf", patro: 13, patroRel: 0, nom: "République centrafricaine", droit: 5, tva: 19, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "st", patro: 8, patroRel: 0, nom: "Sao Tomé-et-Principe", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "sc", patro: 5, patroRel: 0, nom: "Seychelles", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "sl", patro: 10, patroRel: 0, nom: "Sierra Leone", droit: 5, tva: 15, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "so", patro: 0, patroRel: 0, nom: "Somalie", droit: 5, tva: 5, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "sd", patro: 17, patroRel: 0, nom: "Soudan", droit: 5, tva: 17, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "ss", patro: 17, patroRel: 0, nom: "Soudan du Sud", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "td", patro: 16.5, patroRel: 0, nom: "Tchad", droit: 5, tva: 18, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "tg", patro: 17.5, patroRel: 0, nom: "Togo", droit: 5, tva: 18, taxes: [["Prélèvement communautaire de solidarité (PCS)", 1], ["Redevance statistique (RS)", 1]], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "zm", patro: 5, patroRel: 0, nom: "Zambie", droit: 5, tva: 16, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "zw", patro: 4.5, patroRel: 0, nom: "Zimbabwe", droit: 5, tva: 15.5, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" },
+      { k: "er", patro: 0, patroRel: 0, nom: "Érythrée", droit: 5, tva: 5, taxes: [], statut: "Estimation (TVA standard) : droits et taxes à confirmer.", note: "" }
     ];
     function prixHT() { return S.achat + (S.optAI ? S.prixAI : 0) + (S.optSmart ? S.prixSmart : 0) + (S.optPost ? S.prixPost : 0); }
     // Frais d'importation : valeur en douane = prix HT + transport/assurance ; droits et autres taxes sur la valeur en douane ; TVA sur le tout.
@@ -1005,29 +1051,31 @@
     })();
     // Comparaison des pays : résultat sur 10 ans aux réglages actuels, avec droits, taxes, charges et taux bancaire propres à chaque pays (état de la page restauré ensuite)
     function resultat10Pays(k) {
-      var cles = ["pays", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
+      var cles = ["pays", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux", "salaire", "kwh"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
       cles.forEach(function (q) { sv[q] = S[q]; });
-      S.pays = k; S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); S.chargesPat = c ? c.patro : 42; // comparaison : toujours le taux bancaire propre à chaque pays
+      S.pays = k; S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); if (S.parPays && COUTS_PAYS[k]) { S.salaire = COUTS_PAYS[k][0]; S.kwh = COUTS_PAYS[k][1]; }
+      S.chargesPat = c ? c.patro : 42; // comparaison : toujours le taux bancaire propre à chaque pays
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (j) { S["tax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][1] : 0; S["nTax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][0] : ""; }); }
       var r = calculer(), g = 1 + S.croiss / 100, P = r.achatTotal;
       for (n = 1; n <= 10; n++) {
         var ex = r.examens * Math.pow(g, n - 1), d = (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer, res = ex * S.prix - d;
         cumul += res; pat += ex; if (!anPos && cumul >= 0) anPos = n;
       }
-      out = { k: k, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
+      out = { k: k, sal: S.salaire, kwh: S.kwh, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
       cles.forEach(function (q) { S[q] = sv[q]; });
       return out;
     }
     (function () { // page plein écran « tous les pays » (icône carte de l'Afrique sous le drapeau)
       var page = document.createElement("div"); page.className = "af-carte-page"; page.hidden = true; page.setAttribute("role", "dialog"); page.setAttribute("aria-label", "Comparaison des pays");
-      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option></select></h2><p></p></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div><div class="af-carte-opts"><strong>Options Esaote :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div></div>';
+      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option></select></h2><p></p><select class="af-carte-region" aria-label="Régions"><option value="">Toutes les régions</option><option value="N">Afrique du Nord</option><option value="O">Afrique de l\'Ouest</option><option value="C">Afrique centrale</option><option value="E">Afrique de l\'Est</option><option value="S">Afrique australe</option><option value="I">Îles</option></select></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div><div class="af-carte-opts"><label class="af-check"><input type="checkbox" id="afCartePaysCouts" /> <span>Salaire du MERM et prix du kWh propres à chaque pays (estimations)</span></label><strong>Options Esaote :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div></div>';
       document.body.appendChild(page);
       var grille = page.querySelector(".af-carte-grille"), mode = page.querySelector(".af-carte-mode"), carteMode = "total"; // critère du classement : résultat sur 10 ans ou résultat par patient
       mode.addEventListener("change", function () { carteMode = mode.value; remplir(); });
+      var regionSel = page.querySelector(".af-carte-region"); regionSel.addEventListener("change", function () { remplir(); });
       function remplir() {
         page.querySelector("h2 > span").textContent = "Comparaison des pays :";
         page.querySelector("p").textContent = "Aux réglages actuels de la table de mixage, avec les droits, taxes, charges et taux bancaire propres à chaque pays. Classés du résultat le plus généreux au moins généreux ; cliquez sur un pays pour le choisir.";
-        var res = PAYS.map(function (c) { return resultat10Pays(c.k); }).sort(function (a, b) { return carteMode === "patient" ? b.parPat - a.parPat : b.tot - a.tot; });
+        var res = PAYS.filter(function (c) { return !regionSel.value || REGION_PAYS[c.k] === regionSel.value; }).map(function (c) { return resultat10Pays(c.k); }).sort(function (a, b) { return carteMode === "patient" ? b.parPat - a.parPat : b.tot - a.tot; });
         grille.textContent = "";
         res.forEach(function (x, i) {
           var c = PAYS.filter(function (y) { return y.k === x.k; })[0], b = document.createElement("button"); b.type = "button"; b.className = "af-carte-carte"; b.setAttribute("aria-current", String(x.k === S.pays));
@@ -1035,7 +1083,7 @@
           b.querySelector(".rang").textContent = "#" + (i + 1); b.querySelector(".nom").textContent = c.nom;
           var v = b.querySelector(".val"), parP = carteMode === "patient"; v.textContent = parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
           var det = b.querySelector(".det");
-          [parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %"].filter(Boolean).forEach(function (tx) { var d = document.createElement("div"); d.textContent = tx; det.appendChild(d); });
+          [parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean).forEach(function (tx) { var d = document.createElement("div"); d.textContent = tx; det.appendChild(d); });
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
         });
@@ -1043,6 +1091,11 @@
       rafraichirCarte = function () { if (!page.hidden) remplir(); };
       function ouvrir() { remplir(); page.hidden = false; document.documentElement.style.overflow = "hidden"; if (page.requestFullscreen) page.requestFullscreen().catch(function () {}); page.querySelector(".af-carte-fermer").focus(); }
       function fermer() { if (page.hidden) return; page.hidden = true; document.documentElement.style.overflow = ""; if (document.fullscreenElement === page) document.exitFullscreen(); }
+      page.querySelector("#afCartePaysCouts").addEventListener("change", function () { // salaire du MERM et kWh du pays : suivent le pays choisi tant que la case est cochée ; décochée, vos propres valeurs reviennent
+        if (this.checked) { S.salUser = S.salaire; S.kwhUser = S.kwh; S.parPays = true; appliquerCoutsPays(); }
+        else { S.parPays = false; if (S.salUser != null) { S.salaire = S.salUser; S.kwh = S.kwhUser; } }
+        synchroniser(); rendre();
+      });
       Array.prototype.forEach.call(page.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { // même réglage que les cases du panneau Esaote (recalcul des patients par heure compris)
         i.addEventListener("change", function () { var cb = OPT_CB[i.dataset.opt]; cb.checked = i.checked; cb.dispatchEvent(new Event("change")); });
       });
@@ -1185,6 +1238,7 @@
         { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
         { k: "hSam", color: "#8a5ad6", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Samedi", si: "ouvSam" },
         { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
+      { id: "afGCPrix", ou: "afCarteMix", titre: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGCPat", ou: "afCarteMix", titre: "Patients par an", cols: [{ k: "patAn", color: "#2a78d6", min: 0, max: function () { return Math.max(100, Math.round(pphMax() * volumeParPph())); }, step: 50, kind: "int", unit: "patients / an", siCadenas: true }] },
       { id: "afGRPrix", ou: "afResMix", titre: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGRAchat", ou: "afResMix", titre: "Prix de base de l'O-scan (avant options)", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
@@ -1359,7 +1413,7 @@
       S.patAn = Math.round(S.pph * volumeParPph());
       Object.keys(OPT_CB).forEach(function (k) { OPT_CB[k].checked = !!S["opt" + k]; }); // cases des options (panneau Esaote et page des pays) = état réel
       Array.prototype.forEach.call(document.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { i.checked = !!S["opt" + i.dataset.opt]; });
-      el("afTauxAuto").checked = S.tauxAuto;
+      el("afTauxAuto").checked = S.tauxAuto; var cpc = document.getElementById("afCartePaysCouts"); if (cpc) cpc.checked = S.parPays;
       (function () { // ligne d'information : taux bancaire du pays pour la durée du crédit
         var z = el("afTauxPays"), t = TAUX_PAYS[S.pays], ans = Math.max(0.5, S.dureeMois / 12), nom = (PAYS.filter(function (x) { return x.k === S.pays; })[0] || {}).nom;
         z.textContent = "";
@@ -1471,7 +1525,7 @@
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
-      majTauxAuto();
+      majTauxAuto(); appliquerCoutsPays();
       if (el("afPaysFiltre").value) { el("afPaysFiltre").value = ""; filtrerPays(); selP.value = S.pays; }
       majDrapeauPays();
       S.chargesPat = c ? c.patro : 42;
@@ -1497,12 +1551,19 @@
     // Mise à jour des taux bancaires : dernier « taux d'emprunt » publié par la Banque mondiale (api.worldbank.org, gratuit) ; seules les valeurs de 2023 ou plus récentes remplacent les valeurs en place.
     function majStatutBanque(txt) { el("afTauxBanqueStatut").textContent = txt || "Taux du " + TAUX_BANQUE_DATE; }
     el("afTauxBanqueMaj").addEventListener("click", function () {
-      var bt = this; bt.disabled = true; majStatutBanque("Mise à jour…");
-      fetch("https://api.worldbank.org/v2/country/" + Object.keys(TAUX_PAYS).map(function (k) { return k.toUpperCase(); }).join(";") + "/indicator/FR.INR.LEND?format=json&mrnev=1&per_page=50").then(function (r) { return r.json(); }).then(function (d) {
-        if (!d || !d[1]) throw new Error("réponse inattendue");
-        var n = 0, mem = {};
-        d[1].forEach(function (x) { var k = String(x.country && x.country.id || "").toLowerCase(); if (TAUX_PAYS[k] && x.value != null && parseInt(x.date, 10) >= 2023) { TAUX_PAYS[k] = [Math.round(x.value * 100) / 100, 1, "Banque mondiale, " + x.date]; n++; } });
-        Object.keys(TAUX_PAYS).forEach(function (k) { mem[k] = TAUX_PAYS[k]; });
+      var bt = this, codes = Object.keys(TAUX_PAYS).map(function (k) { return k.toUpperCase(); }), lots = [], n = 0, ok = 0, i;
+      for (i = 0; i < codes.length; i += 10) lots.push(codes.slice(i, i + 10).join(";"));
+      bt.disabled = true; majStatutBanque("Mise à jour…");
+      lots.reduce(function (suite, lot) { // un lot de 10 pays à la fois (le service refuse les demandes trop longues)
+        return suite.then(function () {
+          return fetch("https://api.worldbank.org/v2/country/" + lot + "/indicator/FR.INR.LEND?format=json&mrnev=1&per_page=50").then(function (r) { return r.text(); }).then(function (txt) {
+            var d = JSON.parse(txt.replace(/^\uFEFF/, "")); if (!d || !d[1]) return; ok++;
+            d[1].forEach(function (x) { var k = String(x.country && x.country.id || "").toLowerCase(); if (TAUX_PAYS[k] && x.value != null && parseInt(x.date, 10) >= 2023 && x.value <= 40) { TAUX_PAYS[k] = [Math.round(x.value * 100) / 100, 1, "Banque mondiale, " + x.date]; n++; } });
+          }).catch(function () {});
+        });
+      }, Promise.resolve()).then(function () {
+        if (!ok) throw new Error("aucune réponse");
+        var mem = {}; Object.keys(TAUX_PAYS).forEach(function (k) { mem[k] = TAUX_PAYS[k]; });
         var dt = new Date();
         TAUX_BANQUE_DATE = ("0" + dt.getDate()).slice(-2) + "/" + ("0" + (dt.getMonth() + 1)).slice(-2) + "/" + dt.getFullYear();
         try { localStorage.setItem(CLE_TAUX_BANQUE, JSON.stringify({ date: TAUX_BANQUE_DATE, taux: mem })); } catch (e) {}
@@ -1704,6 +1765,47 @@
       et: function () { return bandesH(["#078930", "#FCDD09", "#DA121D"]) + '<circle cx="1.5" cy="1" r="0.4" fill="#0F47AF"/>' + etoile(1.5, 1, 0.26, "#FCDD09"); },
       tz: function () { return null; },
       cd: function () { return '<rect width="3" height="2" fill="#007FFF"/><path d="M0,2 L3,0" stroke="#F7D618" stroke-width="0.62"/><path d="M0,2 L3,0" stroke="#CE1021" stroke-width="0.4"/>' + etoile(0.45, 0.45, 0.28, "#F7D618"); },
+
+      // --- 39 pays ajoutés le 12/10/2026 (dessins simplifiés) ---
+      ao: function () { return bandesH(["#CC092F", "#000"]) + '<circle cx="1.5" cy="1" r="0.3" fill="none" stroke="#FFCB00" stroke-width="0.09"/>' + etoile(1.5, 1, 0.16, "#FFCB00"); },
+      bj: function () { return '<rect width="1.2" height="2" fill="#008751"/><rect x="1.2" width="1.8" height="1" fill="#FCD116"/><rect x="1.2" y="1" width="1.8" height="1" fill="#E8112D"/>'; },
+      bw: function () { return '<rect width="3" height="2" fill="#75AADB"/><rect y="0.74" width="3" height="0.52" fill="#fff"/><rect y="0.84" width="3" height="0.32" fill="#000"/>'; },
+      bf: function () { return bandesH(["#EF2B2D", "#009E49"]) + etoile(1.5, 1, 0.3, "#FCD116"); },
+      bi: function () { return '<rect width="3" height="2" fill="#1EB53A"/><polygon points="1.5,1 0,0 3,0" fill="#CE1126"/><polygon points="1.5,1 0,2 3,2" fill="#CE1126"/><path d="M0,0 L3,2 M3,0 L0,2" stroke="#fff" stroke-width="0.26"/><circle cx="1.5" cy="1" r="0.42" fill="#fff"/>' + etoile(1.5, 1, 0.2, "#CE1126"); },
+      cf: function () { return bandesH(["#003082", "#fff", "#289728", "#FFCE00"]) + '<rect x="1.25" width="0.5" height="2" fill="#D21034"/>' + etoile(0.4, 0.28, 0.2, "#FFCE00"); },
+      td: function () { return bandesV(["#002664", "#FECB00", "#C60C30"]); },
+      km: function () { return bandesH(["#FFC61E", "#fff", "#CE1126", "#3D8E33"]).replace("#3D8E33", "#3A75C4") + '<polygon points="0,0 1.5,1 0,2" fill="#3D8E33"/>' + croissant(0.42, 1, 0.3, 0.24, 0.07, "#fff"); },
+      cg: function () { return '<rect width="3" height="2" fill="#FBDE4A"/><polygon points="0,0 2.2,0 0,1.5" fill="#009543"/><polygon points="3,2 0.8,2 3,0.5" fill="#DC241F"/>'; },
+      dj: function () { return bandesH(["#6AB2E7", "#12AD2B"]) + '<polygon points="0,0 1.7,1 0,2" fill="#fff"/>' + etoile(0.5, 1, 0.22, "#D7141A"); },
+      gq: function () { return bandesH(["#3E9A00", "#fff", "#E32118"]) + '<polygon points="0,0 0.9,1 0,2" fill="#0073CE"/>'; },
+      er: function () { return '<rect width="3" height="1" fill="#12AD2B"/><rect y="1" width="3" height="1" fill="#4189DD"/><polygon points="0,0 3,1 0,2" fill="#EA0437"/>'; },
+      sz: function () { return bandesH(["#3E5EB9", "#FFD900", "#B10C0C", "#FFD900", "#3E5EB9"]).replace(/height="0\.41"/g, 'height="0.41"') + '<ellipse cx="1.5" cy="1" rx="0.7" ry="0.2" fill="#000" stroke="#fff" stroke-width="0.04"/>'; },
+      ga: function () { return bandesH(["#009E60", "#FCD116", "#3A75C4"]); },
+      gm: function () { return '<rect width="3" height="0.62" fill="#CE1126"/><rect y="0.62" width="3" height="0.12" fill="#fff"/><rect y="0.74" width="3" height="0.52" fill="#0C1C8C"/><rect y="1.26" width="3" height="0.12" fill="#fff"/><rect y="1.38" width="3" height="0.62" fill="#3A7728"/>'; },
+      gn: function () { return bandesV(["#CE1126", "#FCD116", "#009460"]); },
+      gw: function () { return '<rect width="1.1" height="2" fill="#CE1126"/><rect x="1.1" width="1.9" height="1" fill="#FCD116"/><rect x="1.1" y="1" width="1.9" height="1" fill="#009E49"/>' + etoile(0.55, 1, 0.3, "#000"); },
+      ls: function () { return bandesH(["#00209F", "#fff", "#009543"]) + '<polygon points="1.5,0.62 1.62,0.95 1.38,0.95" fill="#000"/><ellipse cx="1.5" cy="1.0" rx="0.2" ry="0.06" fill="#000"/>'; },
+      lr: function () { var b = "", i; for (i = 0; i < 11; i++) b += '<rect y="' + (i * 2 / 11).toFixed(3) + '" width="3" height="' + (2 / 11 + 0.01).toFixed(3) + '" fill="' + (i % 2 ? "#fff" : "#BF0A30") + '"/>'; return b + '<rect width="0.9" height="0.73" fill="#002868"/>' + etoile(0.45, 0.37, 0.24, "#fff"); },
+      ly: function () { return '<rect width="3" height="2" fill="#000"/><rect width="3" height="0.5" fill="#E70013"/><rect y="1.5" width="3" height="0.5" fill="#239E46"/>' + croissant(1.5, 1, 0.3, 0.24, 0.07, "#fff") + etoile(1.65, 1, 0.1, "#fff"); },
+      mg: function () { return '<rect width="1" height="2" fill="#fff"/><rect x="1" width="2" height="1" fill="#FC3D32"/><rect x="1" y="1" width="2" height="1" fill="#007E3A"/>'; },
+      mw: function () { return bandesH(["#000", "#CE1126", "#339E35"]) + '<path d="M1.1,0.62 A0.4,0.4 0 0 1 1.9,0.62 Z" fill="#CE1126"/>'; },
+      ml: function () { return bandesV(["#14B53A", "#FCD116", "#CE1126"]); },
+      mr: function () { return '<rect width="3" height="2" fill="#006233"/><rect width="3" height="0.3" fill="#D01C1F"/><rect y="1.7" width="3" height="0.3" fill="#D01C1F"/><g transform="rotate(90 1.5 1.05)">' + croissant(1.5, 1.05, 0.4, 0.34, 0.1, "#FFC400") + "</g>" + etoile(1.5, 0.8, 0.1, "#FFC400"); },
+      mu: function () { return bandesH(["#EA2839", "#1A206D", "#FFD500", "#00A551"]); },
+      mz: function () { return '<rect width="3" height="0.68" fill="#007168"/><rect y="0.68" width="3" height="0.05" fill="#fff"/><rect y="0.73" width="3" height="0.54" fill="#000"/><rect y="1.27" width="3" height="0.05" fill="#fff"/><rect y="1.32" width="3" height="0.68" fill="#FCE100"/><polygon points="0,0 1.2,1 0,2" fill="#D21034"/>' + etoile(0.4, 1, 0.22, "#FCE100"); },
+      na: function () { return '<rect width="3" height="2" fill="#009543"/><polygon points="0,0 3,0 0,2" fill="#003580"/><path d="M0,2 L3,0" stroke="#fff" stroke-width="0.62"/><path d="M0,2 L3,0" stroke="#D21034" stroke-width="0.42"/>' + etoile(0.55, 0.5, 0.26, "#FFCE00"); },
+      ne: function () { return bandesH(["#E05206", "#fff", "#0DB02B"]) + '<circle cx="1.5" cy="1" r="0.22" fill="#E05206"/>'; },
+      rw: function () { return '<rect width="3" height="1" fill="#00A1DE"/><rect y="1" width="3" height="0.5" fill="#FAD201"/><rect y="1.5" width="3" height="0.5" fill="#20603D"/><circle cx="2.4" cy="0.45" r="0.2" fill="#FAD201"/>'; },
+      st: function () { return bandesH(["#12AD2B", "#FFCE00", "#12AD2B"]).replace("0.67", "0.67") + '<polygon points="0,0 1,1 0,2" fill="#D21034"/>' + etoile(1.55, 1, 0.22, "#000") + etoile(2.2, 1, 0.22, "#000"); },
+      sc: function () { return '<rect width="3" height="2" fill="#fff"/><polygon points="0,2 0,0 1,0" fill="#003F87"/><polygon points="0,2 1,0 2,0" fill="#FCD856"/><polygon points="0,2 2,0 3,0 3,0.67" fill="#D62828"/><polygon points="0,2 3,0.67 3,1.33" fill="#fff"/><polygon points="0,2 3,1.33 3,2" fill="#007A3D"/>'; },
+      sl: function () { return bandesH(["#1EB53A", "#fff", "#0072C6"]); },
+      so: function () { return '<rect width="3" height="2" fill="#4189DD"/>' + etoile(1.5, 1, 0.5, "#fff"); },
+      ss: function () { return '<rect width="3" height="0.6" fill="#000"/><rect y="0.6" width="3" height="0.1" fill="#fff"/><rect y="0.7" width="3" height="0.6" fill="#DA121A"/><rect y="1.3" width="3" height="0.1" fill="#fff"/><rect y="1.4" width="3" height="0.6" fill="#078930"/><polygon points="0,0 1.4,1 0,2" fill="#0F47AF"/>' + etoile(0.45, 1, 0.22, "#FCDD09"); },
+      sd: function () { return bandesH(["#D21034", "#fff", "#000"]) + '<polygon points="0,0 1,1 0,2" fill="#007229"/>'; },
+      tg: function () { var b = "", i; for (i = 0; i < 5; i++) b += '<rect y="' + (i * 0.4) + '" width="3" height="0.41" fill="' + (i % 2 ? "#FFCE00" : "#006A4E") + '"/>'; return b + '<rect width="1.2" height="1.2" fill="#D21034"/>' + etoile(0.6, 0.6, 0.3, "#fff"); },
+      ug: function () { var b = "", i, c = ["#000", "#FCDC04", "#D90000"]; for (i = 0; i < 6; i++) b += '<rect y="' + (i * 2 / 6).toFixed(3) + '" width="3" height="' + (2 / 6 + 0.01).toFixed(3) + '" fill="' + c[i % 3] + '"/>'; return b + '<circle cx="1.5" cy="1" r="0.36" fill="#fff"/><circle cx="1.5" cy="1" r="0.18" fill="#000"/>'; },
+      zm: function () { return '<rect width="3" height="2" fill="#198A00"/><rect x="2" y="0.9" width="0.34" height="1.1" fill="#EF7D00"/><rect x="2.34" y="0.9" width="0.33" height="1.1" fill="#000"/><rect x="2.67" y="0.9" width="0.33" height="1.1" fill="#DE2010"/>'; },
+      zw: function () { var b = "", i, c = ["#006400", "#FFD200", "#D40000", "#000", "#D40000", "#FFD200", "#006400"]; for (i = 0; i < 7; i++) b += '<rect y="' + (i * 2 / 7).toFixed(3) + '" width="3" height="' + (2 / 7 + 0.01).toFixed(3) + '" fill="' + c[i] + '"/>'; return b + '<polygon points="0,0 1.15,1 0,2" fill="#fff"/><polygon points="0,0.18 0.92,1 0,1.82" fill="#000"/>' + etoile(0.42, 1, 0.22, "#D40000"); },
       cv: function () { var d = "", k; for (k = 0; k < 10; k++) { d += '<circle cx="' + (1.2 + 0.45 * Math.cos(k * Math.PI / 5)).toFixed(3) + '" cy="' + (1.1 + 0.45 * Math.sin(k * Math.PI / 5)).toFixed(3) + '" r="0.055" fill="#F7D116"/>'; } return '<rect width="3" height="2" fill="#003893"/><rect y="1.0" width="3" height="0.18" fill="#fff"/><rect y="1.1" width="3" height="0.0" fill="#fff"/><rect y="1.03" width="3" height="0.12" fill="#CF2027"/>' + d; }
     };
     function drapeauPays(k) {
