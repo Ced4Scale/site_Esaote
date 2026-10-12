@@ -3394,6 +3394,33 @@ window.AF_I18N = {
 "تتمة الجدول أعلاه، سنة بعد سنة: الإيرادات − النفقات (الشراء أو أقساط القرض والصيانة والكهرباء والموظفون وإيجار المحلات). يُطبَّق النمو السنوي على عدد المرضى وبالتالي على الإيرادات؛ وتبقى النفقات كما في الجدول أعلاه.",
 "Mwendelezo wa jedwali la juu, mwaka kwa mwaka: mapato − matumizi (ununuzi au malipo ya mkopo, matengenezo, umeme, wafanyakazi, kodi ya majengo). Ukuaji wa kila mwaka unatumika kwa idadi ya wagonjwa, hivyo kwa mapato; matumizi yanabaki kama katika jedwali la juu.",
 "Voortsetting van die tabel hierbo, jaar vir jaar: inkomste − uitgawes (aankoop of leningbetalings, instandhouding, elektrisiteit, personeel, huur van die persele). Die jaarlikse groei geld vir die aantal pasiënte, dus vir die inkomste; die uitgawes bly dié van die tabel hierbo."
+],
+[
+"Patients par an",
+"Patients per year",
+"Pazienti all'anno",
+"Pacientes por ano",
+"المرضى في السنة",
+"Wagonjwa kwa mwaka",
+"Pasiënte per jaar"
+],
+[
+"patients / an",
+"patients / year",
+"pazienti / anno",
+"pacientes / ano",
+"مرضى / سنة",
+"wagonjwa / mwaka",
+"pasiënte / jaar"
+],
+[
+"Prix de base de l'O-scan (avant options)",
+"Base price of the O-scan (before options)",
+"Prezzo base dell'O-scan (prima delle opzioni)",
+"Preço base do O-scan (antes das opções)",
+"السعر الأساسي لجهاز O-scan (قبل الخيارات)",
+"Bei ya msingi ya O-scan (kabla ya chaguo)",
+"Basisprys van die O-scan (voor opsies)"
 ]
 ]
 };
