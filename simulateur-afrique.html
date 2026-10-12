@@ -29,7 +29,10 @@
       document.documentElement.classList.add("af-verrou");
       document.addEventListener("DOMContentLoaded", function () {
         var d = document.createElement("div"); d.id = "afVerrou";
-        d.innerHTML = '<form><h1>Simulateur Afrique</h1><p>Accès réservé. Saisissez le code d\'accès.</p><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" aria-label="Code d\'accès" /><button type="submit">Valider</button><p class="af-verrou-err" role="alert"></p></form>';
+        var lg = "it"; try { lg = localStorage.getItem("ced4scale-afrique-langue") || "it"; } catch (e) {}
+        var T = { fr: ["Simulateur Afrique", "Accès réservé. Saisissez le code d'accès.", "Code d'accès", "Valider", "Code incorrect."], en: ["Africa Simulator", "Restricted access. Enter the access code.", "Access code", "Confirm", "Wrong code."], it: ["Simulatore Africa", "Accesso riservato. Inserite il codice di accesso.", "Codice di accesso", "Conferma", "Codice errato."], pt: ["Simulador África", "Acesso reservado. Introduza o código de acesso.", "Código de acesso", "Confirmar", "Código incorreto."] }[lg] || ["Simulatore Africa", "Accesso riservato. Inserite il codice di accesso.", "Codice di accesso", "Conferma", "Codice errato."];
+        d.innerHTML = '<form><h1></h1><p></p><input type="password" inputmode="numeric" autocomplete="off" maxlength="12" /><button type="submit"></button><p class="af-verrou-err" role="alert"></p></form>';
+        d.querySelector("h1").textContent = T[0]; d.querySelector("p").textContent = T[1]; d.querySelector("input").setAttribute("aria-label", T[2]); d.querySelector("button").textContent = T[3];
         document.body.appendChild(d);
         var f = d.querySelector("form"), inp = d.querySelector("input");
         inp.focus();
@@ -38,7 +41,7 @@
           if (emp(inp.value.trim()) === EMPREINTE) {
             try { localStorage.setItem(CLE, JSON.stringify({ h: EMPREINTE, expiresAt: Date.now() + 30 * 24 * 3600 * 1000 })); } catch (x) {}
             document.documentElement.classList.remove("af-verrou"); d.remove();
-          } else { d.querySelector(".af-verrou-err").textContent = "Code incorrect."; inp.value = ""; inp.focus(); }
+          } else { d.querySelector(".af-verrou-err").textContent = T[4]; inp.value = ""; inp.focus(); }
         });
       });
     })();
@@ -554,9 +557,9 @@
               <div class="af-switch-ligne"><span>Année par année</span><label class="af-switch" title="Cumulé / année par année"><input type="checkbox" id="afTcoCumul" role="switch" checked aria-label="Cumulé" /><span class="af-switch__piste"></span></label><span>Cumulé</span></div>
               <div class="af-tco-wrap" style="overflow-x:auto"><table class="af-table af-table--tco" id="afTco"></table></div>
               <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au coût total :</strong></div>
-              <label class="af-check"><input type="checkbox" id="afTcoElec" /> Électricité</label>
-              <label class="af-check"><input type="checkbox" id="afTcoPers" /> Personnel</label>
-              <label class="af-check"><input type="checkbox" id="afTcoLoyer" /> Loyer des locaux</label>
+              <label class="af-check"><input type="checkbox" id="afTcoElec" checked /> Électricité</label>
+              <label class="af-check"><input type="checkbox" id="afTcoPers" checked /> Personnel</label>
+              <label class="af-check"><input type="checkbox" id="afTcoLoyer" checked /> Loyer des locaux</label>
               <p class="af-aide">Le coût total de possession et de fonctionnement additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
               </details>
               <details class="af-tco-det af-res-det">
@@ -605,7 +608,7 @@
           <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /><span class="af-hyp-unite">%</span></div>
           <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /><span class="af-hyp-unite">ans</span></div>
         </div>
-        <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Retenues (22 %) et charges patronales (42 %) : règles françaises tant qu'aucun pays acheteur n'est choisi ; à adapter au pays visé.</p>
+        <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues 22 %, charges patronales 42 %).</p>
       </details>
     </div>
   </main>
@@ -686,7 +689,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: false, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -716,14 +719,16 @@
       sn: [7, 0, ""], ci: [7, 0, ""], cm: [7, 0, ""], ng: [30, 0, ""], gh: [28, 0, ""], ke: [15.44, 1, "moyenne des banques, mai 2025"], za: [10.5, 1, "taux préférentiel (prime), juillet 2025"],
       et: [16, 0, ""], tz: [12.25, 1, "taux débiteur, janvier 2026"], cd: [15, 0, ""], cv: [8, 0, ""]
     };
-    var TAUX_DEFAUT = 4;
+    // Retenues salariales (cotisations du salarié, en % du brut) par pays : ESTIMATIONS de Claude (12/10/2026), à confirmer avec un expert local ; 22 % = règle française quand aucun pays n'est choisi.
+    var RETENUES_PAYS = { ma: 6.74, dz: 9, tn: 9.18, eg: 11, sn: 5.6, ci: 6.3, cm: 2.8, ng: 8, gh: 5.5, ke: 10, za: 1, et: 7, tz: 10, cd: 3.5, cv: 8, ao: 3, bw: 0, bf: 5.5, bi: 4, bj: 3.6, km: 5, cg: 4, dj: 4, sz: 5, ga: 3.5, gm: 0, gn: 5, gq: 4.5, gw: 8, ls: 0, ly: 3.75, lr: 4, mg: 2, mw: 5, ml: 6.7, mu: 3, mr: 1, mz: 3, na: 0.9, ne: 5.25, ug: 5, rw: 6, cf: 2.5, st: 6, sc: 3, sl: 5, so: 0, sd: 8, ss: 8, td: 3.5, tg: 4, zm: 5, zw: 3.5, er: 0 };
+    var TAUX_DEFAUT = 4, MARGE_PETITE = 1; // marge « petite structure » ajoutée au taux de prêt aux entreprises (décidé le 12/10/2026)
     // Pays ajoutés le 12/10/2026 : taux bancaires (Banque mondiale si 2023 ou plus récent, sinon estimation)
     Object.assign(TAUX_PAYS, { ao: [19.37, 1, "Banque mondiale, 2025"], bw: [6.26, 1, "Banque mondiale, 2024"], bf: [7, 0, ""], bi: [12.37, 1, "Banque mondiale, 2025"], bj: [7, 0, ""], km: [8, 0, ""], cg: [8, 0, ""], dj: [8, 0, ""], sz: [11, 0, ""], ga: [7, 0, ""], gm: [24, 0, ""], gn: [20, 0, ""], gq: [9, 0, ""], gw: [7, 0, ""], ls: [11, 0, ""], ly: [7, 0, ""], lr: [13, 0, ""], mg: [18, 0, ""], mw: [37.06, 1, "Banque mondiale, 2024"], ml: [7, 0, ""], mu: [9, 1, "Banque mondiale, 2025"], mr: [16, 0, ""], mz: [17.53, 1, "Banque mondiale, 2025"], na: [10.96, 1, "Banque mondiale, 2024"], ne: [7, 0, ""], ug: [19, 0, ""], rw: [16.02, 1, "Banque mondiale, 2024"], cf: [8, 0, ""], st: [17.74, 1, "Banque mondiale, 2025"], sc: [9.85, 1, "Banque mondiale, 2025"], sl: [21.44, 1, "Banque mondiale, 2025"], so: [12, 0, ""], sd: [25, 0, ""], ss: [14.29, 1, "Banque mondiale, 2025"], td: [8, 0, ""], tg: [7, 0, ""], zm: [25, 0, ""], zw: [40, 0, ""], er: [10, 0, ""] });
     // Salaire net annuel d'un MERM (€) et prix du kWh (€) PAR PAYS : ESTIMATIONS INDICATIVES de Claude (non sourcées), à remplacer par vos valeurs
     var COUTS_PAYS = { ma: [6000, 0.11], dz: [4000, 0.04], tn: [5000, 0.1], eg: [2500, 0.05], sn: [4000, 0.18], ci: [4200, 0.12], cm: [3500, 0.1], ng: [2800, 0.07], gh: [3000, 0.12], ke: [4200, 0.16], za: [11000, 0.11], et: [1800, 0.03], tz: [3000, 0.12], cd: [3000, 0.08], cv: [5500, 0.28], ao: [5000, 0.03], bw: [9000, 0.1], bf: [3000, 0.17], bi: [1500, 0.12], bj: [3000, 0.15], km: [3500, 0.25], cg: [4000, 0.1], dj: [6000, 0.2], sz: [8000, 0.11], ga: [6500, 0.14], gm: [2000, 0.2], gn: [2000, 0.08], gq: [6000, 0.08], gw: [2000, 0.2], ls: [6500, 0.1], ly: [5000, 0.01], lr: [2500, 0.25], mg: [2200, 0.2], mw: [2500, 0.1], ml: [3000, 0.18], mu: [9000, 0.15], mr: [4000, 0.15], mz: [4500, 0.1], na: [11000, 0.11], ne: [3000, 0.14], ug: [3200, 0.15], rw: [4000, 0.12], cf: [2000, 0.15], st: [3500, 0.2], sc: [12000, 0.25], sl: [2200, 0.2], so: [2500, 0.3], sd: [2500, 0.02], ss: [2500, 0.2], td: [2500, 0.15], tg: [3000, 0.17], zm: [5500, 0.09], zw: [4000, 0.12], er: [1500, 0.05] };
     var REGION_PAYS = { ma: "N", dz: "N", tn: "N", eg: "N", ly: "N", sd: "N", sn: "O", ci: "O", ng: "O", gh: "O", bj: "O", bf: "O", gm: "O", gn: "O", gw: "O", lr: "O", ml: "O", mr: "O", ne: "O", sl: "O", tg: "O", cm: "C", cf: "C", td: "C", cg: "C", cd: "C", gq: "C", ga: "C", et: "E", ke: "E", tz: "E", ug: "E", rw: "E", bi: "E", dj: "E", er: "E", so: "E", ss: "E", za: "S", bw: "S", sz: "S", ls: "S", na: "S", mz: "S", zm: "S", zw: "S", mw: "S", ao: "S", cv: "I", st: "I", km: "I", mg: "I", mu: "I", sc: "I" };
     // taux du pays pour une durée donnée : taux de base (vers 5 ans) ± 0,15 point par année d'écart ; sans pays, taux de départ
-    function tauxPays(annees) { var t = TAUX_PAYS[S.pays]; if (!t) return TAUX_DEFAUT; return Math.max(0.5, Math.round((t[0] + 0.15 * (annees - 5)) * 100) / 100); }
+    function tauxPays(annees) { var t = TAUX_PAYS[S.pays], b = t ? t[0] : TAUX_DEFAUT; return Math.max(0.5, Math.round((b + MARGE_PETITE + 0.15 * (annees - 5)) * 100) / 100); }
     var CLE_TAUX_BANQUE = "ced4scale-afrique-taux-banque", TAUX_BANQUE_DATE = "12/10/2026";
     try { var tb = JSON.parse(localStorage.getItem(CLE_TAUX_BANQUE) || "null"); if (tb && tb.taux) { Object.keys(tb.taux).forEach(function (k) { if (TAUX_PAYS[k]) TAUX_PAYS[k] = tb.taux[k]; }); TAUX_BANQUE_DATE = tb.date || TAUX_BANQUE_DATE; } } catch (e) {}
     function appliquerCoutsPays() { if (!S.parPays) return; var t = COUTS_PAYS[S.pays]; if (t) { S.salaire = t[0]; S.kwh = t[1]; } }
@@ -813,7 +818,7 @@
     function volumeBrut() { return S.pph * hNetAnnuel(); }
     // Temps d'acquisition moyen (minutes) selon la répartition des examens, avec la réduction de l'option e-Spades si elle est choisie : sert à l'électricité et au surcoût par examen.
     // Durée d'un examen : changement de patient (incompressible) + acquisition réduite d'e-Spades (en %), puis moins le gain fixe de Agil Exam (en minutes) sans descendre sous le changement de patient.
-    function dureeExam(T) { var c = Math.min(S.tChg, T), f = S.optAI ? 1 - S.reducIA / 100 : 1, acq = Math.max(0, (T - c) * f - (S.optSmart ? S.gainSmart : 0)); return { c: c, acq: acq, total: c + acq }; }
+    function dureeExam(T) { var c0 = Math.min(S.tChg, T), f = S.optAI ? 1 - S.reducIA / 100 : 1, c = c0 * f, acq = Math.max(0, (T - c0) * f - (S.optSmart ? S.gainSmart : 0)); return { c: c, acq: acq, total: c + acq }; }
     function acqMoyenne() { var m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * dureeExam(S["tAcq" + t.k]).acq; }); return m > 0 ? m : OSCAN.dureeAcquisitionMinutes; }
     function pphMax() { var m = tempsMoyen(); return m > 0 ? 60 / m : 4.4; } // plafond de patients par heure = 60 / temps moyen par examen (acquisition réduite par e-Spades + changement de patient)
     function tempsMoyen() { var m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * dureeExam(S["tAcq" + t.k]).total; }); return m; }
@@ -848,7 +853,7 @@
       var elec = kwhAn * S.kwh;
       var achatTotal = prixOscan();
       var anneeNum = S.annee === "moy" ? 0 : parseInt(S.annee, 10);
-      var horizon = Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort);
+      var horizon = Math.max(1, S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : S.amort);
       var mens = mensualite(achatTotal);
       var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * S.dureeMois / horizon) : (anneeNum > S.amort ? 0 : achatTotal / Math.max(1, S.amort)); // sans crédit : plus d'achat à étaler après la durée d'étalement
       // crédit actif : les mensualités se séparent en remboursement du capital (« achat ») et coût du financement (intérêts de l'année affichée ; moyenne = total des intérêts ÷ horizon)
@@ -1051,23 +1056,23 @@
     })();
     // Comparaison des pays : résultat sur 10 ans aux réglages actuels, avec droits, taxes, charges et taux bancaire propres à chaque pays (état de la page restauré ensuite)
     function resultat10Pays(k) {
-      var cles = ["pays", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux", "salaire", "kwh"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
+      var cles = ["pays", "retenue", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux", "salaire", "kwh"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
       cles.forEach(function (q) { sv[q] = S[q]; });
       S.pays = k; S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); if (S.parPays && COUTS_PAYS[k]) { S.salaire = COUTS_PAYS[k][0]; S.kwh = COUTS_PAYS[k][1]; }
-      S.chargesPat = c ? c.patro : 42; // comparaison : toujours le taux bancaire propre à chaque pays
+      S.chargesPat = c ? c.patro : 42; S.retenue = c && RETENUES_PAYS[c.k] != null ? RETENUES_PAYS[c.k] : 22; // comparaison : toujours le taux bancaire propre à chaque pays
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (j) { S["tax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][1] : 0; S["nTax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][0] : ""; }); }
       var r = calculer(), g = 1 + S.croiss / 100, P = r.achatTotal;
       for (n = 1; n <= 10; n++) {
         var ex = r.examens * Math.pow(g, n - 1), d = (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer, res = ex * S.prix - d;
         cumul += res; pat += ex; if (!anPos && cumul >= 0) anPos = n;
       }
-      out = { k: k, sal: S.salaire, kwh: S.kwh, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
+      out = { k: k, parJour: r.joursAn > 0 ? cumul / (10 * r.joursAn) : 0, sal: S.salaire, kwh: S.kwh, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
       cles.forEach(function (q) { S[q] = sv[q]; });
       return out;
     }
     (function () { // page plein écran « tous les pays » (icône carte de l'Afrique sous le drapeau)
       var page = document.createElement("div"); page.className = "af-carte-page"; page.hidden = true; page.setAttribute("role", "dialog"); page.setAttribute("aria-label", "Comparaison des pays");
-      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option></select></h2><p></p><select class="af-carte-region" aria-label="Régions"><option value="">Toutes les régions</option><option value="N">Afrique du Nord</option><option value="O">Afrique de l\'Ouest</option><option value="C">Afrique centrale</option><option value="E">Afrique de l\'Est</option><option value="S">Afrique australe</option><option value="I">Îles</option></select></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div><div class="af-carte-opts"><label class="af-check"><input type="checkbox" id="afCartePaysCouts" /> <span>Salaire du MERM et prix du kWh propres à chaque pays (estimations)</span></label><strong>Options Esaote :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div></div>';
+      page.innerHTML = '<header><div><h2><span></span> <select class="af-carte-mode" aria-label="Comparaison des pays"><option value="total">Résultat sur 10 ans</option><option value="patient">Résultat par patient</option><option value="jour">Résultat par jour d\'ouverture</option></select></h2><p></p><select class="af-carte-region" aria-label="Régions"><option value="">Toutes les régions</option><option value="N">Afrique du Nord</option><option value="O">Afrique de l\'Ouest</option><option value="C">Afrique centrale</option><option value="E">Afrique de l\'Est</option><option value="S">Afrique australe</option><option value="I">Îles</option></select></div><button type="button" class="af-carte-fermer" aria-label="Fermer">✕</button></header><div class="af-carte-grille"></div><div class="af-carte-reglages"><div class="af-mixer af-mixer--mini" id="afCarteMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem"></div><div class="af-carte-opts"><label class="af-check"><input type="checkbox" id="afCartePaysCouts" /> <span>Salaire du MERM et prix du kWh propres à chaque pays (estimations)</span></label><strong>Options Esaote :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div></div>';
       document.body.appendChild(page);
       var grille = page.querySelector(".af-carte-grille"), mode = page.querySelector(".af-carte-mode"), carteMode = "total"; // critère du classement : résultat sur 10 ans ou résultat par patient
       mode.addEventListener("change", function () { carteMode = mode.value; remplir(); });
@@ -1075,15 +1080,15 @@
       function remplir() {
         page.querySelector("h2 > span").textContent = "Comparaison des pays :";
         page.querySelector("p").textContent = "Aux réglages actuels de la table de mixage, avec les droits, taxes, charges et taux bancaire propres à chaque pays. Classés du résultat le plus généreux au moins généreux ; cliquez sur un pays pour le choisir.";
-        var res = PAYS.filter(function (c) { return !regionSel.value || REGION_PAYS[c.k] === regionSel.value; }).map(function (c) { return resultat10Pays(c.k); }).sort(function (a, b) { return carteMode === "patient" ? b.parPat - a.parPat : b.tot - a.tot; });
+        var res = PAYS.filter(function (c) { return !regionSel.value || REGION_PAYS[c.k] === regionSel.value; }).map(function (c) { return resultat10Pays(c.k); }).sort(function (a, b) { return carteMode === "patient" ? b.parPat - a.parPat : carteMode === "jour" ? b.parJour - a.parJour : b.tot - a.tot; });
         grille.textContent = "";
         res.forEach(function (x, i) {
           var c = PAYS.filter(function (y) { return y.k === x.k; })[0], b = document.createElement("button"); b.type = "button"; b.className = "af-carte-carte"; b.setAttribute("aria-current", String(x.k === S.pays));
           b.innerHTML = '<span class="rang"></span>' + drapeauPays(x.k) + '<span class="nom"></span><span class="val"></span><span class="det"></span>';
           b.querySelector(".rang").textContent = "#" + (i + 1); b.querySelector(".nom").textContent = c.nom;
-          var v = b.querySelector(".val"), parP = carteMode === "patient"; v.textContent = parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
+          var v = b.querySelector(".val"), parP = carteMode === "patient", parJ = carteMode === "jour"; v.textContent = parJ ? fmtMoney(x.parJour) : parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parJ ? x.parJour : parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
           // le détail (par patient, cumul positif, taux bancaire, coûts du pays) n'est plus écrit sous le drapeau : il reste dans l'info-bulle de la carte
-          var lignes = [parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
+          var lignes = [parJ ? "Résultat par jour d'ouverture : " + fmtMoney(x.parJour) : null, parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
           b.setAttribute("title", lignes.join(" — ")); b.querySelector(".det").remove();
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
@@ -1190,7 +1195,7 @@
       el("afN1Btn").setAttribute("aria-pressed", String(demiN1)); el("afN1Bar").hidden = demiFocus >= 0;
       zone.classList.toggle("af-demis--dual", dual);
       zone.classList.toggle("af-demis--focus", demiFocus >= 0);
-      var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
+      var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
       var anN = S.annee === "moy" ? 0 : parseInt(S.annee, 10), rembourse = S.finActif && anN > 0 && moisPayes(anN) === 0; // crédit terminé avant l'année affichée : plus de mensualités dans les dépenses
@@ -1392,7 +1397,7 @@
           if (col.kind === "int") v = Math.round(v);
           S[col.k] = Math.round(v * 1e6) / 1e6;
           if (col.k === "finAns") { if (S.finAns > 0) { S.finActif = true; S.dureeMois = Math.max(6, Math.round(S.finAns * 12)); } else S.finActif = false; }
-          if (col.k === "finAns" || col.k === "dureeMois") { ajusterAnneeCredit(); majTauxAuto(); }
+          if (col.k === "finAns" || col.k === "dureeMois") { ajusterAnneeCredit(); S.tauxAuto = true; majTauxAuto(); }
           if (col.k === "taux") S.tauxAuto = false; // taux réglé à la main : le taux automatique est désactivé
           if (col.k === "patAn") { var vol = volumeParPph(); if (vol > 0 && !S.cadenasPph) S.pph = Math.max(0.1, Math.min(pphMax(), S.patAn / vol)); }
           if (S.cadenasPph && (col.k === "hS" || col.k === "hSam" || col.k === "hDim")) S.volRef = volumeBrut(); // heures changées à la main : nouveau volume de référence
@@ -1422,7 +1427,7 @@
         var b = document.createElement("strong"); b.textContent = nom; z.appendChild(b);
         z.appendChild(document.createTextNode(" — "));
         z.appendChild(document.createTextNode("Taux bancaire du pays : " + nf2.format(tauxPays(ans)).replace(/,00$/, "") + " % pour " + nf1.format(ans).replace(/,0$/, "") + " ans"));
-        z.appendChild(document.createTextNode(" "));
+        z.appendChild(document.createTextNode(" ")); var mg = document.createElement("span"); mg.textContent = "(dont " + MARGE_PETITE + " point de marge pour une petite structure)"; z.appendChild(mg); z.appendChild(document.createTextNode(" "));
         var em = document.createElement("em"); em.textContent = t[1] ? "(relevé" + (t[2] ? " : " + t[2] : "") + ")" : "(estimation à confirmer avec une banque locale)"; z.appendChild(em);
       })();
       S.finAns = S.finActif ? Math.round(S.dureeMois / 6) / 2 : 0; el("afFinActif").checked = S.finActif;
@@ -1526,17 +1531,17 @@
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
-      majTauxAuto(); appliquerCoutsPays();
+      S.parPays = true; majTauxAuto(); appliquerCoutsPays();
       if (el("afPaysFiltre").value) { el("afPaysFiltre").value = ""; filtrerPays(); selP.value = S.pays; }
       majDrapeauPays();
-      S.chargesPat = c ? c.patro : 42;
+      S.chargesPat = c ? c.patro : 42; S.retenue = c && RETENUES_PAYS[c.k] != null ? RETENUES_PAYS[c.k] : 22;
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (i) { S["tax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][1] : 0; S["nTax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][0] : ""; }); }
       synchroniser(); rendre();
     });
     el("afImpTva").addEventListener("change", function () { S.tvaCompte = this.checked; rendre(); });
     function majImport() {
       var c = PAYS.filter(function (x) { return x.k === S.pays; })[0], ht = prixHT(), d = detailImport(ht);
-      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>Charges patronales sur le salaire du MERM : " + nf2.format(c.patro).replace(/,00$/, "") + (c.patroRel ? " % (taux relevés)." : " % (estimation à confirmer).") + "<br>L'IRM part d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez le pays qui achète l'IRM : les frais d'importation depuis l'Italie s'ajoutent alors au prix d'achat.";
+      el("afImpStatut").innerHTML = c ? "<strong>" + c.nom + "</strong> — " + c.statut + (c.note ? "<br>" + c.note : "") + "<br>Retenues salariales sur le salaire du MERM : " + nf2.format(RETENUES_PAYS[c.k] != null ? RETENUES_PAYS[c.k] : 22).replace(/,00$/, "") + " % (estimation à confirmer).<br>Charges patronales sur le salaire du MERM : " + nf2.format(c.patro).replace(/,00$/, "") + (c.patroRel ? " % (taux relevés)." : " % (estimation à confirmer).") + "<br>L'IRM part d'Italie : vérifiez auprès d'un transitaire les accords commerciaux applicables." : "Choisissez le pays qui achète l'IRM : les frais d'importation depuis l'Italie s'ajoutent alors au prix d'achat.";
       var h = '<tbody><tr><td>Prix de l\'O-scan et options (hors taxes)</td><td></td><td style="text-align:right">' + fmtMoney(ht) + '</td></tr>';
       d.lignes.forEach(function (l) { h += '<tr><td>' + l[0] + '</td><td style="text-align:right;white-space:nowrap">' + fmtPct(l[1]) + '</td><td style="text-align:right;white-space:nowrap">' + fmtMoney(l[2]) + '</td></tr>'; });
       h += '<tr><td><strong>Frais et taxes d\'importation</strong></td><td style="text-align:right">' + (ht > 0 ? fmtPct(d.total / ht * 100) : "") + '</td><td style="text-align:right;white-space:nowrap"><strong>' + fmtMoney(d.total) + '</strong></td></tr>' +

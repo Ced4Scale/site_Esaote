@@ -2739,6 +2739,15 @@ window.AF_I18N = {
 "maksimum: §"
 ],
 [
+"Retenues salariales sur le salaire du MERM : § % (estimation à confirmer).",
+"Employee deductions on the radiographer's salary: § % (estimate to be confirmed).",
+"Trattenute a carico del dipendente sullo stipendio del TSRM: § % (stima da confermare).",
+"Descontos do trabalhador sobre o salário do técnico (MERM): § % (estimativa a confirmar).",
+"اقتطاعات الأجير من راتب فني الأشعة: § % (تقدير يجب تأكيده).",
+"Makato ya mfanyakazi kwenye mshahara wa mtaalamu wa mionzi: § % (makadirio yathibitishwe).",
+"Werknemersaftrekkings op die salaris van die MERM: § % (skatting om te bevestig)."
+],
+[
 "Charges patronales sur le salaire du MERM : § % (taux relevés).",
 "Employer charges on the radiographer's salary: § % (rates noted).",
 "Oneri a carico del datore di lavoro sullo stipendio del TSRM: § % (aliquote rilevate).",
@@ -2793,13 +2802,49 @@ window.AF_I18N = {
 "Werkgewersheffings (in % van die bruto)"
 ],
 [
-"Salaire de départ : ¤ net par an (confirmé le §/§/§). Retenues (§ %) et charges patronales (§ %) : règles françaises tant qu'aucun pays acheteur n'est choisi ; à adapter au pays visé.",
-"Starting salary: ¤ net per year (confirmed on §/§/§). Deductions (§ %) and employer charges (§ %): French rules as long as no buying country is chosen; adapt to the target country.",
-"Stipendio iniziale: ¤ netti all'anno (confermato il §/§/§). Trattenute (§ %) e oneri datore di lavoro (§ %): regole francesi finché non si sceglie un paese acquirente; da adattare al paese di destinazione.",
-"Salário inicial: ¤ líquidos por ano (confirmado em §/§/§). Descontos (§ %) e encargos patronais (§ %): regras francesas enquanto nenhum país comprador for escolhido; adaptar ao país visado.",
-"الراتب الابتدائي: ¤ صافية سنويًا (تم تأكيده في §/§/§). الاقتطاعات (§ %) وأعباء صاحب العمل (§ %): قواعد فرنسية ما دام لم يُختر بلد مشترٍ؛ يجب تكييفها مع البلد المستهدف.",
-"Mshahara wa kuanzia: ¤ halisi kwa mwaka (umethibitishwa §/§/§). Makato (§ %) na gharama za mwajiri (§ %): kanuni za Ufaransa mradi hakuna nchi mnunuzi iliyochaguliwa; zirekebishwe kulingana na nchi lengwa.",
-"Beginsalaris: ¤ netto per jaar (bevestig op §/§/§). Aftrekkings (§ %) en werkgewersheffings (§ %): Franse reëls solank geen kopersland gekies is nie; pas aan by die teikenland."
+"Salaire de départ : ¤ net par an (confirmé le §/§/§). Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues § %, charges patronales § %).",
+"Starting salary: ¤ net per year (confirmed on §/§/§). When you choose a country, the radiographer's salary, the price per kWh, the deductions and the employer charges are suggested (estimates); you can change them. With no country: French rules (deductions § %, employer charges § %).",
+"Stipendio iniziale: ¤ netti all'anno (confermato il §/§/§). Quando scegliete un paese, lo stipendio del TSRM, il prezzo del kWh, le trattenute e gli oneri a carico del datore di lavoro vengono proposti (stime); potete modificarli. Senza paese: regole francesi (trattenute § %, oneri § %).",
+"Salário inicial: ¤ líquidos por ano (confirmado em §/§/§). Ao escolher um país, o salário do técnico (MERM), o preço do kWh, os descontos e os encargos patronais são propostos (estimativas); pode alterá-los. Sem país: regras francesas (descontos § %, encargos patronais § %).",
+"الراتب الابتدائي: ¤ صافية سنويًا (تم تأكيده في §/§/§). عند اختيار بلد، يُقترح راتب فني الأشعة وسعر الكيلوواط ساعة والاقتطاعات وأعباء صاحب العمل (تقديرات)؛ يمكنكم تعديلها. دون بلد: قواعد فرنسية (اقتطاعات § %، أعباء § %).",
+"Mshahara wa kuanzia: ¤ halisi kwa mwaka (umethibitishwa §/§/§). Ukichagua nchi, mshahara wa mtaalamu wa mionzi, bei ya kWh, makato na gharama za mwajiri hupendekezwa (makadirio); mnaweza kuzirekebisha. Bila nchi: kanuni za Ufaransa (makato § %, gharama § %).",
+"Beginsalaris: ¤ netto per jaar (bevestig op §/§/§). Wanneer u 'n land kies, word die salaris van die MERM, die prys per kWh, die aftrekkings en die werkgewersheffings voorgestel (skattings); u kan dit verander. Sonder land: Franse reëls (aftrekkings § %, heffings § %)."
+],
+[
+"(dont § point de marge pour une petite structure)",
+"(including § point margin for a small business)",
+"(di cui § punto di margine per una piccola struttura)",
+"(incluindo § ponto de margem para uma pequena estrutura)",
+"(منها § نقطة هامش لمؤسسة صغيرة)",
+"(ikiwemo pointi § ya ziada kwa taasisi ndogo)",
+"(waarvan § punt marge vir 'n klein onderneming)"
+],
+[
+"MERM : ¤ net par an",
+"Radiographer: ¤ net per year",
+"TSRM: ¤ netti all'anno",
+"Técnico (MERM): ¤ líquidos por ano",
+"فني الأشعة: ¤ صافية سنويًا",
+"Mtaalamu wa mionzi: ¤ halisi kwa mwaka",
+"MERM: ¤ netto per jaar"
+],
+[
+"Résultat par jour d'ouverture : ¤",
+"Result per opening day: ¤",
+"Risultato per giorno di apertura: ¤",
+"Resultado por dia de abertura: ¤",
+"النتيجة لكل يوم عمل: ¤",
+"Matokeo kwa siku ya kufungua: ¤",
+"Resultaat per openingsdag: ¤"
+],
+[
+"¤ le kWh",
+"¤ per kWh",
+"¤ al kWh",
+"¤ por kWh",
+"¤ للكيلوواط ساعة",
+"¤ kwa kWh",
+"¤ per kWh"
 ],
 [
 "Prix saisis",
