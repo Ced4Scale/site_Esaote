@@ -177,6 +177,8 @@
     #afImpPop { width: min(calc(100vw - 4.5rem), 580px); }
     .af-lang-btn { width: auto; padding: 0 .45rem; }
     .af-lang-btn svg, .af-lang-row svg { display: block; width: 22px; height: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 2px; }
+    .af-imp-btn { width: auto; padding: 0 .45rem; }
+    .af-imp-flag svg.af-flag { display: block; width: 22px; height: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 2px; }
     .af-lang-row { display: flex; align-items: center; gap: .6rem; }
     html[dir="rtl"] .af-pop, html[dir="rtl"] .af-mixer__header { text-align: right; }
     html[dir="rtl"] .af-legende b, html[dir="rtl"] .af-pm-valeur, html[dir="rtl"] .af-mixer__value, html[dir="rtl"] .af-demi svg text { direction: ltr; unicode-bidi: isolate; }
@@ -390,8 +392,8 @@
 
           <!-- Import : pays, droits de douane, autres taxes, TVA (les IRM arrivent d'Italie) -->
           <span class="af-info-wrap">
-            <button type="button" class="af-info-btn" id="afImpBtn" aria-expanded="false" aria-controls="afImpPop" aria-label="Importation : pays, droits de douane, taxes et TVA" title="Importation (douane, taxes, TVA)">
-              <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M2.5 15h19l-2.4 4.5H5z" fill="currentColor"/><rect x="5" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="9.8" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14.6" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 6.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <button type="button" class="af-info-btn af-imp-btn" id="afImpBtn" aria-expanded="false" aria-controls="afImpPop" aria-label="Importation : pays, droits de douane, taxes et TVA" title="Importation (douane, taxes, TVA)">
+              <span class="af-imp-flag" id="afImpFlag"></span>
             </button>
             <div class="af-pop af-pop--large" id="afImpPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
@@ -1065,6 +1067,7 @@
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
+      majDrapeauPays();
       S.chargesPat = c ? c.patro : 42;
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (i) { S["tax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][1] : 0; S["nTax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][0] : ""; }); }
       synchroniser(); rendre();
@@ -1226,6 +1229,37 @@
       }[c];
       return '<svg viewBox="0 0 3 2" preserveAspectRatio="none" aria-hidden="true">' + f + '</svg>';
     }
+
+    // Drapeau du pays acheteur (icône d'importation) : remplace le bateau dès qu'un pays est choisi.
+    var NAVIRE = '<svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M2.5 15h19l-2.4 4.5H5z" fill="currentColor"/><rect x="5" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="9.8" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><rect x="14.6" y="9" width="4.2" height="4.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M7 6.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+    function etoile(cx, cy, r, fill) { var p = [], k, a, rr; for (k = 0; k < 10; k++) { a = -Math.PI / 2 + k * Math.PI / 5; rr = k % 2 ? r * 0.382 : r; p.push((cx + rr * Math.cos(a)).toFixed(3) + "," + (cy + rr * Math.sin(a)).toFixed(3)); } return '<polygon points="' + p.join(" ") + '" fill="' + fill + '"/>'; }
+    function croissant(cx, cy, R, r, d, fill) { var x = (d * d + R * R - r * r) / (2 * d), y = Math.sqrt(Math.max(0, R * R - x * x)); return '<path d="M' + (cx + x).toFixed(3) + "," + (cy - y).toFixed(3) + " A" + R + "," + R + " 0 1 0 " + (cx + x).toFixed(3) + "," + (cy + y).toFixed(3) + " A" + r + "," + r + " 0 1 1 " + (cx + x).toFixed(3) + "," + (cy - y).toFixed(3) + ' Z" fill="' + fill + '"/>'; }
+    function bandesV(c) { return c.map(function (k, i) { return '<rect x="' + i + '" width="1" height="2" fill="' + k + '"/>'; }).join(""); }
+    function bandesH(c) { var h = 2 / c.length; return c.map(function (k, i) { return '<rect y="' + (i * h).toFixed(3) + '" width="3" height="' + (h + 0.01).toFixed(3) + '" fill="' + k + '"/>'; }).join(""); }
+    var DRAPEAUX_PAYS = {
+      ma: function () { var p = [], k, a; for (k = 0; k < 5; k++) { a = -Math.PI / 2 + k * 2 * Math.PI / 5; p.push([1.5 + 0.42 * Math.cos(a), 1 + 0.42 * Math.sin(a)]); } var o = [0, 2, 4, 1, 3, 0].map(function (i, n) { return (n ? "L" : "M") + p[i][0].toFixed(3) + "," + p[i][1].toFixed(3); }).join(""); return '<rect width="3" height="2" fill="#C1272D"/><path d="' + o + 'Z" fill="none" stroke="#006233" stroke-width="0.07"/>'; },
+      dz: function () { return '<rect width="1.5" height="2" fill="#006233"/><rect x="1.5" width="1.5" height="2" fill="#fff"/>' + croissant(1.5, 1, 0.5, 0.4, 0.12, "#D21034") + etoile(1.68, 1, 0.2, "#D21034"); },
+      tn: function () { return '<rect width="3" height="2" fill="#E70013"/><circle cx="1.5" cy="1" r="0.52" fill="#fff"/>' + croissant(1.5, 1, 0.38, 0.3, 0.1, "#E70013") + etoile(1.58, 1, 0.16, "#E70013"); },
+      eg: function () { return bandesH(["#CE1126", "#fff", "#000"]) + '<circle cx="1.5" cy="1" r="0.2" fill="#C09300"/>'; },
+      sn: function () { return bandesV(["#00853F", "#FDEF42", "#E31B23"]) + etoile(1.5, 1, 0.3, "#00853F"); },
+      ci: function () { return bandesV(["#F77F00", "#fff", "#009E60"]); },
+      cm: function () { return bandesV(["#007A5E", "#CE1126", "#FCD116"]) + etoile(1.5, 1, 0.3, "#FCD116"); },
+      ng: function () { return bandesV(["#008751", "#fff", "#008751"]); },
+      gh: function () { return bandesH(["#CE1126", "#FCD116", "#006B3F"]) + etoile(1.5, 1, 0.3, "#000"); },
+      ke: function () { return bandesH(["#000", "#fff", "#BB0000", "#fff", "#006600"]).replace('height="0.41"', 'height="0.41"') + '<rect y="0.4" width="3" height="0.27" fill="#fff"/><rect y="0.67" width="3" height="0.66" fill="#BB0000"/><rect y="1.33" width="3" height="0.27" fill="#fff"/><rect y="1.6" width="3" height="0.4" fill="#006600"/><ellipse cx="1.5" cy="1" rx="0.3" ry="0.5" fill="#BB0000" stroke="#000" stroke-width="0.06"/>'; },
+      za: function () { return null; },
+      et: function () { return bandesH(["#078930", "#FCDD09", "#DA121D"]) + '<circle cx="1.5" cy="1" r="0.4" fill="#0F47AF"/>' + etoile(1.5, 1, 0.26, "#FCDD09"); },
+      tz: function () { return null; },
+      cd: function () { return '<rect width="3" height="2" fill="#007FFF"/><path d="M0,2 L3,0" stroke="#F7D618" stroke-width="0.62"/><path d="M0,2 L3,0" stroke="#CE1021" stroke-width="0.4"/>' + etoile(0.45, 0.45, 0.28, "#F7D618"); },
+      cv: function () { var d = "", k; for (k = 0; k < 10; k++) { d += '<circle cx="' + (1.2 + 0.45 * Math.cos(k * Math.PI / 5)).toFixed(3) + '" cy="' + (1.1 + 0.45 * Math.sin(k * Math.PI / 5)).toFixed(3) + '" r="0.055" fill="#F7D116"/>'; } return '<rect width="3" height="2" fill="#003893"/><rect y="1.0" width="3" height="0.18" fill="#fff"/><rect y="1.1" width="3" height="0.0" fill="#fff"/><rect y="1.03" width="3" height="0.12" fill="#CF2027"/>' + d; }
+    };
+    function drapeauPays(k) {
+      var f = DRAPEAUX_PAYS[k], g = f ? f() : null;
+      if (k === "za") return drapeau("af").replace("<svg ", '<svg class="af-flag" ');
+      if (k === "tz") return drapeau("sw").replace("<svg ", '<svg class="af-flag" ');
+      return g ? '<svg class="af-flag" viewBox="0 0 3 2" preserveAspectRatio="none" aria-hidden="true">' + g + "</svg>" : NAVIRE;
+    }
+    function majDrapeauPays() { el("afImpFlag").innerHTML = drapeauPays(S.pays); }
     var I18N = window.AF_I18N || { langs: ["fr"], rows: [] }, MAPS = {};
     I18N.langs.forEach(function (c, i) { if (i > 0) { MAPS[c] = {}; I18N.rows.forEach(function (r) { if (r[i]) MAPS[c][r[0]] = r[i]; }); } });
     var codesMonnaie = CURRENCIES.map(function (x) { return x.c; }).join("|");
