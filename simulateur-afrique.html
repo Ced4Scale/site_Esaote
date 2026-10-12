@@ -1110,7 +1110,9 @@
           var v = b.querySelector(".val"), parP = carteMode === "patient", parJ = carteMode === "jour"; v.textContent = parJ ? fmtMoney(x.parJour) : parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parJ ? x.parJour : parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
           // le détail (par patient, cumul positif, taux bancaire, coûts du pays) n'est plus écrit sous le drapeau : il reste dans l'info-bulle de la carte
           var lignes = [parJ ? "Résultat par jour d'ouverture : " + fmtMoney(x.parJour) : null, parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Prix de l'examen : " + fmtMoney(x.prix), "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
-          b.setAttribute("title", lignes.join(" — ")); var dt = b.querySelector(".det"); if (cartePrixPays) dt.textContent = "Examen : " + fmtMoney(x.prix); else dt.remove(); // prix de l'hôpital public écrit sous chaque pays
+          b.setAttribute("title", lignes.join(" — ")); var dt = b.querySelector(".det"); // prix de l'examen (hôpital public) puis prix du kWh écrits sous chaque pays
+          var tx = []; if (cartePrixPays) tx.push("Examen : " + fmtMoney(x.prix)); if (S.parPays) tx.push("kWh : " + fmtMoney2(x.kwh));
+          if (tx.length) { dt.textContent = ""; tx.forEach(function (t) { var l = document.createElement("div"); l.textContent = t; dt.appendChild(l); }); } else dt.remove();
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
         });

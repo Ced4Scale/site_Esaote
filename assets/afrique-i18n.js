@@ -3027,6 +3027,15 @@ window.AF_I18N = {
 "Ondersoek: ¤"
 ],
 [
+"kWh : ¤",
+"kWh: ¤",
+"kWh: ¤",
+"kWh: ¤",
+"كيلوواط ساعة: ¤",
+"kWh: ¤",
+"kWh: ¤"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
