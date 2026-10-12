@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014p"></script>
+  <script src="assets/afrique-i18n.js?v=20261014q"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -106,6 +106,7 @@
     .af-demi.is-focus { cursor: zoom-out; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "titre titre" "annees annees" "anneau legende"; align-items: center; gap: .4rem 1.8rem; padding: .4rem .6rem; }
     .af-demi-annees { grid-area: annees; display: flex; flex-wrap: wrap; gap: .4rem; justify-content: center; margin: .2rem 0 .4rem; cursor: default; }
     .af-demi-annees button { display: inline-flex; flex-direction: column; align-items: center; gap: 0; padding: .3rem .75rem; border: 1px solid var(--af-bd); border-radius: 999px; background: #fff; font: inherit; font-size: .8rem; font-weight: 700; color: var(--ink); cursor: pointer; }
+    .af-demi-annees[hidden] { display: none; }
     .af-demi-annees button small { font-size: .62rem; font-weight: 600; color: var(--muted); }
     .af-demi-annees button:hover { border-color: var(--red); }
     .af-demi-annees button[aria-pressed="true"] { background: var(--red); border-color: var(--red); color: #fff; }
@@ -300,6 +301,7 @@
       </button>
       <h2 class="af-titre">Recettes, dépenses et résultat</h2>
       <p class="af-sous-titre" id="afSousTitre"></p>
+      <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
       <div class="af-demis" id="afDemis"></div>
       <div class="af-pm" id="afPm"></div>
 
@@ -841,6 +843,7 @@
           : "Le prix de l'examen ne couvre pas le surcoût d'électricité d'un examen supplémentaire.",
         isFinite(pmJour) ? Math.min(1, exJour / (pmJour * 2)) : 0, exJour >= pmJour ? "#1baf7a" : "#c2334d", "0", isFinite(pmJour) ? nf1.format(pmJour * 2) + " examens par jour" : ""));
     }
+    el("afN1Btn").addEventListener("click", function () { demiN1 = !demiN1; rendre(); });
     var demiFocus = -1, demiN1 = false; // demiFocus : numéro du demi-anneau affiché seul en grand (-1 : les trois) ; demiN1 : second demi-anneau « N+1 » (année après le financement)
     function demisPour(r) { // les trois demi-anneaux (Recettes, Dépenses, Résultat) d'un jeu de résultats
       var positif = r.resultat >= 0;
@@ -856,7 +859,7 @@
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
       var boxes = demisPour(r), dual = demiFocus >= 0 && demiN1, boxes2 = null, nFin = S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : Math.max(1, S.amort);
-      if (dual) { // second demi-anneau : l'année qui suit la fin du financement (ou de l'étalement), pour voir les gains une fois l'IRM remboursée
+      if (demiN1) { // second jeu de demi-anneaux : l'année qui suit la fin du financement (ou de l'étalement), pour voir les gains une fois l'IRM remboursée
         var anSave = S.annee; S.annee = String(nFin + 1); var r2 = calculer(); S.annee = anSave; boxes2 = demisPour(r2);
       }
       boxes.forEach(function (bx, i) {
@@ -884,6 +887,17 @@
           }
         }
       });
+      if (demiN1 && demiFocus < 0) { // aucun anneau agrandi : une seconde rangée avec les trois demi-anneaux de l'année qui suit le financement
+        boxes.forEach(function (bx) { var c1 = document.createElement("div"); c1.className = "af-demi-an"; c1.textContent = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, nFin) : S.amort)) + " ans" : "Année " + S.annee; bx.insertBefore(c1, bx.querySelector("h3").nextSibling); });
+        boxes2.forEach(function (b2, i) {
+          var c2 = document.createElement("div"); c2.className = "af-demi-an"; c2.textContent = "Année " + (nFin + 1) + " · après financement"; b2.insertBefore(c2, b2.querySelector("h3").nextSibling);
+          b2.tabIndex = 0; b2.setAttribute("role", "button"); b2.setAttribute("aria-label", b2.querySelector("h3").textContent);
+          function foc() { demiFocus = i; rendre(); }
+          b2.addEventListener("click", foc); b2.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); foc(); } });
+          zone.appendChild(b2);
+        });
+      }
+      el("afN1Btn").setAttribute("aria-pressed", String(demiN1)); el("afN1Bar").hidden = demiFocus >= 0;
       zone.classList.toggle("af-demis--dual", dual);
       zone.classList.toggle("af-demis--focus", demiFocus >= 0);
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
