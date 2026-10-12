@@ -722,7 +722,8 @@
       // taille ajustée à la largeur de la zone blanche (le montant ne déborde jamais de l'anneau, même en FCFA)
       var tailleC = Math.max(8, Math.min(17, 128 / (centre.valeur.length * 0.62)));
       var t2 = svgEl("text", { x: cx, y: cy - 10, "text-anchor": "middle", "font-size": tailleC.toFixed(1), "font-weight": 800, fill: centre.couleur || "#222" }); t2.textContent = centre.valeur; svg.appendChild(t2);
-      [].concat(centre.sous || []).filter(Boolean).forEach(function (ligne, i) { // lignes de détail sous le montant (examens par an, valeur par patient…)
+      [].concat(centre.sous || []).forEach(function (ligne, i) { // lignes de détail sous le montant (1re : examens par an ; 2e : valeur par patient, au même niveau dans les 3 anneaux)
+        if (!ligne) return;
         var t3 = svgEl("text", { x: cx, y: cy + 8 + i * 14, "text-anchor": "middle", "font-size": 10.5, "font-weight": 600, fill: "#777" }); t3.textContent = ligne; svg.appendChild(t3);
       });
       var box = document.createElement("div"); box.className = "af-demi";
@@ -810,10 +811,10 @@
       CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
       zone.appendChild(demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney(r.recettes / r.examens) + " de recette par patient" : ""] }));
-      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: r.examens > 0 ? fmtMoney(r.depenses / r.examens) + " de charges par patient" : "" }));
+      zone.appendChild(demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney(r.depenses / r.examens) + " de charges par patient" : ""] }));
       var positif = r.resultat >= 0;
       zone.appendChild(demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, maint: r.maint, resultat: Math.max(0, r.resultat) },
-        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: r.examens > 0 ? fmtMoney(r.resultat / r.examens) + " de résultat par patient" : "" }));
+        positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney(r.resultat / r.examens) + " de résultat par patient" : ""] }));
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
