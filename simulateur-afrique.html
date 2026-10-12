@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261013d"></script>
+  <script src="assets/afrique-i18n.js?v=20261013e"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -82,8 +82,11 @@
     .af-pop-plein .af-fs-reduire { display: none; }
     .af-pop-plein.is-fullscreen .af-fs-agrandir { display: none; }
     .af-pop-plein.is-fullscreen .af-fs-reduire { display: inline; }
-    #afOptPop:fullscreen { position: fixed; inset: 0; width: 100vw !important; max-width: none; height: 100vh; max-height: none !important; margin: 0; translate: none; overflow: auto; box-sizing: border-box; padding: 1.2rem max(1.5rem, 4vw); border-radius: 0; }
-    #afOptPop:fullscreen .af-table.af-table--tco { font-size: clamp(.6rem, 1.3cqw, .9rem); }
+    /* Plein écran depuis l'icône Esaote : le panneau Esaote occupe le centre, les autres panneaux ouverts restent en bandes à gauche et à droite (règles .af-bloc:fullscreen .af-pop) */
+    .af-bloc.af-opt-plein:fullscreen::before { content: ""; position: fixed; inset: 0; background: var(--wash, #f7f7f7); z-index: 10; }
+    .af-bloc.af-opt-plein:fullscreen #afOptPop { position: fixed; top: 1rem; left: max(var(--gut), 21rem); right: max(var(--gut), 21rem); width: auto !important; max-height: calc(100vh - 2rem) !important; margin: 0; translate: none; z-index: 21; overflow: auto; padding-top: 1.6rem; }
+    .af-bloc.af-opt-plein:fullscreen .af-pop:not(#afOptPop) { width: 300px !important; max-width: calc(max(var(--gut), 21rem) - 1.4rem); }
+    .af-bloc.af-opt-plein:fullscreen #afOptPop .af-table.af-table--tco { font-size: clamp(.5rem, 1.3cqw, .85rem); }
     .af-fs-btn .af-fs-reduire { display: none; }
     .af-fs-btn.is-fullscreen .af-fs-agrandir { display: none; }
     .af-fs-btn.is-fullscreen .af-fs-reduire { display: inline; }
@@ -1206,10 +1209,17 @@
       if (document.fullscreenElement) document.exitFullscreen(); else if (bloc.requestFullscreen) bloc.requestFullscreen();
     });
     document.addEventListener("fullscreenchange", function () { fsBtn.classList.toggle("is-fullscreen", document.fullscreenElement === bloc); });
-    (function () { // plein écran du panneau des options Esaote
-      var pop = el("afOptPop"), b = el("afOptFs");
-      b.addEventListener("click", function (e) { e.stopPropagation(); if (document.fullscreenElement === pop) document.exitFullscreen(); else if (pop.requestFullscreen) pop.requestFullscreen(); });
-      document.addEventListener("fullscreenchange", function () { b.classList.toggle("is-fullscreen", document.fullscreenElement === pop); requestAnimationFrame(alignerMixers); });
+    (function () { // plein écran depuis l'icône Esaote : panneau Esaote au centre, autres panneaux ouverts en bandes latérales
+      var pop = el("afOptPop"), b = el("afOptFs"), dejaPlein = false;
+      function etat() { b.classList.toggle("is-fullscreen", bloc.classList.contains("af-opt-plein")); requestAnimationFrame(alignerMixers); }
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        if (bloc.classList.contains("af-opt-plein")) { bloc.classList.remove("af-opt-plein"); if (!dejaPlein && document.fullscreenElement) document.exitFullscreen(); etat(); return; }
+        dejaPlein = document.fullscreenElement === bloc;
+        bloc.classList.add("af-opt-plein"); etat();
+        if (!dejaPlein && bloc.requestFullscreen) bloc.requestFullscreen().catch(function () { bloc.classList.remove("af-opt-plein"); etat(); });
+      });
+      document.addEventListener("fullscreenchange", function () { if (!document.fullscreenElement) bloc.classList.remove("af-opt-plein"); etat(); });
     })();
     el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
 
