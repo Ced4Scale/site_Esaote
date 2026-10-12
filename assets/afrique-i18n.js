@@ -3259,6 +3259,24 @@ window.AF_I18N = {
 "السيولة السنوية (¤ بعد الصيانة) لا تسمح باسترداد سعر جهاز O-scan وفوائد القرض (¤).",
 "Fedha taslimu ya mwaka (¤ baada ya matengenezo) haitoshi kurudisha bei ya O-scan na riba ya mkopo (¤).",
 "Die jaarlikse kontant (¤ ná instandhouding) laat nie toe om die prys van die O-scan en die leningrente (¤) terug te verdien nie."
+],
+[
+"Coût du financement (intérêts)",
+"Financing cost (interest)",
+"Costo del finanziamento (interessi)",
+"Custo do financiamento (juros)",
+"تكلفة التمويل (الفوائد)",
+"Gharama ya ufadhili (riba)",
+"Koste van finansiering (rente)"
+],
+[
+"Remboursement de l'O-scan et options (capital)",
+"Repayment of the O-scan and options (principal)",
+"Rimborso dell'O-scan e opzioni (capitale)",
+"Reembolso do O-scan e opções (capital)",
+"سداد ثمن O-scan والخيارات (أصل الدين)",
+"Ulipaji wa O-scan na chaguo (mtaji)",
+"Terugbetaling van die O-scan en opsies (kapitaal)"
 ]
 ]
 };
