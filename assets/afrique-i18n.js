@@ -3196,6 +3196,24 @@ window.AF_I18N = {
 "¤ نتيجة لكل مريض",
 "¤ ya matokeo kwa mgonjwa",
 "¤ resultaat per pasiënt"
+],
+[
+"Durée du financement",
+"Financing term",
+"Durata del finanziamento",
+"Duração do financiamento",
+"مدة التمويل",
+"Muda wa ufadhili",
+"Duur van die finansiering"
+],
+[
+"sans crédit (achat étalé)",
+"no loan (purchase spread)",
+"senza prestito (acquisto ripartito)",
+"sem crédito (compra diluída)",
+"بدون قرض (شراء موزَّع)",
+"bila mkopo (ununuzi umegawanywa)",
+"geen lening (aankoop gespreid)"
 ]
 ]
 };

@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014g"></script>
+  <script src="assets/afrique-i18n.js?v=20261014h"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -576,7 +576,7 @@
 
     // ------------------------------------------------------------------ état (tout en euros)
     var S = {
-      pph: 2, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
+      pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
       plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
@@ -859,6 +859,8 @@
       { id: "afGMerm", titre: "Nombre de MERM", choix: "Nombre de MERM", cols: [{ k: "nMerm", color: "#d1477a", min: 0, max: 2, step: 0.5, kind: "dec", unit: "ETP" }] },
       { id: "afGPrix", titre: "Prix de l'examen", choix: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
       { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
+      // Durée du financement (0 à 10 ans) : vue en années du crédit de l'icône banque. 0 = pas de crédit (achat étalé) ; au-dessus de 0, le crédit est activé pour cette durée.
+      { id: "afGFin", titre: "Durée du financement", choix: "Durée du financement", unitFn: function () { return S.finActif ? "" : "sans crédit (achat étalé)"; }, cols: [{ k: "finAns", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" }] },
       { id: "afGKwh", titre: "Coût du kWh", choix: "Coût du kWh", cols: [{ k: "kwh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" }] },
       { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle", unitFn: function () { return S.garantie > 0 ? "après " + fmt(S.garantie) + " mois de garantie" : "sans garantie"; }, cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
     ];
@@ -1006,6 +1008,7 @@
           v = Math.max(mn, Math.min(mx, v));
           if (col.kind === "int") v = Math.round(v);
           S[col.k] = Math.round(v * 1e6) / 1e6;
+          if (col.k === "finAns") { if (S.finAns > 0) { S.finActif = true; S.dureeMois = Math.max(6, Math.round(S.finAns * 12)); } else S.finActif = false; }
           if (S.cadenasPph && (col.k === "hS" || col.k === "hSam" || col.k === "hDim")) S.volRef = volumeBrut(); // heures changées à la main : nouveau volume de référence
           synchroniser(); rendre();
         }
@@ -1022,6 +1025,7 @@
     });
 
     function synchroniser() {
+      S.finAns = S.finActif ? Math.round(S.dureeMois / 6) / 2 : 0; el("afFinActif").checked = S.finActif;
       GROUPES.forEach(function (g) {
         var gd = el(g.id); gd.hidden = !g.ou && visibles[g.id] === false;
         if (g.unitFn) gd.lastElementChild.textContent = g.unitFn();
@@ -1140,7 +1144,7 @@
     brancher("afFinBtn", "afFinPop");
     brancher("afNegBtn", "afNegPop");
     [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
-    el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; rendre(); });
+    el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; synchroniser(); rendre(); });
 
     // ------------------------------------------------------------------ loyer
     el("afLoyerM2").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.loyerM2 = n / cur.r; synchroniser(); rendre(); });
