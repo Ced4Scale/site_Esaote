@@ -3232,6 +3232,15 @@ window.AF_I18N = {
 "النسبة",
 "Riba",
 "Koers"
+],
+[
+"crédit déjà remboursé",
+"loan already repaid",
+"prestito già rimborsato",
+"crédito já reembolsado",
+"القرض سُدِّد بالفعل",
+"mkopo umeshalipwa tayari",
+"lening reeds terugbetaal"
 ]
 ]
 };

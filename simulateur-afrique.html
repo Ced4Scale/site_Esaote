@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014i"></script>
+  <script src="assets/afrique-i18n.js?v=20261014j"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -837,7 +837,8 @@
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Financement (loyer du crédit)" : "Achat de l'O-scan et options (étalé)";
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
-      el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + cur.n + " (" + cur.c + ")";
+      var anN = S.annee === "moy" ? 0 : parseInt(S.annee, 10), rembourse = S.finActif && anN > 0 && moisPayes(anN) === 0; // crédit terminé avant l'année affichée : plus de mensualités dans les dépenses
+      el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + (rembourse ? "crédit déjà remboursé · " : "") + cur.n + " (" + cur.c + ")";
       el("afNegSortie").innerHTML = [["Diagnostique", S.repDiag], ["Claustrophobie", S.repClau], ["Consultation d'orthopédiste", S.repOrth]].map(function (l) { return l[0] + " : <strong>" + fmt(r.examens * l[1] / 100) + "</strong> examens par an (" + fmt(l[1]) + " %)"; }).join("<br>");
       majRepart();
       majTemps();
