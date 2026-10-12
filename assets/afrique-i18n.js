@@ -795,6 +795,15 @@ window.AF_I18N = {
 "Aannames"
 ],
 [
+"Hypothèses (salaire, charges)",
+"Assumptions (salary, charges)",
+"Ipotesi (stipendio, oneri)",
+"Hipóteses (salário, encargos)",
+"الافتراضات (الراتب، الأعباء)",
+"Dhana (mshahara, gharama za ajira)",
+"Aannames (salaris, heffings)"
+],
+[
 "Hypothèses (salaire, charges, durée d'étalement de l'achat)",
 "Assumptions (salary, charges, purchase spreading period)",
 "Ipotesi (stipendio, oneri, durata di ripartizione dell'acquisto)",

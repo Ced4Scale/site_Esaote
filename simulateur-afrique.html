@@ -601,12 +601,11 @@
       </div>
 
       <details class="af-hyp">
-        <summary>Hypothèses (salaire, charges, durée d'étalement de l'achat)</summary>
+        <summary>Hypothèses (salaire, charges)</summary>
         <div class="af-hyp-grille">
           <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /><span class="af-hyp-unite" id="afSalaireUnite">€</span></div>
           <div><label for="afRetenue">Retenues sur le salaire (du net au brut, en %)</label><input type="text" inputmode="decimal" id="afRetenue" /><span class="af-hyp-unite">%</span></div>
           <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /><span class="af-hyp-unite">%</span></div>
-          <div><label for="afAmort">Durée d'étalement de l'achat (années)</label><input type="text" inputmode="numeric" id="afAmort" /><span class="af-hyp-unite">ans</span></div>
         </div>
         <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues 22 %, charges patronales 42 %).</p>
       </details>
@@ -1458,8 +1457,6 @@
       el("afSalaire").value = fmt(S.salaire * cur.r); el("afSalaireUnite").textContent = cur.s;
       if (el("afRetenue") !== document.activeElement) el("afRetenue").value = nf2.format(S.retenue).replace(/,00$/, "");
       if (el("afPatro") !== document.activeElement) el("afPatro").value = nf2.format(S.chargesPat).replace(/,00$/, "");
-      // crédit actif : la durée d'étalement de l'achat est celle du crédit (bâton durée du financement) — champ grisé, en lecture seule
-      el("afAmort").value = S.finActif ? nf1.format(S.dureeMois / 12) : fmt(S.amort); el("afAmort").readOnly = S.finActif; el("afAmort").style.opacity = S.finActif ? ".55" : "";
       relireCalendrier();
       if (el("afLoyerM2") !== document.activeElement) el("afLoyerM2").value = fmt(S.loyerM2 * cur.r);
       el("afLoyerM2Unite").textContent = cur.s;
@@ -1473,7 +1470,6 @@
     el("afSalaire").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.salaire = n / cur.r; synchroniser(); rendre(); });
     el("afRetenue").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n < 60) S.retenue = n; synchroniser(); rendre(); });
     el("afPatro").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n <= 100) S.chargesPat = n; synchroniser(); rendre(); });
-    el("afAmort").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 1) S.amort = Math.min(30, Math.round(n)); synchroniser(); rendre(); });
 
     // ------------------------------------------------------------------ panneaux déplaçables (clic sur l'icône = ouvrir/fermer, rien d'autre ne les ferme)
     var nbPops = 0;
