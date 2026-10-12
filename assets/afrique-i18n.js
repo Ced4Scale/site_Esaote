@@ -3421,6 +3421,15 @@ window.AF_I18N = {
 "السعر الأساسي لجهاز O-scan (قبل الخيارات)",
 "Bei ya msingi ya O-scan (kabla ya chaguo)",
 "Basisprys van die O-scan (voor opsies)"
+],
+[
+"Année",
+"Year",
+"Anno",
+"Ano",
+"السنة",
+"Mwaka",
+"Jaar"
 ]
 ]
 };

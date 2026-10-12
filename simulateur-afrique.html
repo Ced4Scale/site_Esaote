@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014x"></script>
+  <script src="assets/afrique-i18n.js?v=20261014z"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -230,6 +230,12 @@
     .af-switch input:focus-visible + .af-switch__piste { outline: 2px solid #282828; outline-offset: 2px; }
     html[dir="rtl"] .af-switch__piste::after { left: auto; right: .18rem; }
     html[dir="rtl"] .af-switch input:checked + .af-switch__piste::after { transform: translateX(-1.2rem); }
+    .af-res-haut { display: flex; flex-wrap: nowrap; gap: .8rem 1rem; align-items: flex-start; }
+    .af-histo { flex: 1 1 18rem; min-width: 15rem; max-width: 30rem; margin-top: .6rem; }
+    #afOptPop:has(.af-res-det[open]) { width: min(calc(100vw - 4.5rem), 1280px); } /* assez large pour les bâtons + l'histogramme côte à côte */
+    @media (max-width: 1150px) { .af-res-haut { flex-wrap: wrap; } .af-histo { max-width: 26rem; } }
+    .af-histo svg { width: 100%; height: auto; display: block; }
+    html[dir="rtl"] .af-histo svg text { direction: ltr; unicode-bidi: isolate; }
     .af-tco-det > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: .4rem; }
     .af-tco-det > summary::-webkit-details-marker { display: none; }
     .af-tco-det > summary::before { content: "▸"; font-size: 1rem; color: var(--red); flex: none; }
@@ -492,7 +498,7 @@
               </details>
               <details class="af-tco-det af-res-det">
               <summary class="af-pop-sous-titre">Résultat</summary>
-              <div class="af-mixer af-mixer--mini" id="afResMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.2rem"></div>
+              <div class="af-res-haut"><div class="af-mixer af-mixer--mini" id="afResMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.2rem;flex:0 1 auto"></div><div class="af-histo" id="afResHisto"></div></div>
               <div class="af-tco-wrap" style="overflow-x:auto"><table class="af-table af-table--tco" id="afRes"></table></div>
               <p class="af-aide">Suite du tableau ci-dessus, année par année : recettes − dépenses (achat ou mensualités du crédit, maintenance, électricité, personnel, loyer des locaux). La croissance annuelle s'applique au nombre de patients, donc aux recettes ; les dépenses restent celles du tableau ci-dessus.</p>
               </details>
@@ -869,6 +875,22 @@
       h += ligne("Résultat par patient", function (x) { return x.ex > 0 ? fmtMoney2(x.res / x.ex) : ""; });
       h += ligne("Résultat par jour d'ouverture", function (x) { return r.joursAn > 0 ? fmtMoney(x.res / r.joursAn) : ""; });
       el("afRes").innerHTML = h + "</tbody>";
+      // histogramme : résultat par jour d'ouverture, année 1 à 10 (vert : gain, rouge : perte)
+      var vals = lig.map(function (x) { return r.joursAn > 0 ? x.res / r.joursAn : 0; }), W = 330, H = 200, gauche = 8, droite = 8, haut = 34, bas = 34, n = vals.length;
+      var vmax = Math.max.apply(null, vals.concat([0])), vmin = Math.min.apply(null, vals.concat([0])), ech = (H - haut - bas) / ((vmax - vmin) || 1), y0 = haut + vmax * ech, lb = (W - gauche - droite) / n;
+      var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Résultat par jour d'ouverture" });
+      var tt = svgEl("text", { x: W / 2, y: 13, "text-anchor": "middle", "font-size": 11, "font-weight": 800, fill: "#555" }); tt.textContent = "Résultat par jour d'ouverture"; svg.appendChild(tt);
+      var ut = svgEl("text", { x: W / 2, y: 26, "text-anchor": "middle", "font-size": 9, "font-weight": 600, fill: "#888" }); ut.textContent = cur.s; svg.appendChild(ut);
+      vals.forEach(function (v, i) {
+        var hh = Math.abs(v) * ech, x = gauche + i * lb + lb * 0.14, w = lb * 0.72, y = v >= 0 ? y0 - hh : y0;
+        var rc = svgEl("rect", { x: x.toFixed(1), y: y.toFixed(1), width: w.toFixed(1), height: Math.max(0.6, hh).toFixed(1), rx: 2, fill: v >= 0 ? "#1baf7a" : "#c2334d" });
+        var ti = svgEl("title", {}); ti.textContent = "Année " + (i + 1) + " : " + fmtMoney(v); rc.appendChild(ti); svg.appendChild(rc);
+        var lv = svgEl("text", { x: (x + w / 2).toFixed(1), y: (v >= 0 ? y - 3 : y + hh + 9).toFixed(1), "text-anchor": "middle", "font-size": 8, "font-weight": 700, fill: v >= 0 ? "#12805a" : "#a12842" }); lv.textContent = fmt(v * cur.r); svg.appendChild(lv);
+        var la = svgEl("text", { x: (x + w / 2).toFixed(1), y: H - 16, "text-anchor": "middle", "font-size": 9, "font-weight": 600, fill: "#666" }); la.textContent = String(i + 1); svg.appendChild(la);
+      });
+      svg.appendChild(svgEl("line", { x1: gauche, x2: W - droite, y1: y0.toFixed(1), y2: y0.toFixed(1), stroke: "#888", "stroke-width": 1 }));
+      var ax = svgEl("text", { x: W / 2, y: H - 3, "text-anchor": "middle", "font-size": 9, "font-weight": 600, fill: "#888" }); ax.textContent = "Année"; svg.appendChild(ax);
+      var hz = el("afResHisto"); hz.textContent = ""; hz.appendChild(svg);
     }
     function rendrePointsMorts(r) {
       var z = el("afPm"); z.textContent = "";
