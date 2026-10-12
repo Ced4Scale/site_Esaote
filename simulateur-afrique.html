@@ -533,7 +533,7 @@
 
     // ------------------------------------------------------------------ état (tout en euros)
     var S = {
-      pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 350000, kwh: 0.05, maint: 20000,
+      pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
       plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
@@ -802,7 +802,7 @@
         { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
       { id: "afGMerm", titre: "Nombre de MERM", choix: "Nombre de MERM", cols: [{ k: "nMerm", color: "#d1477a", min: 0, max: 2, step: 0.5, kind: "dec", unit: "ETP" }] },
       { id: "afGPrix", titre: "Prix de l'examen", choix: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
-      { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 200000, max: 500000, step: 5000, kind: "money" }] },
+      { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
       { id: "afGKwh", titre: "Coût du kWh", choix: "Coût du kWh", cols: [{ k: "kwh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" }] },
       { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle", unitFn: function () { return S.garantie > 0 ? "après " + fmt(S.garantie) + " mois de garantie" : "sans garantie"; }, cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
     ];
@@ -1009,7 +1009,7 @@
       var btn = el(btnId), pop = el(popId), cote = (nbPops++ % 2) ? "d" : "g", poignee = pop.querySelector(".af-poignee"), dx = 0, dy = 0, dep = null;
       pop.dataset.cote = cote;
       function appliquer() { pop.style.setProperty("--dx", dx + "px"); pop.style.setProperty("--dy", dy + "px"); }
-      btn.addEventListener("click", function (e) { e.stopPropagation(); pop.hidden = !pop.hidden; btn.setAttribute("aria-expanded", String(!pop.hidden)); });
+      btn.addEventListener("click", function (e) { e.stopPropagation(); pop.hidden = !pop.hidden; btn.setAttribute("aria-expanded", String(!pop.hidden)); requestAnimationFrame(alignerMixers); });
       pop.addEventListener("click", function (e) { e.stopPropagation(); });
       poignee.addEventListener("pointerdown", function (e) { dep = { x: e.clientX - dx, y: e.clientY - dy }; poignee.setPointerCapture(e.pointerId); e.preventDefault(); });
       poignee.addEventListener("pointermove", function (e) { if (!dep) return; dx = e.clientX - dep.x; dy = e.clientY - dep.y; appliquer(); });
@@ -1256,8 +1256,23 @@
       });
       if (document.__frTitre === undefined) document.__frTitre = document.title;
       document.title = c === "fr" ? document.__frTitre : trTexte(document.__frTitre, c);
+      alignerMixers();
       if (obsLangue) obsLangue.takeRecords();
     }
+    // Bâtons : les titres d'une même rangée prennent la hauteur du plus haut (1, 2 ou 3 lignes selon la langue), pour que bâtons, valeurs et boutons − / + soient tous alignés.
+    function alignerMixers() {
+      Array.prototype.forEach.call(document.querySelectorAll(".af-mixer"), function (m) {
+        if (!m.offsetParent) return;
+        var titres = Array.prototype.slice.call(m.querySelectorAll(".af-mixer__group-title")), rangs = {};
+        titres.forEach(function (t) { t.style.minHeight = ""; });
+        titres.forEach(function (t) { var g = t.parentNode; if (g.hidden || !g.offsetParent) return; (rangs[g.offsetTop] = rangs[g.offsetTop] || []).push(t); });
+        Object.keys(rangs).forEach(function (k) {
+          var h = Math.max.apply(null, rangs[k].map(function (t) { return t.offsetHeight; }));
+          rangs[k].forEach(function (t) { t.style.minHeight = h + "px"; });
+        });
+      });
+    }
+    window.addEventListener("resize", alignerMixers);
     var obsLangue = null, planifie = false;
     function planifierLangue() { if (planifie) return; planifie = true; requestAnimationFrame(function () { planifie = false; appliquerLangue(); }); }
     function majBoutonLangue() {
