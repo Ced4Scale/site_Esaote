@@ -285,7 +285,7 @@
     .af-carte-carte svg.af-flag { width: 100%; max-width: 120px; height: auto; aspect-ratio: 3 / 2; border: 1px solid rgba(0,0,0,.22); border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.18); display: block; }
     .af-carte-carte .nom { font-size: clamp(.55rem, .8cqw, 1rem); font-weight: 800; overflow-wrap: anywhere; }
     .af-carte-carte .val { font-size: clamp(.58rem, .85cqw, 1.5rem); font-weight: 800; line-height: 1.1; white-space: nowrap; }
-    .af-carte-carte .det { font-size: .76rem; color: #555; line-height: 1.45; }
+    .af-carte-carte .det { font-size: clamp(.55rem, .75cqw, .76rem); color: #555; line-height: 1.45; white-space: nowrap; }
     .af-carte-carte .rang { font-size: .72rem; font-weight: 800; color: #888; }
     html[dir="rtl"] .af-carte-page { direction: rtl; }
     .af-res-pays svg:not(.af-flag) { width: 30px; height: 30px; margin: 0 auto .3rem; display: block; }
@@ -1110,7 +1110,7 @@
           var v = b.querySelector(".val"), parP = carteMode === "patient", parJ = carteMode === "jour"; v.textContent = parJ ? fmtMoney(x.parJour) : parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parJ ? x.parJour : parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
           // le détail (par patient, cumul positif, taux bancaire, coûts du pays) n'est plus écrit sous le drapeau : il reste dans l'info-bulle de la carte
           var lignes = [parJ ? "Résultat par jour d'ouverture : " + fmtMoney(x.parJour) : null, parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Prix de l'examen : " + fmtMoney(x.prix), "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
-          b.setAttribute("title", lignes.join(" — ")); b.querySelector(".det").remove();
+          b.setAttribute("title", lignes.join(" — ")); var dt = b.querySelector(".det"); if (cartePrixPays) dt.textContent = "Examen : " + fmtMoney(x.prix); else dt.remove(); // prix de l'hôpital public écrit sous chaque pays
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
         });

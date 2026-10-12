@@ -3018,6 +3018,15 @@ window.AF_I18N = {
 "Prys van die ondersoek: ¤"
 ],
 [
+"Examen : ¤",
+"Exam: ¤",
+"Esame: ¤",
+"Exame: ¤",
+"الفحص: ¤",
+"Uchunguzi: ¤",
+"Ondersoek: ¤"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
