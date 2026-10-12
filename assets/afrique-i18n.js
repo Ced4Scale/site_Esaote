@@ -2964,6 +2964,24 @@ window.AF_I18N = {
 "Opsies wat tyd bespaar:"
 ],
 [
+"Cadenas fermé : le résultat en pourcentage des recettes reste fixe ; le prix de l'O-scan se recalcule seul quand vous changez un autre réglage (patients, prix de l'examen, options...)",
+"Lock closed: the result as a percentage of revenue stays fixed; the O-scan price is recalculated automatically when you change another setting (patients, exam price, options...)",
+"Lucchetto chiuso: il risultato in percentuale dei ricavi resta fisso; il prezzo dell'O-scan si ricalcola da solo quando cambiate un altro parametro (pazienti, prezzo dell'esame, opzioni...)",
+"Cadeado fechado: o resultado em percentagem das receitas fica fixo; o preço do O-scan recalcula-se sozinho quando altera outro parâmetro (pacientes, preço do exame, opções...)",
+"القفل مغلق: تبقى النتيجة كنسبة من الإيرادات ثابتة؛ ويُعاد حساب سعر O-scan تلقائيًا عند تغيير أي إعداد آخر (المرضى، سعر الفحص، الخيارات...)",
+"Kufuli imefungwa: matokeo kama asilimia ya mapato yanabaki thabiti; bei ya O-scan huhesabiwa upya yenyewe ukibadilisha mpangilio mwingine (wagonjwa, bei ya uchunguzi, chaguo...)",
+"Slot toe: die resultaat as persentasie van die inkomste bly vas; die prys van die O-scan word outomaties herbereken wanneer u 'n ander instelling verander (pasiënte, prys van die ondersoek, opsies...)"
+],
+[
+"Verrouiller le résultat souhaité",
+"Lock the desired result",
+"Bloccare il risultato desiderato",
+"Bloquear o resultado pretendido",
+"تثبيت النتيجة المرغوبة",
+"Funga matokeo unayotaka",
+"Sluit die gewenste resultaat vas"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
