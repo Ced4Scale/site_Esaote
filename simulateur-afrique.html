@@ -1435,7 +1435,7 @@
     });
 
     // Prix de vente de l'O-scan déduit du résultat souhaité (en % des recettes de l'année affichée) : recherche par dichotomie, le résultat baisse quand le prix monte
-    var PRIX_MIN = 100000, PRIX_MAX = 500000;
+    var PRIX_MIN = 0, PRIX_MAX = 3000000; // le prix de l'O-scan déduit du résultat peut sortir des bornes du bâton « Prix de l'O-scan » (le bâton se cale alors sur sa limite)
     function pctResultat() { var r = calculer(); return r.recettes > 0 ? r.resultat / r.recettes * 100 : 0; }
     function resoudrePrix(cible) {
       var sv = S.achat, lo = PRIX_MIN, hi = PRIX_MAX, i;
@@ -1449,7 +1449,7 @@
     function majPrixSortie() { // panneau « prix selon le résultat souhaité » : le bâton montre toujours le résultat réel
       var p = pctResultat(); S.margeCible = Math.max(-30, Math.min(80, Math.round(p)));
       var z = document.getElementById("afPrixSortie"); if (!z) return;
-      z.innerHTML = "Prix de vente de l'O-scan (hors taxes) : <strong>" + fmtMoney(S.achat) + "</strong><br>Résultat obtenu : <strong>" + nf1.format(p).replace(/,0$/, "") + " %</strong> des recettes" + (S.msgPrix === "min" ? "<br>Objectif hors limites : le prix est bloqué au minimum du bâton « Prix de l'O-scan »." : S.msgPrix === "max" ? "<br>Objectif hors limites : le prix est bloqué au maximum du bâton « Prix de l'O-scan »." : "");
+      z.innerHTML = "Prix de vente de l'O-scan (hors taxes) : <strong>" + fmtMoney(S.achat) + "</strong><br>Résultat obtenu : <strong>" + nf1.format(p).replace(/,0$/, "") + " %</strong> des recettes" + (S.msgPrix === "min" ? "<br>Objectif inatteignable : même avec un prix de l'O-scan nul, le résultat souhaité ne peut pas être atteint." : S.msgPrix === "max" ? "<br>Objectif hors limites : le prix de l'O-scan nécessaire dépasse la limite du simulateur." : "");
       var cd = document.querySelector("#afGPrixCible .af-cadenas"); if (cd) cd.setAttribute("aria-pressed", String(S.cadenasMarge));
     }
     function appliquerCadenasMarge() { if (S.cadenasMarge) resoudrePrix(S.margeVerrou); }
