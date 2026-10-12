@@ -3610,6 +3610,60 @@ window.AF_I18N = {
 "بدون بلد",
 "Hakuna nchi",
 "Geen land"
+],
+[
+"Comparaison des pays : résultat sur § ans",
+"Country comparison: result over § years",
+"Confronto dei paesi: risultato su § anni",
+"Comparação dos países: resultado em § anos",
+"مقارنة البلدان: النتيجة على § سنوات",
+"Ulinganisho wa nchi: matokeo ya miaka §",
+"Vergelyking van lande: resultaat oor § jaar"
+],
+[
+"Aux réglages actuels de la table de mixage, avec les droits, taxes, charges et taux bancaire propres à chaque pays. Classés du meilleur au moins bon résultat ; cliquez sur un pays pour le choisir.",
+"With the current mixing-table settings, using each country's duties, taxes, social charges and bank rate. Ranked from best to worst result; click a country to choose it.",
+"Con le impostazioni attuali della tabella di missaggio, con dazi, imposte, oneri e tasso bancario propri di ogni paese. In ordine dal miglior al peggior risultato; cliccate su un paese per sceglierlo.",
+"Com as definições atuais da mesa de mistura, com os direitos, impostos, encargos e taxa bancária próprios de cada país. Ordenados do melhor para o pior resultado; clique num país para o escolher.",
+"بحسب إعدادات طاولة المزج الحالية، مع الرسوم والضرائب والأعباء والنسبة المصرفية الخاصة بكل بلد. مرتبة من أفضل نتيجة إلى أضعفها؛ انقروا على بلد لاختياره.",
+"Kulingana na mipangilio ya sasa ya meza ya kuchanganya, na ushuru, kodi, gharama na riba ya benki ya kila nchi. Zimepangwa kutoka matokeo bora hadi dhaifu; bofya nchi ili kuichagua.",
+"Volgens die huidige instellings van die mengtafel, met elke land se regte, belastings, heffings en bankkoers. Gerangskik van beste tot swakste resultaat; klik op 'n land om dit te kies."
+],
+[
+"Voir tous les pays",
+"See all countries",
+"Vedere tutti i paesi",
+"Ver todos os países",
+"عرض جميع البلدان",
+"Tazama nchi zote",
+"Sien alle lande"
+],
+[
+"Taux bancaire : § %",
+"Bank rate: § %",
+"Tasso bancario: § %",
+"Taxa bancária: § %",
+"النسبة المصرفية: § %",
+"Riba ya benki: § %",
+"Bankkoers: § %"
+],
+[
+"Comparaison des pays",
+"Country comparison",
+"Confronto dei paesi",
+"Comparação dos países",
+"مقارنة البلدان",
+"Ulinganisho wa nchi",
+"Vergelyking van lande"
+],
+[
+"Fermer",
+"Close",
+"Chiudi",
+"Fechar",
+"إغلاق",
+"Funga",
+"Sluit"
 ]
 ]
 };
