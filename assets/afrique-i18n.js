@@ -3169,6 +3169,33 @@ window.AF_I18N = {
 "¤ لكل مريض",
 "¤ kwa mgonjwa",
 "¤ per pasiënt"
+],
+[
+"¤ de recette par patient",
+"¤ revenue per patient",
+"¤ di ricavo per paziente",
+"¤ de receita por paciente",
+"¤ إيراد لكل مريض",
+"¤ ya mapato kwa mgonjwa",
+"¤ inkomste per pasiënt"
+],
+[
+"¤ de charges par patient",
+"¤ cost per patient",
+"¤ di costi per paziente",
+"¤ de custos por paciente",
+"¤ تكاليف لكل مريض",
+"¤ ya gharama kwa mgonjwa",
+"¤ koste per pasiënt"
+],
+[
+"¤ de résultat par patient",
+"¤ result per patient",
+"¤ di risultato per paziente",
+"¤ de resultado por paciente",
+"¤ نتيجة لكل مريض",
+"¤ ya matokeo kwa mgonjwa",
+"¤ resultaat per pasiënt"
 ]
 ]
 };
