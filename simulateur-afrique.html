@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016e"></script>
+  <script src="assets/afrique-i18n.js?v=20261016f"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -1082,8 +1082,9 @@
           b.innerHTML = '<span class="rang"></span>' + drapeauPays(x.k) + '<span class="nom"></span><span class="val"></span><span class="det"></span>';
           b.querySelector(".rang").textContent = "#" + (i + 1); b.querySelector(".nom").textContent = c.nom;
           var v = b.querySelector(".val"), parP = carteMode === "patient"; v.textContent = parP ? fmtMoney2(x.parPat) : fmtMoney(x.tot); v.style.color = (parP ? x.parPat : x.tot) >= 0 ? "#1baf7a" : "#c2334d";
-          var det = b.querySelector(".det");
-          [parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean).forEach(function (tx) { var d = document.createElement("div"); d.textContent = tx; det.appendChild(d); });
+          // le détail (par patient, cumul positif, taux bancaire, coûts du pays) n'est plus écrit sous le drapeau : il reste dans l'info-bulle de la carte
+          var lignes = [parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
+          b.setAttribute("title", lignes.join(" — ")); b.querySelector(".det").remove();
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
         });
