@@ -3295,6 +3295,15 @@ window.AF_I18N = {
 "بعد التمويل",
 "baada ya ufadhili",
 "ná finansiering"
+],
+[
+"Moyenne des années § à §",
+"Average of years § to §",
+"Media degli anni da § a §",
+"Média dos anos § a §",
+"متوسط السنوات من § إلى §",
+"Wastani wa miaka § hadi §",
+"Gemiddelde van jare § tot §"
 ]
 ]
 };

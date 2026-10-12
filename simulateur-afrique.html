@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261014q"></script>
+  <script src="assets/afrique-i18n.js?v=20261014r"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -858,10 +858,19 @@
       var r = calculer(), zone = el("afDemis");
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       zone.textContent = "";
-      var boxes = demisPour(r), dual = demiFocus >= 0 && demiN1, boxes2 = null, nFin = S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : Math.max(1, S.amort);
-      if (demiN1) { // second jeu de demi-anneaux : l'année qui suit la fin du financement (ou de l'étalement), pour voir les gains une fois l'IRM remboursée
-        var anSave = S.annee; S.annee = String(nFin + 1); var r2 = calculer(); S.annee = anSave; boxes2 = demisPour(r2);
+      var dual = demiFocus >= 0 && demiN1, boxes2 = null, nFin = S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : Math.max(1, S.amort), rGauche = r, boxes;
+      if (demiN1) { // N+1 : à gauche la MOYENNE des années du financement (1 à N), à droite l'année qui suit (N+1) — pour voir les gains une fois l'IRM remboursée
+        var anSave = S.annee, somme = null, ky, y2, rn;
+        for (y2 = 1; y2 <= nFin; y2++) {
+          S.annee = String(y2); rn = calculer();
+          if (!somme) { somme = {}; for (ky in rn) if (typeof rn[ky] === "number") somme[ky] = 0; }
+          for (ky in somme) somme[ky] += rn[ky] / nFin;
+        }
+        S.annee = String(nFin + 1); var r2 = calculer(); S.annee = anSave;
+        rGauche = Object.assign({}, r, somme); boxes2 = demisPour(r2);
       }
+      boxes = demisPour(rGauche);
+      var legGauche = nFin > 1 ? "Moyenne des années 1 à " + nFin : "Année 1";
       boxes.forEach(function (bx, i) {
         zone.appendChild(bx);
         bx.tabIndex = 0; bx.setAttribute("role", "button"); bx.setAttribute("aria-pressed", String(demiFocus === i)); bx.setAttribute("aria-label", bx.querySelector("h3").textContent);
@@ -878,7 +887,7 @@
           bar.appendChild(bt); bx.insertBefore(bar, bx.querySelector("h3").nextSibling);
           if (dual) {
             bx.classList.add("is-dual");
-            var cap = document.createElement("div"); cap.className = "af-demi-an"; cap.textContent = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, nFin) : S.amort)) + " ans" : "Année " + S.annee; bx.insertBefore(cap, bar.nextSibling);
+            var cap = document.createElement("div"); cap.className = "af-demi-an"; cap.textContent = legGauche; bx.insertBefore(cap, bar.nextSibling);
             var b2 = boxes2[i]; b2.classList.add("is-n1", "is-dual"); b2.tabIndex = 0; b2.setAttribute("role", "button"); b2.setAttribute("aria-label", b2.querySelector("h3").textContent);
             var cap2 = document.createElement("div"); cap2.className = "af-demi-an"; cap2.textContent = "Année " + (nFin + 1) + " · après financement"; var ghost = bar.cloneNode(true); ghost.style.visibility = "hidden"; ghost.setAttribute("aria-hidden", "true"); ghost.inert = true; // même hauteur que la barre N+1 de gauche : les deux anneaux restent alignés
             b2.insertBefore(cap2, b2.querySelector("h3").nextSibling); b2.insertBefore(ghost, cap2);
@@ -888,7 +897,7 @@
         }
       });
       if (demiN1 && demiFocus < 0) { // aucun anneau agrandi : une seconde rangée avec les trois demi-anneaux de l'année qui suit le financement
-        boxes.forEach(function (bx) { var c1 = document.createElement("div"); c1.className = "af-demi-an"; c1.textContent = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(S.amort, nFin) : S.amort)) + " ans" : "Année " + S.annee; bx.insertBefore(c1, bx.querySelector("h3").nextSibling); });
+        boxes.forEach(function (bx) { var c1 = document.createElement("div"); c1.className = "af-demi-an"; c1.textContent = legGauche; bx.insertBefore(c1, bx.querySelector("h3").nextSibling); });
         boxes2.forEach(function (b2, i) {
           var c2 = document.createElement("div"); c2.className = "af-demi-an"; c2.textContent = "Année " + (nFin + 1) + " · après financement"; b2.insertBefore(c2, b2.querySelector("h3").nextSibling);
           b2.tabIndex = 0; b2.setAttribute("role", "button"); b2.setAttribute("aria-label", b2.querySelector("h3").textContent);
