@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261015d"></script>
+  <script src="assets/afrique-i18n.js?v=20261015g"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -442,8 +442,15 @@
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Financement, garantie et maintenance</div>
               <label class="af-check"><input type="checkbox" id="afFinActif" /> Financer l'achat par un crédit (le loyer du crédit remplace l'étalement du prix)</label>
+              <label class="af-check"><input type="checkbox" id="afTauxAuto" checked /> Taux automatique selon le pays et la durée du crédit</label>
+              <div id="afTauxPays" class="af-aide" style="margin:.1rem 0 .3rem"></div>
+              <div style="display:flex;align-items:center;gap:.5rem;margin:.2rem 0 .4rem;flex-wrap:wrap">
+                <button type="button" class="btn btn--sm" id="afTauxBanqueMaj">Mettre à jour les taux</button>
+                <span id="afTauxBanqueStatut" style="font-size:.78rem"></span>
+              </div>
               <div class="af-mixer af-mixer--mini" id="afFinMix"></div>
               <div id="afFinSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
+              <p class="af-aide">Le taux automatique part du taux bancaire du pays (crédits d'équipement vers 5 ans) et varie de 0,15 point par année de durée en plus ou en moins ; modifier le taux à la main désactive la case. Le bouton « Mettre à jour les taux » récupère les derniers taux publiés par la Banque mondiale (service gratuit : seule la liste des pays est envoyée, aucune donnée de simulation) ; les valeurs plus anciennes que 2023 sont ignorées.</p>
               <p class="af-aide">Crédit à mensualités constantes sur le prix de l'O-scan et de ses options, sans apport. Pendant les mois de garantie, la maintenance n'est pas comptée ; ensuite, elle coûte le montant annuel choisi.</p>
             </div>
           </span>
@@ -636,7 +643,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, croiss: 0, patAn: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, croiss: 0, patAn: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -660,6 +667,18 @@
     }
     function moisPayes(y) { return Math.max(0, Math.min(12, S.dureeMois - 12 * (y - 1))); }
     function moisMaint(y) { return 12 - Math.max(0, Math.min(12, S.garantie - 12 * (y - 1))); }
+    // Taux bancaire des crédits d'équipement par pays (valeur vers 5 ans, en %). rel = 1 : relevé (source et date) ; 0 : estimation à confirmer avec une banque locale. Recherche web du 12/10/2026 (sites d'information et statistiques, pas des sources officielles directes).
+    var TAUX_PAYS = {
+      ma: [4.95, 1, "Bank Al-Maghrib, crédits d'équipement, T4 2025"], dz: [8, 1, "CEIC, taux débiteur, octobre 2024"], tn: [10, 0, ""], eg: [24.3, 1, "Banque mondiale, 2024"],
+      sn: [7, 0, ""], ci: [7, 0, ""], cm: [7, 0, ""], ng: [30, 0, ""], gh: [28, 0, ""], ke: [15.44, 1, "moyenne des banques, mai 2025"], za: [10.5, 1, "taux préférentiel (prime), juillet 2025"],
+      et: [16, 0, ""], tz: [12.25, 1, "taux débiteur, janvier 2026"], cd: [15, 0, ""], cv: [8, 0, ""]
+    };
+    var TAUX_DEFAUT = 4;
+    // taux du pays pour une durée donnée : taux de base (vers 5 ans) ± 0,15 point par année d'écart ; sans pays, taux de départ
+    function tauxPays(annees) { var t = TAUX_PAYS[S.pays]; if (!t) return TAUX_DEFAUT; return Math.max(0.5, Math.round((t[0] + 0.15 * (annees - 5)) * 100) / 100); }
+    var CLE_TAUX_BANQUE = "ced4scale-afrique-taux-banque", TAUX_BANQUE_DATE = "12/10/2026";
+    try { var tb = JSON.parse(localStorage.getItem(CLE_TAUX_BANQUE) || "null"); if (tb && tb.taux) { Object.keys(tb.taux).forEach(function (k) { if (TAUX_PAYS[k]) TAUX_PAYS[k] = tb.taux[k]; }); TAUX_BANQUE_DATE = tb.date || TAUX_BANQUE_DATE; } } catch (e) {}
+    function majTauxAuto() { if (S.tauxAuto) S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); }
     var PAYS = [
       { k: "ma", patro: 21.09, patroRel: 1, nom: "Maroc", droit: 5, tva: 20, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Maroc : droit possiblement nul pour un produit d'origine italienne — à confirmer avec un transitaire." },
       { k: "dz", patro: 25.5, patroRel: 1, nom: "Algérie", droit: 5, tva: 19, taxes: [["TCS", 3], ["PRCT", 2]], statut: "Taux relevés sur le tarif douanier algérien (conformepro.dz, position 9018.13).", note: "Agrément du ministère de la Santé requis pour importer des équipements médicaux." },
@@ -1032,11 +1051,11 @@
       // Durée du financement (0 à 10 ans) : vue en années du crédit de l'icône banque. 0 = pas de crédit (achat étalé) ; au-dessus de 0, le crédit est activé pour cette durée.
       { id: "afGFin", titre: "Durée du financement", titreFn: function () { return S.finActif ? "Financement" : "Durée du financement"; }, choix: "Durée du financement", unitFn: function () { return S.finActif ? "" : "sans crédit (achat étalé)"; }, cols: [
         { k: "finAns", slot: "Durée", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" },
-        { k: "taux", slot: "Taux", si: "finActif", color: "#d1477a", min: 0, max: 15, step: 0.25, kind: "pct", unit: "% par an" }] },
+        { k: "taux", slot: "Taux", si: "finActif", color: "#d1477a", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% par an" }] },
       // Réglages repris dans le tableau Résultat (mêmes données que la table de mixage : modifier l'un modifie l'autre)
       { id: "afGRFin", ou: "afResMix", titre: "Durée du financement", titreFn: function () { return S.finActif ? "Financement" : "Durée du financement"; }, unitFn: function () { return S.finActif ? "" : "sans crédit (achat étalé)"; }, cols: [
         { k: "finAns", slot: "Durée", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" },
-        { k: "taux", slot: "Taux", si: "finActif", color: "#d1477a", min: 0, max: 15, step: 0.25, kind: "pct", unit: "% par an" }] },
+        { k: "taux", slot: "Taux", si: "finActif", color: "#d1477a", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% par an" }] },
       { id: "afGRPat", ou: "afResMix", titre: "Patients par an", cols: [{ k: "patAn", color: "#2a78d6", min: 0, max: function () { return Math.max(100, Math.round(pphMax() * volumeParPph())); }, step: 50, kind: "int", unit: "patients / an", siCadenas: true }] },
       { id: "afGRHeures", ou: "afResMix", titre: "Heures d'ouverture", cols: [
         { k: "hS", color: "#2a78d6", min: 1, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Lun-Ven" },
@@ -1049,7 +1068,7 @@
       { id: "afGMaint", titre: "Maintenance annuelle", choix: "Maintenance annuelle", unitFn: function () { return S.garantie > 0 ? "après " + fmt(S.garantie) + " mois de garantie" : "sans garantie"; }, cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
     ];
     GROUPES.push(
-      { id: "afGFTaux", ou: "afFinMix", titre: "Taux du crédit", cols: [{ k: "taux", color: "#d1477a", min: 0, max: 15, step: 0.25, kind: "pct", unit: "% par an" }] },
+      { id: "afGFTaux", ou: "afFinMix", titre: "Taux du crédit", cols: [{ k: "taux", color: "#d1477a", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% par an" }] },
       { id: "afGFDuree", ou: "afFinMix", titre: "Durée du crédit", cols: [{ k: "dureeMois", color: "#6b5b95", min: 6, max: 120, step: 6, kind: "int", unit: "mois" }] },
       { id: "afGFGarantie", ou: "afFinMix", titre: "Garantie", cols: [{ k: "garantie", color: "#1f9d78", min: 0, max: 60, step: 1, kind: "int", unit: "mois" }] },
       { id: "afGFMaint", ou: "afFinMix", titre: "Maintenance annuelle", cols: [{ k: "maint", color: "#8a8f98", min: 0, max: 50000, step: 1000, kind: "money" }] }
@@ -1193,7 +1212,8 @@
           if (col.kind === "int") v = Math.round(v);
           S[col.k] = Math.round(v * 1e6) / 1e6;
           if (col.k === "finAns") { if (S.finAns > 0) { S.finActif = true; S.dureeMois = Math.max(6, Math.round(S.finAns * 12)); } else S.finActif = false; }
-          if (col.k === "finAns" || col.k === "dureeMois") ajusterAnneeCredit();
+          if (col.k === "finAns" || col.k === "dureeMois") { ajusterAnneeCredit(); majTauxAuto(); }
+          if (col.k === "taux") S.tauxAuto = false; // taux réglé à la main : le taux automatique est désactivé
           if (col.k === "patAn") { var vol = volumeParPph(); if (vol > 0 && !S.cadenasPph) S.pph = Math.max(0.1, Math.min(pphMax(), S.patAn / vol)); }
           if (S.cadenasPph && (col.k === "hS" || col.k === "hSam" || col.k === "hDim")) S.volRef = volumeBrut(); // heures changées à la main : nouveau volume de référence
           synchroniser(); rendre();
@@ -1212,6 +1232,17 @@
 
     function synchroniser() {
       S.patAn = Math.round(S.pph * volumeParPph());
+      el("afTauxAuto").checked = S.tauxAuto;
+      (function () { // ligne d'information : taux bancaire du pays pour la durée du crédit
+        var z = el("afTauxPays"), t = TAUX_PAYS[S.pays], ans = Math.max(0.5, S.dureeMois / 12), nom = (PAYS.filter(function (x) { return x.k === S.pays; })[0] || {}).nom;
+        z.textContent = "";
+        if (!t) { z.textContent = "Aucun pays acheteur : taux de départ de " + nf2.format(TAUX_DEFAUT).replace(/,00$/, "") + " %."; return; }
+        var b = document.createElement("strong"); b.textContent = nom; z.appendChild(b);
+        z.appendChild(document.createTextNode(" — "));
+        z.appendChild(document.createTextNode("Taux bancaire du pays : " + nf2.format(tauxPays(ans)).replace(/,00$/, "") + " % pour " + nf1.format(ans).replace(/,0$/, "") + " ans"));
+        z.appendChild(document.createTextNode(" "));
+        var em = document.createElement("em"); em.textContent = t[1] ? "(relevé" + (t[2] ? " : " + t[2] : "") + ")" : "(estimation à confirmer avec une banque locale)"; z.appendChild(em);
+      })();
       S.finAns = S.finActif ? Math.round(S.dureeMois / 6) / 2 : 0; el("afFinActif").checked = S.finActif;
       GROUPES.forEach(function (g) {
         var gd = el(g.id); gd.hidden = !g.ou && visibles[g.id] === false;
@@ -1312,6 +1343,7 @@
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
+      majTauxAuto();
       if (el("afPaysFiltre").value) { el("afPaysFiltre").value = ""; filtrerPays(); selP.value = S.pays; }
       majDrapeauPays();
       S.chargesPat = c ? c.patro : 42;
@@ -1334,6 +1366,25 @@
     brancher("afNegBtn", "afNegPop");
     el("afTcoCumul").addEventListener("change", function () { S.tcoCumul = this.checked; rendre(); });
     [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
+    // Mise à jour des taux bancaires : dernier « taux d'emprunt » publié par la Banque mondiale (api.worldbank.org, gratuit) ; seules les valeurs de 2023 ou plus récentes remplacent les valeurs en place.
+    function majStatutBanque(txt) { el("afTauxBanqueStatut").textContent = txt || "Taux du " + TAUX_BANQUE_DATE; }
+    el("afTauxBanqueMaj").addEventListener("click", function () {
+      var bt = this; bt.disabled = true; majStatutBanque("Mise à jour…");
+      fetch("https://api.worldbank.org/v2/country/" + Object.keys(TAUX_PAYS).map(function (k) { return k.toUpperCase(); }).join(";") + "/indicator/FR.INR.LEND?format=json&mrnev=1&per_page=50").then(function (r) { return r.json(); }).then(function (d) {
+        if (!d || !d[1]) throw new Error("réponse inattendue");
+        var n = 0, mem = {};
+        d[1].forEach(function (x) { var k = String(x.country && x.country.id || "").toLowerCase(); if (TAUX_PAYS[k] && x.value != null && parseInt(x.date, 10) >= 2023) { TAUX_PAYS[k] = [Math.round(x.value * 100) / 100, 1, "Banque mondiale, " + x.date]; n++; } });
+        Object.keys(TAUX_PAYS).forEach(function (k) { mem[k] = TAUX_PAYS[k]; });
+        var dt = new Date();
+        TAUX_BANQUE_DATE = ("0" + dt.getDate()).slice(-2) + "/" + ("0" + (dt.getMonth() + 1)).slice(-2) + "/" + dt.getFullYear();
+        try { localStorage.setItem(CLE_TAUX_BANQUE, JSON.stringify({ date: TAUX_BANQUE_DATE, taux: mem })); } catch (e) {}
+        majTauxAuto(); synchroniser(); rendre();
+        majStatutBanque("Taux bancaires mis à jour le " + TAUX_BANQUE_DATE + " : " + n + " pays (Banque mondiale).");
+      }).catch(function () { majStatutBanque("Mise à jour impossible (pas de connexion) : taux du " + TAUX_BANQUE_DATE + " conservés."); })
+        .then(function () { bt.disabled = false; });
+    });
+    majStatutBanque();
+    el("afTauxAuto").addEventListener("change", function () { S.tauxAuto = this.checked; majTauxAuto(); synchroniser(); rendre(); });
     el("afFinActif").addEventListener("change", function () { S.finActif = this.checked; ajusterAnneeCredit(); synchroniser(); rendre(); });
 
     // ------------------------------------------------------------------ loyer
@@ -1489,7 +1540,7 @@
 
     // ------------------------------------------------------------------ langues (le français est la langue source ; tout texte affiché est traduit par dictionnaire)
     var LANGS = [{ c: "fr", nom: "Français" }, { c: "en", nom: "English" }, { c: "it", nom: "Italiano" }, { c: "pt", nom: "Português" }, { c: "ar", nom: "العربية", dir: "rtl" }, { c: "sw", nom: "Kiswahili" }, { c: "af", nom: "Afrikaans" }];
-    var CLE_LANGUE = "ced4scale-afrique-langue", lang = "it"; // langue de départ : italien (demande du 14/10/2026) ; le choix de l'utilisateur est mémorisé dans le navigateur
+    var CLE_LANGUE = "ced4scale-afrique-langue", lang = "it"; // langue de départ : italien (demande du 12/10/2026) ; le choix de l'utilisateur est mémorisé dans le navigateur
     try { var l0 = localStorage.getItem(CLE_LANGUE); LANGS.forEach(function (x) { if (x.c === l0) lang = l0; }); } catch (e) {}
     function drapeau(c) {
       var f = {

@@ -3484,6 +3484,114 @@ window.AF_I18N = {
 "التراكمي لا يصبح إيجابيًا خلال § سنوات",
 "Jumla haiwi chanya katika miaka §",
 "Gekumuleerd nooit positief oor § jaar"
+],
+[
+"Taux automatique selon le pays et la durée du crédit",
+"Automatic rate based on the country and the loan term",
+"Tasso automatico in base al paese e alla durata del prestito",
+"Taxa automática segundo o país e a duração do crédito",
+"نسبة تلقائية حسب البلد ومدة القرض",
+"Riba ya kiotomatiki kulingana na nchi na muda wa mkopo",
+"Outomatiese koers volgens die land en die leningtermyn"
+],
+[
+"Aucun pays acheteur : taux de départ de § %.",
+"No buying country: starting rate of § %.",
+"Nessun paese acquirente: tasso iniziale del § %.",
+"Nenhum país comprador: taxa inicial de § %.",
+"لا يوجد بلد مشترٍ: النسبة الأولية § %.",
+"Hakuna nchi mnunuzi: riba ya kuanzia ya § %.",
+"Geen kopersland: beginkoers van § %."
+],
+[
+"Taux bancaire du pays : § % pour § ans",
+"Bank rate of the country: § % for § years",
+"Tasso bancario del paese: § % per § anni",
+"Taxa bancária do país: § % para § anos",
+"النسبة المصرفية للبلد: § % لمدة § سنوات",
+"Riba ya benki ya nchi: § % kwa miaka §",
+"Bankkoers van die land: § % vir § jaar"
+],
+[
+"(estimation à confirmer avec une banque locale)",
+"(estimate, to be confirmed with a local bank)",
+"(stima da confermare con una banca locale)",
+"(estimativa a confirmar com um banco local)",
+"(تقدير يجب تأكيده مع مصرف محلي)",
+"(makadirio, yathibitishwe na benki ya hapa)",
+"(skatting, om met 'n plaaslike bank te bevestig)"
+],
+[
+"(relevé : Bank Al-Maghrib, crédits d'équipement, T§ §)",
+"(recorded: Bank Al-Maghrib, equipment loans, Q§ §)",
+"(rilevato: Bank Al-Maghrib, prestiti per attrezzature, T§ §)",
+"(apurado: Bank Al-Maghrib, créditos de equipamento, T§ §)",
+"(مُسجَّل: بنك المغرب، قروض التجهيز، الربع الرابع §)",
+"(imerekodiwa: Bank Al-Maghrib, mikopo ya vifaa, robo ya § §)",
+"(aangeteken: Bank Al-Maghrib, toerustinglenings, K§ §)"
+],
+[
+"(relevé : CEIC, taux débiteur, octobre §)",
+"(recorded: CEIC, lending rate, October §)",
+"(rilevato: CEIC, tasso debitore, ottobre §)",
+"(apurado: CEIC, taxa de empréstimo, outubro §)",
+"(مُسجَّل: CEIC، سعر الإقراض، أكتوبر §)",
+"(imerekodiwa: CEIC, riba ya mkopo, Oktoba §)",
+"(aangeteken: CEIC, uitleenkoers, Oktober §)"
+],
+[
+"(relevé : Banque mondiale, §)",
+"(recorded: World Bank, §)",
+"(rilevato: Banca mondiale, §)",
+"(apurado: Banco Mundial, §)",
+"(مُسجَّل: البنك الدولي، §)",
+"(imerekodiwa: Benki ya Dunia, §)",
+"(aangeteken: Wêreldbank, §)"
+],
+[
+"(relevé : moyenne des banques, mai §)",
+"(recorded: bank average, May §)",
+"(rilevato: media delle banche, maggio §)",
+"(apurado: média dos bancos, maio §)",
+"(مُسجَّل: متوسط المصارف، مايو §)",
+"(imerekodiwa: wastani wa benki, Mei §)",
+"(aangeteken: gemiddeld van die banke, Mei §)"
+],
+[
+"(relevé : taux préférentiel (prime), juillet §)",
+"(recorded: prime rate, July §)",
+"(rilevato: tasso primario (prime), luglio §)",
+"(apurado: taxa preferencial (prime), julho §)",
+"(مُسجَّل: سعر الفائدة الأساسي (برايم)، يوليو §)",
+"(imerekodiwa: riba ya msingi (prime), Julai §)",
+"(aangeteken: primakoers, Julie §)"
+],
+[
+"(relevé : taux débiteur, janvier §)",
+"(recorded: lending rate, January §)",
+"(rilevato: tasso debitore, gennaio §)",
+"(apurado: taxa de empréstimo, janeiro §)",
+"(مُسجَّل: سعر الإقراض، يناير §)",
+"(imerekodiwa: riba ya mkopo, Januari §)",
+"(aangeteken: uitleenkoers, Januarie §)"
+],
+[
+"Taux bancaires mis à jour le §/§/§ : § pays (Banque mondiale).",
+"Bank rates updated on §/§/§: § countries (World Bank).",
+"Tassi bancari aggiornati il §/§/§: § paesi (Banca mondiale).",
+"Taxas bancárias atualizadas em §/§/§: § países (Banco Mundial).",
+"تم تحديث النسب المصرفية في §/§/§: § بلدان (البنك الدولي).",
+"Riba za benki zimesasishwa tarehe §/§/§: nchi § (Benki ya Dunia).",
+"Bankkoerse op §/§/§ opgedateer: § lande (Wêreldbank)."
+],
+[
+"Le taux automatique part du taux bancaire du pays (crédits d'équipement vers § ans) et varie de § point par année de durée en plus ou en moins ; modifier le taux à la main désactive la case. Le bouton « Mettre à jour les taux » récupère les derniers taux publiés par la Banque mondiale (service gratuit : seule la liste des pays est envoyée, aucune donnée de simulation) ; les valeurs plus anciennes que § sont ignorées.",
+"The automatic rate starts from the country's bank rate (equipment loans around § years) and varies by § point per year of term, up or down; changing the rate by hand switches the box off. The “Update rates” button fetches the latest rates published by the World Bank (free service: only the list of countries is sent, no simulation data); values older than § are ignored.",
+"Il tasso automatico parte dal tasso bancario del paese (prestiti per attrezzature a circa § anni) e varia di § punto per ogni anno di durata in più o in meno; modificare il tasso a mano disattiva la casella. Il pulsante « Aggiorna i tassi » recupera gli ultimi tassi pubblicati dalla Banca mondiale (servizio gratuito: viene inviato solo l'elenco dei paesi, nessun dato della simulazione); i valori anteriori al § sono ignorati.",
+"A taxa automática parte da taxa bancária do país (créditos de equipamento a cerca de § anos) e varia § ponto por ano de duração a mais ou a menos; alterar a taxa à mão desativa a caixa. O botão « Atualizar as taxas » obtém as últimas taxas publicadas pelo Banco Mundial (serviço gratuito: só é enviada a lista de países, nenhum dado da simulação); os valores anteriores a § são ignorados.",
+"تنطلق النسبة التلقائية من النسبة المصرفية للبلد (قروض التجهيز لنحو § سنوات) وتتغير بمقدار § نقطة لكل سنة زيادة أو نقصان في المدة؛ وتعديل النسبة يدويًا يُلغي تفعيل الخانة. يجلب زر « تحديث النسب » آخر النسب التي نشرها البنك الدولي (خدمة مجانية: تُرسَل قائمة البلدان فقط ولا تُرسَل أي بيانات من المحاكاة)؛ وتُتجاهل القيم الأقدم من §.",
+"Riba ya kiotomatiki huanzia riba ya benki ya nchi (mikopo ya vifaa kwa takriban miaka §) na hubadilika kwa pointi § kwa kila mwaka wa muda zaidi au pungufu; kubadilisha riba kwa mkono huzima kisanduku. Kitufe « Sasisha viwango » hupakua viwango vya hivi karibuni vilivyochapishwa na Benki ya Dunia (huduma ya bure: orodha ya nchi pekee hutumwa, hakuna data ya kiigaji); thamani za zamani kuliko § hupuuzwa.",
+"Die outomatiese koers begin by die bankkoers van die land (toerustinglenings oor ongeveer § jaar) en wissel met § punt per jaar langer of korter termyn; as u die koers met die hand verander, word die blokkie afgeskakel. Die knoppie « Werk die koerse by » haal die jongste koerse wat deur die Wêreldbank gepubliseer is (gratis diens: slegs die lys van lande word gestuur, geen simulasiedata nie); waardes ouer as § word geïgnoreer."
 ]
 ]
 };
