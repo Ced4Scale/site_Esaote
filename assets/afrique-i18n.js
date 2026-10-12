@@ -3214,6 +3214,24 @@ window.AF_I18N = {
 "بدون قرض (شراء موزَّع)",
 "bila mkopo (ununuzi umegawanywa)",
 "geen lening (aankoop gespreid)"
+],
+[
+"Durée",
+"Duration",
+"Durata",
+"Duração",
+"المدة",
+"Muda",
+"Duur"
+],
+[
+"Taux",
+"Rate",
+"Tasso",
+"Taxa",
+"النسبة",
+"Riba",
+"Koers"
 ]
 ]
 };
