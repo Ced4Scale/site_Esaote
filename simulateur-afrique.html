@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261012h"></script>
+  <script src="assets/afrique-i18n.js?v=20261013a"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -533,7 +533,7 @@
 
     // ------------------------------------------------------------------ état (tout en euros)
     var S = {
-      pph: 2, hS: 8, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
+      pph: 2, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.05, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
       plafond: 13, semaines: 50, salaire: 5000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoElec: false, tcoPers: false, tcoLoyer: false, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
@@ -1193,7 +1193,7 @@
     el("afClose").addEventListener("click", function () { if (document.referrer) window.history.back(); else window.location.href = "index.html"; });
 
     // ------------------------------------------------------------------ langues (le français est la langue source ; tout texte affiché est traduit par dictionnaire)
-    var LANGS = [{ c: "fr", nom: "Français" }, { c: "en", nom: "English" }, { c: "it", nom: "Italiano" }, { c: "pt", nom: "Português" }, { c: "ar", nom: "العربية", dir: "rtl" }, { c: "sw", nom: "Kiswahili" }];
+    var LANGS = [{ c: "fr", nom: "Français" }, { c: "en", nom: "English" }, { c: "it", nom: "Italiano" }, { c: "pt", nom: "Português" }, { c: "ar", nom: "العربية", dir: "rtl" }, { c: "sw", nom: "Kiswahili" }, { c: "af", nom: "Afrikaans" }];
     var CLE_LANGUE = "ced4scale-afrique-langue", lang = "fr";
     try { var l0 = localStorage.getItem(CLE_LANGUE); LANGS.forEach(function (x) { if (x.c === l0) lang = l0; }); } catch (e) {}
     function drapeau(c) {
@@ -1202,6 +1202,7 @@
         it: '<rect width="1" height="2" fill="#009246"/><rect x="1" width="1" height="2" fill="#fff"/><rect x="2" width="1" height="2" fill="#CE2B37"/>',
         ar: '<rect width="3" height="0.67" fill="#CE1126"/><rect y="0.67" width="3" height="0.66" fill="#fff"/><rect y="1.33" width="3" height="0.67" fill="#000"/><circle cx="1.5" cy="1" r="0.17" fill="#C09300"/>',
         pt: '<rect width="3" height="2" fill="#FF0000"/><rect width="1.2" height="2" fill="#006600"/><circle cx="1.2" cy="1" r="0.34" fill="#FFD700"/><circle cx="1.2" cy="1" r="0.2" fill="#fff"/>',
+        af: '<rect width="3" height="1" y="0" fill="#DE3831"/><rect width="3" height="1" y="1" fill="#002395"/><path d="M0,0 L1.15,1 L0,2 M1.15,1 H3" fill="none" stroke="#fff" stroke-width="0.72"/><path d="M0,0 L1.15,1 L0,2 M1.15,1 H3" fill="none" stroke="#007A4D" stroke-width="0.46"/><polygon points="0,0.04 0,1.96 1.02,1" fill="#FFB612"/><polygon points="0,0.28 0,1.72 0.78,1" fill="#000"/>',
         sw: '<rect width="3" height="2" fill="#00A3DD"/><polygon points="0,0 3,0 0,2" fill="#1EB53A"/><line x1="0" y1="2" x2="3" y2="0" stroke="#FCD116" stroke-width="0.7"/><line x1="0" y1="2" x2="3" y2="0" stroke="#000" stroke-width="0.45"/>',
         en: '<rect width="3" height="2" fill="#012169"/><path d="M0,0 L3,2 M3,0 L0,2" stroke="#fff" stroke-width="0.4"/><path d="M0,0 L3,2 M3,0 L0,2" stroke="#C8102E" stroke-width="0.14"/><path d="M1.5,0 V2 M0,1 H3" stroke="#fff" stroke-width="0.66"/><path d="M1.5,0 V2 M0,1 H3" stroke="#C8102E" stroke-width="0.4"/>'
       }[c];
