@@ -161,7 +161,8 @@
     .af-cadenas[aria-pressed="true"] .af-lock-fermee { display: inline; }
     .af-cadenas:focus-visible { outline: 2px solid var(--red, #cd0000); border-radius: 4px; }
     .af-mixer__fader-col.is-verrou .af-mixer__bar { opacity: .6; }
-    #afNegPop { width: min(calc(100vw - 4.5rem), 580px); }
+    #afNegPop { width: min(calc(100vw - 4.5rem), 430px); } /* étroit tant que « Temps moyen par type d'examen » est replié (3 bâtons), large une fois ouvert (5 bâtons) */
+    #afNegPop:has(.af-tps-det[open]) { width: min(calc(100vw - 4.5rem), 580px); }
     #afOsPop { width: min(calc(100vw - 4.5rem), 580px); }
     #afImpPop { width: min(calc(100vw - 4.5rem), 580px); }
     .af-lang-btn { width: auto; padding: 0 .45rem; }
@@ -369,10 +370,12 @@
               <div class="af-pop-titre">Répartition des examens</div>
               <p class="af-aide" style="margin:.1rem 0 .2rem">En % de l'activité : le total fait toujours 100 % (en bougeant un bâton, les autres se partagent le reste). Valeurs de départ = estimation, à ajuster.</p>
               <div class="af-mixer af-mixer--mini" id="afNegMix"></div>
-              <div class="af-pop-sous-titre">Temps moyen par type d'examen</div>
+              <details class="af-tco-det af-tps-det">
+              <summary class="af-pop-sous-titre">Temps moyen par type d'examen</summary>
               <div class="af-mixer af-mixer--mini" id="afTempsMix"></div>
               <p class="af-aide" style="margin:.3rem 0 0">Le changement de patient est inclus dans la durée d'examen ; e-Spades ne réduit que le reste (l'acquisition).</p>
               <div id="afNegTemps"></div>
+              </details>
               <div id="afNegSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
             </div>
           </span>
