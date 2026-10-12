@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261013c"></script>
+  <script src="assets/afrique-i18n.js?v=20261013d"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -423,13 +423,13 @@
               <div class="af-pop-sous-titre">Prix de l'O-scan avec options, travaux et cage</div>
               <div id="afOptTotal" style="font-weight:800"></div>
               <details class="af-tco-det">
-              <summary class="af-pop-sous-titre">TCO : coût total de possession</summary>
+              <summary class="af-pop-sous-titre">Coût total de possession et de fonctionnement</summary>
               <div class="af-tco-wrap" style="overflow-x:auto"><table class="af-table af-table--tco" id="afTco"></table></div>
-              <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au TCO :</strong></div>
+              <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au coût total :</strong></div>
               <label class="af-check"><input type="checkbox" id="afTcoElec" /> Électricité</label>
               <label class="af-check"><input type="checkbox" id="afTcoPers" /> Personnel</label>
               <label class="af-check"><input type="checkbox" id="afTcoLoyer" /> Loyer des locaux</label>
-              <p class="af-aide">Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
+              <p class="af-aide">Le coût total de possession et de fonctionnement additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
               </details>
             </div>
           </span>
@@ -759,8 +759,8 @@
       lignes.forEach(function (l) {
         h += "<tr><td>" + l[0] + "</td>" + ANS.map(function (n, i) { var v = l[1](n); tot[i] += v; return "<td>" + fmtMoney(v) + "</td>"; }).join("") + "</tr>";
       });
-      h += "<tr><td><strong>TCO total</strong></td>" + tot.map(function (v) { return "<td><strong>" + fmtMoney(v) + "</strong></td>"; }).join("") + "</tr>";
-      h += "<tr><td>TCO par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
+      h += "<tr><td><strong>Coût total</strong></td>" + tot.map(function (v) { return "<td><strong>" + fmtMoney(v) + "</strong></td>"; }).join("") + "</tr>";
+      h += "<tr><td>Coût total par an</td>" + tot.map(function (v, i) { return "<td>" + fmtMoney(v / ANS[i]) + "</td>"; }).join("") + "</tr>";
       h += "<tr><td>Coût par examen</td>" + tot.map(function (v, i) { return "<td>" + (r.examens > 0 ? fmtMoney(v / (ANS[i] * r.examens)) : "") + "</td>"; }).join("") + "</tr>";
       h += "<tr><td>Nombre de patients (cumulé)</td>" + ANS.map(function (n) { return "<td>" + fmt(Math.round(r.examens * n)) + "</td>"; }).join("") + "</tr></tbody>";
       t.innerHTML = h;

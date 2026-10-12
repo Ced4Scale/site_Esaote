@@ -2865,22 +2865,22 @@ window.AF_I18N = {
 "Die pasiëntwisseling is by die duur van die ondersoek ingesluit; e-Spades verkort slegs die res (die opname)."
 ],
 [
-"TCO : coût total de possession",
-"TCO: total cost of ownership",
-"TCO: costo totale di possesso",
-"TCO: custo total de propriedade",
-"التكلفة الإجمالية للامتلاك (TCO)",
-"TCO: gharama jumla ya umiliki",
-"TCO: totale eienaarskapskoste"
+"Coût total de possession et de fonctionnement",
+"Total cost of ownership and operation",
+"Costo totale di proprietà e di esercizio",
+"Custo total de posse e de funcionamento",
+"التكلفة الإجمالية للامتلاك والتشغيل",
+"Gharama jumla ya umiliki na uendeshaji",
+"Totale koste van eienaarskap en bedryf"
 ],
 [
-"Le TCO financier additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).",
-"The financial TCO adds up the MRI and its options (import included), the works, the Faraday cage (local VAT included) and maintenance after the warranty, without revenue. If the loan is enabled (coins icon), the loan payments, interest included, replace the amount invested (works and cage included).",
-"Il TCO finanziario somma la RM e le sue opzioni (importazione inclusa), i lavori, la gabbia di Faraday (IVA locale inclusa) e la manutenzione dopo la garanzia, senza i ricavi. Se il finanziamento è attivo (icona monete), le rate del prestito, interessi compresi, sostituiscono l'importo investito (lavori e gabbia compresi).",
-"O TCO financeiro soma a RM e as suas opções (importação incluída), as obras, a gaiola de Faraday (IVA local incluído) e a manutenção após a garantia, sem as receitas. Se o crédito estiver ativo (ícone de moedas), as mensalidades do crédito, juros incluídos, substituem o montante investido (obras e gaiola incluídas).",
-"يجمع TCO المالي جهاز الرنين المغناطيسي وخياراته (شاملًا الاستيراد) والأشغال وقفص فاراداي (شاملًا ضريبة القيمة المضافة المحلية) والصيانة بعد الضمان، دون الإيرادات. إذا كان القرض مفعّلًا (أيقونة العملات)، تحل أقساط القرض، شاملةً الفوائد، محل المبلغ المستثمر (شاملًا الأشغال والقفص).",
-"TCO ya kifedha inajumlisha MRI na chaguo zake (pamoja na uagizaji), kazi za ujenzi, ngome ya Faraday (pamoja na VAT ya ndani) na matengenezo baada ya dhamana, bila mapato. Ikiwa mkopo umewashwa (ikoni ya sarafu), malipo ya mkopo, pamoja na riba, yanachukua nafasi ya kiasi kilichowekezwa (pamoja na kazi za ujenzi na ngome).",
-"Die finansiële TCO tel die MRI en sy opsies (invoer ingesluit), die werke, die Faraday-hok (plaaslike BTW ingesluit) en die instandhouding ná die waarborg bymekaar, sonder die inkomste. Indien die lening geaktiveer is (ikoon muntstukke), vervang die leningbetalings, rente ingesluit, die belegde bedrag (werke en hok ingesluit)."
+"Le coût total de possession et de fonctionnement additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).",
+"The total cost of ownership and operation adds up the MRI and its options (import included), the works, the Faraday cage (local VAT included) and maintenance after the warranty, without revenue. If the loan is enabled (coins icon), the loan payments, interest included, replace the amount invested (works and cage included).",
+"Il costo totale di proprietà e di esercizio somma la RM e le sue opzioni (importazione inclusa), i lavori, la gabbia di Faraday (IVA locale inclusa) e la manutenzione dopo la garanzia, senza i ricavi. Se il finanziamento è attivo (icona monete), le rate del prestito, interessi compresi, sostituiscono l'importo investito (lavori e gabbia compresi).",
+"O custo total de posse e de funcionamento soma a RM e as suas opções (importação incluída), as obras, a gaiola de Faraday (IVA local incluído) e a manutenção após a garantia, sem as receitas. Se o crédito estiver ativo (ícone de moedas), as mensalidades do crédito, juros incluídos, substituem o montante investido (obras e gaiola incluídas).",
+"تجمع التكلفة الإجمالية للامتلاك والتشغيل جهاز الرنين المغناطيسي وخياراته (شاملًا الاستيراد) والأشغال وقفص فاراداي (شاملًا ضريبة القيمة المضافة المحلية) والصيانة بعد الضمان، دون الإيرادات. إذا كان القرض مفعّلًا (أيقونة العملات)، تحل أقساط القرض، شاملةً الفوائد، محل المبلغ المستثمر (شاملًا الأشغال والقفص).",
+"Gharama jumla ya umiliki na uendeshaji inajumlisha MRI na chaguo zake (pamoja na uagizaji), kazi za ujenzi, ngome ya Faraday (pamoja na VAT ya ndani) na matengenezo baada ya dhamana, bila mapato. Ikiwa mkopo umewashwa (ikoni ya sarafu), malipo ya mkopo, pamoja na riba, yanachukua nafasi ya kiasi kilichowekezwa (pamoja na kazi za ujenzi na ngome).",
+"Die totale koste van eienaarskap en bedryf tel die MRI en sy opsies (invoer ingesluit), die werke, die Faraday-hok (plaaslike BTW ingesluit) en die instandhouding ná die waarborg bymekaar, sonder die inkomste. Indien die lening geaktiveer is (ikoon muntstukke), vervang die leningbetalings, rente ingesluit, die belegde bedrag (werke en hok ingesluit)."
 ],
 [
 "Achat rendu (O-scan, options, importation, travaux, cage)",
@@ -2901,22 +2901,22 @@ window.AF_I18N = {
 "Rente op die lening"
 ],
 [
-"TCO total",
-"Total TCO",
-"TCO totale",
-"TCO total",
-"إجمالي TCO",
-"TCO jumla",
-"TCO totaal"
+"Coût total",
+"Total cost",
+"Costo totale",
+"Custo total",
+"التكلفة الإجمالية",
+"Gharama jumla",
+"Totale koste"
 ],
 [
-"TCO par an",
-"TCO per year",
-"TCO all'anno",
-"TCO por ano",
-"TCO سنويًا",
-"TCO kwa mwaka",
-"TCO per jaar"
+"Coût total par an",
+"Total cost per year",
+"Costo totale all'anno",
+"Custo total por ano",
+"التكلفة الإجمالية سنويًا",
+"Gharama jumla kwa mwaka",
+"Totale koste per jaar"
 ],
 [
 "Coût par examen",
@@ -2946,13 +2946,13 @@ window.AF_I18N = {
 "MRI en opsies (invoer ingesluit)"
 ],
 [
-"Ajouter au TCO :",
-"Add to the TCO:",
-"Aggiungi al TCO:",
-"Adicionar ao TCO:",
-"أضِف إلى TCO:",
-"Ongeza kwenye TCO:",
-"Voeg by die TCO:"
+"Ajouter au coût total :",
+"Add to the total cost:",
+"Aggiungi al costo totale:",
+"Adicionar ao custo total:",
+"أضِف إلى التكلفة الإجمالية:",
+"Ongeza kwenye gharama jumla:",
+"Voeg by die totale koste:"
 ],
 [
 "Gain avec Agil Exam",
