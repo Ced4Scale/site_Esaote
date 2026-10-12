@@ -390,6 +390,7 @@
         <div class="af-pop-titre">Prix de vente de l'O-scan selon le résultat souhaité</div>
         <p class="af-aide" style="margin:.1rem 0 .4rem">Choisissez le résultat que vous souhaitez, en pourcentage des recettes de l'année affichée : le simulateur calcule le prix de vente de l'O-scan (hors taxes) qui permet de l'atteindre, et l'applique à la table de mixage.</p>
         <div class="af-mixer af-mixer--mini" id="afPrixMix" style="justify-content:flex-start"></div>
+        <div class="af-carte-opts"><strong>Options qui font gagner du temps :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div>
         <div id="afPrixSortie" class="af-aide" style="margin-top:.4rem"></div>
       </div>
       <h2 class="af-titre">Recettes, dépenses et résultat</h2>
@@ -1535,6 +1536,7 @@
       el("afOptListe").appendChild(d);
     });
     brancher("afOptBtn", "afOptPop"); brancher("afPrixBtn", "afPrixPop");
+    Array.prototype.forEach.call(document.querySelectorAll("#afPrixPop input[data-opt]"), function (i) { i.addEventListener("change", function () { var cb = OPT_CB[i.dataset.opt]; cb.checked = i.checked; cb.dispatchEvent(new Event("change")); }); }); // mêmes cases que dans le panneau Esaote
     brancher("afImpBtn", "afImpPop");
     var selP = el("afPays"); selP.innerHTML = '<option value="">— Aucun pays acheteur (pas de frais d\'importation) —</option>';
     PAYS.forEach(function (c) { var o = document.createElement("option"); o.value = c.k; o.textContent = c.nom; selP.appendChild(o); });

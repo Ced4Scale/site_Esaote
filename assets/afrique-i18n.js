@@ -2955,6 +2955,15 @@ window.AF_I18N = {
 "Teiken buite perke: die prys is vasgesteek by die maksimum van die « Prys van die O-scan »-staaf."
 ],
 [
+"Options qui font gagner du temps :",
+"Time-saving options:",
+"Opzioni che fanno risparmiare tempo:",
+"Opções que poupam tempo:",
+"خيارات توفّر الوقت:",
+"Chaguo zinazookoa muda:",
+"Opsies wat tyd bespaar:"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
