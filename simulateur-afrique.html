@@ -686,7 +686,7 @@
       if (S.finActif) { interetsAn = anneeNum ? interetsCredit(achatTotal, 12 * anneeNum) - interetsCredit(achatTotal, 12 * (anneeNum - 1)) : interetsCredit(achatTotal, S.dureeMois) / horizon; achat = Math.max(0, achat - interetsAn); }
       var loyer = S.loyerM2 * S.surface;
       var maint = anneeNum ? S.maint * moisMaint(anneeNum) / 12 : S.maint * Math.max(0, 12 * horizon - S.garantie) / 12 / horizon;
-      var depenses = personnel + loyer + elec + achat + maint;
+      var depenses = personnel + loyer + elec + achat + interetsAn + maint;
       var joursAn = (5 + (S.ouvSam ? 1 : 0) + (S.ouvDim ? 1 : 0)) * S.semaines;
       var acqH = acqMoyenne() / 60;
       var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
