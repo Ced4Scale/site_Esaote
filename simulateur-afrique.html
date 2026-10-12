@@ -602,11 +602,7 @@
 
       <details class="af-hyp">
         <summary>Hypothèses (salaire, charges)</summary>
-        <div class="af-hyp-grille">
-          <div><label for="afSalaire">Salaire net annuel d'un MERM</label><input type="text" inputmode="numeric" id="afSalaire" /><span class="af-hyp-unite" id="afSalaireUnite">€</span></div>
-          <div><label for="afRetenue">Retenues sur le salaire (du net au brut, en %)</label><input type="text" inputmode="decimal" id="afRetenue" /><span class="af-hyp-unite">%</span></div>
-          <div><label for="afPatro">Charges patronales (en % du brut)</label><input type="text" inputmode="decimal" id="afPatro" /><span class="af-hyp-unite">%</span></div>
-        </div>
+        <div class="af-mixer af-mixer--mini" id="afHypMix" style="flex-wrap:wrap;justify-content:flex-start;gap:.5rem 1.6rem;margin-top:.8rem"></div>
         <p class="af-aide">Salaire de départ : 5.000 € net par an (confirmé le 11/10/2026). Quand vous choisissez un pays, le salaire du MERM, le prix du kWh, les retenues et les charges patronales sont proposés (estimations) ; vous pouvez les modifier. Sans pays : règles françaises (retenues 22 %, charges patronales 42 %).</p>
       </details>
     </div>
@@ -1345,7 +1341,9 @@
       { id: "afGITax1", ou: "afImpMix", titreFn: function () { return S.nTax1 || "Autre taxe 1"; }, cols: [{ k: "tax1", color: "#8a5ad6", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax2", ou: "afImpMix", titreFn: function () { return S.nTax2 || "Autre taxe 2"; }, cols: [{ k: "tax2", color: "#6b5b95", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
       { id: "afGITax3", ou: "afImpMix", titreFn: function () { return S.nTax3 || "Autre taxe 3"; }, cols: [{ k: "tax3", color: "#8a8f98", min: 0, max: 20, step: 0.25, kind: "pct", unit: "%" }] },
-      { id: "afGIPatro", ou: "afImpMix", titre: "Charges patronales (salaire MERM)", cols: [{ k: "chargesPat", color: "#d1477a", min: 0, max: 60, step: 0.25, kind: "pct", unit: "% du brut" }] },
+      { id: "afGHSal", ou: "afHypMix", titre: "Salaire net annuel d'un MERM", cols: [{ k: "salaire", color: "#2a78d6", min: 0, max: 30000, step: 100, kind: "money" }] },
+      { id: "afGHRet", ou: "afHypMix", titre: "Retenues salariales", cols: [{ k: "retenue", color: "#eb6834", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% du brut" }] },
+      { id: "afGHPatro", ou: "afHypMix", titre: "Charges patronales (salaire MERM)", cols: [{ k: "chargesPat", color: "#d1477a", min: 0, max: 60, step: 0.25, kind: "pct", unit: "% du brut" }] },
       { id: "afGITva", ou: "afImpMix", titre: "TVA", cols: [{ k: "tvaImp", color: "#eb6834", min: 0, max: 30, step: 0.25, kind: "pct", unit: "%" }] }
     );
     var visibles = {};
@@ -1454,9 +1452,6 @@
         g.cols.forEach(function (col) { var sl = col.node.querySelector(".af-mixer__slot"); if (sl) sl.style.display = nb > 1 ? "" : "none"; });
       });
       // hypothèses
-      el("afSalaire").value = fmt(S.salaire * cur.r); el("afSalaireUnite").textContent = cur.s;
-      if (el("afRetenue") !== document.activeElement) el("afRetenue").value = nf2.format(S.retenue).replace(/,00$/, "");
-      if (el("afPatro") !== document.activeElement) el("afPatro").value = nf2.format(S.chargesPat).replace(/,00$/, "");
       relireCalendrier();
       if (el("afLoyerM2") !== document.activeElement) el("afLoyerM2").value = fmt(S.loyerM2 * cur.r);
       el("afLoyerM2Unite").textContent = cur.s;
@@ -1467,9 +1462,6 @@
     }
 
     // ------------------------------------------------------------------ hypothèses (champs sous la table)
-    el("afSalaire").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.salaire = n / cur.r; synchroniser(); rendre(); });
-    el("afRetenue").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n < 60) S.retenue = n; synchroniser(); rendre(); });
-    el("afPatro").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0 && n <= 100) S.chargesPat = n; synchroniser(); rendre(); });
 
     // ------------------------------------------------------------------ panneaux déplaçables (clic sur l'icône = ouvrir/fermer, rien d'autre ne les ferme)
     var nbPops = 0;

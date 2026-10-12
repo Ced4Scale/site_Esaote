@@ -2856,6 +2856,15 @@ window.AF_I18N = {
 "¤ per kWh"
 ],
 [
+"Retenues salariales",
+"Employee deductions",
+"Trattenute sul salario",
+"Descontos salariais",
+"اقتطاعات الأجر",
+"Makato ya mshahara",
+"Salarisaftrekkings"
+],
+[
 "Prix saisis",
 "Prices entered",
 "Prezzi inseriti",
