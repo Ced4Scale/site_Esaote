@@ -3664,6 +3664,24 @@ window.AF_I18N = {
 "إغلاق",
 "Funga",
 "Sluit"
+],
+[
+"Comparaison des pays :",
+"Country comparison:",
+"Confronto dei paesi:",
+"Comparação dos países:",
+"مقارنة البلدان:",
+"Ulinganisho wa nchi:",
+"Vergelyking van lande:"
+],
+[
+"Résultat sur § ans : ¤",
+"Result over § years: ¤",
+"Risultato su § anni: ¤",
+"Resultado em § anos: ¤",
+"النتيجة على § سنوات: ¤",
+"Matokeo ya miaka §: ¤",
+"Resultaat oor § jaar: ¤"
 ]
 ]
 };
