@@ -3340,6 +3340,60 @@ window.AF_I18N = {
 "عدد المرضى (في السنة)",
 "Idadi ya wagonjwa (kwa mwaka)",
 "Aantal pasiënte (per jaar)"
+],
+[
+"Croissance annuelle de l'activité",
+"Annual activity growth",
+"Crescita annuale dell'attività",
+"Crescimento anual da atividade",
+"النمو السنوي للنشاط",
+"Ukuaji wa kila mwaka wa shughuli",
+"Jaarlikse groei van die aktiwiteit"
+],
+[
+"Patients par jour",
+"Patients per day",
+"Pazienti al giorno",
+"Pacientes por dia",
+"المرضى في اليوم",
+"Wagonjwa kwa siku",
+"Pasiënte per dag"
+],
+[
+"Résultat cumulé",
+"Cumulative result",
+"Risultato cumulato",
+"Resultado acumulado",
+"النتيجة التراكمية",
+"Matokeo ya jumla",
+"Gekumuleerde resultaat"
+],
+[
+"Résultat par patient",
+"Result per patient",
+"Risultato per paziente",
+"Resultado por paciente",
+"النتيجة لكل مريض",
+"Matokeo kwa mgonjwa",
+"Resultaat per pasiënt"
+],
+[
+"Résultat par jour d'ouverture",
+"Result per opening day",
+"Risultato per giorno di apertura",
+"Resultado por dia de abertura",
+"النتيجة لكل يوم عمل",
+"Matokeo kwa siku ya kufunguliwa",
+"Resultaat per openingsdag"
+],
+[
+"Suite du tableau ci-dessus, année par année : recettes − dépenses (achat ou mensualités du crédit, maintenance, électricité, personnel, loyer des locaux). La croissance annuelle s'applique au nombre de patients, donc aux recettes ; les dépenses restent celles du tableau ci-dessus.",
+"Continuation of the table above, year by year: revenue − expenses (purchase or loan payments, maintenance, electricity, staff, premises rent). The annual growth applies to the number of patients, hence to revenue; expenses stay those of the table above.",
+"Seguito della tabella sopra, anno per anno: ricavi − spese (acquisto o rate del prestito, manutenzione, elettricità, personale, affitto dei locali). La crescita annuale si applica al numero di pazienti, quindi ai ricavi; le spese restano quelle della tabella sopra.",
+"Continuação da tabela acima, ano a ano: receitas − despesas (compra ou mensalidades do crédito, manutenção, eletricidade, pessoal, renda das instalações). O crescimento anual aplica-se ao número de pacientes, logo às receitas; as despesas ficam as da tabela acima.",
+"تتمة الجدول أعلاه، سنة بعد سنة: الإيرادات − النفقات (الشراء أو أقساط القرض والصيانة والكهرباء والموظفون وإيجار المحلات). يُطبَّق النمو السنوي على عدد المرضى وبالتالي على الإيرادات؛ وتبقى النفقات كما في الجدول أعلاه.",
+"Mwendelezo wa jedwali la juu, mwaka kwa mwaka: mapato − matumizi (ununuzi au malipo ya mkopo, matengenezo, umeme, wafanyakazi, kodi ya majengo). Ukuaji wa kila mwaka unatumika kwa idadi ya wagonjwa, hivyo kwa mapato; matumizi yanabaki kama katika jedwali la juu.",
+"Voortsetting van die tabel hierbo, jaar vir jaar: inkomste − uitgawes (aankoop of leningbetalings, instandhouding, elektrisiteit, personeel, huur van die persele). Die jaarlikse groei geld vir die aantal pasiënte, dus vir die inkomste; die uitgawes bly dié van die tabel hierbo."
 ]
 ]
 };
