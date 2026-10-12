@@ -3043,6 +3043,24 @@ window.AF_I18N = {
 "سنوات",
 "miaka",
 "jaar"
+],
+[
+"Rechercher une devise (premières lettres)",
+"Search a currency (first letters)",
+"Cercare una valuta (prime lettere)",
+"Procurar uma moeda (primeiras letras)",
+"ابحث عن عملة (الحروف الأولى)",
+"Tafuta sarafu (herufi za kwanza)",
+"Soek 'n valuta (eerste letters)"
+],
+[
+"Rechercher un pays (premières lettres)",
+"Search a country (first letters)",
+"Cercare un paese (prime lettere)",
+"Procurar um país (primeiras letras)",
+"ابحث عن بلد (الحروف الأولى)",
+"Tafuta nchi (herufi za kwanza)",
+"Soek 'n land (eerste letters)"
 ]
 ]
 };

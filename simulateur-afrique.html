@@ -63,7 +63,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261013f"></script>
+  <script src="assets/afrique-i18n.js?v=20261014a"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -217,6 +217,7 @@
     .af-cal-ligne input[type="number"] { width: 4.6rem; }
     .af-cal-ligne label { flex: 1 1 auto; }
     .af-cal-sous { margin-left: 1.4rem; }
+    .af-filtre { width: 100%; box-sizing: border-box; margin: .2rem 0 .4rem; padding: .38rem .55rem; border: 1px solid var(--af-bd); border-radius: .4rem; font: inherit; font-size: .8rem; background: #fff; }
     .af-dev-liste { max-height: 15rem; overflow-y: auto; border: 1px solid var(--af-bd); border-radius: .4rem; background: #fff; }
     .af-dev-row { display: flex; width: 100%; gap: .5rem; align-items: baseline; padding: .28rem .5rem; border: 0; border-bottom: 1px solid var(--line); background: transparent; font: inherit; font-size: .8rem; color: #222; cursor: pointer; text-align: left; }
     .af-dev-row:last-child { border-bottom: 0; }
@@ -295,6 +296,7 @@
             <div class="af-pop" id="afDevPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Devise d'affichage</div>
+              <input type="search" class="af-filtre" id="afDevFiltre" autocomplete="off" placeholder="Rechercher une devise (premières lettres)" aria-label="Rechercher une devise (premières lettres)" />
               <div class="af-dev-liste" id="afDevListe"></div>
               <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
                 <button type="button" class="btn btn--sm" id="afTauxMaj">Mettre à jour les taux</button>
@@ -405,6 +407,7 @@
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Importation depuis l'Italie</div>
               <label for="afPays" style="font-size:.8rem;font-weight:700">Pays acheteur de l'IRM (elle part toujours d'Italie)</label>
+              <input type="search" class="af-filtre" id="afPaysFiltre" autocomplete="off" placeholder="Rechercher un pays (premières lettres)" aria-label="Rechercher un pays (premières lettres)" />
               <select id="afPays" style="width:100%;margin:.2rem 0 .4rem"></select>
               <div id="afImpStatut" class="af-aide" style="margin:0 0 .4rem"></div>
               <label class="af-check"><input type="checkbox" id="afImpTva" checked /> Compter la TVA dans le prix d'achat (à décocher si elle est récupérable)</label>
@@ -1069,10 +1072,22 @@
     brancher("afImpBtn", "afImpPop");
     var selP = el("afPays"); selP.innerHTML = '<option value="">— Aucun pays acheteur (pas de frais d\'importation) —</option>';
     PAYS.forEach(function (c) { var o = document.createElement("option"); o.value = c.k; o.textContent = c.nom; selP.appendChild(o); });
+    function filtrerPays() {
+      var q = el("afPaysFiltre").value, garde = selP.value, n = 0;
+      selP.innerHTML = '<option value="">— Aucun pays acheteur (pas de frais d\'importation) —</option>';
+      PAYS.forEach(function (c) {
+        if (!correspond(c.nom + " " + (lang === "fr" ? "" : trTexte(c.nom, lang)), q)) return;
+        var o = document.createElement("option"); o.value = c.k; o.textContent = c.nom; selP.appendChild(o); n++;
+      });
+      selP.value = Array.prototype.some.call(selP.options, function (o) { return o.value === garde; }) ? garde : "";
+      selP.size = q.trim() ? Math.min(n + 1, 7) : 1; // pendant la recherche, la liste s'affiche en clair pour voir les pays qui restent
+    }
+    el("afPaysFiltre").addEventListener("input", filtrerPays);
     function fmtPct(v) { return nf2.format(v).replace(/,00$/, "") + " %"; }
     selP.addEventListener("change", function () {
       var c = PAYS.filter(function (x) { return x.k === selP.value; })[0];
       S.pays = c ? c.k : "";
+      if (el("afPaysFiltre").value) { el("afPaysFiltre").value = ""; filtrerPays(); selP.value = S.pays; }
       majDrapeauPays();
       S.chargesPat = c ? c.patro : 42;
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (i) { S["tax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][1] : 0; S["nTax" + i] = c.taxes[i - 1] ? c.taxes[i - 1][0] : ""; }); }
@@ -1121,6 +1136,21 @@
       });
       listeDev.appendChild(b);
     });
+    // Recherche : on tape les premières lettres (code, nom ou symbole) pour réduire la liste ; insensible aux accents et aux majuscules.
+    function nrm(t) { return String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
+    function correspond(texte, q) {
+      q = nrm(q).trim(); if (!q) return true;
+      var t = nrm(texte); if (q.indexOf(" ") >= 0) return t.indexOf(q) >= 0;
+      return t.split(/[^a-z0-9\u0600-\u06ff]+/).some(function (m) { return m.indexOf(q) === 0; });
+    }
+    function filtrerDevises() {
+      var q = el("afDevFiltre").value;
+      Array.prototype.forEach.call(listeDev.children, function (b) {
+        var x = CURRENCIES.filter(function (y) { return y.c === b.dataset.c; })[0];
+        b.hidden = !correspond(x.c + " " + x.n + " " + x.s + " " + b.querySelector("span").textContent, q);
+      });
+    }
+    el("afDevFiltre").addEventListener("input", filtrerDevises);
     function majTauxListe() {
       Array.prototype.forEach.call(listeDev.querySelectorAll("em"), function (e) {
         var x = CURRENCIES.filter(function (y) { return y.c === e.dataset.c; })[0];
@@ -1323,6 +1353,7 @@
       if (document.__frTitre === undefined) document.__frTitre = document.title;
       document.title = c === "fr" ? document.__frTitre : trTexte(document.__frTitre, c);
       alignerMixers();
+      if (el("afDevFiltre").value) filtrerDevises();
       if (obsLangue) obsLangue.takeRecords();
     }
     // Bâtons : les titres d'une même rangée prennent la hauteur du plus haut (1, 2 ou 3 lignes selon la langue), pour que bâtons, valeurs et boutons − / + soient tous alignés.
