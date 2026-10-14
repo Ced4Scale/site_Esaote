@@ -366,6 +366,9 @@
     .af-hyp-grille label { flex: 1 1 auto; font-size: .8rem; font-weight: 700; margin: 0; }
     .af-hyp-grille input { flex: 0 0 8rem; width: 8rem; box-sizing: border-box; text-align: right; }
     .af-hyp-unite { flex: 0 0 3.2rem; font-size: .8rem; font-weight: 700; color: var(--ink-soft); }
+    .af-lieu { display: flex; gap: 2px; margin-top: .4rem; justify-content: center; }
+    .af-lieu button { font: inherit; font-size: .68rem; font-weight: 800; padding: .2rem .5rem; border: 1px solid var(--af-bd); background: #fff; border-radius: 6px; cursor: pointer; }
+    .af-lieu button[aria-pressed="true"] { background: #2a78d6; color: #fff; border-color: #2a78d6; }
     .af-aide { font-size: .78rem; color: var(--muted); margin: .6rem 0 0; }
   </style>
 </head>
@@ -484,6 +487,24 @@
             </div>
           </span>
 
+          <!-- Radiologue : coût de lecture des examens (par examen, par an ou en % du prix) -->
+          <span class="af-info-wrap">
+            <button type="button" class="af-info-btn" id="afRadBtn" aria-expanded="false" aria-controls="afRadPop" aria-label="Coût du radiologue" data-tip="Radiologue : coût de lecture des examens, par examen, par an ou en % du prix de l'examen.">
+              <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="12" cy="7.5" r="3.6" fill="currentColor"/><path d="M4.5 20.5c0-4.2 3.3-7 7.5-7s7.5 2.8 7.5 7z" fill="currentColor"/><path d="M10.2 14.2v2.4a1.9 1.9 0 0 0 3.8 0v-2.4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg>
+            </button>
+            <div class="af-pop" id="afRadPop" hidden>
+              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+              <div class="af-pop-titre">Coût du radiologue</div>
+              <label class="af-check"><input type="radio" name="afRadMode" value="exam" /> Par examen</label>
+              <label class="af-check"><input type="radio" name="afRadMode" value="an" /> Par an</label>
+              <label class="af-check"><input type="radio" name="afRadMode" value="pct" /> % du prix de l'examen</label>
+              <div class="af-mixer af-mixer--mini" id="afRadMix"></div>
+              <div class="af-pop-sous-titre">Coût annuel du radiologue</div>
+              <div id="afRadTotal" style="font-weight:800"></div>
+              <p class="af-aide">Coût total payé par le centre pour la lecture des examens (honoraires ou salaire chargé). Quand vous choisissez un pays, ce coût est proposé (estimation, à confirmer).</p>
+            </div>
+          </span>
+
           <!-- Os : répartition des examens par zone (l'O-scan ne fait pas l'épaule) -->
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afOsBtn" aria-expanded="false" aria-controls="afOsPop" aria-label="Répartition des examens MSK par zone" data-tip="Examens par zone : part de chaque zone du corps (genou, main, pied, coude…) dans l'activité.">
@@ -573,6 +594,9 @@
               <div class="af-pop-titre">Options de l'Esaote O-scan</div>
               <p class="af-aide" style="margin:.1rem 0 .4rem">Cochez les options retenues et ajustez leur prix : elles s'ajoutent au prix de l'O-scan (étalé comme lui). Prix de départ à confirmer avec Esaote (travaux et cage de Faraday : à confirmer sur devis).</p>
               <div id="afOptListe"></div>
+              <div class="af-pop-sous-titre">Garantie</div>
+              <div class="af-mixer af-mixer--mini" id="afOptGar"></div>
+              <p class="af-aide" style="margin:.2rem 0 .4rem">Pendant la garantie, la maintenance n'est pas comptée. C'est le même réglage que dans l'icône Financement (affiché ici en années).</p>
               <div class="af-pop-sous-titre">Prix de l'O-scan avec options, travaux et cage</div>
               <div id="afOptTotal" style="font-weight:800"></div>
               <details class="af-tco-det">
@@ -582,6 +606,7 @@
               <div class="af-aide" style="margin:.5rem 0 .1rem"><strong>Ajouter au coût total :</strong></div>
               <label class="af-check"><input type="checkbox" id="afTcoElec" checked /> Électricité</label>
               <label class="af-check"><input type="checkbox" id="afTcoPers" checked /> Personnel</label>
+              <label class="af-check"><input type="checkbox" id="afTcoRadio" checked /> Radiologue</label>
               <label class="af-check"><input type="checkbox" id="afTcoLoyer" checked /> Loyer des locaux</label>
               <p class="af-aide">Le coût total de possession et de fonctionnement additionne l'IRM et ses options (importation comprise), les travaux, la cage de Faraday (TVA locale comprise) et la maintenance après la garantie, sans les recettes. Si le crédit est activé (icône pièces), les mensualités du crédit, intérêts compris, remplacent le montant investi (travaux et cage compris).</p>
               </details>
@@ -615,7 +640,8 @@
                 <tr><td>Financement</td><td>Si coché (icône Financement) : mensualité du crédit (taux, durée) à la place de l'étalement du prix.</td></tr>
                 <tr><td>Loyer des locaux</td><td>Prix au m² par an × surface (icône bâtiment). Rien tant que le prix est à 0.</td></tr>
                 <tr><td>Répartition</td><td>Diagnostique / claustrophobie / consultation d'orthopédiste (icône négatoscope) : information en % de l'activité, sans effet sur les montants pour l'instant.</td></tr>
-                <tr><td>Non compté</td><td>Radiologue, secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
+                <tr><td>Radiologue</td><td>Au choix : par examen, par an ou en % du prix de l'examen (icône radiologue). Rien tant que le coût est à 0.</td></tr>
+                <tr><td>Non compté</td><td>Secrétariat, assurance, consommables, formation, droits de douane.</td></tr>
               </tbody></table>
             </div>
           </span>
@@ -707,7 +733,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.1, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, margeCible: 0, cadenasMarge: false, margeVerrou: 0, msgPrix: "", retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, lieu: "hop", radMode: "exam", radExam: 0, radAn: 0, radPct: 0, radUser: null, tcoRadio: true, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, margeCible: 0, cadenasMarge: false, margeVerrou: 0, msgPrix: "", retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -747,12 +773,19 @@
     // Prix d'un examen d'IRM facturé à l'hôpital public (€), par pays : ESTIMATIONS du 12/10/2026, à confirmer. Relevés : Maroc 800-1.400 MAD (radiologue.ma / sahha.ma 2026), Sénégal Hôpital principal 162.000 FCFA (Jeune Afrique), Kenya 12.000-18.000 KES (hôpitaux publics, 2026), Nigeria 78.000 NGN (DELSUTH), Ouganda Mulago 300-1.200 $ ; le reste = jugement de Claude (ordre de grandeur selon la région et le niveau de vie).
     var PRIX_PAYS = { ma: 100, dz: 55, tn: 50, eg: 50, sn: 245, ci: 190, cm: 170, ng: 55, gh: 190, ke: 105, za: 150, et: 50, tz: 120, cd: 180, cv: 120, ao: 200, bw: 180, bf: 150, bi: 120, bj: 150, km: 130, cg: 170, dj: 150, sz: 130, ga: 220, gm: 100, gn: 130, gq: 200, gw: 120, ls: 100, ly: 60, lr: 130, mg: 90, mw: 100, ml: 140, mu: 130, mr: 130, mz: 110, na: 150, ne: 120, ug: 300, rw: 150, cf: 110, st: 120, sc: 180, sl: 110, so: 150, sd: 70, ss: 150, td: 130, tg: 140, zm: 140, zw: 130, er: 80 };
     var COUTS_PAYS = { ma: [9000, 0.1], dz: [4800, 0.03], tn: [6000, 0.11], eg: [3600, 0.04], sn: [7500, 0.16], ci: [8000, 0.2], cm: [5500, 0.16], ng: [2800, 0.08], gh: [3600, 0.13], ke: [6000, 0.16], za: [15000, 0.12], et: [2400, 0.02], tz: [3600, 0.09], cd: [3000, 0.07], cv: [7000, 0.19], ao: [5500, 0.02], bw: [10000, 0.115], bf: [6500, 0.2], bi: [2000, 0.13], bj: [6500, 0.14], km: [4500, 0.25], cg: [5500, 0.09], dj: [6000, 0.18], sz: [8000, 0.09], ga: [8000, 0.16], gm: [2500, 0.2], gn: [3500, 0.08], gq: [6000, 0.08], gw: [3500, 0.2], ls: [6500, 0.08], ly: [5000, 0.01], lr: [3000, 0.3], mg: [2400, 0.18], mw: [2800, 0.14], ml: [6500, 0.15], mu: [9000, 0.13], mr: [5000, 0.15], mz: [4500, 0.07], na: [12000, 0.13], ne: [5000, 0.15], ug: [3600, 0.11], rw: [4500, 0.07], cf: [3000, 0.15], st: [3500, 0.15], sc: [12000, 0.2], sl: [2400, 0.28], so: [2500, 0.4], sd: [2200, 0.04], ss: [2500, 0.3], td: [4500, 0.18], tg: [6000, 0.17], zm: [5500, 0.04], zw: [4000, 0.12], er: [1500, 0.05] };
+    // Lieu de l'examen (hôpital public ou clinique privée) et coût du radiologue par pays : ESTIMATIONS du 14/10/2026, à confirmer (aucune source publique fiable par pays n'a été trouvée).
+    // Clinique privée = prix de l'hôpital × 2,2 (examen < 100 €), × 1,8 (< 200 €) ou × 1,5 ; radiologue par examen = 20 % du prix à l'hôpital ; radiologue par an = 5 × le salaire du MERM du pays (Kenya : 32.000 €, relevé lifeindexed.com 2026 : 4.687.100 KES).
+    function prixLieu(k, lieu) { var h = PRIX_PAYS[k]; if (h == null) return null; if (lieu !== "cli") return h; var f = h < 100 ? 2.2 : h < 200 ? 1.8 : 1.5; return Math.round(h * f / 5) * 5; }
+    function radPays(k) { var c = COUTS_PAYS[k], h = PRIX_PAYS[k]; if (!c || h == null) return null; return { exam: Math.round(h * 0.2), an: k === "ke" ? 32000 : Math.round(c[0] * 5 / 500) * 500, pct: 20 }; }
+    function radParExamen() { return S.radMode === "exam" ? S.radExam : S.radMode === "pct" ? S.prix * S.radPct / 100 : 0; }
+    function radiologueAn(ex) { return S.radMode === "an" ? S.radAn : ex * radParExamen(); }
+    function radLib(m, e, a, q) { return m === "an" ? fmtMoney(a) + " / an" : m === "pct" ? nf2.format(q).replace(/,00$/, "") + " % du prix" : fmtMoney(e) + " / examen"; }
     var REGION_PAYS = { ma: "N", dz: "N", tn: "N", eg: "N", ly: "N", sd: "N", sn: "O", ci: "O", ng: "O", gh: "O", bj: "O", bf: "O", gm: "O", gn: "O", gw: "O", lr: "O", ml: "O", mr: "O", ne: "O", sl: "O", tg: "O", cm: "C", cf: "C", td: "C", cg: "C", cd: "C", gq: "C", ga: "C", et: "E", ke: "E", tz: "E", ug: "E", rw: "E", bi: "E", dj: "E", er: "E", so: "E", ss: "E", za: "S", bw: "S", sz: "S", ls: "S", na: "S", mz: "S", zm: "S", zw: "S", mw: "S", ao: "S", cv: "I", st: "I", km: "I", mg: "I", mu: "I", sc: "I" };
     // taux du pays pour une durée donnée : taux de base (vers 5 ans) ± 0,15 point par année d'écart ; sans pays, taux de départ
     function tauxPays(annees) { var t = TAUX_PAYS[S.pays], b = t ? t[0] : TAUX_DEFAUT; return Math.max(0.5, Math.round((b + MARGE_PETITE + 0.15 * (annees - 5)) * 100) / 100); }
     var CLE_TAUX_BANQUE = "ced4scale-afrique-taux-banque", TAUX_BANQUE_DATE = "12/10/2026";
     try { var tb = JSON.parse(localStorage.getItem(CLE_TAUX_BANQUE) || "null"); if (tb && tb.taux) { Object.keys(tb.taux).forEach(function (k) { if (TAUX_PAYS[k]) TAUX_PAYS[k] = tb.taux[k]; }); TAUX_BANQUE_DATE = tb.date || TAUX_BANQUE_DATE; } } catch (e) {}
-    function appliquerCoutsPays() { if (PRIX_PAYS[S.pays] != null) S.prix = PRIX_PAYS[S.pays]; if (!S.parPays) return; var t = COUTS_PAYS[S.pays]; if (t) { S.salaire = t[0]; S.kwh = t[1]; } }
+    function appliquerCoutsPays() { if (PRIX_PAYS[S.pays] != null) S.prix = prixLieu(S.pays, S.lieu); if (!S.parPays) return; var t = COUTS_PAYS[S.pays]; if (t) { S.salaire = t[0]; S.kwh = t[1]; } var rp = radPays(S.pays); if (rp) { S.radExam = rp.exam; S.radAn = rp.an; S.radPct = rp.pct; } }
     function majTauxAuto() { if (S.tauxAuto) S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); }
     var PAYS = [
       { k: "ma", patro: 21.09, patroRel: 1, nom: "Maroc", droit: 5, tva: 20, taxes: [], statut: "TVA standard relevée ; droit de douane estimé.", note: "Accord UE–Maroc : droit possiblement nul pour un produit d'origine italienne — à confirmer avec un transitaire." },
@@ -882,18 +915,19 @@
       if (S.finActif) { interetsAn = anneeNum ? interetsCredit(achatTotal, 12 * anneeNum) - interetsCredit(achatTotal, 12 * (anneeNum - 1)) : interetsCredit(achatTotal, S.dureeMois) / horizon; achat = Math.max(0, achat - interetsAn); }
       var loyer = S.loyerM2 * S.surface;
       var maint = anneeNum ? S.maint * moisMaint(anneeNum) / 12 : S.maint * Math.max(0, 12 * horizon - S.garantie) / 12 / horizon;
-      var depenses = personnel + loyer + elec + achat + interetsAn + maint;
+      var radio = radiologueAn(examens);
+      var depenses = personnel + radio + loyer + elec + achat + interetsAn + maint;
       var joursAn = (5 + (S.ouvSam ? 1 : 0) + (S.ouvDim ? 1 : 0)) * S.semaines;
       var acqH = acqMoyenne() / 60;
-      var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
+      var variable = Math.max(0, (OSCAN.mesure - OSCAN.pret) * acqH * S.kwh) + radParExamen(); // surcoût d'électricité d'un examen de plus (acquisition à la place du temps « prêt »)
       var pmExamens = S.prix > variable ? Math.max(0, depenses - variable * examens) / (S.prix - variable) : Infinity;
       // Retour sur investissement : trésorerie annuelle = recettes - personnel - loyer - électricité (- maintenance dès l'année 2)
-      var cash1 = recettes - personnel - loyer - elec, cashN = cash1 - S.maint, retour = Infinity;
+      var cash1 = recettes - personnel - radio - loyer - elec, cashN = cash1 - S.maint, retour = Infinity;
       var cashM = cash1 / 12, maintM = S.maint / 12, g = Math.max(0, S.garantie);
       // à récupérer : le prix d'achat rendu ; si un crédit est actif, on y ajoute les intérêts du crédit (le financement des deux bâtons durée / taux)
       var aRecuperer = achatTotal + (S.finActif ? Math.max(0, mens * Math.max(1, S.dureeMois) - achatTotal) : 0);
       if (cashM > 0) { var t1 = aRecuperer / cashM; if (t1 <= g) retour = t1; else if (cashM > maintM) retour = (aRecuperer + maintM * g) / (cashM - maintM); }
-      return { examens: examens, recettes: recettes, personnel: personnel, loyer: loyer, elec: elec, achat: achat, interetsAn: interetsAn, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, aRecuperer: aRecuperer, mensualite: mens, interets: mens * Math.max(1, S.dureeMois) - achatTotal, retourMois: retour, cash1: cash1 };
+      return { examens: examens, recettes: recettes, personnel: personnel, radio: radio, loyer: loyer, elec: elec, achat: achat, interetsAn: interetsAn, maint: maint, depenses: depenses, resultat: recettes - depenses, kwhAn: kwhAn, joursAn: joursAn, pmExamens: pmExamens, achatTotal: achatTotal, aRecuperer: aRecuperer, mensualite: mens, interets: mens * Math.max(1, S.dureeMois) - achatTotal, retourMois: retour, cash1: cash1 };
     }
 
     // ------------------------------------------------------------------ demi-anneaux
@@ -909,6 +943,7 @@
     var CAT_REC = [{ key: "recettes", label: "Examens", color: "#2a78d6" }];
     var CAT_DEP = [
       { key: "personnel", label: "Personnel (MERM)", color: "#d1477a" },
+      { key: "radio", label: "Radiologue", color: "#e0643c" },
       { key: "loyer", label: "Loyer des locaux", color: "#6b5b95" },
       { key: "elec", label: "Électricité", color: "#3aa0b5" },
       { key: "achat", label: "Achat de l'O-scan et options (étalé)", color: "#b8782f" },
@@ -997,6 +1032,7 @@
         ["Maintenance", function (n) { return S.maint * Math.max(0, 12 * n - S.garantie) / 12; }, function (n) { return S.maint * moisMaint(n) / 12; }],
         S.tcoElec ? ["Électricité", function (n) { return r.elec * n; }, function () { return r.elec; }] : null,
         S.tcoPers ? ["Personnel", function (n) { return r.personnel * n; }, function () { return r.personnel; }] : null,
+        S.tcoRadio ? ["Radiologue", function (n) { return r.radio * n; }, function () { return r.radio; }] : null,
         S.tcoLoyer ? ["Loyer des locaux", function (n) { return r.loyer * n; }, function () { return r.loyer; }] : null
       ].filter(Boolean);
       var tot = ANS.map(function () { return 0; });
@@ -1012,8 +1048,8 @@
     // Tableau « Résultat » (suite du coût total) : recettes − dépenses année par année, avec une croissance annuelle du nombre de patients.
     function majRes(r) {
       var ANS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10], g = 1 + S.croiss / 100, P = r.achatTotal, cumul = 0;
-      var dep = function (n) { return (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer; };
-      var lig = ANS.map(function (n) { var ex = r.examens * Math.pow(g, n - 1), rec = ex * S.prix, d = dep(n), res = rec - d; cumul += res; return { ex: ex, rec: rec, d: d, res: res, cum: cumul }; });
+      var dep = function (n, ex) { return (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer + radiologueAn(ex); };
+      var lig = ANS.map(function (n) { var ex = r.examens * Math.pow(g, n - 1), rec = ex * S.prix, d = dep(n, ex), res = rec - d; cumul += res; return { ex: ex, rec: rec, d: d, res: res, cum: cumul }; });
       var h = "<thead><tr><td></td>" + ANS.map(function (n) { return "<td>" + "Année " + n + "</td>"; }).join("") + "</tr></thead><tbody>";
       var ligne = function (lib, f, fort) { return "<tr><td>" + (fort ? "<strong>" + lib + "</strong>" : lib) + "</td>" + lig.map(function (x) { var v = f(x); return "<td>" + (fort ? "<strong>" + v + "</strong>" : v) + "</td>"; }).join("") + "</tr>"; };
       h += ligne("Nombre de patients (par an)", function (x) { return fmt(Math.round(x.ex)); });
@@ -1078,17 +1114,17 @@
     // Comparaison des pays : résultat sur 10 ans aux réglages actuels, avec droits, taxes, charges et taux bancaire propres à chaque pays (état de la page restauré ensuite)
     var cartePrixPays = false; // page des pays : prix de l'examen propre à chaque pays (hôpital public) au lieu du bâton commun
     function resultat10Pays(k) {
-      var cles = ["pays", "prix", "retenue", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux", "salaire", "kwh"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
+      var cles = ["pays", "prix", "retenue", "chargesPat", "droit", "tvaImp", "tax1", "tax2", "tax3", "nTax1", "nTax2", "nTax3", "taux", "salaire", "kwh", "radExam", "radAn", "radPct"], sv = {}, c = PAYS.filter(function (x) { return x.k === k; })[0], i, n, cumul = 0, pat = 0, anPos = 0, out;
       cles.forEach(function (q) { sv[q] = S[q]; });
-      S.pays = k; if (cartePrixPays && PRIX_PAYS[k] != null) S.prix = PRIX_PAYS[k]; S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); if (S.parPays && COUTS_PAYS[k]) { S.salaire = COUTS_PAYS[k][0]; S.kwh = COUTS_PAYS[k][1]; }
+      S.pays = k; if (cartePrixPays && PRIX_PAYS[k] != null) S.prix = prixLieu(k, S.lieu); S.taux = Math.min(40, tauxPays(S.dureeMois / 12)); if (S.parPays && COUTS_PAYS[k]) { S.salaire = COUTS_PAYS[k][0]; S.kwh = COUTS_PAYS[k][1]; var rpk = radPays(k); if (rpk) { S.radExam = rpk.exam; S.radAn = rpk.an; S.radPct = rpk.pct; } }
       S.chargesPat = c ? c.patro : 42; S.retenue = c && RETENUES_PAYS[c.k] != null ? RETENUES_PAYS[c.k] : 22; // comparaison : toujours le taux bancaire propre à chaque pays
       if (c) { S.droit = c.droit; S.tvaImp = c.tva; [1, 2, 3].forEach(function (j) { S["tax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][1] : 0; S["nTax" + j] = c.taxes[j - 1] ? c.taxes[j - 1][0] : ""; }); }
       var r = calculer(), g = 1 + S.croiss / 100, P = r.achatTotal;
       for (n = 1; n <= 10; n++) {
-        var ex = r.examens * Math.pow(g, n - 1), d = (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer, res = ex * S.prix - d;
+        var ex = r.examens * Math.pow(g, n - 1), d = (S.finActif ? mensualite(P) * moisPayes(n) : (n === 1 ? P : 0)) + S.maint * moisMaint(n) / 12 + r.elec + r.personnel + r.loyer + radiologueAn(ex), res = ex * S.prix - d;
         cumul += res; pat += ex; if (!anPos && cumul >= 0) anPos = n;
       }
-      out = { k: k, prix: S.prix, parJour: r.joursAn > 0 ? cumul / (10 * r.joursAn) : 0, sal: S.salaire, kwh: S.kwh, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
+      out = { k: k, prix: S.prix, parJour: r.joursAn > 0 ? cumul / (10 * r.joursAn) : 0, sal: S.salaire, kwh: S.kwh, radE: S.radExam, radA: S.radAn, radP: S.radPct, tot: cumul, pat: pat, parPat: pat > 0 ? cumul / pat : 0, anPos: anPos, taux: S.taux, achat: P };
       cles.forEach(function (q) { S[q] = sv[q]; });
       return out;
     }
@@ -1114,7 +1150,7 @@
           // le détail (par patient, cumul positif, taux bancaire, coûts du pays) n'est plus écrit sous le drapeau : il reste dans l'info-bulle de la carte
           var lignes = [parJ ? "Résultat par jour d'ouverture : " + fmtMoney(x.parJour) : null, parP ? "Résultat sur 10 ans : " + fmtMoney(x.tot) : (x.pat > 0 ? fmtMoney2(x.parPat) + " par patient en moyenne" : ""), x.anPos ? "Cumul positif dès l'année " + x.anPos : "Cumul jamais positif sur 10 ans", "Prix de l'examen : " + fmtMoney(x.prix), "Taux bancaire : " + nf2.format(x.taux).replace(/,00$/, "") + " %", S.parPays ? "MERM : " + fmtMoney(x.sal) + " net par an · " + fmtMoney2(x.kwh) + " le kWh" : ""].filter(Boolean);
           b.setAttribute("title", lignes.join(" — ")); var dt = b.querySelector(".det"); // prix de l'examen (hôpital public) puis prix du kWh écrits sous chaque pays
-          var tx = []; if (cartePrixPays) tx.push("Examen : " + fmtMoney(x.prix)); if (S.parPays) tx.push("kWh : " + fmtMoney2(x.kwh));
+          var tx = []; if (cartePrixPays) tx.push("Examen : " + fmtMoney(x.prix)); if (S.parPays) tx.push("kWh : " + fmtMoney2(x.kwh)); if (S.parPays && S.radMode) tx.push("Radiologue : " + radLib(S.radMode, x.radE, x.radA, x.radP));
           if (tx.length) { dt.textContent = ""; tx.forEach(function (t) { var l = document.createElement("div"); l.textContent = t; dt.appendChild(l); }); } else dt.remove();
           b.addEventListener("click", function () { var sp = el("afPays"); sp.value = x.k; sp.dispatchEvent(new Event("change")); fermer(); });
           grille.appendChild(b);
@@ -1124,8 +1160,8 @@
       function ouvrir() { remplir(); page.hidden = false; document.documentElement.style.overflow = "hidden"; if (page.requestFullscreen) page.requestFullscreen().catch(function () {}); page.querySelector(".af-carte-fermer").focus(); }
       function fermer() { if (page.hidden) return; page.hidden = true; document.documentElement.style.overflow = ""; if (document.fullscreenElement === page) document.exitFullscreen(); }
       page.querySelector("#afCartePaysCouts").addEventListener("change", function () { // salaire du MERM et kWh du pays : suivent le pays choisi tant que la case est cochée ; décochée, vos propres valeurs reviennent
-        if (this.checked) { S.salUser = S.salaire; S.kwhUser = S.kwh; S.parPays = true; appliquerCoutsPays(); }
-        else { S.parPays = false; if (S.salUser != null) { S.salaire = S.salUser; S.kwh = S.kwhUser; } }
+        if (this.checked) { S.salUser = S.salaire; S.kwhUser = S.kwh; S.radUser = [S.radExam, S.radAn, S.radPct]; S.parPays = true; appliquerCoutsPays(); }
+        else { S.parPays = false; if (S.salUser != null) { S.salaire = S.salUser; S.kwh = S.kwhUser; } if (S.radUser) { S.radExam = S.radUser[0]; S.radAn = S.radUser[1]; S.radPct = S.radUser[2]; } }
         synchroniser(); rendre();
       });
       Array.prototype.forEach.call(page.querySelectorAll(".af-carte-opts input[data-opt]"), function (i) { // même réglage que les cases du panneau Esaote (recalcul des patients par heure compris)
@@ -1162,7 +1198,7 @@
       return [
         demi("Recettes", CAT_REC, { recettes: r.recettes }, r.recettes, { label: "Total", valeur: fmtMoney(r.recettes), sous: [fmt(r.examens) + " examens par an", r.examens > 0 ? fmtMoney2(r.recettes / r.examens) + " de recette par patient" : ""] }),
         demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney2(r.depenses / r.examens) + " de charges par patient" : ""] }),
-        demi("Résultat", CAT_RES, { personnel: r.personnel, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
+        demi("Résultat", CAT_RES, { personnel: r.personnel, radio: r.radio, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
           positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney2(r.resultat / r.examens) + " de résultat par patient" : ""] })];
     }
     function rendre() {
@@ -1248,6 +1284,10 @@
         { k: "hDim", color: "#1f9d78", min: 0.5, max: hMax, step: 0.5, kind: "dec", unit: "h / jour", slot: "Dimanche", si: "ouvDim" }] },
       { id: "afGMerm", titre: "Nombre de MERM", choix: "Nombre de MERM", cols: [{ k: "nMerm", color: "#d1477a", min: 0, max: 2, step: 0.5, kind: "dec", unit: "ETP" }] },
       { id: "afGPrix", titre: "Prix de l'examen", choix: "Prix de l'examen", cols: [{ k: "prix", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" }] },
+      { id: "afGRadExam", ou: "afRadMix", titre: "Par examen", cols: [{ k: "radExam", color: "#e0643c", min: 0, max: 300, step: 1, kind: "money" }] },
+      { id: "afGRadAn", ou: "afRadMix", titre: "Par an", cols: [{ k: "radAn", color: "#e0643c", min: 0, max: 300000, step: 1000, kind: "money" }] },
+      { id: "afGRadPct", ou: "afRadMix", titre: "% du prix", cols: [{ k: "radPct", color: "#e0643c", min: 0, max: 100, step: 1, kind: "pct", unit: "% du prix de l'examen" }] },
+      { id: "afGOptGar", ou: "afOptGar", titre: "Années de garantie", cols: [{ k: "garAns", color: "#1f9d78", min: 0, max: 5, step: 0.5, kind: "dec", unit: "ans" }] },
       { id: "afGAchat", titre: "Prix de l'O-scan", choix: "Prix de l'O-scan", cols: [{ k: "achat", color: "#6b5b95", min: 100000, max: 500000, step: 5000, kind: "money" }] },
       // Durée du financement (0 à 10 ans) : vue en années du crédit de l'icône banque. 0 = pas de crédit (achat étalé) ; au-dessus de 0, le crédit est activé pour cette durée.
       { id: "afGFin", titre: "Durée du financement", titreFn: function () { return S.finActif ? "Financement" : "Durée du financement"; }, choix: "Durée du financement", unitFn: function () { return S.finActif ? "" : "sans crédit (achat étalé)"; }, cols: [
@@ -1427,6 +1467,7 @@
           v = Math.max(mn, Math.min(mx, v));
           if (col.kind === "int") v = Math.round(v);
           S[col.k] = Math.round(v * 1e6) / 1e6;
+          if (col.k === "garAns") S.garantie = Math.round(S.garAns * 12);
           if (col.k === "finAns") { if (S.finAns > 0) { S.finActif = true; S.dureeMois = Math.max(6, Math.round(S.finAns * 12)); } else S.finActif = false; }
           if (col.k === "finAns" || col.k === "dureeMois") { ajusterAnneeCredit(); S.tauxAuto = true; majTauxAuto(); }
           if (col.k === "margeCible") { resoudrePrix(S.margeCible); if (S.cadenasMarge) S.margeVerrou = pctResultat(); } else if (!S.cadenasMarge) S.msgPrix = "";
@@ -1446,6 +1487,15 @@
       });
       (g.ou ? el(g.ou) : mixer).appendChild(gd);
     });
+
+    (function () { // choix hôpital public / clinique privée sous le bâton « Prix de l'examen »
+      var b = document.createElement("div"); b.className = "af-lieu"; b.id = "afLieu"; b.setAttribute("role", "group"); b.setAttribute("aria-label", "Lieu de l'examen : hôpital public ou clinique privée");
+      b.innerHTML = '<button type="button" data-lieu="hop">Hôpital</button><button type="button" data-lieu="cli">Clinique</button>';
+      el("afGPrix").appendChild(b);
+      Array.prototype.forEach.call(b.querySelectorAll("button"), function (bt) { bt.addEventListener("click", function () {
+        S.lieu = bt.dataset.lieu; if (S.pays && PRIX_PAYS[S.pays] != null) S.prix = prixLieu(S.pays, S.lieu); synchroniser(); rendre(); }); });
+      Array.prototype.forEach.call(document.querySelectorAll("input[name=afRadMode]"), function (r) { r.addEventListener("change", function () { if (r.checked) { S.radMode = r.value; synchroniser(); rendre(); } }); });
+    })();
 
     // Prix de vente de l'O-scan déduit du résultat souhaité (en % des recettes de l'année affichée) : recherche par dichotomie, le résultat baisse quand le prix monte
     var PRIX_MIN = 100000, PRIX_MAX = 500000; // plafond et plancher du prix de l'O-scan : ceux du bâton « Prix de l'O-scan » (rétabli le 12/10/2026 à la demande de Cédric)
@@ -1467,6 +1517,7 @@
     }
     function appliquerCadenasMarge() { if (S.cadenasMarge) resoudrePrix(S.margeVerrou); }
     function synchroniser() {
+      S.garAns = S.garantie / 12;
       S.patAn = Math.round(S.pph * volumeParPph());
       appliquerCadenasMarge(); majPrixSortie();
       Object.keys(OPT_CB).forEach(function (k) { OPT_CB[k].checked = !!S["opt" + k]; }); // cases des options (panneau Esaote et page des pays) = état réel
@@ -1514,6 +1565,10 @@
       OPTIONS.forEach(function (o) { var b = el("afPrix" + o.k); if (b !== document.activeElement) b.value = fmt(S["prix" + o.k] * cur.r); el("afUnite" + o.k).textContent = cur.s; });
       el("afOptTotal").textContent = fmtMoney(prixHT() + prixLocal());
       el("afLoyerTotal").textContent = fmtMoney(S.loyerM2 * S.surface) + " par an";
+      Array.prototype.forEach.call(document.querySelectorAll("#afLieu button"), function (bt) { bt.setAttribute("aria-pressed", String(bt.dataset.lieu === S.lieu)); });
+      Array.prototype.forEach.call(document.querySelectorAll("input[name=afRadMode]"), function (r) { r.checked = r.value === S.radMode; });
+      [["exam", "afGRadExam"], ["an", "afGRadAn"], ["pct", "afGRadPct"]].forEach(function (m) { el(m[1]).hidden = S.radMode !== m[0]; });
+      el("afRadTotal").textContent = fmtMoney(radiologueAn(calculer().examens)) + " par an";
     }
 
     // ------------------------------------------------------------------ hypothèses (champs sous la table)
@@ -1539,7 +1594,7 @@
       poignee.addEventListener("pointercancel", function () { dep = null; });
       poignee.addEventListener("dblclick", function () { dx = 0; dy = 0; appliquer(); });
     }
-    ["Dev", "Cal", "Outils", "Info"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
+    ["Dev", "Cal", "Outils", "Info", "Rad"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
 
     // ------------------------------------------------------------------ options Esaote
     var OPT_CB = {}; // cases à cocher des options (panneau Esaote), pour les synchroniser avec la page des pays
@@ -1604,7 +1659,7 @@
     brancher("afFinBtn", "afFinPop");
     brancher("afNegBtn", "afNegPop");
     el("afTcoCumul").addEventListener("change", function () { S.tcoCumul = this.checked; rendre(); });
-    [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
+    [["afTcoElec", "tcoElec"], ["afTcoPers", "tcoPers"], ["afTcoLoyer", "tcoLoyer"], ["afTcoRadio", "tcoRadio"]].forEach(function (p) { el(p[0]).addEventListener("change", function () { S[p[1]] = this.checked; rendre(); }); });
     // Mise à jour des taux bancaires : dernier « taux d'emprunt » publié par la Banque mondiale (api.worldbank.org, gratuit) ; seules les valeurs de 2023 ou plus récentes remplacent les valeurs en place.
     function majStatutBanque(txt) { el("afTauxBanqueStatut").textContent = txt || "Taux du " + TAUX_BANQUE_DATE; }
     el("afTauxBanqueMaj").addEventListener("click", function () {

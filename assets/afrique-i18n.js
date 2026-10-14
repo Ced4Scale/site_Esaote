@@ -4366,6 +4366,125 @@ window.AF_I18N = {
 "فني الأشعة: ¤ صافي سنويًا · ¤ للكيلوواط ساعة",
 "MERM: ¤ halisi kwa mwaka · ¤ kwa kWh",
 "MERM: ¤ netto per jaar · ¤ per kWh"
-]
+],
+[
+"Hôpital",
+"Hospital",
+"Ospedale",
+"Hospital",
+"مستشفى",
+"Hospitali",
+"Hospitaal"
+],
+[
+"Clinique",
+"Clinic",
+"Clinica",
+"Clínica",
+"عيادة",
+"Kliniki",
+"Kliniek"
+],
+[
+"Radiologue",
+"Radiologist",
+"Radiologo",
+"Radiologista",
+"طبيب الأشعة",
+"Daktari wa radiolojia",
+"Radioloog"
+],
+[
+"Coût du radiologue",
+"Radiologist cost",
+"Costo del radiologo",
+"Custo do radiologista",
+"تكلفة طبيب الأشعة",
+"Gharama ya daktari wa radiolojia",
+"Koste van die radioloog"
+],
+[
+"Par examen",
+"Per exam",
+"Per esame",
+"Por exame",
+"لكل فحص",
+"Kwa kila uchunguzi",
+"Per ondersoek"
+],
+[
+"Par an",
+"Per year",
+"Per anno",
+"Por ano",
+"سنويًا",
+"Kwa mwaka",
+"Per jaar"
+],
+[
+"% du prix de l'examen",
+"% of exam price",
+"% del prezzo dell'esame",
+"% do preço do exame",
+"% من سعر الفحص",
+"% ya bei ya uchunguzi",
+"% van die ondersoekprys"
+],
+[
+"Coût annuel du radiologue",
+"Annual radiologist cost",
+"Costo annuo del radiologo",
+"Custo anual do radiologista",
+"التكلفة السنوية لطبيب الأشعة",
+"Gharama ya mwaka ya daktari wa radiolojia",
+"Jaarlikse koste van die radioloog"
+],
+[
+"Coût total payé par le centre pour la lecture des examens (honoraires ou salaire chargé). Quand vous choisissez un pays, ce coût est proposé (estimation, à confirmer).",
+"Total cost paid by the centre for reading the exams (fees or loaded salary). When you choose a country, this cost is suggested (estimate, to be confirmed).",
+"Costo totale sostenuto dal centro per la lettura degli esami (onorari o stipendio con oneri). Scegliendo un paese, il costo viene proposto (stima, da confermare).",
+"Custo total pago pelo centro pela leitura dos exames (honorários ou salário com encargos). Ao escolher um país, este custo é sugerido (estimativa, a confirmar).",
+"التكلفة الإجمالية التي يدفعها المركز لقراءة الفحوصات (أتعاب أو راتب شامل). عند اختيار بلد يُقترح هذا المبلغ (تقدير يلزم تأكيده).",
+"Gharama ya jumla inayolipwa na kituo kwa kusoma uchunguzi (ada au mshahara kamili). Ukichagua nchi, gharama hii hupendekezwa (makadirio, yathibitishwe).",
+"Totale koste wat die sentrum betaal vir die lees van die ondersoeke (honorarium of salaris met heffings). Wanneer u 'n land kies, word hierdie koste voorgestel (skatting, om te bevestig)."
+],
+[
+"Radiologue : coût de lecture des examens, par examen, par an ou en % du prix de l'examen.",
+"Radiologist: cost of reading the exams, per exam, per year or as a % of the exam price.",
+"Radiologo: costo di lettura degli esami, per esame, per anno o in % del prezzo dell'esame.",
+"Radiologista: custo de leitura dos exames, por exame, por ano ou em % do preço do exame.",
+"طبيب الأشعة: تكلفة قراءة الفحوصات، لكل فحص أو سنويًا أو كنسبة من سعر الفحص.",
+"Daktari wa radiolojia: gharama ya kusoma uchunguzi, kwa uchunguzi, kwa mwaka au kwa % ya bei.",
+"Radioloog: koste van die lees van die ondersoeke, per ondersoek, per jaar of as % van die ondersoekprys."
+],
+[
+"Lieu de l'examen : hôpital public ou clinique privée",
+"Exam location: public hospital or private clinic",
+"Luogo dell'esame: ospedale pubblico o clinica privata",
+"Local do exame: hospital público ou clínica privada",
+"مكان الفحص: مستشفى عام أو عيادة خاصة",
+"Mahali pa uchunguzi: hospitali ya umma au kliniki binafsi",
+"Plek van die ondersoek: openbare hospitaal of private kliniek"
+],
+[
+"Au choix : par examen, par an ou en % du prix de l'examen (icône radiologue). Rien tant que le coût est à 0.",
+"Your choice: per exam, per year or as a % of the exam price (radiologist icon). Nothing while the cost is 0.",
+"A scelta: per esame, per anno o in % del prezzo dell'esame (icona radiologo). Nulla finché il costo è 0.",
+"À escolha: por exame, por ano ou em % do preço do exame (ícone radiologista). Nada enquanto o custo for 0.",
+"حسب اختيارك: لكل فحص أو سنويًا أو كنسبة من سعر الفحص (أيقونة طبيب الأشعة). لا شيء ما دامت التكلفة 0.",
+"Kwa chaguo: kwa uchunguzi, kwa mwaka au kwa % ya bei (ikoni ya daktari wa radiolojia). Hakuna maadamu gharama ni 0.",
+"Na keuse: per ondersoek, per jaar of as % van die ondersoekprys (radioloog-ikoon). Niks solank die koste 0 is."
+],
+[
+"Secrétariat, assurance, consommables, formation, droits de douane.",
+"Secretarial work, insurance, consumables, training, customs duties.",
+"Segreteria, assicurazione, materiali di consumo, formazione, dazi doganali.",
+"Secretariado, seguro, consumíveis, formação, direitos aduaneiros.",
+"السكرتارية، التأمين، المستهلكات، التكوين، الرسوم الجمركية.",
+"Ukatibu, bima, vifaa vya matumizi, mafunzo, ushuru wa forodha.",
+"Sekretariaat, versekering, verbruiksgoedere, opleiding, doeanegelde."
+],
+["Années de garantie", "Years of warranty", "Anni di garanzia", "Anos de garantia", "سنوات الضمان", "Miaka ya dhamana", "Jare waarborg"],
+["Pendant la garantie, la maintenance n'est pas comptée. C'est le même réglage que dans l'icône Financement (affiché ici en années).", "During the warranty, maintenance is not counted. This is the same setting as in the Financing icon (shown here in years).", "Durante la garanzia la manutenzione non viene conteggiata. È la stessa impostazione dell'icona Finanziamento (qui in anni).", "Durante a garantia, a manutenção não é contabilizada. É a mesma definição do ícone Financiamento (aqui em anos).", "خلال الضمان لا تُحتسب الصيانة. هذا هو نفس الإعداد الموجود في أيقونة التمويل (معروض هنا بالسنوات).", "Wakati wa dhamana, matengenezo hayahesabiwi. Ni mpangilio uleule wa ikoni ya Ufadhili (hapa kwa miaka).", "Tydens die waarborg word instandhouding nie getel nie. Dit is dieselfde instelling as in die Finansiering-ikoon (hier in jare)."]
 ]
 };
