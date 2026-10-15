@@ -108,6 +108,13 @@
     .af-accueil { position: relative; padding: 5.2rem var(--gut, 1.2rem) 2.5rem; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
     .af-accueil[hidden], .simulator[hidden] { display: none; }
     .af-accueil-barre { position: absolute; top: 4.4rem; right: var(--gut, 1.2rem); z-index: 6; display: flex; justify-content: flex-end; align-items: center; gap: .45rem; direction: ltr; min-height: 2.2rem; }
+    .af-accueil-barre { flex-wrap: wrap; row-gap: .45rem; }
+    .af-saut { flex-basis: 100%; height: 0; order: 1; }
+    .af-carte-acc { order: 2; width: 2.2rem; height: 2.2rem; padding: .3rem; border-radius: 999px; border: 1px solid #f0d998; background: #fff6e0; color: #8a6d1e; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+    .af-carte-acc:hover { border-color: var(--red); color: var(--red); }
+    .af-carte-acc svg { width: 100%; height: auto; display: block; }
+    .af-carte-acc svg path, .af-carte-acc svg circle { fill: currentColor; opacity: .7; stroke: #fff; stroke-width: .35; }
+    .af-carte-acc svg .est-choisi { fill: #d11; opacity: 1; }
     .af-accueil-barre .af-pop { left: auto; right: 0; }
     html[dir="rtl"] .af-accueil-barre .af-pop { direction: rtl; }
     .af-accueil-corps { text-align: center; padding-top: .6rem; }
@@ -439,7 +446,7 @@
   </header>
 
   <section class="af-accueil" id="afAccueil">
-    <div class="af-accueil-barre" id="afAccueilBarre"></div>
+    <div class="af-accueil-barre" id="afAccueilBarre"><span class="af-saut" id="afAccueilSaut"></span><button type="button" class="af-carte-acc" id="afAccueilCarte" title="Voir tous les pays" aria-label="Voir tous les pays"></button></div>
     <div class="af-accueil-corps">
       <span class="kicker">Simulateur Afrique</span>
       <h1>Simulateur de rentabilité Esaote</h1>
@@ -2195,7 +2202,7 @@
       var acc = el("afAccueil"), simu = el("afSimu"), barreAcc = el("afAccueilBarre"), barreSimu = document.querySelector(".af-barre-btn"), fs = el("afFsBtn");
       var wl = el("afLangBtn").parentNode, wd = el("afDevBtn").parentNode;
       function fermerPops() { [el("afLangPop"), el("afDevPop")].forEach(function (p) { p.hidden = true; }); el("afLangBtn").setAttribute("aria-expanded", "false"); el("afDevBtn").setAttribute("aria-expanded", "false"); }
-      function versAccueil() { fermerPops(); barreAcc.appendChild(wl); barreAcc.appendChild(wd); simu.hidden = true; acc.hidden = false; window.scrollTo(0, 0); }
+      function versAccueil() { fermerPops(); barreAcc.insertBefore(wl, el("afAccueilSaut")); barreAcc.insertBefore(wd, el("afAccueilSaut")); simu.hidden = true; acc.hidden = false; window.scrollTo(0, 0); }
       function versSimu() { fermerPops(); barreSimu.insertBefore(wl, fs); barreSimu.insertBefore(wd, fs); acc.hidden = true; simu.hidden = false; window.scrollTo(0, 0); requestAnimationFrame(function () { alignerMixers(); synchroniser(); rendre(); }); }
       Array.prototype.forEach.call(acc.querySelectorAll(".af-irm"), function (b) { b.addEventListener("click", function () { if (b.dataset.irm === "oscan") versSimu(); }); });
       el("afRetourIrm").addEventListener("click", versAccueil);
@@ -2209,6 +2216,11 @@
           setTimeout(function () { img.setAttribute("src", liste[cur]); img.classList.remove("is-fading"); }, 200);
         }, 1500);
       });
+      (function () { // icône Afrique : ouvre la page des pays (drapeaux), la même que dans le simulateur
+        var b = el("afAccueilCarte"), svg = document.querySelector("#afCarteBtn svg");
+        if (svg) { var c = svg.cloneNode(true); Array.prototype.forEach.call(c.querySelectorAll("[id]"), function (n) { n.removeAttribute("id"); }); b.appendChild(c); }
+        b.addEventListener("click", function () { el("afCarteBtn").click(); });
+      })();
       versAccueil();
     })();
 
