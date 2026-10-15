@@ -77,14 +77,13 @@
     .af-bloc:fullscreen .af-pop { position: fixed; top: 4.5rem; margin: 0; width: clamp(300px, calc(var(--gut) - 1.6rem), 500px); max-height: calc(100vh - 6rem); overflow-y: auto; z-index: 20; }
     .af-bloc:fullscreen .af-pop[data-cote="g"] { left: .8rem; right: auto; }
     .af-bloc:fullscreen .af-pop[data-cote="d"] { right: .8rem; left: auto; }
-    .af-barre-btn { position: absolute; top: .85rem; right: .85rem; display: flex; align-items: center; gap: .45rem; direction: ltr; z-index: 3; }
-    html[dir="rtl"] .af-barre-btn .af-pop { direction: rtl; }
-    .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
-    .af-prix-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
+    .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
+    .af-outils-icones { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
+        .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
+    .af-prix-btn { position: relative; display: block; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
     .af-prix-btn:hover, .af-prix-btn[aria-expanded="true"] { border-color: var(--red); }
     .af-prix-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
-    #afPrixPop { --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; z-index: 30; top: 3.4rem; right: .85rem; left: auto; width: min(calc(100vw - 4.5rem), 340px); }
-    .af-bloc > .af-titre { padding-right: 11rem; } /* le titre ne passe pas sous les deux boutons ronds (O-scan et plein écran), en LTR comme en RTL */
+    #afPrixPop { --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; z-index: 30; width: min(calc(100vw - 4.5rem), 340px); }
     .af-fs-btn:hover { border-color: var(--red); color: var(--red); }
     /* Panneau des options Esaote : bouton plein écran (le TCO sur 10 ans y est large) */
     .af-pop-plein { position: absolute; top: .3rem; right: .4rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; border: 1px solid var(--af-bd); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
@@ -393,8 +392,27 @@
     </div>
 
     <div class="af-bloc" id="afBloc">
-      <div class="af-barre-btn">
+      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
+      <p class="af-sous-titre" id="afSousTitre"></p>
+      <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
+      <div class="af-demis" id="afDemis"></div>
+      <div class="af-pm" id="afPm"></div>
+
+      <!-- Boîte à outils : toutes les icônes (réglages, langue, devise, plein écran) -->
+      <div class="af-outils-boite" id="afBoiteOutils">
+        <span class="af-mixer__title">Boîte à outils</span>
+        <div class="af-outils-icones">
+          <span class="af-info-wrap af-prix-wrap">
       <button type="button" class="af-prix-btn" id="afPrixBtn" aria-expanded="false" aria-controls="afPrixPop" aria-label="Prix de vente de l'O-scan : choisir le résultat souhaité" title="Prix de vente de l'O-scan selon le résultat souhaité"><img src="assets/products/o-scan-hero.webp" alt="" /></button>
+      <div class="af-pop" id="afPrixPop" hidden>
+        <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+        <div class="af-pop-titre">Prix de vente de l'O-scan selon le résultat souhaité</div>
+        <p class="af-aide" style="margin:.1rem 0 .4rem">Choisissez le résultat que vous souhaitez, en pourcentage des recettes de l'année affichée : le simulateur calcule le prix de vente de l'O-scan (hors taxes) qui permet de l'atteindre, et l'applique à la table de mixage.</p>
+        <div class="af-mixer af-mixer--mini" id="afPrixMix" style="justify-content:flex-start"></div>
+        <div class="af-carte-opts"><strong>Options qui font gagner du temps :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div>
+        <div id="afPrixSortie" class="af-aide" style="margin-top:.4rem"></div>
+      </div>
+          </span>
         <!-- Langue : le drapeau de la langue choisie -->
         <span class="af-info-wrap">
           <button type="button" class="af-info-btn af-lang-btn" id="afLangBtn" aria-expanded="false" aria-controls="afLangPop" aria-label="Langue" data-tip="Langue : choisir la langue d'affichage du simulateur."><span id="afLangFlag"></span></button>
@@ -425,29 +443,7 @@
         </span>
 
         <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
-      <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
-        <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
-      </div>
-      <div class="af-pop" id="afPrixPop" hidden>
-        <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
-        <div class="af-pop-titre">Prix de vente de l'O-scan selon le résultat souhaité</div>
-        <p class="af-aide" style="margin:.1rem 0 .4rem">Choisissez le résultat que vous souhaitez, en pourcentage des recettes de l'année affichée : le simulateur calcule le prix de vente de l'O-scan (hors taxes) qui permet de l'atteindre, et l'applique à la table de mixage.</p>
-        <div class="af-mixer af-mixer--mini" id="afPrixMix" style="justify-content:flex-start"></div>
-        <div class="af-carte-opts"><strong>Options qui font gagner du temps :</strong><label class="af-check"><input type="checkbox" data-opt="AI" /> <span>e-Spades</span></label><label class="af-check"><input type="checkbox" data-opt="Smart" /> <span>Agil Exam</span></label></div>
-        <div id="afPrixSortie" class="af-aide" style="margin-top:.4rem"></div>
-      </div>
-      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
-      <p class="af-sous-titre" id="afSousTitre"></p>
-      <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
-      <div class="af-demis" id="afDemis"></div>
-      <div class="af-pm" id="afPm"></div>
 
-      <!-- Table de mixage : les groupes de curseurs sont construits par le script (liste GROUPES). -->
-      <div class="af-mixer" id="afMixer">
-        <div class="af-mixer__header">
-          <span class="af-mixer__title">Table de mixage</span>
 
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afCalBtn" aria-expanded="false" aria-controls="afCalPop" aria-label="Horaires d'ouverture : modifier les jours et les heures" data-tip="Horaires : jours et heures d'ouverture du centre, coupures, plafond d'heures par jour et semaines d'ouverture par an.">
@@ -649,6 +645,18 @@
               </tbody></table>
             </div>
           </span>
+
+      <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
+        <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+        </div>
+      </div>
+
+      <!-- Table de mixage : les groupes de curseurs sont construits par le script (liste GROUPES). -->
+      <div class="af-mixer" id="afMixer">
+        <div class="af-mixer__header">
+          <span class="af-mixer__title">Table de mixage</span>
         </div>
         <!-- groupes de curseurs insérés ici par le script -->
       </div>
