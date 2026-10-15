@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016f"></script>
+  <script src="assets/afrique-i18n.js?v=20261016g"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -100,6 +100,30 @@
     .af-pop.af-dock .af-poignee { display: none; }
     .af-pop.af-dock .af-zone-fs { display: inline-flex; position: absolute; top: .6rem; right: .8rem; }
     .af-pop.af-dock #afOptFs { display: none; }
+    /* Page d'accueil : choix de l'IRM (seul l'O-scan est disponible pour l'instant) */
+    .af-accueil { position: relative; padding: 5.2rem var(--gut, 1.2rem) 2.5rem; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+    .af-accueil[hidden], .simulator[hidden] { display: none; }
+    .af-accueil-barre { position: absolute; top: 4.4rem; right: var(--gut, 1.2rem); z-index: 6; display: flex; justify-content: flex-end; align-items: center; gap: .45rem; direction: ltr; min-height: 2.2rem; }
+    .af-accueil-barre .af-pop { left: auto; right: 0; }
+    html[dir="rtl"] .af-accueil-barre .af-pop { direction: rtl; }
+    .af-accueil-corps { text-align: center; padding-top: .6rem; }
+    .af-accueil-corps h1 { margin: .2rem 0 .3rem; }
+    .af-irm-grille { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1rem; margin-top: 1.6rem; text-align: center; }
+    .af-irm { display: flex; flex-direction: column; align-items: center; gap: .45rem; padding: .8rem .7rem 1rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .9rem; background: #fff; font: inherit; color: var(--ink); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
+    .af-irm:not([disabled]):hover { border-color: var(--red); box-shadow: 0 6px 18px rgba(0,0,0,.12); transform: translateY(-2px); }
+    .af-irm-photo { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 4 / 3; background: #f4f4f1; border-radius: .6rem; overflow: hidden; }
+    .af-irm-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .af-irm strong { font-size: 1.15rem; }
+    .af-irm-tag { font-size: .8rem; line-height: 1.35; color: var(--ink-soft, #555); }
+    .af-irm-etat { font-style: normal; font-size: .72rem; font-weight: 800; padding: .15rem .6rem; border-radius: 999px; background: #e3f6ec; color: #17794f; margin-top: auto; }
+    .af-irm.is-bientot { cursor: not-allowed; }
+    .af-irm.is-bientot .af-irm-photo, .af-irm.is-bientot strong, .af-irm.is-bientot .af-irm-tag { opacity: .5; }
+    .af-irm.is-bientot .af-irm-photo img { filter: grayscale(1); }
+    .af-irm.is-bientot .af-irm-etat { background: #eee; color: #777; }
+    .af-retour { margin: 0 0 .6rem; padding: .3rem .8rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: 999px; background: #fff; font: inherit; font-size: .8rem; font-weight: 700; color: var(--ink); cursor: pointer; }
+    .af-retour:hover { border-color: var(--red); color: var(--red); }
+    @media (max-width: 1000px) { .af-irm-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+    @media (max-width: 640px) { .af-irm-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
     .af-outils-icones { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
@@ -409,8 +433,50 @@
     </div>
   </header>
 
-  <main class="simulator">
+  <section class="af-accueil" id="afAccueil">
+    <div class="af-accueil-barre" id="afAccueilBarre"></div>
+    <div class="af-accueil-corps">
+      <span class="kicker">Simulateur Afrique</span>
+      <h1>Simulateur de rentabilité Esaote</h1>
+      <p>Choisissez l'IRM que vous souhaitez simuler.</p>
+      <div class="af-irm-grille">
+        <button type="button" class="af-irm" data-irm="oscan">
+          <span class="af-irm-photo"><img src="assets/products/o-scan.webp" alt="" loading="lazy" /></span>
+          <strong>O-scan</strong>
+          <span class="af-irm-tag">IRM ouverte dédiée aux extrémités : genou, main, pied, coude</span>
+          <em class="af-irm-etat">Disponible</em>
+        </button>
+        <button type="button" class="af-irm is-bientot" data-irm="sscan" disabled aria-disabled="true">
+          <span class="af-irm-photo"><img src="assets/products/s-scan.webp" alt="" loading="lazy" /></span>
+          <strong>S-scan</strong>
+          <span class="af-irm-tag">IRM ouverte pour le rachis et les articulations</span>
+          <em class="af-irm-etat">Bientôt disponible</em>
+        </button>
+        <button type="button" class="af-irm is-bientot" data-irm="gscan" disabled aria-disabled="true">
+          <span class="af-irm-photo"><img src="assets/products/g-scan.webp" alt="" loading="lazy" /></span>
+          <strong>G-scan</strong>
+          <span class="af-irm-tag">IRM en charge : debout ou allongée</span>
+          <em class="af-irm-etat">Bientôt disponible</em>
+        </button>
+        <button type="button" class="af-irm is-bientot" data-irm="magnifico" disabled aria-disabled="true">
+          <span class="af-irm-photo"><img src="assets/products/magnifico.webp" alt="" loading="lazy" /></span>
+          <strong>Magnifico</strong>
+          <span class="af-irm-tag">IRM ouverte corps entier</span>
+          <em class="af-irm-etat">Bientôt disponible</em>
+        </button>
+        <button type="button" class="af-irm is-bientot" data-irm="igenius" disabled aria-disabled="true">
+          <span class="af-irm-photo"><img src="assets/products/i-genius.webp" alt="" loading="lazy" /></span>
+          <strong>i-genius</strong>
+          <span class="af-irm-tag">IRM de bloc opératoire pour la neurochirurgie</span>
+          <em class="af-irm-etat">Bientôt disponible</em>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <main class="simulator" id="afSimu" hidden>
     <div class="simulator__intro">
+      <button type="button" class="af-retour" id="afRetourIrm">← Choisir une autre IRM</button>
       <span class="kicker">Simulateur Afrique</span>
       <h1>Rentabilité de l'Esaote O-scan</h1>
       <p>Réglez l'activité, l'équipe et les prix dans la table de mixage : les recettes, les dépenses et le résultat se recalculent aussitôt.</p>
@@ -2119,6 +2185,17 @@
         boite.classList.add("af-boite-zone"); aide.hidden = true;
         pop.scrollTop = 0; requestAnimationFrame(alignerMixers);
       }, true);
+    })();
+
+    (function () { // page d'accueil : choix de l'IRM ; langue et devise vivent en haut à droite de la page affichée
+      var acc = el("afAccueil"), simu = el("afSimu"), barreAcc = el("afAccueilBarre"), barreSimu = document.querySelector(".af-barre-btn"), fs = el("afFsBtn");
+      var wl = el("afLangBtn").parentNode, wd = el("afDevBtn").parentNode;
+      function fermerPops() { [el("afLangPop"), el("afDevPop")].forEach(function (p) { p.hidden = true; }); el("afLangBtn").setAttribute("aria-expanded", "false"); el("afDevBtn").setAttribute("aria-expanded", "false"); }
+      function versAccueil() { fermerPops(); barreAcc.appendChild(wl); barreAcc.appendChild(wd); simu.hidden = true; acc.hidden = false; window.scrollTo(0, 0); }
+      function versSimu() { fermerPops(); barreSimu.insertBefore(wl, fs); barreSimu.insertBefore(wd, fs); acc.hidden = true; simu.hidden = false; window.scrollTo(0, 0); requestAnimationFrame(function () { alignerMixers(); synchroniser(); rendre(); }); }
+      Array.prototype.forEach.call(acc.querySelectorAll(".af-irm"), function (b) { b.addEventListener("click", function () { if (b.dataset.irm === "oscan") versSimu(); }); });
+      el("afRetourIrm").addEventListener("click", versAccueil);
+      versAccueil();
     })();
 
     // Pays acheteur de départ : le Maroc (demande du 11/10/2026)
