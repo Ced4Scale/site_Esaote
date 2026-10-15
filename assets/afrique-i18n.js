@@ -4567,6 +4567,14 @@ window.AF_I18N = {
 ["Un curseur que vous ne touchez pas suit celui de l'O-scan.", "A slider you do not touch follows the O-scan's.", "Un cursore che non toccate segue quello dell'O-scan.", "Um cursor em que não toca acompanha o do O-scan.", "المنزلق الذي لا تلمسه يتبع منزلق O-scan.", "Kitelezi ambacho hukigusi hufuata cha O-scan.", "'n Skuifknoppie wat u nie aanraak nie, volg die O-scan s'n."],
 ["Table de mixage", "Mixing table", "Tavolo di mixaggio", "Mesa de mistura", "طاولة الخلط", "Meza ya kuchanganya", "Mengtafel"],
 ["Légende", "Legend", "Legenda", "Legenda", "مفتاح الرموز", "Maelezo ya alama", "Legende"],
-["Point mort", "Break-even", "Punto di pareggio", "Ponto de equilíbrio", "نقطة التعادل", "Kiwango cha kuvunja", "Gelykbreekpunt"]
+["Point mort", "Break-even", "Punto di pareggio", "Ponto de equilíbrio", "نقطة التعادل", "Kiwango cha kuvunja", "Gelykbreekpunt"],
+["Patients/h", "Patients/h", "Pazienti/h", "Doentes/h", "مرضى/س", "Wagonjwa/saa", "Pasiënte/u"],
+["Heures", "Hours", "Ore", "Horas", "الساعات", "Saa", "Ure"],
+["MERM", "MERM", "MERM", "MERM", "MERM", "MERM", "MERM"],
+["Examen", "Exam", "Esame", "Exame", "الفحص", "Kipimo", "Ondersoek"],
+["Crédit", "Loan", "Prestito", "Crédito", "القرض", "Mkopo", "Lening"],
+["kWh", "kWh", "kWh", "kWh", "kWh", "kWh", "kWh"],
+["Acquisition", "Acquisition", "Acquisizione", "Aquisição", "الاكتساب", "Upigaji picha", "Opname"],
+["Changement", "Changeover", "Cambio", "Troca", "التبديل", "Kubadilisha", "Wisseling"]
 ]
 };

@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016o"></script>
+  <script src="assets/afrique-i18n.js?v=20261016p"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -297,12 +297,18 @@
     .af-mixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; }
     .af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
     .af-mixer--ligne .af-mixer__faders { gap: .4rem; }
-    .af-mixer--ligne .af-mixer__bar { width: 34px; }
-    .af-mixer--ligne .af-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 34px; }
-    .af-mixer--ligne .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 34px; }
+    .af-t-c { display: none; }
+    .af-mixer--ligne .af-t-c { display: inline; }
+    .af-mixer--ligne .af-t-r { display: none; }
+    .af-mixer--ligne > .af-mixer__group:hover, .af-mixer--ligne > .af-mixer__group:focus-within { position: relative; z-index: 50; }
+    .af-mixer--ligne .af-mixer__group-title { position: relative; cursor: help; text-transform: none; font-size: .78rem; font-weight: 800; }
+    .af-mixer--ligne .af-mixer__group-title:hover .af-t-r, .af-mixer--ligne .af-mixer__group-title:focus .af-t-r { display: block; position: absolute; z-index: 40; top: 100%; left: 50%; transform: translateX(-50%); width: max-content; max-width: 16rem; padding: .3rem .55rem; background: #fffaf0; border: 1px solid #f0d998; border-radius: .4rem; box-shadow: 0 4px 14px rgba(0,0,0,.18); font-size: calc(.8rem / var(--zl, 1)); font-weight: 700; text-transform: none; text-align: center; letter-spacing: 0; white-space: normal; }
+    .af-mixer--ligne .af-cadenas svg { width: 38px; height: 38px; }
+    .af-mixer--ligne .af-mixer__bar { width: 46px; }
+    .af-mixer--ligne .af-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 46px; }
+    .af-mixer--ligne .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 46px; }
     .af-mixer--ligne .af-mixer__value { width: 100%; max-width: 4.6rem; min-width: 0; box-sizing: border-box; }
     .af-mixer--ligne .af-mixer__unit { max-width: 100%; font-size: .62rem; }
-    .af-mixer--ligne .af-mixer__group-title { font-size: .58rem; max-width: 100%; letter-spacing: 0; }
     .af-mixers--cote .af-mixer__header .af-aide { font-size: .68rem; margin: 0; flex: 1 1 100%; }
     #afMixer.af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
     @media (max-width: 700px) { #afMixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } #afMixer.af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } .af-mixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } .af-mixer--ligne > .af-mixer__header { flex: 0 0 auto; } .af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } } /* téléphone : une seule ligne, qui défile côte à côte */
@@ -1145,6 +1151,16 @@
     ];
     var CAT_RES = CAT_DEP.concat([{ key: "resultat", label: "Résultat", color: "#1baf7a" }]);
 
+    // Titres des curseurs : mot court (affiché quand les tables sont côte à côte) + texte complet (affiché au survol)
+    var TITRES_COURTS = { "Patients par heure": "Patients/h", "Heures d'ouverture": "Heures", "Nombre de MERM": "MERM", "Prix de l'examen": "Examen", "Prix de l'O-scan": "O-scan", "Durée du financement": "Crédit", "Financement": "Crédit", "Coût du kWh": "kWh", "Maintenance annuelle": "Maintenance", "Loyer mensuel de l'IRM (SAV inclus)": "Loyer", "Durée d'acquisition (en % de celle de l'O-scan)": "Acquisition", "Changement de patient": "Changement" };
+    function poserTitre(noeud, complet) {
+      if (!noeud) return;
+      var court = TITRES_COURTS[complet] || (complet.split(/[\s']+/).filter(function (m) { return m.length > 2; })[0] || complet);
+      noeud.textContent = ""; noeud.tabIndex = 0;
+      var c = document.createElement("span"); c.className = "af-t-c"; c.textContent = court;
+      var r = document.createElement("span"); r.className = "af-t-r"; r.textContent = complet;
+      noeud.appendChild(c); noeud.appendChild(r);
+    }
     function libelleAchat(quoi) { CAT_DEP.forEach(function (c) { if (c.key === "achat") c.label = (S.finActif ? "Remboursement de l'" : "Achat de l'") + quoi + (S.finActif ? " (capital)" : " (étalé)"); }); }
     function libelleLoyerIrm() { CAT_DEP.forEach(function (c) { if (c.key === "achat") c.label = "Loyer de l'IRM (SAV inclus)"; }); }
     function demi(titre, cats, vals, total, centre) {
@@ -1493,7 +1509,7 @@
           COLS_CONC.forEach(function (col) {
             var gd = document.createElement("div"); gd.className = "af-mixer__group";
             gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"><div class="af-mixer__fader-col"><div class="af-mixer__bar"><div class="af-mixer__bar-fill"></div><input type="range" /></div><input type="text" inputmode="decimal" class="af-mixer__value" /><div class="af-mixer__pm"><button type="button" class="af-moins">−</button><button type="button" class="af-plus">+</button></div><div class="af-mixer__unit"></div></div></div>';
-            gd.querySelector(".af-mixer__group-title").textContent = col.titre;
+            poserTitre(gd.querySelector(".af-mixer__group-title"), col.titre);
             var fc = gd.querySelector(".af-mixer__fader-col"); fc.style.setProperty("--fader-color", col.color);
             var rg = gd.querySelector("input[type=range]"), bx = gd.querySelector(".af-mixer__value");
             rg.setAttribute("aria-label", col.titre + " — " + m.nomCourt); bx.setAttribute("aria-label", col.titre + ", valeur");
@@ -1838,7 +1854,7 @@
     GROUPES.forEach(function (g) {
       var gd = document.createElement("div"); gd.className = "af-mixer__group"; gd.id = g.id;
       gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"></div>' + ((g.unitG || g.unitFn) ? '<div class="af-mixer__unit"></div>' : "");
-      gd.querySelector(".af-mixer__group-title").textContent = g.titre || "";
+      poserTitre(gd.querySelector(".af-mixer__group-title"), g.titre || "");
       if (g.unitG) gd.querySelector(".af-mixer__unit").textContent = g.unitG;
       var fd = gd.querySelector(".af-mixer__faders");
       g.cols.forEach(function (col) {
@@ -1947,7 +1963,7 @@
       GROUPES.forEach(function (g) {
         var gd = el(g.id); gd.hidden = g.extra ? visibles[g.id] !== true : (!g.ou && visibles[g.id] === false);
         if (g.unitFn) gd.lastElementChild.textContent = g.unitFn();
-        if (g.titreFn) gd.querySelector(".af-mixer__group-title").textContent = g.titreFn();
+        if (g.titreFn) poserTitre(gd.querySelector(".af-mixer__group-title"), g.titreFn());
         g.cols.forEach(function (col) {
           var mn = val(col.min), mx = val(col.max);
           if (S[col.k] > mx) S[col.k] = mx;
