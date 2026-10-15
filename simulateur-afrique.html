@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016w"></script>
+  <script src="assets/afrique-i18n.js?v=20261016x"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -589,17 +589,17 @@
           <span class="af-ouinon" role="group" aria-label="Comparer avec une autre IRM" data-cmp="actif"><button type="button" data-v="non" aria-pressed="true">Non</button><button type="button" data-v="oui" aria-pressed="false">Oui</button></span></div>
         <div class="af-compare-corps" id="afCompareCorps" hidden>
           <figure class="af-cmp-carte">
-            <svg id="afCmpFreeSvg" viewBox="0 0 240 160" role="img" aria-label="Illustration d'une IRM Siemens de la gamme Free 0,55 T"><ellipse cx="120" cy="146" rx="96" ry="7" fill="#000" opacity=".08"/><rect x="40" y="26" width="160" height="112" rx="26" fill="#eceff3" stroke="#c9d0d8" stroke-width="2"/><circle cx="120" cy="82" r="44" fill="#fff" stroke="#c9d0d8" stroke-width="3"/><circle cx="120" cy="82" r="36" fill="#2c3a4b"/><circle cx="120" cy="82" r="30" fill="#3d4e63"/><rect x="62" y="88" width="108" height="10" rx="5" fill="#dfe4ea" stroke="#c9d0d8"/><rect x="74" y="80" width="60" height="9" rx="4.5" fill="#f1c9a5"/><circle cx="68" cy="84" r="6" fill="#f1c9a5"/><rect x="48" y="34" width="46" height="16" rx="8" fill="#009999"/><text x="71" y="46" font-size="10" font-weight="700" text-anchor="middle" fill="#fff" font-family="Montserrat,Arial,sans-serif">0,55 T</text></svg>
+            <img id="afCmpFreeImg" src="assets/comparaison/free-max.webp" alt="Photo de l'IRM Siemens de la gamme Free" loading="lazy" width="640" height="480" />
             <figcaption>Siemens gamme Free 0,55 T</figcaption>
             <small class="af-cmp-tunnel" id="afCmpFreeTunnel">&nbsp;</small>
             <select id="afCmpFree" aria-label="IRM Siemens de la gamme Free"><option value="">Choisir une IRM Siemens</option><option value="siemens-star">Free.Star (tunnel de 60 cm)</option><option value="siemens-055">Free.Max (tunnel de 80 cm)</option></select>
           </figure>
           <figure class="af-cmp-carte">
-            <img src="assets/comparaison/irm-tunnel-siemens-aera.webp" alt="Photo d'une IRM tunnel (Siemens MAGNETOM Aera 1,5 T)" loading="lazy" width="900" height="558" />
+            <img id="afCmpTunnelImg" src="assets/comparaison/irm-tunnel-siemens-aera.webp" alt="Photo d'une IRM tunnel" loading="lazy" width="900" height="558" />
             <figcaption>IRM tunnel</figcaption>
             <select id="afCmpTunnel" aria-label="IRM concurrente"><option value="">Choisir une IRM concurrente</option><option value="siemens-sempra">Siemens Sempra</option><option value="siemens-altea">Siemens Altea</option><option value="siemens-sola-xj">Siemens Sola XJ</option><option value="siemens-sola-xq">Siemens Sola XQ</option><option value="siemens-vida">Siemens Vida XQ</option><option value="siemens-vida-xt">Siemens Vida XT</option><option value="siemens-skyra-2012">Siemens Skyra</option><option value="siemens-amira">Siemens Amira</option><option value="siemens-prisma">Siemens Prisma</option><option value="siemens-terra">Siemens Terra</option><option value="siemens-avanto-2011">Siemens Avanto</option><option value="ge-explorer">GE Explorer</option><option value="ge-voyager">GE Voyager</option><option value="ge-sigma-prime">GE Sigma Prime</option><option value="ge-pioneer">GE Pioneer</option><option value="ge-artist">GE Artist</option><option value="ge-optima-mr450w">GE Optima MR450w</option><option value="philips-ambition-s">Philips Ambition S</option><option value="philips-ambition-x">Philips Ambition X</option><option value="philips-mr7700">Philips MR7700</option><option value="philips-elition-x">Philips Elition X</option><option value="canon-elan">Canon Elan</option><option value="canon-orian">Canon Orian Std</option><option value="canon-orian-hyp">Canon Orian Hyp</option><option value="siemens-aera">Siemens Aera</option></select>
           </figure>
-          <p class="af-cmp-credit">Photo de l'IRM tunnel : Ptrump16 (Siemens MAGNETOM Aera), licence CC BY-SA 4.0, Wikimedia Commons. Les deux IRM Siemens 0,55 T sont des dessins, en attendant des photos libres de droits.</p>
+          <p class="af-cmp-credit">Photos des appareils © Siemens Healthineers, GE HealthCare, Philips et Canon Medical Systems, utilisées pour identifier les machines comparées. Photo de l'IRM tunnel par défaut : Ptrump16 (Siemens MAGNETOM Aera), licence CC BY-SA 4.0, Wikimedia Commons.</p>
         </div>
       </div>
     </div>
@@ -1665,7 +1665,7 @@
       });
     }
     function valCol(m, col) { var q = paramsConc(m); return q[col.k]; }
-    var ligneArgs = null, majDessinFree = null;
+    var ligneArgs = null, majDessinFree = null, majPhotoTunnel = null;
     function ajusterLignes(actif, nb) { // en comparaison : chaque table de mixage sur une seule ligne, les tables côte à côte (taille réduite)
       ligneArgs = [actif, nb]; var sm = el("afSimu"); if (sm) sm.style.maxWidth = actif ? Math.round(Math.min(window.innerWidth * 0.98, 760 * (nb || 2))) + "px" : "";
       var mx = el("afMixers"); if (mx) { mx.classList.toggle("af-mixers--cote", actif && window.innerWidth > 700); mx.style.setProperty("--nt", String(nb || 1)); }
@@ -2781,10 +2781,14 @@
             });
           });
         });
-        el("afCmpTunnel").addEventListener("change", function () { S.cmpTunnel = this.value; memoriser(); });
-        function dessinFree() { var v = S.cmpFree, r = v === "siemens-star" ? [38, 30, 25] : [44, 36, 30], cs = el("afCmpFreeSvg").querySelectorAll("circle"); cs[0].setAttribute("r", r[0]); cs[1].setAttribute("r", r[1]); cs[2].setAttribute("r", r[2]); el("afCmpFreeTunnel").textContent = v === "siemens-star" ? "Tunnel de 60 cm" : v === "siemens-055" ? "Tunnel de 80 cm" : "\u00a0"; }
+        el("afCmpTunnel").addEventListener("change", function () { S.cmpTunnel = this.value; if (majPhotoTunnel) majPhotoTunnel(); memoriser(); });
+        var PHOTOS = { "siemens-sempra": "sempra", "siemens-altea": "altea", "siemens-sola-xj": "sola", "siemens-sola-xq": "sola", "siemens-amira": "amira", "siemens-aera": "aera", "siemens-vida": "vida", "siemens-vida-xt": "vida", "siemens-skyra-2012": "skyra", "siemens-terra": "terra",
+          "ge-voyager": "ge-voyager", "ge-artist": "ge-artist", "ge-sigma-prime": "ge-prime", "philips-ambition-s": "ambition", "philips-ambition-x": "ambition", "canon-elan": "canon-elan", "canon-orian": "canon-orian", "canon-orian-hyp": "canon-orian" }; // photos des constructeurs (dossier assets/comparaison) ; les autres modèles gardent la photo générique
+        function dessinFree() { var v = S.cmpFree; el("afCmpFreeImg").src = "assets/comparaison/" + (v === "siemens-star" ? "free-star" : "free-max") + ".webp"; el("afCmpFreeTunnel").textContent = v === "siemens-star" ? "Tunnel de 60 cm" : v === "siemens-055" ? "Tunnel de 80 cm" : "\u00a0"; }
+        function photoTunnel() { var f = PHOTOS[S.cmpTunnel]; el("afCmpTunnelImg").src = "assets/comparaison/" + (f || "irm-tunnel-siemens-aera") + ".webp"; }
         el("afCmpFree").addEventListener("change", function () { S.cmpFree = this.value; dessinFree(); memoriser(); });
         majDessinFree = dessinFree;
+        majPhotoTunnel = photoTunnel;
       })();
       versAccueil();
     })();
@@ -2804,7 +2808,7 @@
         demiN1 = !!e.n1;
         function appuyer(g, v) { Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === v)); }); }
         appuyer(el("afCompare").querySelector('[data-cmp="actif"]'), S.cmpActif ? "oui" : "non"); el("afCompareCorps").hidden = !S.cmpActif;
-        if (S.cmpSiemens) S.cmpFree = "siemens-055"; else if (S.cmpStar) S.cmpFree = "siemens-star"; /* anciens réglages mémorisés */ delete S.cmpSiemens; delete S.cmpStar; el("afCmpFree").value = S.cmpFree || ""; if (majDessinFree) majDessinFree(); el("afCmpTunnel").value = S.cmpTunnel || "";
+        if (S.cmpSiemens) S.cmpFree = "siemens-055"; else if (S.cmpStar) S.cmpFree = "siemens-star"; /* anciens réglages mémorisés */ delete S.cmpSiemens; delete S.cmpStar; el("afCmpFree").value = S.cmpFree || ""; if (majDessinFree) majDessinFree(); el("afCmpTunnel").value = S.cmpTunnel || ""; if (majPhotoTunnel) majPhotoTunnel();
         appuyer(el("afLegChoix"), e.leg === false ? "non" : "oui"); el("afDemis").classList.toggle("af-sans-legende", e.leg === false);
         appuyer(el("afPmChoix"), e.pm === false ? "non" : "oui"); el("afPm").hidden = e.pm === false;
         majTauxListe(); majDevise(); synchroniser(); rendre(); majMenuAnnee();
