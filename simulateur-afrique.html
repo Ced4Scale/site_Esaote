@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016q"></script>
+  <script src="assets/afrique-i18n.js?v=20261016r"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -167,6 +167,22 @@
     @media (max-width: 1000px) { .af-irm-grille { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
     @media (max-width: 640px) { .af-irm-grille { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
+
+    /* Boîte à outils verticale dans la marge (fixe quand on fait défiler la page) ; déplaçable à droite ou à gauche. Écran trop petit : elle reste en ligne sous les demi-anneaux. */
+    .af-boite-cote { display: none; }
+    @media (min-width: 1100px) and (min-height: 560px) {
+      .af-outils-boite:not(.af-boite-plein) { position: fixed; top: 5.5rem; left: .5rem; right: auto; z-index: 40; width: 4.2rem; margin: 0; padding: .5rem .3rem; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; box-shadow: var(--shadow-sm); }
+      .af-outils-boite:not(.af-boite-plein)[data-cote="d"] { left: auto; right: .5rem; }
+      .af-outils-boite:not(.af-boite-plein) .af-mixer__title { font-size: .62rem; text-align: center; line-height: 1.15; }
+      .af-outils-boite:not(.af-boite-plein) .af-boite-cote { display: inline-flex; }
+      .af-outils-boite:not(.af-boite-plein) .af-outils-icones { flex-direction: column; flex-wrap: nowrap; }
+      .af-outils-boite:not(.af-boite-plein) .af-pop:not(.af-dock) { position: fixed; top: 1rem; left: 5.2rem; right: auto; margin: 0; max-height: calc(100vh - 2rem); overflow-y: auto; z-index: 45; }
+      .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-pop:not(.af-dock) { left: auto; right: 5.2rem; }
+      .af-outils-boite:not(.af-boite-plein) .af-info-btn[data-tip]:hover::after, .af-outils-boite:not(.af-boite-plein) .af-info-btn[data-tip]:focus-visible::after { top: 0; left: calc(100% + 8px); right: auto; }
+      .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-info-btn[data-tip]:hover::after, .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-info-btn[data-tip]:focus-visible::after { left: auto; right: calc(100% + 8px); }
+      #afSimu.af-marge-g { padding-left: 4.9rem; box-sizing: border-box; }
+      #afSimu.af-marge-d { padding-right: 4.9rem; box-sizing: border-box; }
+    }
     .af-outils-icones { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
     .af-prix-btn { position: relative; display: block; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
@@ -625,6 +641,9 @@
         <button type="button" class="af-fs-btn" id="afBoiteFs" aria-label="Plein écran" title="Plein écran" aria-pressed="false">
           <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button type="button" class="af-fs-btn af-boite-cote" id="afBoiteCote" aria-label="Placer la boîte à outils de l'autre côté" title="Placer la boîte à outils de l'autre côté">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
         <p class="af-aide" id="afBoiteAide" hidden>Cliquez sur un cadre pour l'afficher sur la moitié de l'écran ; cliquez sur un autre cadre pour changer.</p>
         <div class="af-outils-icones">
@@ -2466,6 +2485,23 @@
       el("afLangListe").appendChild(b);
     });
     brancher("afLangBtn", "afLangPop");
+
+    (function () { // Boîte à outils dans la marge : côté mémorisé, et la page cède 4,9 rem de ce côté si la marge est trop étroite (mode comparaison large)
+      var boite = el("afBoiteOutils"), simu = el("afSimu"), CLE = "ced4scale-afrique-boite-cote", cote = "g";
+      try { if (localStorage.getItem(CLE) === "d") cote = "d"; } catch (e) {}
+      var mq = window.matchMedia("(min-width: 1100px) and (min-height: 560px)");
+      function ajuster() {
+        boite.setAttribute("data-cote", cote);
+        simu.classList.remove("af-marge-g", "af-marge-d");
+        if (!mq.matches) return;
+        var r = simu.getBoundingClientRect(), vw = document.documentElement.clientWidth, marge = cote === "g" ? r.left : vw - r.right;
+        if (marge < 78) simu.classList.add(cote === "g" ? "af-marge-g" : "af-marge-d");
+      }
+      el("afBoiteCote").addEventListener("click", function () { cote = cote === "g" ? "d" : "g"; try { localStorage.setItem(CLE, cote); } catch (e) {} ajuster(); });
+      window.addEventListener("resize", ajuster);
+      new MutationObserver(ajuster).observe(simu, { attributes: true, attributeFilter: ["style", "hidden"] });
+      ajuster();
+    })();
 
     (function () { // Boîte à outils en plein écran : TOUS les cadres s'ouvrent en grille ; un clic sur un cadre le place sur la moitié de l'écran (un autre clic = on change) ; plein écran possible pour chaque cadre
       var boite = el("afBoiteOutils"), zone = boite.querySelector(".af-outils-icones"), bFs = el("afBoiteFs"), aide = el("afBoiteAide"), vraiPlein = false;
