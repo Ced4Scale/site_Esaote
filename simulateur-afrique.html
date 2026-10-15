@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016s"></script>
+  <script src="assets/afrique-i18n.js?v=20261016t"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -169,8 +169,10 @@
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
 
     /* Boîte à outils verticale dans la marge (fixe quand on fait défiler la page) ; déplaçable à droite ou à gauche. Écran trop petit : elle reste en ligne sous les demi-anneaux. */
+    .af-outils-boite:not(.af-boite-plein) .af-mixer__title { cursor: grab; touch-action: none; user-select: none; }
+    .af-outils-boite.af-boite-glisse { transition: none; cursor: grabbing; opacity: .92; z-index: 90 !important; }
     .af-boite-cote, .af-boite-plein .af-boite-cote, .af-drapeau-marge { display: none; }
-    @media (min-width: 1100px) and (min-height: 560px) {
+    @media (min-width: 900px) and (min-height: 560px) {
       .af-outils-boite:not(.af-boite-plein) { position: fixed; top: 5.5rem; left: .5rem; right: auto; z-index: 40; width: 4.2rem; margin: 0; padding: .5rem .3rem; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; box-shadow: var(--shadow-sm); }
       .af-outils-boite:not(.af-boite-plein)[data-cote="d"] { left: auto; right: .5rem; }
       .af-outils-boite:not(.af-boite-plein) .af-mixer__title { font-size: .62rem; text-align: center; line-height: 1.15; }
@@ -2585,7 +2587,7 @@
     (function () { // Boîte à outils dans la marge : côté mémorisé, et la page cède 4,9 rem de ce côté si la marge est trop étroite (mode comparaison large)
       var boite = el("afBoiteOutils"), simu = el("afSimu"), CLE = "ced4scale-afrique-boite-cote", cote = "g";
       try { if (localStorage.getItem(CLE) === "d") cote = "d"; } catch (e) {}
-      var mq = window.matchMedia("(min-width: 1100px) and (min-height: 560px)");
+      var mq = window.matchMedia("(min-width: 900px) and (min-height: 560px)");
       var ancien = "";
       function ajuster() {
         boite.setAttribute("data-cote", cote);
@@ -2596,6 +2598,26 @@
         var etat = simu.className; if (etat !== ancien && ligneArgs) ajusterLignes(ligneArgs[0], ligneArgs[1]); ancien = etat;
       }
       el("afDrapeauMarge").addEventListener("click", function () { el("afResPaysBtn").click(); });
+      (function () { // glisser la boîte par son titre : elle suit la souris (ou le doigt) et se range dans la marge la plus proche au relâchement
+        var titre = boite.querySelector(".af-mixer__title"), dep = null;
+        titre.title = "Glisser pour déplacer la boîte à outils à gauche ou à droite";
+        titre.addEventListener("pointerdown", function (e) {
+          if (!mq.matches || boite.classList.contains("af-boite-plein")) return;
+          var r = boite.getBoundingClientRect(); dep = { dx: e.clientX - r.left, dy: e.clientY - r.top }; titre.setPointerCapture(e.pointerId); boite.classList.add("af-boite-glisse"); e.preventDefault();
+        });
+        titre.addEventListener("pointermove", function (e) {
+          if (!dep) return;
+          boite.style.setProperty("left", Math.max(0, Math.min(window.innerWidth - boite.offsetWidth, e.clientX - dep.dx)) + "px", "important"); boite.style.setProperty("right", "auto", "important");
+          boite.style.setProperty("top", Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dep.dy)) + "px", "important");
+        });
+        function fin(e) {
+          if (!dep) return; dep = null; boite.classList.remove("af-boite-glisse");
+          var milieu = boite.getBoundingClientRect().left + boite.offsetWidth / 2;
+          ["left", "right", "top"].forEach(function (pr) { boite.style.removeProperty(pr); });
+          cote = milieu < window.innerWidth / 2 ? "g" : "d"; try { localStorage.setItem(CLE, cote); } catch (x) {} ajuster();
+        }
+        titre.addEventListener("pointerup", fin); titre.addEventListener("pointercancel", fin);
+      })();
       el("afBoiteCote").addEventListener("click", function () { cote = cote === "g" ? "d" : "g"; try { localStorage.setItem(CLE, cote); } catch (e) {} ajuster(); });
       window.addEventListener("resize", ajuster);
       new MutationObserver(ajuster).observe(simu, { attributes: true, attributeFilter: ["style", "hidden"] });
