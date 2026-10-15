@@ -169,7 +169,7 @@
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
 
     /* Boîte à outils verticale dans la marge (fixe quand on fait défiler la page) ; déplaçable à droite ou à gauche. Écran trop petit : elle reste en ligne sous les demi-anneaux. */
-    .af-boite-cote, .af-boite-plein .af-boite-cote { display: none; }
+    .af-boite-cote, .af-boite-plein .af-boite-cote, .af-drapeau-marge { display: none; }
     @media (min-width: 1100px) and (min-height: 560px) {
       .af-outils-boite:not(.af-boite-plein) { position: fixed; top: 5.5rem; left: .5rem; right: auto; z-index: 40; width: 4.2rem; margin: 0; padding: .5rem .3rem; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; box-shadow: var(--shadow-sm); }
       .af-outils-boite:not(.af-boite-plein)[data-cote="d"] { left: auto; right: .5rem; }
@@ -180,6 +180,12 @@
       .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-pop:not(.af-dock) { left: auto; right: 5.2rem; }
       .af-outils-boite:not(.af-boite-plein) .af-info-btn[data-tip]:hover::after, .af-outils-boite:not(.af-boite-plein) .af-info-btn[data-tip]:focus-visible::after { top: 0; left: calc(100% + 8px); right: auto; }
       .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-info-btn[data-tip]:hover::after, .af-outils-boite:not(.af-boite-plein)[data-cote="d"] .af-info-btn[data-tip]:focus-visible::after { left: auto; right: calc(100% + 8px); }
+      .af-drapeau-marge { position: fixed; top: 5.5rem; right: .5rem; z-index: 40; width: 4.2rem; box-sizing: border-box; padding: .45rem .2rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; box-shadow: var(--shadow-sm); display: flex; flex-direction: column; align-items: center; gap: .3rem; font: inherit; cursor: pointer; }
+      .af-drapeau-marge[hidden] { display: none; }
+      .af-drapeau-marge:hover { border-color: var(--red); }
+      .af-drapeau-marge svg.af-flag { display: block; width: 44px; height: 30px; border: 1px solid rgba(0,0,0,.2); border-radius: 3px; }
+      .af-drapeau-marge span.nom { font-size: .6rem; font-weight: 800; line-height: 1.15; text-align: center; color: var(--ink); overflow-wrap: anywhere; }
+      body:has(#afBoiteOutils[data-cote="d"]) .af-drapeau-marge { right: auto; left: .5rem; }
       #afSimu.af-marge-g { padding-left: 4.9rem; box-sizing: border-box; }
       #afSimu.af-marge-d { padding-right: 4.9rem; box-sizing: border-box; }
     }
@@ -327,6 +333,16 @@
     .af-mixer--ligne .af-mixer__unit { max-width: 100%; font-size: .62rem; }
     .af-mixers--cote .af-mixer__header .af-aide { font-size: .68rem; margin: 0; flex: 1 1 100%; }
     #afMixer.af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
+    /* en comparaison, la table de gauche reprend exactement la taille de celle de droite (mêmes bâtons, même texte, mêmes écarts) : les bâtons sont sur la même ligne */
+    #afMixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; justify-content: flex-start; }
+    #afMixer.af-mixer--ligne > .af-mixer__group { gap: .6rem; }
+    #afMixer.af-mixer--ligne .af-mixer__group-title { max-width: none; text-wrap: wrap; font-size: .78rem; letter-spacing: .04em; }
+    #afMixer.af-mixer--ligne .af-mixer__faders { gap: .4rem; }
+    #afMixer.af-mixer--ligne .af-mixer__value { width: 100%; max-width: 4.6rem; padding-left: 0; padding-right: 0; }
+    #afMixer.af-mixer--ligne .af-mixer__bar { width: 46px; }
+    #afMixer.af-mixer--ligne .af-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 46px; }
+    #afMixer.af-mixer--ligne .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 46px; }
+    #afMixer.af-mixer--ligne .af-mixer__unit { max-width: 100%; }
     @media (max-width: 700px) { #afMixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } #afMixer.af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } .af-mixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } .af-mixer--ligne > .af-mixer__header { flex: 0 0 auto; } .af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } } /* téléphone : une seule ligne, qui défile côte à côte */
     .af-mixer--mini { margin-top: .6rem; padding: .8rem .4rem .6rem; gap: .5rem; justify-content: space-between; flex-wrap: nowrap; align-items: stretch; }
     .af-mixer--mini .af-mixer__group { justify-content: flex-start; }
@@ -634,6 +650,9 @@
       <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
       <div class="af-demis" id="afDemis"></div>
       <div class="af-pm" id="afPm"></div>
+
+      <!-- Drapeau du pays choisi, dans la marge de droite (un clic ouvre la liste des pays) -->
+      <button type="button" class="af-drapeau-marge" id="afDrapeauMarge" title="Changer de pays" aria-label="Changer de pays" hidden><span id="afDrapeauMargeFlag"></span><span class="nom" id="afDrapeauMargeNom"></span></button>
 
       <!-- Boîte à outils : toutes les icônes (réglages, langue, devise, plein écran) -->
       <div class="af-outils-boite" id="afBoiteOutils">
@@ -1325,6 +1344,7 @@
       // drapeau du pays acheteur, à droite de l'encadré : un clic ouvre la liste des pays pour en changer
       var pc = PAYS.filter(function (x) { return x.k === S.pays; })[0];
       el("afResPaysFlag").innerHTML = drapeauPays(S.pays); el("afResPaysNom").textContent = pc ? pc.nom : "Aucun pays";
+      el("afDrapeauMargeFlag").innerHTML = S.pays ? drapeauPays(S.pays) : ""; el("afDrapeauMargeNom").textContent = pc ? pc.nom : ""; el("afDrapeauMarge").hidden = !pc;
     }
     (function () { // sélecteur de pays sur le drapeau de l'encadré Résultat
       var btn = el("afResPaysBtn"), pop = el("afResPaysPop"), liste = el("afResPaysListe"), filtre = el("afResPaysFiltre");
@@ -1581,18 +1601,38 @@
       });
     }
     function valCol(m, col) { var q = paramsConc(m); return q[col.k]; }
+    var ligneArgs = null;
     function ajusterLignes(actif, nb) { // en comparaison : chaque table de mixage sur une seule ligne, les tables côte à côte (taille réduite)
-      var sm = el("afSimu"); if (sm) sm.style.maxWidth = actif ? Math.round(Math.min(window.innerWidth * 0.98, 760 * (nb || 2))) + "px" : "";
+      ligneArgs = [actif, nb]; var sm = el("afSimu"); if (sm) sm.style.maxWidth = actif ? Math.round(Math.min(window.innerWidth * 0.98, 760 * (nb || 2))) + "px" : "";
       var mx = el("afMixers"); if (mx) { mx.classList.toggle("af-mixers--cote", actif && window.innerWidth > 700); mx.style.setProperty("--nt", String(nb || 1)); }
       var tables = [el("afMixer")].concat(Array.prototype.slice.call(document.querySelectorAll("#afMixerConc .af-mixer")));
+      var zmin = 1, actives = [];
       tables.forEach(function (m) {
         if (!m) return;
         m.classList.toggle("af-mixer--ligne", actif); m.style.setProperty("--zl", "1");
+        m.querySelectorAll(".af-mixer__header, .af-mixer__group-title").forEach(function (t) { t.style.minHeight = ""; });
         if (!actif || !m.offsetParent || window.innerWidth <= 700) return;
+        actives.push(m);
         var z = 1;
         function enLigne() { var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }); return !gs.length || (gs.every(function (g) { return Math.abs(g.offsetTop - gs[0].offsetTop) < 4; }) && m.scrollWidth <= m.clientWidth + 2 && Array.prototype.every.call(m.querySelectorAll(".af-mixer__value"), function (i) { return !i.offsetParent || i.scrollWidth <= i.clientWidth + 1; })); }
         while (!enLigne() && z > 0.25) { z = Math.round((z - 0.05) * 100) / 100; m.style.setProperty("--zl", String(z)); }
+        zmin = Math.min(zmin, z);
       });
+      if (actives.length > 1) actives.forEach(function (m) { m.style.setProperty("--zl", String(zmin)); });
+      egaliserTables();
+    }
+
+    function egaliserTables() { // les deux tables côte à côte : mêmes hauteurs d'en-tête et de titres, donc les bâtons sont sur la même ligne
+      var tabs = Array.prototype.filter.call(document.querySelectorAll("#afMixers .af-mixer--ligne"), function (m) { return m.offsetParent; });
+      tabs.forEach(function (m) { var e = m.querySelector(".af-mixer__header"); if (e) e.style.minHeight = ""; });
+      if (tabs.length < 2) return;
+      var lots = tabs.map(function (m) { return Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }).map(function (g) { return g.querySelector(".af-mixer__group-title"); }); });
+      for (var k = 0, n = Math.min.apply(null, lots.map(function (l) { return l.length; })); k < n; k++) {
+        var ts = lots.map(function (l) { return l[k]; }).filter(Boolean); ts.forEach(function (t) { t.style.minHeight = ""; });
+        var ht = Math.max.apply(null, ts.map(function (t) { return t.offsetHeight; })); ts.forEach(function (t) { t.style.minHeight = ht + "px"; });
+      }
+      var entetes = tabs.map(function (m) { return m.querySelector(".af-mixer__header"); }), hm = Math.max.apply(null, entetes.map(function (e) { return e ? e.offsetHeight : 0; }));
+      entetes.forEach(function (e) { if (e) e.style.minHeight = hm + "px"; });
     }
     function majJumeaux() {
       var boite = el("afBoiteOutils"); if (!boite) return;
@@ -2475,6 +2515,7 @@
           rangs[k].forEach(function (t) { t.style.minHeight = h + "px"; });
         });
       });
+      egaliserTables();
     }
     window.addEventListener("resize", alignerMixers);
     var obsLangue = null, planifie = false;
@@ -2497,13 +2538,16 @@
       var boite = el("afBoiteOutils"), simu = el("afSimu"), CLE = "ced4scale-afrique-boite-cote", cote = "g";
       try { if (localStorage.getItem(CLE) === "d") cote = "d"; } catch (e) {}
       var mq = window.matchMedia("(min-width: 1100px) and (min-height: 560px)");
+      var ancien = "";
       function ajuster() {
         boite.setAttribute("data-cote", cote);
         simu.classList.remove("af-marge-g", "af-marge-d");
         if (!mq.matches) return;
         var r = simu.getBoundingClientRect(), vw = document.documentElement.clientWidth, marge = cote === "g" ? r.left : vw - r.right;
         if (marge < 78) simu.classList.add(cote === "g" ? "af-marge-g" : "af-marge-d");
+        var etat = simu.className; if (etat !== ancien && ligneArgs) ajusterLignes(ligneArgs[0], ligneArgs[1]); ancien = etat;
       }
+      el("afDrapeauMarge").addEventListener("click", function () { el("afResPaysBtn").click(); });
       el("afBoiteCote").addEventListener("click", function () { cote = cote === "g" ? "d" : "g"; try { localStorage.setItem(CLE, cote); } catch (e) {} ajuster(); });
       window.addEventListener("resize", ajuster);
       new MutationObserver(ajuster).observe(simu, { attributes: true, attributeFilter: ["style", "hidden"] });
