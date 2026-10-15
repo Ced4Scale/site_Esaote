@@ -884,7 +884,9 @@
     function volumeBrut() { return S.pph * hNetAnnuel(); }
     // Temps d'acquisition moyen (minutes) selon la répartition des examens, avec la réduction de l'option e-Spades si elle est choisie : sert à l'électricité et au surcoût par examen.
     // Durée d'un examen : changement de patient (incompressible) + acquisition réduite d'e-Spades (en %), puis moins le gain fixe de Agil Exam (en minutes) sans descendre sous le changement de patient.
-    function dureeExam(T) { var c0 = Math.min(S.tChg, T), f = S.optAI ? 1 - S.reducIA / 100 : 1, c = c0 * f, acq = Math.max(0, (T - c0) * f - (S.optSmart ? S.gainSmart : 0)); return { c: c, acq: acq, total: c + acq }; }
+    // Agil Exam : le gain (90 secondes au départ) ne concerne que l'acquisition du genou ; en moyenne sur tous les examens = gain × part des examens du genou (zones de l'icône os)
+    function gainSmartMoyen() { return S.gainSmart * partZone(0); }
+    function dureeExam(T) { var c0 = Math.min(S.tChg, T), f = S.optAI ? 1 - S.reducIA / 100 : 1, c = c0 * f, acq = Math.max(0, (T - c0) * f - (S.optSmart ? gainSmartMoyen() : 0)); return { c: c, acq: acq, total: c + acq }; }
     function acqMoyenne() { var m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * dureeExam(S["tAcq" + t.k]).acq; }); return m > 0 ? m : OSCAN.dureeAcquisitionMinutes; }
     function pphMax() { var m = tempsMoyen(); return m > 0 ? 60 / m : 4.4; } // plafond de patients par heure = 60 / temps moyen par examen (acquisition réduite par e-Spades + changement de patient)
     function tempsMoyen() { var m = 0; TYPES.forEach(function (t) { m += S[t.rep] / 100 * dureeExam(S["tAcq" + t.k]).total; }); return m; }
@@ -1346,7 +1348,7 @@
         h += t.nom + " : <strong>" + nf1.format(d.total) + " min</strong> par examen" + (S.optAI || S.optSmart ? " (acquisition " + nf1.format(d.acq) + ")" : "") + "<br>";
       });
       h += (S.optAI ? "e-Spades choisi : acquisition réduite de " + fmt(S.reducIA) + " %." : "e-Spades non choisi (icône Esaote) : la réduction ne s'applique pas.") + "<br>" +
-        (S.optSmart ? "Agil Exam choisi : gain de " + nf1.format(S.gainSmart) + " min par examen." : "Agil Exam non choisi (icône Esaote) : pas de gain.");
+        (S.optSmart ? "Agil Exam choisi : gain de " + nf1.format(S.gainSmart) + " min sur l'acquisition du genou uniquement (" + fmt(Math.round(partZone(0) * 100)) + " % des examens), soit " + nf1.format(gainSmartMoyen()) + " min par examen en moyenne." : "Agil Exam non choisi (icône Esaote) : pas de gain.");
       el("afTLignes").innerHTML = h;
       el("afTMoy").innerHTML = "Temps moyen par examen : <strong>" + nf1.format(moy) + " min</strong>" + (moy > 0 ? " — soit <strong>" + nf1.format(60 / moy) + "</strong> patients par heure possibles (votre réglage : " + nf1.format(S.pph) + ")." : "") + (S.msgCadenas ? "<br>" + S.msgCadenas : "");
     }
@@ -1417,7 +1419,7 @@
       { id: "afGTClau", ou: "afTempsMix", titre: "Durée d'examen claustrophobie", cols: [{ k: "tAcqClau", color: "#8a5ad6", min: 2, max: 45, step: 0.5, kind: "dec", unit: "min" }] },
       { id: "afGTOrth", ou: "afTempsMix", titre: "Durée d'examen consultation", cols: [{ k: "tAcqOrth", color: "#eb6834", min: 2, max: 45, step: 0.5, kind: "dec", unit: "min" }] },
       { id: "afGTIA", ou: "afTempsMix", titre: "Réduction avec e-Spades", cols: [{ k: "reducIA", color: "#1baf7a", min: 0, max: 90, step: 1, kind: "int", unit: "% de l'acquisition" }] },
-      { id: "afGTSmart", ou: "afTempsMix", titre: "Gain avec Agil Exam", cols: [{ k: "gainSmart", color: "#2a9d8f", min: 0, max: 5, step: 0.5, kind: "dec", unit: "min par examen" }] }
+      { id: "afGTSmart", ou: "afTempsMix", titre: "Gain avec Agil Exam", cols: [{ k: "gainSmart", color: "#2a9d8f", min: 0, max: 5, step: 0.5, kind: "dec", unit: "min d'acquisition du genou" }] }
     );
     GROUPES.push(
       { id: "afGIFret", ou: "afImpMix", titre: "Transport et assurance", cols: [{ k: "fret", color: "#3aa0b5", min: 0, max: 15, step: 0.5, kind: "pct", unit: "% du prix" }] },
