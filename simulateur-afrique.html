@@ -290,6 +290,8 @@
     .af-mixer__fader-col { display: flex; flex-direction: column; align-items: center; gap: .45rem; }
     .af-mixer__fader-col[hidden] { display: none; }
     .af-mixer__bar { position: relative; width: 46px; height: 150px; border-radius: 10px; background: #e5e7eb; background: color-mix(in srgb, var(--fader-color) 16%, #fff); overflow: hidden; }
+    /* Le titre de chaque bâtons est écrit dans le bâton, à la verticale (lecture de bas en haut) */
+    .af-mixer__bar-lib { position: absolute; inset: 0; z-index: 2; pointer-events: none; display: flex; align-items: center; justify-content: center; writing-mode: vertical-rl; transform: rotate(180deg); font-size: .64rem; font-weight: 800; letter-spacing: .03em; line-height: 1; white-space: nowrap; overflow: hidden; color: #1f2937; text-shadow: 0 0 2px #fff, 0 0 3px #fff, 0 0 4px #fff; }
     .af-mixer__bar-fill { position: absolute; left: 0; right: 0; bottom: 0; height: calc(var(--pct, 0) * 1%); background: var(--fader-color); }
     .af-mixer__slot { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; writing-mode: vertical-rl; transform: rotate(180deg); white-space: nowrap; font-size: .74rem; font-weight: 800; color: #000; }
     .af-mixer__bar input[type="range"] { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; padding: 0; writing-mode: vertical-lr; direction: rtl; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
@@ -1626,11 +1628,9 @@
       var tabs = Array.prototype.filter.call(document.querySelectorAll("#afMixers .af-mixer--ligne"), function (m) { return m.offsetParent; });
       tabs.forEach(function (m) { var e = m.querySelector(".af-mixer__header"); if (e) e.style.minHeight = ""; });
       if (tabs.length < 2) return;
-      var lots = tabs.map(function (m) { return Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }).map(function (g) { return g.querySelector(".af-mixer__group-title"); }); });
-      for (var k = 0, n = Math.min.apply(null, lots.map(function (l) { return l.length; })); k < n; k++) {
-        var ts = lots.map(function (l) { return l[k]; }).filter(Boolean); ts.forEach(function (t) { t.style.minHeight = ""; });
-        var ht = Math.max.apply(null, ts.map(function (t) { return t.offsetHeight; })); ts.forEach(function (t) { t.style.minHeight = ht + "px"; });
-      }
+      var ts = []; tabs.forEach(function (m) { Array.prototype.forEach.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { var t = g.querySelector(".af-mixer__group-title"); if (t && !g.hidden && g.offsetParent) ts.push(t); }); });
+      ts.forEach(function (t) { t.style.minHeight = ""; });
+      var ht = Math.max.apply(null, ts.map(function (t) { return t.offsetHeight; })); ts.forEach(function (t) { t.style.minHeight = ht + "px"; });
       var entetes = tabs.map(function (m) { return m.querySelector(".af-mixer__header"); }), hm = Math.max.apply(null, entetes.map(function (e) { return e ? e.offsetHeight : 0; }));
       entetes.forEach(function (e) { if (e) e.style.minHeight = hm + "px"; });
     }
@@ -2533,6 +2533,22 @@
       el("afLangListe").appendChild(b);
     });
     brancher("afLangBtn", "afLangPop");
+
+    (function () { // titre du groupe recopié, à la verticale, dans chaque bâton (suit la langue et les changements de titre)
+      var simu = el("afSimu"), plan = false;
+      function poser() {
+        plan = false;
+        Array.prototype.forEach.call(simu.querySelectorAll(".af-mixer__bar"), function (bar) {
+          var g = bar.closest(".af-mixer__group"), t = g && g.querySelector(".af-mixer__group-title"); if (!t) return;
+          var c = t.querySelector(".af-t-c"), txt = ((c || t).textContent || "").trim(), lib = bar.querySelector(":scope > .af-mixer__bar-lib");
+          if (!lib) { lib = document.createElement("span"); lib.className = "af-mixer__bar-lib"; lib.setAttribute("aria-hidden", "true"); bar.appendChild(lib); }
+          if (lib.textContent !== txt) lib.textContent = txt;
+        });
+      }
+      function planifier() { if (plan) return; plan = true; requestAnimationFrame(poser); }
+      new MutationObserver(planifier).observe(simu, { childList: true, subtree: true, characterData: true });
+      poser();
+    })();
 
     (function () { // Boîte à outils dans la marge : côté mémorisé, et la page cède 4,9 rem de ce côté si la marge est trop étroite (mode comparaison large)
       var boite = el("afBoiteOutils"), simu = el("afSimu"), CLE = "ced4scale-afrique-boite-cote", cote = "g";
