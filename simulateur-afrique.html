@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016t"></script>
+  <script src="assets/afrique-i18n.js?v=20261016v"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -153,12 +153,16 @@
     .af-ouinon { display: inline-flex; border: 1px solid var(--line-2, #d6d6d0); border-radius: 999px; overflow: hidden; background: #fff; }
     .af-ouinon button { font: inherit; font-size: .85rem; font-weight: 800; padding: .3rem 1rem; border: 0; background: transparent; color: var(--ink-soft, #555); cursor: pointer; }
     .af-ouinon button[aria-pressed="true"] { background: var(--red); color: #fff; }
-    .af-compare-corps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; margin-top: 1.2rem; }
+    .af-cmp-tunnel { display: block; margin: -.2rem 0 .5rem; font-size: .75rem; color: var(--muted, #6b7280); }
+    .af-compare-corps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; margin-top: 1.2rem; }
     .af-compare-corps[hidden] { display: none; }
     .af-cmp-carte { margin: 0; display: flex; flex-direction: column; align-items: center; gap: .55rem; padding: .9rem .8rem 1rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .9rem; background: #fff; }
+    .af-cmp-carte img { width: 100%; max-width: 280px; height: auto; aspect-ratio: 240 / 160; object-fit: cover; border-radius: .6rem; }
+    .af-cmp-credit { grid-column: 1 / -1; margin: 0; font-size: .7rem; color: var(--muted, #6b7280); text-align: center; }
     .af-cmp-carte svg { width: 100%; max-width: 280px; height: auto; background: #f4f4f1; border-radius: .6rem; }
     .af-cmp-carte figcaption { font-weight: 800; }
     .af-cmp-carte select { width: 100%; max-width: 280px; font: inherit; font-size: .85rem; padding: .4rem .5rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .5rem; background: #fff; }
+    @media (max-width: 900px) { .af-compare-corps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     @media (max-width: 640px) { .af-compare-corps { grid-template-columns: 1fr; } }
     .af-jumeau { border-color: #cfd8e6; background: #f4f8ff; }
     .af-jumeau .af-cal-ligne input { text-align: right; }
@@ -586,15 +590,23 @@
           <span class="af-ouinon" role="group" aria-label="Comparer avec une autre IRM" data-cmp="actif"><button type="button" data-v="non" aria-pressed="true">Non</button><button type="button" data-v="oui" aria-pressed="false">Oui</button></span></div>
         <div class="af-compare-corps" id="afCompareCorps" hidden>
           <figure class="af-cmp-carte">
-            <svg viewBox="0 0 240 160" role="img" aria-label="Illustration d'une IRM Siemens 0,55 T"><ellipse cx="120" cy="146" rx="96" ry="7" fill="#000" opacity=".08"/><rect x="40" y="26" width="160" height="112" rx="26" fill="#eceff3" stroke="#c9d0d8" stroke-width="2"/><circle cx="120" cy="82" r="44" fill="#fff" stroke="#c9d0d8" stroke-width="3"/><circle cx="120" cy="82" r="36" fill="#2c3a4b"/><circle cx="120" cy="82" r="30" fill="#3d4e63"/><rect x="62" y="88" width="108" height="10" rx="5" fill="#dfe4ea" stroke="#c9d0d8"/><rect x="74" y="80" width="60" height="9" rx="4.5" fill="#f1c9a5"/><circle cx="68" cy="84" r="6" fill="#f1c9a5"/><rect x="48" y="34" width="46" height="16" rx="8" fill="#009999"/><text x="71" y="46" font-size="10" font-weight="700" text-anchor="middle" fill="#fff" font-family="Montserrat,Arial,sans-serif">0,55 T</text></svg>
-            <figcaption>Siemens 0,55 T</figcaption>
-            <span class="af-ouinon" role="group" aria-label="Comparer avec le Siemens 0,55 T" data-cmp="siemens"><button type="button" data-v="non" aria-pressed="true">Non</button><button type="button" data-v="oui" aria-pressed="false">Oui</button></span>
+            <svg viewBox="0 0 240 160" role="img" aria-label="Illustration d'une IRM Siemens Free.Max 0,55 T"><ellipse cx="120" cy="146" rx="96" ry="7" fill="#000" opacity=".08"/><rect x="40" y="26" width="160" height="112" rx="26" fill="#eceff3" stroke="#c9d0d8" stroke-width="2"/><circle cx="120" cy="82" r="44" fill="#fff" stroke="#c9d0d8" stroke-width="3"/><circle cx="120" cy="82" r="36" fill="#2c3a4b"/><circle cx="120" cy="82" r="30" fill="#3d4e63"/><rect x="62" y="88" width="108" height="10" rx="5" fill="#dfe4ea" stroke="#c9d0d8"/><rect x="74" y="80" width="60" height="9" rx="4.5" fill="#f1c9a5"/><circle cx="68" cy="84" r="6" fill="#f1c9a5"/><rect x="48" y="34" width="46" height="16" rx="8" fill="#009999"/><text x="71" y="46" font-size="10" font-weight="700" text-anchor="middle" fill="#fff" font-family="Montserrat,Arial,sans-serif">0,55 T</text></svg>
+            <figcaption>Siemens Free.Max 0,55 T</figcaption>
+            <small class="af-cmp-tunnel">Tunnel de 80 cm</small>
+            <span class="af-ouinon" role="group" aria-label="Comparer avec le Siemens Free.Max 0,55 T" data-cmp="siemens"><button type="button" data-v="non" aria-pressed="true">Non</button><button type="button" data-v="oui" aria-pressed="false">Oui</button></span>
           </figure>
           <figure class="af-cmp-carte">
-            <svg viewBox="0 0 240 160" role="img" aria-label="Illustration d'une IRM tunnel"><ellipse cx="120" cy="146" rx="96" ry="7" fill="#000" opacity=".08"/><rect x="38" y="22" width="164" height="116" rx="22" fill="#e4e7eb" stroke="#bcc4cd" stroke-width="2"/><circle cx="120" cy="80" r="38" fill="#fff" stroke="#bcc4cd" stroke-width="3"/><circle cx="120" cy="80" r="29" fill="#2c3a4b"/><circle cx="120" cy="80" r="23" fill="#3d4e63"/><rect x="52" y="90" width="116" height="9" rx="4.5" fill="#d6dbe1" stroke="#bcc4cd"/><rect x="64" y="82" width="58" height="9" rx="4.5" fill="#f1c9a5"/><circle cx="58" cy="86" r="6" fill="#f1c9a5"/><rect x="48" y="30" width="44" height="14" rx="7" fill="#7a8795"/><text x="70" y="40.5" font-size="9" font-weight="700" text-anchor="middle" fill="#fff" font-family="Montserrat,Arial,sans-serif">1,5 / 3 T</text></svg>
+            <svg viewBox="0 0 240 160" role="img" aria-label="Illustration d'une IRM Siemens Free.Star 0,55 T"><ellipse cx="120" cy="146" rx="96" ry="7" fill="#000" opacity=".08"/><rect x="40" y="26" width="160" height="112" rx="26" fill="#eceff3" stroke="#c9d0d8" stroke-width="2"/><circle cx="120" cy="82" r="38" fill="#fff" stroke="#c9d0d8" stroke-width="3"/><circle cx="120" cy="82" r="30" fill="#2c3a4b"/><circle cx="120" cy="82" r="25" fill="#3d4e63"/><rect x="62" y="88" width="108" height="10" rx="5" fill="#dfe4ea" stroke="#c9d0d8"/><rect x="74" y="80" width="60" height="9" rx="4.5" fill="#f1c9a5"/><circle cx="68" cy="84" r="6" fill="#f1c9a5"/><rect x="48" y="34" width="46" height="16" rx="8" fill="#009999"/><text x="71" y="46" font-size="10" font-weight="700" text-anchor="middle" fill="#fff" font-family="Montserrat,Arial,sans-serif">0,55 T</text></svg>
+            <figcaption>Siemens Free.Star 0,55 T</figcaption>
+            <small class="af-cmp-tunnel">Tunnel de 60 cm</small>
+            <span class="af-ouinon" role="group" aria-label="Comparer avec le Siemens Free.Star 0,55 T" data-cmp="star"><button type="button" data-v="non" aria-pressed="true">Non</button><button type="button" data-v="oui" aria-pressed="false">Oui</button></span>
+          </figure>
+          <figure class="af-cmp-carte">
+            <img src="assets/comparaison/irm-tunnel-siemens-aera.webp" alt="Photo d'une IRM tunnel (Siemens MAGNETOM Aera 1,5 T)" loading="lazy" width="900" height="558" />
             <figcaption>IRM tunnel</figcaption>
             <select id="afCmpTunnel" aria-label="IRM concurrente"><option value="">Choisir une IRM concurrente</option><option value="siemens-sempra">Siemens Sempra</option><option value="siemens-altea">Siemens Altea</option><option value="siemens-sola-xj">Siemens Sola XJ</option><option value="siemens-sola-xq">Siemens Sola XQ</option><option value="siemens-vida">Siemens Vida XQ</option><option value="siemens-vida-xt">Siemens Vida XT</option><option value="siemens-skyra-2012">Siemens Skyra</option><option value="siemens-amira">Siemens Amira</option><option value="siemens-prisma">Siemens Prisma</option><option value="siemens-terra">Siemens Terra</option><option value="siemens-avanto-2011">Siemens Avanto</option><option value="ge-explorer">GE Explorer</option><option value="ge-voyager">GE Voyager</option><option value="ge-sigma-prime">GE Sigma Prime</option><option value="ge-pioneer">GE Pioneer</option><option value="ge-artist">GE Artist</option><option value="ge-optima-mr450w">GE Optima MR450w</option><option value="philips-ambition-s">Philips Ambition S</option><option value="philips-ambition-x">Philips Ambition X</option><option value="philips-mr7700">Philips MR7700</option><option value="philips-elition-x">Philips Elition X</option><option value="canon-elan">Canon Elan</option><option value="canon-orian">Canon Orian Std</option><option value="canon-orian-hyp">Canon Orian Hyp</option><option value="siemens-aera">Siemens Aera</option></select>
           </figure>
+          <p class="af-cmp-credit">Photo de l'IRM tunnel : Ptrump16 (Siemens MAGNETOM Aera), licence CC BY-SA 4.0, Wikimedia Commons. Les deux IRM Siemens 0,55 T sont des dessins, en attendant des photos libres de droits.</p>
         </div>
       </div>
     </div>
@@ -1468,19 +1480,21 @@
     // Estimations : durées d'examen et consommation de la fiche machine (assets/machines-energie-data.js), 2 manipulateurs pour une IRM à aimant supraconducteur et changement de patient d'au moins 2,5 min (simulateur du site) ; prix d'achat par champ magnétique et maintenance à 8 % du prix par an : ESTIMATIONS Ced4Scale À CONFIRMER (le loyer du site, SAV inclus, ne donne pas de prix d'achat). Même activité que l'O-scan.
     var PRIX_CONC = { "0.55": 950000, "1.5": 750000, "3": 1300000, "7": 5500000 }, TAUX_MAINT_CONC = 0.08; // repli si une machine n'a pas de prix propre
     var PRIX_MACHINE = { // prix d'achat HT et contrat de service HT par an, donnés par Cédric le 15/10/2026
-      "siemens-055": [500000, 50000], "siemens-sempra": [600000, 52000], "siemens-altea": [800000, 68000], "siemens-sola-xj": [820000, 72000], "siemens-sola-xq": [870000, 80000],
+      "siemens-055": [500000, 50000], "siemens-star": [500000, 50000], "siemens-sempra": [600000, 52000], "siemens-altea": [800000, 68000], "siemens-sola-xj": [820000, 72000], "siemens-sola-xq": [870000, 80000],
       "siemens-amira": [650000, 60000], "siemens-aera": [780000, 75000], "siemens-avanto-2011": [750000, 85000], "siemens-vida": [950000, 90000], "siemens-vida-xt": [900000, 87000],
       "siemens-skyra-2012": [850000, 90000], "siemens-prisma": [1200000, 130000], "siemens-terra": [1400000, 150000],
       "ge-explorer": [800000, 72000], "ge-voyager": [800000, 72000], "ge-sigma-prime": [750000, 65000], "ge-optima-mr450w": [700000, 65000], "ge-pioneer": [1000000, 90000], "ge-artist": [1000000, 90000],
       "philips-ambition-s": [650000, 60000], "philips-ambition-x": [700000, 60000], "philips-mr7700": [960000, 92000], "philips-elition-x": [950000, 60000],
       "canon-elan": [650000, 60000], "canon-orian": [650000, 60000], "canon-orian-hyp": [650000, 60000] };
-    var SIEMENS_055 = { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55, eteint: 0.8, pret: 4, mesure: 9, climSalleKw: 3, coeffRefroidissementLT: 0.1, dureeAcquisitionMinutes: 10, dureeChangementMinutes: 2.5, aimant: "supraconducteur" };
-    (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "generique-15t") SIEMENS_055 = Object.assign({}, m, { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55 }); }); // consommation et durées : celles d'une IRM tunnel générique du site (pas de fiche propre au 0,55 T)
+    var SIEMENS_055 = { key: "siemens-055", nomCourt: "Siemens Free.Max 0,55 T", champT: 0.55, eteint: 0.8, pret: 4, mesure: 9, climSalleKw: 3, coeffRefroidissementLT: 0.1, dureeAcquisitionMinutes: 10, dureeChangementMinutes: 2.5, aimant: "supraconducteur" };
+    (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "generique-15t") SIEMENS_055 = Object.assign({}, m, { key: "siemens-055", nomCourt: "Siemens Free.Max 0,55 T", champT: 0.55 }); });
+    var SIEMENS_STAR = Object.assign({}, SIEMENS_055, { key: "siemens-star", nomCourt: "Siemens Free.Star 0,55 T" }); // 0,55 T à tunnel de 60 cm (le Free.Max a 80 cm) : même fiche de consommation en attendant les données propres // consommation et durées : celles d'une IRM tunnel générique du site (pas de fiche propre au 0,55 T)
     var OSCAN_REF = OSCAN;
     function comparateurs() {
       var l = [];
       if (!S.cmpActif) return l;
       if (S.cmpSiemens) l.push(SIEMENS_055);
+      if (S.cmpStar) l.push(SIEMENS_STAR);
       if (S.cmpTunnel) (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === S.cmpTunnel) l.push(m); });
       return l;
     }
@@ -2763,14 +2777,14 @@
         });
       })();
       (function () { // comparaison avec une autre IRM (choix enregistrés pour le calcul de comparaison à venir)
-        S.cmpActif = false; S.cmpSiemens = false; S.cmpTunnel = "";
+        S.cmpActif = false; S.cmpSiemens = false; S.cmpStar = false; S.cmpTunnel = "";
         var corps = el("afCompareCorps");
         Array.prototype.forEach.call(el("afCompare").querySelectorAll(".af-ouinon"), function (g) {
           Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) {
             b.addEventListener("click", function () {
               var oui = b.dataset.v === "oui";
               Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
-              if (g.dataset.cmp === "actif") { S.cmpActif = oui; corps.hidden = !oui; } else S.cmpSiemens = oui;
+              if (g.dataset.cmp === "actif") { S.cmpActif = oui; corps.hidden = !oui; } else if (g.dataset.cmp === "star") S.cmpStar = oui; else S.cmpSiemens = oui;
               memoriser();
             });
           });
@@ -2795,7 +2809,7 @@
         demiN1 = !!e.n1;
         function appuyer(g, v) { Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === v)); }); }
         appuyer(el("afCompare").querySelector('[data-cmp="actif"]'), S.cmpActif ? "oui" : "non"); el("afCompareCorps").hidden = !S.cmpActif;
-        appuyer(el("afCompare").querySelector('[data-cmp="siemens"]'), S.cmpSiemens ? "oui" : "non"); el("afCmpTunnel").value = S.cmpTunnel || "";
+        appuyer(el("afCompare").querySelector('[data-cmp="siemens"]'), S.cmpSiemens ? "oui" : "non"); appuyer(el("afCompare").querySelector('[data-cmp="star"]'), S.cmpStar ? "oui" : "non"); el("afCmpTunnel").value = S.cmpTunnel || "";
         appuyer(el("afLegChoix"), e.leg === false ? "non" : "oui"); el("afDemis").classList.toggle("af-sans-legende", e.leg === false);
         appuyer(el("afPmChoix"), e.pm === false ? "non" : "oui"); el("afPm").hidden = e.pm === false;
         majTauxListe(); majDevise(); synchroniser(); rendre(); majMenuAnnee();
