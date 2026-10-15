@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016r"></script>
+  <script src="assets/afrique-i18n.js?v=20261016s"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -1432,7 +1432,14 @@
 
     // ------------------------------------------------------------------ comparaison avec une IRM concurrente (choix faits sur la page d'accueil)
     // Estimations : durées d'examen et consommation de la fiche machine (assets/machines-energie-data.js), 2 manipulateurs pour une IRM à aimant supraconducteur et changement de patient d'au moins 2,5 min (simulateur du site) ; prix d'achat par champ magnétique et maintenance à 8 % du prix par an : ESTIMATIONS Ced4Scale À CONFIRMER (le loyer du site, SAV inclus, ne donne pas de prix d'achat). Même activité que l'O-scan.
-    var PRIX_CONC = { "0.55": 950000, "1.5": 750000, "3": 1300000, "7": 5500000 }, TAUX_MAINT_CONC = 0.08;
+    var PRIX_CONC = { "0.55": 950000, "1.5": 750000, "3": 1300000, "7": 5500000 }, TAUX_MAINT_CONC = 0.08; // repli si une machine n'a pas de prix propre
+    var PRIX_MACHINE = { // prix d'achat HT et contrat de service HT par an, donnés par Cédric le 15/10/2026
+      "siemens-055": [500000, 50000], "siemens-sempra": [600000, 52000], "siemens-altea": [800000, 68000], "siemens-sola-xj": [820000, 72000], "siemens-sola-xq": [870000, 80000],
+      "siemens-amira": [650000, 60000], "siemens-aera": [780000, 75000], "siemens-avanto-2011": [750000, 85000], "siemens-vida": [950000, 90000], "siemens-vida-xt": [900000, 87000],
+      "siemens-skyra-2012": [850000, 90000], "siemens-prisma": [1200000, 130000], "siemens-terra": [1400000, 150000],
+      "ge-explorer": [800000, 72000], "ge-voyager": [800000, 72000], "ge-sigma-prime": [750000, 65000], "ge-optima-mr450w": [700000, 65000], "ge-pioneer": [1000000, 90000], "ge-artist": [1000000, 90000],
+      "philips-ambition-s": [650000, 60000], "philips-ambition-x": [700000, 60000], "philips-mr7700": [960000, 92000], "philips-elition-x": [950000, 60000],
+      "canon-elan": [650000, 60000], "canon-orian": [650000, 60000], "canon-orian-hyp": [650000, 60000] };
     var SIEMENS_055 = { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55, eteint: 0.8, pret: 4, mesure: 9, climSalleKw: 3, coeffRefroidissementLT: 0.1, dureeAcquisitionMinutes: 10, dureeChangementMinutes: 2.5, aimant: "supraconducteur" };
     (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "generique-15t") SIEMENS_055 = Object.assign({}, m, { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55 }); }); // consommation et durées : celles d'une IRM tunnel générique du site (pas de fiche propre au 0,55 T)
     var OSCAN_REF = OSCAN;
@@ -1456,8 +1463,8 @@
     function paramsConc(m) {
       var P = PARAMS_CONC[m.key] || (PARAMS_CONC[m.key] = {});
       ["achat", "maint", "gar", "nMerm", "fAcq", "tChg", "pph", "hS", "prix", "kwh", "finAns", "taux"].forEach(function (k) { if (P[k] === undefined) P[k] = null; });
-      var achat = P.achat != null ? P.achat : (PRIX_CONC[String(m.champT)] || PRIX_CONC["1.5"]);
-      return { achat: achat, maint: P.maint != null ? P.maint : Math.round(achat * TAUX_MAINT_CONC), gar: P.gar != null ? P.gar : 12, nMerm: P.nMerm != null ? P.nMerm : 2,
+      var pm = PRIX_MACHINE[m.key], achat = P.achat != null ? P.achat : (pm ? pm[0] : (PRIX_CONC[String(m.champT)] || PRIX_CONC["1.5"]));
+      return { achat: achat, maint: P.maint != null ? P.maint : (pm ? pm[1] : Math.round(achat * TAUX_MAINT_CONC)), gar: P.gar != null ? P.gar : 12, nMerm: P.nMerm != null ? P.nMerm : 2,
         fAcq: P.fAcq != null ? P.fAcq : (m.dureeAcquisitionMinutes || OSCAN_REF.dureeAcquisitionMinutes) / OSCAN_REF.dureeAcquisitionMinutes, tChg: P.tChg != null ? P.tChg : Math.max(2.5, m.dureeChangementMinutes || 0),
         pph: P.pph != null ? P.pph : S.pph, hS: P.hS != null ? P.hS : S.hS, prix: P.prix != null ? P.prix : S.prix, kwh: P.kwh != null ? P.kwh : S.kwh,
         finAns: P.finAns != null ? P.finAns : (S.finActif ? Math.round(S.dureeMois / 6) / 2 : 0), taux: P.taux != null ? P.taux : S.taux, brut: P };
@@ -1682,7 +1689,7 @@
         var note = el("afCmpNote");
         if (!note) { note = document.createElement("p"); note.id = "afCmpNote"; note.className = "af-aide"; zone.parentNode.insertBefore(note, zone.nextSibling); }
         note.hidden = !comps.length;
-        note.textContent = comps.length ? "Comparaison : estimations Ced4Scale à confirmer (prix d'achat par champ magnétique, maintenance à 8 % du prix par an) et simulateur du site (2 manipulateurs, durées et consommation de la fiche machine). Même activité que l'O-scan : patients, heures, prix de l'examen, salaires et loyer des locaux." : "";
+        note.textContent = comps.length ? "Comparaison : prix d'achat et contrat de service annuel (HT) de chaque IRM d'après Ced4Scale, et simulateur du site (2 manipulateurs, durées et consommation de la fiche machine). Même activité que l'O-scan : patients, heures, prix de l'examen, salaires et loyer des locaux." : "";
         if (!comps.length) return;
         function legende(bx, txt) { var c = document.createElement("div"); c.className = "af-demi-an"; c.textContent = txt; bx.insertBefore(c, bx.querySelector("h3").nextSibling); }
         comps.forEach(function (c) { libelleAchat("IRM"); c.boxes = demisPour(c.r); libelleAchat("O-scan et options"); });
