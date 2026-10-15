@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016m"></script>
+  <script src="assets/afrique-i18n.js?v=20261016n"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -79,7 +79,11 @@
     .af-bloc:fullscreen .af-pop[data-cote="d"] { right: .8rem; left: auto; }
     .af-barre-btn { position: absolute; top: .85rem; right: .85rem; display: flex; align-items: center; gap: .45rem; direction: ltr; z-index: 3; }
     html[dir="rtl"] .af-barre-btn .af-pop { direction: rtl; }
-    .af-bloc > .af-titre { padding-right: 11rem; }
+    .af-titre-ligne { display: flex; align-items: center; flex-wrap: wrap; gap: .4rem 1rem; padding-right: 11rem; }
+    .af-titre-ligne .af-titre { margin: 0; }
+    .af-leg-choix { display: inline-flex; align-items: center; gap: .5rem; font-size: .8rem; font-weight: 700; }
+    .af-leg-choix .af-ouinon button { padding: .2rem .7rem; font-size: .75rem; }
+    .af-demis.af-sans-legende .af-legende { display: none; }
     /* Boîte à outils en plein écran : toutes les icônes (sauf l'ampoule) avec leur nom ; un clic ouvre la zone sur la moitié de l'écran, un autre clic change de zone */
     .af-outils-boite.af-boite-plein { position: fixed; inset: 0; z-index: 10000; background: #fff; margin: 0; border: 0; border-radius: 0; padding: 1.2rem 1.5rem; overflow: auto; align-content: flex-start; box-sizing: border-box; }
     .af-outils-boite.af-boite-plein { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .5rem; }
@@ -594,7 +598,10 @@
         <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
       </div>
-      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
+      <div class="af-titre-ligne">
+        <h2 class="af-titre">Recettes, dépenses et résultat</h2>
+        <span class="af-leg-choix"><span>Légende</span><span class="af-ouinon" role="group" aria-label="Légende" id="afLegChoix"><button type="button" data-v="non" aria-pressed="false">Non</button><button type="button" data-v="oui" aria-pressed="true">Oui</button></span></span>
+      </div>
       <p class="af-sous-titre" id="afSousTitre"></p>
       <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
       <div class="af-demis" id="afDemis"></div>
@@ -2485,6 +2492,16 @@
         Array.prototype.forEach.call(boite.querySelectorAll(".af-pop"), function (p) { mo.observe(p, { attributes: true, attributeFilter: ["hidden", "class"] }); });
         mo.observe(boite, { attributes: true, attributeFilter: ["class"] });
         window.addEventListener("resize", function () { majJumeaux(); rendre(); });
+      })();
+      (function () { // bouton « Légende » : Non = les légendes sous les demi-anneaux disparaissent
+        var g = el("afLegChoix");
+        Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) {
+          b.addEventListener("click", function () {
+            Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+            el("afDemis").classList.toggle("af-sans-legende", b.dataset.v === "non");
+            alignerMixers();
+          });
+        });
       })();
       (function () { // comparaison avec une autre IRM (choix enregistrés pour le calcul de comparaison à venir)
         S.cmpActif = false; S.cmpSiemens = false; S.cmpTunnel = "";
