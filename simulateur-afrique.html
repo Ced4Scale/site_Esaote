@@ -77,6 +77,9 @@
     .af-bloc:fullscreen .af-pop { position: fixed; top: 4.5rem; margin: 0; width: clamp(300px, calc(var(--gut) - 1.6rem), 500px); max-height: calc(100vh - 6rem); overflow-y: auto; z-index: 20; }
     .af-bloc:fullscreen .af-pop[data-cote="g"] { left: .8rem; right: auto; }
     .af-bloc:fullscreen .af-pop[data-cote="d"] { right: .8rem; left: auto; }
+    .af-barre-btn { position: absolute; top: .85rem; right: .85rem; display: flex; align-items: center; gap: .45rem; direction: ltr; z-index: 3; }
+    html[dir="rtl"] .af-barre-btn .af-pop { direction: rtl; }
+    .af-bloc > .af-titre { padding-right: 11rem; }
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
     .af-outils-icones { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
@@ -394,16 +397,7 @@
     </div>
 
     <div class="af-bloc" id="afBloc">
-      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
-      <p class="af-sous-titre" id="afSousTitre"></p>
-      <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
-      <div class="af-demis" id="afDemis"></div>
-      <div class="af-pm" id="afPm"></div>
-
-      <!-- Boîte à outils : toutes les icônes (réglages, langue, devise, plein écran) -->
-      <div class="af-outils-boite" id="afBoiteOutils">
-        <span class="af-mixer__title">Boîte à outils</span>
-        <div class="af-outils-icones">
+      <div class="af-barre-btn">
           <span class="af-info-wrap af-prix-wrap">
       <button type="button" class="af-prix-btn" id="afPrixBtn" aria-expanded="false" aria-controls="afPrixPop" aria-label="Prix de vente de l'O-scan : choisir le résultat souhaité" title="Prix de vente de l'O-scan selon le résultat souhaité"><img src="assets/products/o-scan-hero.webp" alt="" /></button>
       <div class="af-pop" id="afPrixPop" hidden>
@@ -444,6 +438,21 @@
           </div>
         </span>
 
+      <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
+        <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      </div>
+      <h2 class="af-titre">Recettes, dépenses et résultat</h2>
+      <p class="af-sous-titre" id="afSousTitre"></p>
+      <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
+      <div class="af-demis" id="afDemis"></div>
+      <div class="af-pm" id="afPm"></div>
+
+      <!-- Boîte à outils : toutes les icônes (réglages, langue, devise, plein écran) -->
+      <div class="af-outils-boite" id="afBoiteOutils">
+        <span class="af-mixer__title">Boîte à outils</span>
+        <div class="af-outils-icones">
         <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
 
 
@@ -645,10 +654,6 @@
             </div>
           </span>
 
-      <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
-        <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-        <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </button>
         </div>
       </div>
 
