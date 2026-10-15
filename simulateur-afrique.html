@@ -1504,18 +1504,16 @@
     }
 
     // ------------------------------------------------------------------ table de mixage de l'IRM concurrente (sous celle de l'O-scan) : mêmes curseurs, réglages propres à chaque IRM ; tant qu'on n'y touche pas, un curseur suit celui de l'O-scan
-    var COLS_CONC = [
-      { k: "pph", titre: "Patients par heure", color: "#eb6834", min: 0.5, max: function () { return Math.max(1, pphMax() * 2); }, step: 0.1, kind: "dec", unit: "patients / h" },
-      { k: "hS", titre: "Heures d'ouverture", color: "#2a78d6", min: 1, max: function () { return S.plafond; }, step: 0.5, kind: "dec", unit: "h / jour" },
-      { k: "nMerm", titre: "Nombre de MERM", color: "#d1477a", min: 0, max: 4, step: 0.5, kind: "dec", unit: "ETP" },
-      { k: "prix", titre: "Prix de l'examen", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" },
-      { k: "achat", titre: "Prix de l'IRM :", nom: true, color: "#6b5b95", min: 0, max: 3000000, step: 10000, kind: "money" },
-      { k: "finAns", titre: "Durée du financement", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" },
-      { k: "taux", titre: "Taux du crédit", color: "#d1477a", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% par an" },
-      { k: "maint", titre: "Maintenance annuelle", color: "#8a8f98", min: 0, max: 400000, step: 1000, kind: "money" },
-      { k: "kwh", titre: "Coût du kWh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" },
-      { k: "fAcq", titre: "Durée d'acquisition (en % de celle de l'O-scan)", color: "#2a9d8f", min: 30, max: 200, step: 1, kind: "int", unit: "%", echelle: 100 },
-      { k: "tChg", titre: "Changement de patient", color: "#b8782f", min: 0.5, max: 10, step: 0.5, kind: "dec", unit: "min" }
+    var COLS_CONC = [ // mêmes bâtons que la table de gauche (et mêmes choix d'affichage de la boîte à outils) ; durée d'acquisition et changement de patient : dans le cadre « Répartition des examens »
+      { k: "pph", g: "afGPph", titre: "Patients par heure", color: "#eb6834", min: 0.5, max: function () { return Math.max(1, pphMax() * 2); }, step: 0.1, kind: "dec", unit: "patients / h" },
+      { k: "hS", g: "afGHeures", titre: "Heures d'ouverture", color: "#2a78d6", min: 1, max: function () { return S.plafond; }, step: 0.5, kind: "dec", unit: "h / jour" },
+      { k: "nMerm", g: "afGMerm", titre: "Nombre de MERM", color: "#d1477a", min: 0, max: 4, step: 0.5, kind: "dec", unit: "ETP" },
+      { k: "prix", g: "afGPrix", titre: "Prix de l'examen", color: "#2a78d6", min: 10, max: 500, step: 5, kind: "money" },
+      { k: "achat", g: "afGAchat", titre: "Prix de l'IRM :", nom: true, color: "#6b5b95", min: 0, max: 3000000, step: 10000, kind: "money" },
+      { k: "finAns", g: "afGFin", titre: "Durée du financement", color: "#b8782f", min: 0, max: 10, step: 0.5, kind: "dec", unit: "ans" },
+      { k: "taux", g: "afGFin", titre: "Taux du crédit", color: "#d1477a", min: 0, max: 40, step: 0.25, kind: "pct", unit: "% par an", siCredit: true },
+      { k: "kwh", g: "afGKwh", titre: "Coût du kWh", color: "#21c7c1", min: 0, max: 1, step: 0.01, kind: "kwh" },
+      { k: "maint", g: "afGMaint", titre: "Maintenance annuelle", color: "#8a8f98", min: 0, max: 400000, step: 1000, kind: "money" }
     ];
     function majTablesConc(comps) {
       var zone = el("afMixerConc"); if (!zone) return;
@@ -1540,7 +1538,7 @@
             bx.addEventListener("change", function () { var n = lire(bx.value); if (n == null) { rendre(); return; } appliquer(col.kind === "money" || col.kind === "kwh" ? n / cur.r : n); });
             gd.querySelector(".af-moins").addEventListener("click", function () { appliquer(valCol(m, col) * (col.echelle || 1) - col.step); });
             gd.querySelector(".af-plus").addEventListener("click", function () { appliquer(valCol(m, col) * (col.echelle || 1) + col.step); });
-            col.noeuds = col.noeuds || {}; col.noeuds[m.key] = { rg: rg, bx: bx, fill: gd.querySelector(".af-mixer__bar-fill"), bar: gd.querySelector(".af-mixer__bar"), unite: gd.querySelector(".af-mixer__unit") };
+            col.noeuds = col.noeuds || {}; col.noeuds[m.key] = { gd: gd, rg: rg, bx: bx, fill: gd.querySelector(".af-mixer__bar-fill"), bar: gd.querySelector(".af-mixer__bar"), unite: gd.querySelector(".af-mixer__unit") };
             bloc.appendChild(gd);
           });
         }
@@ -1548,6 +1546,7 @@
         COLS_CONC.forEach(function (col) {
           var n = col.noeuds[m.key], v = valCol(m, col) * (col.echelle || 1), mn = val(col.min), mx = val(col.max);
           if (v > mx) mx = v;
+          n.gd.hidden = visibles[col.g] === false || (col.siCredit && !(paramsConc(m).finAns > 0));
           n.rg.min = mn; n.rg.max = mx; n.rg.step = col.step; n.rg.value = v;
           var pct = ((v - mn) / (mx - mn) * 100).toFixed(2); n.fill.style.setProperty("--pct", pct); n.bar.style.setProperty("--pct", pct);
           if (n.bx !== document.activeElement) n.bx.value = affiche(col, v);
@@ -1557,6 +1556,7 @@
     }
     function valCol(m, col) { var q = paramsConc(m); return q[col.k]; }
     function ajusterLignes(actif, nb) { // en comparaison : chaque table de mixage sur une seule ligne, les tables côte à côte (taille réduite)
+      var sm = el("afSimu"); if (sm) sm.style.maxWidth = actif ? Math.round(Math.min(window.innerWidth * 0.98, 760 * (nb || 2))) + "px" : "";
       var mx = el("afMixers"); if (mx) { mx.classList.toggle("af-mixers--cote", actif && window.innerWidth > 700); mx.style.setProperty("--nt", String(nb || 1)); }
       var tables = [el("afMixer")].concat(Array.prototype.slice.call(document.querySelectorAll("#afMixerConc .af-mixer")));
       tables.forEach(function (m) {
