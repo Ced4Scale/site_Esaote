@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016k"></script>
+  <script src="assets/afrique-i18n.js?v=20261016l"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -1107,6 +1107,7 @@
     var CAT_RES = CAT_DEP.concat([{ key: "resultat", label: "Résultat", color: "#1baf7a" }]);
 
     function libelleAchat(quoi) { CAT_DEP.forEach(function (c) { if (c.key === "achat") c.label = (S.finActif ? "Remboursement de l'" : "Achat de l'") + quoi + (S.finActif ? " (capital)" : " (étalé)"); }); }
+    function libelleLoyerIrm() { CAT_DEP.forEach(function (c) { if (c.key === "achat") c.label = "Loyer de l'IRM (SAV inclus)"; }); }
     function demi(titre, cats, vals, total, centre) {
       var W = 300, H = 176, cx = 150, cy = 150, r = 130, ri = 76;
       var svg = svgEl("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": titre });
@@ -1350,9 +1351,10 @@
     var demiFocus = -1, demiN1 = false; // demiFocus : numéro du demi-anneau affiché seul en grand (-1 : les trois) ; demiN1 : second demi-anneau « N+1 » (année après le financement)
 
     // ------------------------------------------------------------------ comparaison avec une IRM concurrente (choix faits sur la page d'accueil)
-    // ESTIMATIONS Ced4Scale À CONFIRMER : prix d'achat selon le champ magnétique, maintenance = 8 % du prix par an (garantie 12 mois), Siemens 0,55 T (consommation et durées). Même activité que l'O-scan (patients, heures, prix de l'examen, salaires, loyer, taux du crédit).
-    var PRIX_CONC = { "0.55": 950000, "1.5": 750000, "3": 1300000, "7": 5500000 }, TAUX_MAINT_CONC = 0.08;
-    var SIEMENS_055 = { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55, eteint: 0.8, pret: 4, mesure: 9, climSalleKw: 3, coeffRefroidissementLT: 0.1, dureeAcquisitionMinutes: 11, dureeChangementMinutes: 3 };
+    // Estimations reprises du simulateur du site (simulateur-unifie.html) : loyer mensuel de base SAV inclus de chaque IRM concurrente (valeur de repli 15.000 € par mois quand la machine n'a pas de loyer de référence), 2 manipulateurs pour une IRM à aimant supraconducteur, changement de patient d'au moins 2,5 min, durées et consommation de la fiche machine (assets/machines-energie-data.js). Même activité que l'O-scan (patients, heures, prix de l'examen, salaires, loyer des locaux).
+    var LOYERS_CONC = { "siemens-altea": 24000, "siemens-sola-xj": 25500, "siemens-sola-xq": 26500, "siemens-prisma": 32000, "siemens-aera": 23000, "ge-optima-mr450w": 25000, "philips-ambition-s": 23000, "philips-ambition-x": 24500, "generique-15t": 25000, "generique-3t": 30000 }, LOYER_REPLI_CONC = 15000;
+    var SIEMENS_055 = { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55, eteint: 0.8, pret: 4, mesure: 9, climSalleKw: 3, coeffRefroidissementLT: 0.1, dureeAcquisitionMinutes: 10, dureeChangementMinutes: 2.5, aimant: "supraconducteur" };
+    (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === "generique-15t") SIEMENS_055 = Object.assign({}, m, { key: "siemens-055", nomCourt: "Siemens 0,55 T", champT: 0.55 }); }); // consommation et durées : celles d'une IRM tunnel générique du site (pas de fiche propre au 0,55 T)
     var OSCAN_REF = OSCAN;
     function comparateurs() {
       var l = [];
@@ -1361,21 +1363,25 @@
       if (S.cmpTunnel) (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === S.cmpTunnel) l.push(m); });
       return l;
     }
-    var PARAMS_CONC = {}; // réglages propres à chaque IRM concurrente (null = valeur par défaut estimée)
+    var PARAMS_CONC = {}; // réglages propres à chaque IRM concurrente (null = valeur du simulateur du site)
     function paramsConc(m) {
-      var P = PARAMS_CONC[m.key] || (PARAMS_CONC[m.key] = { prix: null, maint: null, gar: 12, fAcq: null, tChg: null });
-      var prix = P.prix != null ? P.prix : (PRIX_CONC[String(m.champT)] || PRIX_CONC["1.5"]);
-      return { prix: prix, maint: P.maint != null ? P.maint : Math.round(prix * TAUX_MAINT_CONC), gar: P.gar, fAcq: P.fAcq != null ? P.fAcq : (m.dureeAcquisitionMinutes || OSCAN_REF.dureeAcquisitionMinutes) / OSCAN_REF.dureeAcquisitionMinutes, tChg: P.tChg != null ? P.tChg : (m.dureeChangementMinutes || S.tChg), brut: P };
+      var P = PARAMS_CONC[m.key] || (PARAMS_CONC[m.key] = { loyer: null, nMerm: null, fAcq: null, tChg: null });
+      return { loyer: P.loyer != null ? P.loyer : (LOYERS_CONC[m.key] != null ? LOYERS_CONC[m.key] : LOYER_REPLI_CONC), connu: LOYERS_CONC[m.key] != null, nMerm: P.nMerm != null ? P.nMerm : 2,
+        fAcq: P.fAcq != null ? P.fAcq : (m.dureeAcquisitionMinutes || OSCAN_REF.dureeAcquisitionMinutes) / OSCAN_REF.dureeAcquisitionMinutes, tChg: P.tChg != null ? P.tChg : Math.max(2.5, m.dureeChangementMinutes || 0), brut: P };
     }
     function avecConcurrent(m, fn) { // exécute fn avec les réglages de l'IRM concurrente à la place de ceux de l'O-scan, puis remet tout en place
-      var sv = { o: OSCAN, achat: S.achat, maint: S.maint, gar: S.garantie, garAns: S.garAns, ai: S.optAI, sm: S.optSmart, po: S.optPost, tg: S.tChg, d: S.tAcqDiag, c: S.tAcqClau, or: S.tAcqOrth }, q = paramsConc(m);
+      var sv = { o: OSCAN, achat: S.achat, maint: S.maint, gar: S.garantie, garAns: S.garAns, ai: S.optAI, sm: S.optSmart, po: S.optPost, tg: S.tChg, d: S.tAcqDiag, c: S.tAcqClau, or: S.tAcqOrth, nm: S.nMerm, fa: S.finActif, tr: S.optTrav, fr: S.optFar }, q = paramsConc(m);
       try {
-        OSCAN = m; S.achat = q.prix; S.maint = q.maint; S.garantie = q.gar; S.optAI = false; S.optSmart = false; S.optPost = false;
+        OSCAN = m; S.achat = 0; S.maint = 0; S.garantie = 0; S.optAI = false; S.optSmart = false; S.optPost = false; S.optTrav = false; S.optFar = false; S.finActif = false; S.nMerm = q.nMerm; // le loyer de l'IRM (SAV inclus) remplace achat, maintenance et crédit
         S.tChg = q.tChg; S.tAcqDiag = sv.d * q.fAcq; S.tAcqClau = sv.c * q.fAcq; S.tAcqOrth = sv.or * q.fAcq;
         return fn();
-      } finally { OSCAN = sv.o; S.achat = sv.achat; S.maint = sv.maint; S.garantie = sv.gar; S.garAns = sv.garAns; S.optAI = sv.ai; S.optSmart = sv.sm; S.optPost = sv.po; S.tChg = sv.tg; S.tAcqDiag = sv.d; S.tAcqClau = sv.c; S.tAcqOrth = sv.or; }
+      } finally { OSCAN = sv.o; S.achat = sv.achat; S.maint = sv.maint; S.garantie = sv.gar; S.garAns = sv.garAns; S.optAI = sv.ai; S.optSmart = sv.sm; S.optPost = sv.po; S.optTrav = sv.tr; S.optFar = sv.fr; S.finActif = sv.fa; S.nMerm = sv.nm; S.tChg = sv.tg; S.tAcqDiag = sv.d; S.tAcqClau = sv.c; S.tAcqOrth = sv.or; }
     }
-    function calculerConcurrent(m) { return avecConcurrent(m, calculer); }
+    function calculerConcurrent(m) {
+      var r = avecConcurrent(m, calculer), L = paramsConc(m).loyer * 12;
+      r.achat = L; r.interetsAn = 0; r.maint = 0; r.depenses += L; r.resultat -= L; r.loyerIrm = L; // loyer annuel de l'IRM, SAV inclus
+      return r;
+    }
 
     // ------------------------------------------------------------------ cadres « jumeaux » : quand on compare, chaque cadre de la boîte à outils s'ouvre aussi pour l'IRM concurrente, à côté de celui de l'O-scan
     var TITRES_JUM = { afCalPop: "Horaires d'ouverture", afLoyerPop: "Loyer des locaux", afRadPop: "Coût du radiologue", afOsPop: "Examens MSK par zone", afFinPop: "Financement, garantie et maintenance", afNegPop: "Répartition des examens", afImpPop: "Importation depuis l'Italie", afOptPop: "Options Esaote : choix et prix" };
@@ -1392,11 +1398,10 @@
       var sub = document.createElement("div"); sub.className = "af-pop-sous-titre"; sub.textContent = m.nomCourt; sub.style.marginTop = "0";
       corps.push(h, sub);
       if (pop.id === "afOptPop") {
-        corps.push(champJum("Prix d'achat de l'IRM", fmt(q.prix * cur.r), cur.s, function (n) { P.prix = n / cur.r; P.maint = null; rendre(); }));
-        corps.push(champJum("Maintenance annuelle", fmt(q.maint * cur.r), cur.s, function (n) { P.maint = n / cur.r; rendre(); }));
-        corps.push(champJum("Garantie", fmt(q.gar), "mois", function (n) { P.gar = Math.round(n); rendre(); }));
-        corps.push(ligneJum("Coût d'acquisition (frais d'importation compris)", fmtMoney(r.achatTotal)));
-        if (S.finActif) corps.push(ligneJum("Mensualité du crédit", fmtMoney(r.mensualite)));
+        corps.push(champJum("Loyer mensuel de l'IRM (SAV inclus)", fmt(q.loyer * cur.r), cur.s, function (n) { P.loyer = n / cur.r; rendre(); }));
+        corps.push(champJum("Manipulateurs en poste", nf1.format(q.nMerm), "ETP", function (n) { P.nMerm = n; rendre(); }));
+        corps.push(ligneJum("Loyer annuel de l'IRM", fmtMoney(r.loyerIrm)));
+        if (!q.connu) { var pc = document.createElement("p"); pc.className = "af-aide"; pc.textContent = "Pas de loyer de référence connu pour cette machine : valeur de repli du simulateur du site, à ajuster."; corps.push(pc); }
       } else if (pop.id === "afNegPop") {
         corps.push(champJum("Durée d'acquisition (en % de celle de l'O-scan)", fmt(Math.round(q.fAcq * 100)), "%", function (n) { P.fAcq = n / 100; rendre(); }));
         corps.push(champJum("Changement de patient", nf1.format(q.tChg), "min", function (n) { P.tChg = n; rendre(); }));
@@ -1404,15 +1409,14 @@
         corps.push(ligneJum("Temps moyen par examen", nf1.format(tm), "min"));
         corps.push(ligneJum("Patients par heure possibles", nf1.format(tm > 0 ? 60 / tm : 0)));
       } else if (pop.id === "afFinPop") {
-        var pf = document.createElement("p"); pf.className = "af-aide"; pf.textContent = "Taux et durée du crédit : mêmes réglages que l'O-scan."; corps.push(pf);
-        if (S.finActif) { corps.push(ligneJum("Mensualité du crédit", fmtMoney(r.mensualite))); corps.push(ligneJum("Coût du financement (intérêts)", fmtMoney(r.interets))); }
-        corps.push(ligneJum("Maintenance annuelle", fmtMoney(q.maint)));
+        var pf = document.createElement("p"); pf.className = "af-aide"; pf.textContent = "Pas de crédit ni de maintenance à part : le loyer mensuel de l'IRM comprend le service après-vente."; corps.push(pf);
+        corps.push(ligneJum("Loyer annuel de l'IRM", fmtMoney(r.loyerIrm)));
       } else {
         var pm = document.createElement("p"); pm.className = "af-aide"; pm.textContent = "Mêmes réglages que l'O-scan (même activité)."; corps.push(pm);
         if (pop.id === "afRadPop") corps.push(ligneJum("Coût annuel du radiologue", fmtMoney(r.radio)));
         else if (pop.id === "afLoyerPop") corps.push(ligneJum("Loyer annuel", fmtMoney(r.loyer)));
         else if (pop.id === "afCalPop") corps.push(ligneJum("Examens par an", fmt(r.examens)));
-        else if (pop.id === "afImpPop") corps.push(ligneJum("Droits, taxes et transport de cette IRM", fmtMoney(r.achatTotal - q.prix)));
+        else if (pop.id === "afImpPop") { var pi = document.createElement("p"); pi.className = "af-aide"; pi.textContent = "Aucun frais d'importation à part : tout est compris dans le loyer de l'IRM."; corps.push(pi); }
       }
       j.textContent = "";
       corps.forEach(function (n) { j.appendChild(n); });
@@ -1511,10 +1515,10 @@
         var note = el("afCmpNote");
         if (!note) { note = document.createElement("p"); note.id = "afCmpNote"; note.className = "af-aide"; zone.parentNode.insertBefore(note, zone.nextSibling); }
         note.hidden = !comps.length;
-        note.textContent = comps.length ? "Comparaison : estimations Ced4Scale à confirmer (prix d'achat, maintenance à 8 % du prix par an, consommation et durées des examens). Même activité que l'O-scan : patients, heures, prix de l'examen, salaires, loyer et crédit." : "";
+        note.textContent = comps.length ? "Comparaison : estimations reprises du simulateur du site (loyer mensuel de l'IRM, service après-vente compris ; 2 manipulateurs ; durées et consommation de la fiche machine). Même activité que l'O-scan : patients, heures, prix de l'examen, salaires et loyer des locaux." : "";
         if (!comps.length) return;
         function legende(bx, txt) { var c = document.createElement("div"); c.className = "af-demi-an"; c.textContent = txt; bx.insertBefore(c, bx.querySelector("h3").nextSibling); }
-        comps.forEach(function (c) { libelleAchat("IRM"); c.boxes = demisPour(c.r); libelleAchat("O-scan et options"); });
+        comps.forEach(function (c) { libelleLoyerIrm(); c.boxes = demisPour(c.r); libelleAchat("O-scan et options"); });
         if (demiFocus < 0) {
           boxes.forEach(function (bx) { legende(bx, "Esaote O-scan"); });
           comps.forEach(function (c) {
