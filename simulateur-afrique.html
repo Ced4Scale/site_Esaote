@@ -291,16 +291,20 @@
     .af-info-btn { display: inline-flex; align-items: center; justify-content: center; width: 1.7rem; height: 1.7rem; border-radius: 999px; border: 1px solid var(--af-bd); background: #eef1f5; color: var(--af-fg); font-size: .95rem; line-height: 1; cursor: pointer; padding: 0; position: relative; z-index: 6; }
     .af-pop--large { width: min(calc(100vw - 4.5rem), 500px); }
     /* Comparaison : chaque table de mixage tient sur une seule ligne, l'une sous l'autre (les curseurs se serrent, puis l'échelle diminue si besoin) */
+    .af-mixers.af-mixers--cote { display: grid; grid-template-columns: repeat(var(--nt, 2), minmax(0, 1fr)); gap: 1rem; align-items: start; }
+    .af-mixers.af-mixers--cote > #afMixerConc { display: contents; }
+    .af-mixers--cote .af-mixer { margin-top: 1.2rem; min-width: 0; }
     .af-mixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; }
-    .af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 0; zoom: var(--zl, 1); }
+    .af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
     .af-mixer--ligne .af-mixer__faders { gap: .4rem; }
     .af-mixer--ligne .af-mixer__bar { width: 34px; }
     .af-mixer--ligne .af-mixer__bar input[type="range"]::-webkit-slider-thumb { width: 34px; }
     .af-mixer--ligne .af-mixer__bar input[type="range"]::-moz-range-thumb { width: 34px; }
     .af-mixer--ligne .af-mixer__value { width: 100%; max-width: 4.6rem; min-width: 0; box-sizing: border-box; }
     .af-mixer--ligne .af-mixer__unit { max-width: 100%; font-size: .62rem; }
-    .af-mixer--ligne .af-mixer__group-title { font-size: .6rem; }
-    #afMixer.af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 0; zoom: var(--zl, 1); }
+    .af-mixer--ligne .af-mixer__group-title { font-size: .58rem; max-width: 100%; letter-spacing: 0; }
+    .af-mixers--cote .af-mixer__header .af-aide { font-size: .68rem; margin: 0; flex: 1 1 100%; }
+    #afMixer.af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
     @media (max-width: 700px) { #afMixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } #afMixer.af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } .af-mixer.af-mixer--ligne { flex-wrap: nowrap; overflow-x: auto; } .af-mixer--ligne > .af-mixer__header { flex: 0 0 auto; } .af-mixer--ligne > .af-mixer__group { flex: 0 0 78px; zoom: 1; } } /* téléphone : une seule ligne, qui défile côte à côte */
     .af-mixer--mini { margin-top: .6rem; padding: .8rem .4rem .6rem; gap: .5rem; justify-content: space-between; flex-wrap: nowrap; align-items: stretch; }
     .af-mixer--mini .af-mixer__group { justify-content: flex-start; }
@@ -823,6 +827,7 @@
       </div>
 
       <!-- Table de mixage : les groupes de curseurs sont construits par le script (liste GROUPES). -->
+      <div class="af-mixers" id="afMixers">
       <div class="af-mixer" id="afMixer">
         <div class="af-mixer__header">
           <span class="af-mixer__title">Table de mixage</span>
@@ -831,6 +836,7 @@
       </div>
 
       <div id="afMixerConc"></div>
+      </div>
 
       <details class="af-hyp">
         <summary>Hypothèses (salaire, charges)</summary>
@@ -1512,15 +1518,16 @@
       });
     }
     function valCol(m, col) { var q = paramsConc(m); return q[col.k]; }
-    function ajusterLignes(actif) { // en comparaison : chaque table de mixage sur une seule ligne
+    function ajusterLignes(actif, nb) { // en comparaison : chaque table de mixage sur une seule ligne, les tables côte à côte (taille réduite)
+      var mx = el("afMixers"); if (mx) { mx.classList.toggle("af-mixers--cote", actif && window.innerWidth > 700); mx.style.setProperty("--nt", String(nb || 1)); }
       var tables = [el("afMixer")].concat(Array.prototype.slice.call(document.querySelectorAll("#afMixerConc .af-mixer")));
       tables.forEach(function (m) {
         if (!m) return;
         m.classList.toggle("af-mixer--ligne", actif); m.style.setProperty("--zl", "1");
         if (!actif || !m.offsetParent || window.innerWidth <= 700) return;
         var z = 1;
-        function enLigne() { var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }); return !gs.length || (gs.every(function (g) { return Math.abs(g.offsetTop - gs[0].offsetTop) < 4; }) && m.scrollWidth <= m.clientWidth + 2); }
-        while (!enLigne() && z > 0.45) { z = Math.round((z - 0.05) * 100) / 100; m.style.setProperty("--zl", String(z)); }
+        function enLigne() { var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }); return !gs.length || (gs.every(function (g) { return Math.abs(g.offsetTop - gs[0].offsetTop) < 4; }) && m.scrollWidth <= m.clientWidth + 2 && Array.prototype.every.call(m.querySelectorAll(".af-mixer__value"), function (i) { return !i.offsetParent || i.scrollWidth <= i.clientWidth + 1; })); }
+        while (!enLigne() && z > 0.25) { z = Math.round((z - 0.05) * 100) / 100; m.style.setProperty("--zl", String(z)); }
       });
     }
     function majJumeaux() {
@@ -1661,7 +1668,7 @@
       majOs();
       majJumeaux();
       majTablesConc(comps);
-      ajusterLignes(comps.length > 0);
+      ajusterLignes(comps.length > 0, comps.length + 1);
     }
 
     // ------------------------------------------------------------------ table de mixage
