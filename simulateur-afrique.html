@@ -236,6 +236,8 @@
     .af-imp-btn { width: auto; padding: 0 .45rem; }
     .af-imp-flag svg.af-flag { display: block; width: 22px; height: 15px; border: 1px solid rgba(0,0,0,.2); border-radius: 2px; }
     .af-lang-row { display: flex; align-items: center; gap: .6rem; }
+    #afOutilsPop { max-height: 70vh; overflow-y: auto; }
+    #afAnneeSel { width: 100%; font: inherit; padding: .3rem; border: 1px solid var(--af-bd); border-radius: .4rem; background: #fff; }
     html[dir="rtl"] .af-pop, html[dir="rtl"] .af-mixer__header { text-align: right; }
     html[dir="rtl"] .af-legende b, html[dir="rtl"] .af-pm-valeur, html[dir="rtl"] .af-mixer__value, html[dir="rtl"] .af-demi svg text { direction: ltr; unicode-bidi: isolate; }
     #afOptPop { width: min(calc(100vw - 4.5rem), 400px); } /* étroit quand le TCO est replié, large quand il est ouvert (tableau de 10 années) */
@@ -464,10 +466,7 @@
               <div class="af-pop-titre">Curseurs affichés</div>
               <div id="afOutilsCurseurs"></div>
               <div class="af-pop-sous-titre">Année affichée</div>
-              <label class="af-check"><input type="radio" name="afAnnee" value="1" /> Année 1</label>
-              <label class="af-check"><input type="radio" name="afAnnee" value="2" checked /> Année 2</label>
-              <label class="af-check"><input type="radio" name="afAnnee" value="3" /> Année 3</label>
-              <label class="af-check"><input type="radio" name="afAnnee" value="moy" /> Moyenne sur la durée d'étalement (ou du crédit)</label>
+              <select id="afAnneeSel" aria-label="Année affichée"><option value="1">Année 1</option><option value="2">Année 2</option><option value="3">Année 3</option><option value="4">Année 4</option><option value="5">Année 5</option><option value="6">Année 6</option><option value="7">Année 7</option><option value="8">Année 8</option><option value="9">Année 9</option><option value="10">Année 10</option><option value="moy2">Moyenne sur 2 ans</option><option value="moy3">Moyenne sur 3 ans</option><option value="moy4">Moyenne sur 4 ans</option><option value="moy5">Moyenne sur 5 ans</option><option value="moy6">Moyenne sur 6 ans</option><option value="moy7">Moyenne sur 7 ans</option><option value="moy8">Moyenne sur 8 ans</option><option value="moy9">Moyenne sur 9 ans</option><option value="moy10">Moyenne sur 10 ans</option></select>
             </div>
           </span>
 
@@ -745,7 +744,7 @@
     var S = {
       pph: 2, finAns: 0, hS: 5, hSam: 4, hDim: 4, nMerm: 1, prix: 50, achat: 180000, kwh: 0.1, maint: 20000,
       coupS: false, coupSDur: 1, ouvSam: false, coupSam: false, coupSamDur: 1, ouvDim: false, coupDim: false, coupDimDur: 1,
-      plafond: 13, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, lieu: "hop", radMode: "exam", radExam: 0, radAn: 0, radPct: 0, radUser: null, tcoRadio: true, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, margeCible: 0, cadenasMarge: false, margeVerrou: 0, msgPrix: "", retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
+      plafond: 13, moyAns: 5, semaines: 50, salaire: 9000, retenue: 22, chargesPat: 42, loyerM2: 0, surface: 60, pays: "", fret: 0, tcoCumul: true, tauxAuto: true, parPays: true, salUser: null, kwhUser: null, lieu: "hop", radMode: "exam", radExam: 0, radAn: 0, radPct: 0, radUser: null, tcoRadio: true, croiss: 0, patAn: 0, tcoElec: true, tcoPers: true, tcoLoyer: true, droit: 5, tax1: 0, tax2: 0, tax3: 0, nTax1: "", nTax2: "", nTax3: "", tvaImp: 20, tvaCompte: true, cadenasPph: false, volRef: 0, msgCadenas: "", tAcqDiag: 30, tAcqClau: 33, tAcqOrth: 15, tChg: 1.5, reducIA: 20, gainSmart: 1.5, repDiag: 70, repClau: 15, repOrth: 15, taux: 4, dureeMois: 60, garantie: 12, finActif: false, optAI: false, prixAI: 15000, optSmart: false, prixSmart: 5000, optPost: false, prixPost: 6000, optTrav: false, prixTrav: 10000, optFar: false, prixFar: 15000, margeCible: 0, cadenasMarge: false, margeVerrou: 0, msgPrix: "", retireEpaule: false, retireHanche: false, amort: 7, annee: "2"
     };
     // Parts de départ de l'O-scan (13/10/2026). Épaule et hanche : 0 %, bloquées (3e valeur « fige ») — l'O-scan ne les réalise pas ; les autres IRM Esaote auront leurs propres zones.
     var OS_ZONES = [["Genou", 55], ["Épaule", 0, true], ["Hanche", 0, true], ["Main", 15], ["Pied", 15], ["Coude", 15], ["Autres (bras, tibia…)", 0]];
@@ -765,8 +764,9 @@
     function ajusterAnneeCredit() {
       var a = parseInt(S.annee, 10);
       if (S.finActif && a > 0 && moisPayes(a) === 0) S.annee = "1";
-      Array.prototype.forEach.call(document.querySelectorAll("input[name=afAnnee]"), function (r) { r.checked = r.value === S.annee; });
+      majMenuAnnee();
     }
+    function majMenuAnnee() { var m = el("afAnneeSel"); if (m) m.value = S.annee === "moy" ? "moy" + S.moyAns : S.annee; }
     function moisPayes(y) { return Math.max(0, Math.min(12, S.dureeMois - 12 * (y - 1))); }
     function moisMaint(y) { return 12 - Math.max(0, Math.min(12, S.garantie - 12 * (y - 1))); }
     // Taux bancaire des crédits d'équipement par pays (valeur vers 5 ans, en %). rel = 1 : relevé (source et date) ; 0 : estimation à confirmer avec une banque locale. Recherche web du 12/10/2026 (sites d'information et statistiques, pas des sources officielles directes).
@@ -920,11 +920,12 @@
       var achatTotal = prixOscan();
       var anneeNum = S.annee === "moy" ? 0 : parseInt(S.annee, 10);
       var horizon = Math.max(1, S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : S.amort);
+      if (!anneeNum) horizon = S.moyAns; // moyenne des années 1 à N (N choisi dans la boîte à outils)
       var mens = mensualite(achatTotal);
-      var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * S.dureeMois / horizon) : (anneeNum > S.amort ? 0 : achatTotal / Math.max(1, S.amort)); // sans crédit : plus d'achat à étaler après la durée d'étalement
+      var achat = S.finActif ? (anneeNum ? mens * moisPayes(anneeNum) : mens * Math.min(S.dureeMois, 12 * horizon) / horizon) : (anneeNum ? (anneeNum > S.amort ? 0 : achatTotal / Math.max(1, S.amort)) : achatTotal / Math.max(1, S.amort) * Math.min(horizon, S.amort) / horizon); // sans crédit : plus d'achat à étaler après la durée d'étalement
       // crédit actif : les mensualités se séparent en remboursement du capital (« achat ») et coût du financement (intérêts de l'année affichée ; moyenne = total des intérêts ÷ horizon)
       var interetsAn = 0;
-      if (S.finActif) { interetsAn = anneeNum ? interetsCredit(achatTotal, 12 * anneeNum) - interetsCredit(achatTotal, 12 * (anneeNum - 1)) : interetsCredit(achatTotal, S.dureeMois) / horizon; achat = Math.max(0, achat - interetsAn); }
+      if (S.finActif) { interetsAn = anneeNum ? interetsCredit(achatTotal, 12 * anneeNum) - interetsCredit(achatTotal, 12 * (anneeNum - 1)) : interetsCredit(achatTotal, Math.min(S.dureeMois, 12 * horizon)) / horizon; achat = Math.max(0, achat - interetsAn); }
       var loyer = S.loyerM2 * S.surface;
       var maint = anneeNum ? S.maint * moisMaint(anneeNum) / 12 : S.maint * Math.max(0, 12 * horizon - S.garantie) / 12 / horizon;
       var radio = radiologueAn(examens);
@@ -1269,7 +1270,7 @@
       el("afN1Btn").setAttribute("aria-pressed", String(demiN1)); el("afN1Bar").hidden = demiFocus >= 0;
       zone.classList.toggle("af-demis--dual", dual);
       zone.classList.toggle("af-demis--focus", demiFocus >= 0);
-      var an = S.annee === "moy" ? "Moyenne sur " + fmt(Math.max(1, S.finActif ? Math.max(1, Math.ceil(S.dureeMois / 12)) : S.amort)) + " ans" : "Année " + S.annee;
+      var an = S.annee === "moy" ? "Moyenne sur " + fmt(S.moyAns) + " ans" : "Année " + S.annee;
       CAT_DEP[3].label = S.finActif ? "Remboursement de l'O-scan et options (capital)" : "Achat de l'O-scan et options (étalé)";
       el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
       var anN = S.annee === "moy" ? 0 : parseInt(S.annee, 10), rembourse = S.finActif && anN > 0 && moisPayes(anN) === 0; // crédit terminé avant l'année affichée : plus de mensualités dans les dépenses
@@ -1430,6 +1431,18 @@
       { id: "afGHPatro", ou: "afHypMix", titre: "Charges patronales (salaire MERM)", cols: [{ k: "chargesPat", color: "#d1477a", min: 0, max: 60, step: 0.25, kind: "pct", unit: "% du brut" }] },
       { id: "afGITva", ou: "afImpMix", titre: "TVA", cols: [{ k: "tvaImp", color: "#eb6834", min: 0, max: 30, step: 0.25, kind: "pct", unit: "%" }] }
     );
+    (function () { // tous les bâtons du simulateur sont disponibles dans la table de mixage (cachés au départ) : copies des bâtons des icônes qui n'y figurent pas déjà
+      var vus = {}, copies = [];
+      GROUPES.forEach(function (g) { if (!g.ou) g.cols.forEach(function (c) { vus[c.k] = 1; }); });
+      GROUPES.forEach(function (g) {
+        if (!g.ou || g.cols.every(function (c) { return vus[c.k]; })) return;
+        g.cols.forEach(function (c) { vus[c.k] = 1; });
+        var t = g.titre || (g.titreFn ? g.titreFn() : g.id), n = Object.assign({}, g, { id: g.id + "M", ou: null, extra: true, choix: t });
+        n.cols = g.cols.map(function (c) { return Object.assign({}, c); });
+        copies.push(n);
+      });
+      copies.forEach(function (n) { GROUPES.push(n); });
+    })();
     var visibles = {};
     try { visibles = JSON.parse(localStorage.getItem(CLE_GROUPES) || "{}"); } catch (e) {}
     function val(x) { return typeof x === "function" ? x() : x; }
@@ -1547,7 +1560,7 @@
       })();
       S.finAns = S.finActif ? Math.round(S.dureeMois / 6) / 2 : 0; el("afFinActif").checked = S.finActif;
       GROUPES.forEach(function (g) {
-        var gd = el(g.id); gd.hidden = !g.ou && visibles[g.id] === false;
+        var gd = el(g.id); gd.hidden = g.extra ? visibles[g.id] !== true : (!g.ou && visibles[g.id] === false);
         if (g.unitFn) gd.lastElementChild.textContent = g.unitFn();
         if (g.titreFn) gd.querySelector(".af-mixer__group-title").textContent = g.titreFn();
         g.cols.forEach(function (col) {
@@ -1770,7 +1783,7 @@
     GROUPES.filter(function (g) { return !g.ou; }).forEach(function (g) {
       var l = document.createElement("label"); l.className = "af-check";
       l.innerHTML = '<input type="checkbox" /> <span></span>';
-      var cb = l.querySelector("input"); cb.checked = visibles[g.id] !== false; l.querySelector("span").textContent = g.choix;
+      var cb = l.querySelector("input"); cb.checked = g.extra ? visibles[g.id] === true : visibles[g.id] !== false; l.querySelector("span").textContent = g.choix;
       cb.addEventListener("change", function () {
         visibles[g.id] = cb.checked;
         try { localStorage.setItem(CLE_GROUPES, JSON.stringify(visibles)); } catch (e) {}
@@ -1778,8 +1791,11 @@
       });
       oc.appendChild(l);
     });
-    Array.prototype.forEach.call(document.querySelectorAll("input[name=afAnnee]"), function (r) {
-      r.addEventListener("change", function () { if (r.checked) { S.annee = r.value; rendre(); } });
+    el("afAnneeSel").value = S.annee === "moy" ? "moy" + S.moyAns : S.annee;
+    el("afAnneeSel").addEventListener("change", function () {
+      var v = this.value;
+      if (v.indexOf("moy") === 0) { S.annee = "moy"; S.moyAns = parseInt(v.slice(3), 10); } else S.annee = v;
+      rendre();
     });
 
     // ------------------------------------------------------------------ agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié + semaines d'ouverture par an)
