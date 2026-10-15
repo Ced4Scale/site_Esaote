@@ -77,12 +77,14 @@
     .af-bloc:fullscreen .af-pop { position: fixed; top: 4.5rem; margin: 0; width: clamp(300px, calc(var(--gut) - 1.6rem), 500px); max-height: calc(100vh - 6rem); overflow-y: auto; z-index: 20; }
     .af-bloc:fullscreen .af-pop[data-cote="g"] { left: .8rem; right: auto; }
     .af-bloc:fullscreen .af-pop[data-cote="d"] { right: .8rem; left: auto; }
-    .af-fs-btn { position: absolute; top: .85rem; right: .85rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
-    .af-prix-btn { position: absolute; top: .85rem; right: 3.3rem; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
+    .af-barre-btn { position: absolute; top: .85rem; right: .85rem; display: flex; align-items: center; gap: .45rem; direction: ltr; z-index: 3; }
+    html[dir="rtl"] .af-barre-btn .af-pop { direction: rtl; }
+    .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
+    .af-prix-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; cursor: pointer; padding: 0; overflow: hidden; z-index: 3; }
     .af-prix-btn:hover, .af-prix-btn[aria-expanded="true"] { border-color: var(--red); }
     .af-prix-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
     #afPrixPop { --af-bg: #fff6e0; --af-bg-hover: #ffe9ad; --af-bd: #f0d998; --af-fg: #8a6d1e; --af-pop-bg: #fffaf0; --af-pop-fg: #6b5b2a; z-index: 30; top: 3.4rem; right: .85rem; left: auto; width: min(calc(100vw - 4.5rem), 340px); }
-    .af-bloc > .af-titre { padding-right: 5.8rem; } /* le titre ne passe pas sous les deux boutons ronds (O-scan et plein écran), en LTR comme en RTL */
+    .af-bloc > .af-titre { padding-right: 11rem; } /* le titre ne passe pas sous les deux boutons ronds (O-scan et plein écran), en LTR comme en RTL */
     .af-fs-btn:hover { border-color: var(--red); color: var(--red); }
     /* Panneau des options Esaote : bouton plein écran (le TCO sur 10 ans y est large) */
     .af-pop-plein { position: absolute; top: .3rem; right: .4rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; border: 1px solid var(--af-bd); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 2; }
@@ -391,11 +393,43 @@
     </div>
 
     <div class="af-bloc" id="afBloc">
+      <div class="af-barre-btn">
+      <button type="button" class="af-prix-btn" id="afPrixBtn" aria-expanded="false" aria-controls="afPrixPop" aria-label="Prix de vente de l'O-scan : choisir le résultat souhaité" title="Prix de vente de l'O-scan selon le résultat souhaité"><img src="assets/products/o-scan-hero.webp" alt="" /></button>
+        <!-- Langue : le drapeau de la langue choisie -->
+        <span class="af-info-wrap">
+          <button type="button" class="af-info-btn af-lang-btn" id="afLangBtn" aria-expanded="false" aria-controls="afLangPop" aria-label="Langue" data-tip="Langue : choisir la langue d'affichage du simulateur."><span id="afLangFlag"></span></button>
+          <div class="af-pop" id="afLangPop" hidden>
+            <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+            <div class="af-pop-titre">Langue</div>
+            <div class="af-dev-liste" id="afLangListe"></div>
+            <p class="af-aide">Traductions à faire relire par un locuteur avant tout usage client.</p>
+          </div>
+        </span>
+
+        <!-- $ : choix de la devise -->
+        <span class="af-info-wrap">
+          <button type="button" class="af-info-btn af-dev-btn" id="afDevBtn" aria-expanded="false" aria-controls="afDevPop" aria-label="Choisir la devise" data-tip="Devise : choisir la monnaie d'affichage et de saisie (les calculs restent faits en euros).">
+            <span class="af-dev-sym" id="afDevSym">€</span>
+          </button>
+          <div class="af-pop" id="afDevPop" hidden>
+            <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
+            <div class="af-pop-titre">Devise d'affichage</div>
+            <input type="search" class="af-filtre" id="afDevFiltre" autocomplete="off" placeholder="Rechercher une devise (premières lettres)" aria-label="Rechercher une devise (premières lettres)" />
+            <div class="af-dev-liste" id="afDevListe"></div>
+            <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
+              <button type="button" class="btn btn--sm" id="afTauxMaj">Mettre à jour les taux</button>
+              <span id="afTauxStatut" style="font-size:.78rem"></span>
+            </div>
+            <p class="af-aide">Les calculs restent faits en euros ; la devise ne change que l'affichage et la saisie. Le bouton récupère les taux du jour sur Internet (service gratuit <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> : seule la demande de taux est envoyée, aucune donnée de simulation). Les francs CFA, le Cap-Vert, les Comores et Sao Tomé ont une parité fixe avec l'euro.</p>
+          </div>
+        </span>
+
+        <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
       <button type="button" class="af-fs-btn" id="afFsBtn" aria-label="Plein écran" title="Plein écran">
         <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </button>
-      <button type="button" class="af-prix-btn" id="afPrixBtn" aria-expanded="false" aria-controls="afPrixPop" aria-label="Prix de vente de l'O-scan : choisir le résultat souhaité" title="Prix de vente de l'O-scan selon le résultat souhaité"><img src="assets/products/o-scan-hero.webp" alt="" /></button>
+      </div>
       <div class="af-pop" id="afPrixPop" hidden>
         <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
         <div class="af-pop-titre">Prix de vente de l'O-scan selon le résultat souhaité</div>
@@ -415,36 +449,6 @@
         <div class="af-mixer__header">
           <span class="af-mixer__title">Table de mixage</span>
 
-          <!-- Langue : le drapeau de la langue choisie -->
-          <span class="af-info-wrap">
-            <button type="button" class="af-info-btn af-lang-btn" id="afLangBtn" aria-expanded="false" aria-controls="afLangPop" aria-label="Langue" data-tip="Langue : choisir la langue d'affichage du simulateur."><span id="afLangFlag"></span></button>
-            <div class="af-pop" id="afLangPop" hidden>
-              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
-              <div class="af-pop-titre">Langue</div>
-              <div class="af-dev-liste" id="afLangListe"></div>
-              <p class="af-aide">Traductions à faire relire par un locuteur avant tout usage client.</p>
-            </div>
-          </span>
-
-          <!-- $ : choix de la devise -->
-          <span class="af-info-wrap">
-            <button type="button" class="af-info-btn af-dev-btn" id="afDevBtn" aria-expanded="false" aria-controls="afDevPop" aria-label="Choisir la devise" data-tip="Devise : choisir la monnaie d'affichage et de saisie (les calculs restent faits en euros).">
-              <span class="af-dev-sym" id="afDevSym">€</span>
-            </button>
-            <div class="af-pop" id="afDevPop" hidden>
-              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
-              <div class="af-pop-titre">Devise d'affichage</div>
-              <input type="search" class="af-filtre" id="afDevFiltre" autocomplete="off" placeholder="Rechercher une devise (premières lettres)" aria-label="Rechercher une devise (premières lettres)" />
-              <div class="af-dev-liste" id="afDevListe"></div>
-              <div style="display:flex;align-items:center;gap:.5rem;margin-top:.5rem;flex-wrap:wrap">
-                <button type="button" class="btn btn--sm" id="afTauxMaj">Mettre à jour les taux</button>
-                <span id="afTauxStatut" style="font-size:.78rem"></span>
-              </div>
-              <p class="af-aide">Les calculs restent faits en euros ; la devise ne change que l'affichage et la saisie. Le bouton récupère les taux du jour sur Internet (service gratuit <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a> : seule la demande de taux est envoyée, aucune donnée de simulation). Les francs CFA, le Cap-Vert, les Comores et Sao Tomé ont une parité fixe avec l'euro.</p>
-            </div>
-          </span>
-
-          <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afCalBtn" aria-expanded="false" aria-controls="afCalPop" aria-label="Horaires d'ouverture : modifier les jours et les heures" data-tip="Horaires : jours et heures d'ouverture du centre, coupures, plafond d'heures par jour et semaines d'ouverture par an.">
               <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
