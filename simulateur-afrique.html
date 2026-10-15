@@ -1653,6 +1653,9 @@
             var tot = pleinCadre ? 100 : 50, w = tot / (n + 1);
             pop.style.setProperty("width", w + "vw", "important"); pop.style.setProperty("right", (w * n) + "vw", "important");
             j.style.setProperty("width", w + "vw", "important"); j.style.setProperty("right", (w * (n - 1 - k)) + "vw", "important");
+          } else if (!plein && getComputedStyle(pop).position === "fixed") { // boîte à outils dans la marge : le cadre jumeau s'ouvre juste à côté de celui de l'O-scan, en s'éloignant de la boîte
+            var decal = (pop.offsetWidth + 10) * (k + 1) + "px", vers = boite.getAttribute("data-cote") === "d" ? "right" : "left", base = parseFloat(getComputedStyle(pop)[vers]) || 0;
+            j.style.setProperty(vers, "calc(" + base + "px + " + decal + ")");
           } else if (!plein) { // fenêtre flottante : à droite du cadre de l'O-scan
             var pr = pop.getBoundingClientRect(), aGauche = pr.right + n * 350 > document.documentElement.clientWidth - 6 && pr.left - n * 350 > 0; var aDroite = pr.right + n * 350 <= document.documentElement.clientWidth - 6;
             if (aDroite || aGauche) j.style.left = (aGauche && !aDroite ? -(k + 1) * 350 : pop.offsetWidth + 10 + k * 350) + "px";
@@ -2607,7 +2610,7 @@
       });
       zone.addEventListener("click", function (e) { // en plein écran : le premier clic sur un cadre le place sur la moitié de l'écran (sans rien modifier) ; il remplace le cadre précédent
         if (!boite.classList.contains("af-boite-plein")) return;
-        var pop = e.target.closest(".af-pop"); if (!pop || !zone.contains(pop) || pop.classList.contains("af-dock")) return;
+        var pop = e.target.closest(".af-pop"); if (pop && pop.dataset.pour) pop = el(pop.dataset.pour); /* un clic sur un cadre jumeau ouvre la paire */ if (!pop || !zone.contains(pop) || pop.classList.contains("af-dock")) return;
         e.stopPropagation(); e.preventDefault();
         popsBoite().forEach(function (q) { q.classList.remove("af-dock", "af-dock-plein"); var z = q.querySelector(".af-zone-fs"); if (z) z.classList.remove("is-fullscreen"); });
         pop.classList.add("af-dock"); boite.classList.add("af-boite-zone"); aide.hidden = true; pop.scrollTop = 0;
