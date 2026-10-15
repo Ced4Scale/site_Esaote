@@ -80,6 +80,26 @@
     .af-barre-btn { position: absolute; top: .85rem; right: .85rem; display: flex; align-items: center; gap: .45rem; direction: ltr; z-index: 3; }
     html[dir="rtl"] .af-barre-btn .af-pop { direction: rtl; }
     .af-bloc > .af-titre { padding-right: 11rem; }
+    /* Boîte à outils en plein écran : toutes les icônes (sauf l'ampoule) avec leur nom ; un clic ouvre la zone sur la moitié de l'écran, un autre clic change de zone */
+    .af-outils-boite.af-boite-plein { position: fixed; inset: 0; z-index: 10000; background: #fff; margin: 0; border: 0; border-radius: 0; padding: 1.2rem 1.5rem; overflow: auto; align-content: flex-start; box-sizing: border-box; }
+    .af-outils-boite.af-boite-plein { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .5rem; }
+    .af-boite-plein > * { flex: 0 0 auto; }
+    .af-boite-plein > .af-fs-btn { align-self: flex-start; }
+    .af-boite-plein .af-outils-icones { flex: 0 0 auto; }
+    .af-outils-boite.af-boite-plein.af-boite-zone { right: auto; width: 50vw; border-right: 1px solid var(--line-2, #d6d6d0); }
+    .af-boite-plein .af-outils-icones { flex: 1 1 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.2rem; margin-top: .8rem; }
+    .af-boite-plein .af-info-wrap { position: static; display: flex; flex-direction: column; align-items: center; gap: .45rem; text-align: center; padding: .7rem .4rem; border: 1px solid transparent; border-radius: .7rem; }
+    .af-boite-plein .af-info-wrap::after { content: attr(data-nom); font-size: .78rem; font-weight: 700; line-height: 1.25; color: var(--ink); }
+    .af-boite-plein .af-info-wrap.is-actif { border-color: var(--red); background: #fff6f6; }
+    .af-boite-plein .af-info-wrap.af-sans-plein { display: none; }
+    .af-boite-plein .af-info-btn { zoom: 1.8; }
+    .af-boite-plein .af-info-btn::after { display: none !important; }
+    .af-zone-fs { display: none; }
+    .af-pop.af-dock { position: fixed !important; top: 0; right: 0; bottom: 0; left: auto !important; width: 50vw !important; max-width: none !important; height: 100vh; max-height: none !important; margin: 0; translate: none !important; border-radius: 0; overflow-y: auto; z-index: 10001; box-sizing: border-box; padding-top: 2.8rem; }
+    .af-pop.af-dock.af-dock-plein { width: 100vw !important; }
+    .af-pop.af-dock .af-poignee { display: none; }
+    .af-pop.af-dock .af-zone-fs { display: inline-flex; position: absolute; top: .6rem; right: .8rem; }
+    .af-pop.af-dock #afOptFs { display: none; }
     .af-outils-boite { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; padding: .5rem .7rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .7rem; background: #fafaf7; }
     .af-outils-icones { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; }
         .af-fs-btn { position: relative; width: 2rem; height: 2rem; border-radius: 50%; border: 1px solid var(--line-2, #d6d6d0); background: #fff; color: var(--ink); cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; z-index: 3; }
@@ -452,6 +472,11 @@
       <!-- Boîte à outils : toutes les icônes (réglages, langue, devise, plein écran) -->
       <div class="af-outils-boite" id="afBoiteOutils">
         <span class="af-mixer__title">Boîte à outils</span>
+        <button type="button" class="af-fs-btn" id="afBoiteFs" aria-label="Plein écran" title="Plein écran" aria-pressed="false">
+          <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <p class="af-aide" id="afBoiteAide" hidden>Cliquez sur une icône pour compléter cette zone ; cliquez sur une autre icône pour changer de zone.</p>
         <div class="af-outils-icones">
         <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
 
@@ -2049,6 +2074,52 @@
       el("afLangListe").appendChild(b);
     });
     brancher("afLangBtn", "afLangPop");
+
+    (function () { // Boîte à outils en plein écran : grille de toutes les icônes ; zone choisie = moitié d'écran à droite (plein écran possible pour chaque zone)
+      var boite = el("afBoiteOutils"), zone = boite.querySelector(".af-outils-icones"), bFs = el("afBoiteFs"), aide = el("afBoiteAide"), vraiPlein = false;
+      var wrapAmpoule = el("afInfoBtn").parentNode;
+      function popsBoite() { return Array.prototype.slice.call(boite.querySelectorAll(".af-pop")); }
+      function fermerZone() {
+        popsBoite().forEach(function (p) { p.hidden = true; p.classList.remove("af-dock", "af-dock-plein"); });
+        Array.prototype.forEach.call(zone.querySelectorAll("[aria-controls]"), function (b) { b.setAttribute("aria-expanded", "false"); b.parentNode.classList.remove("is-actif"); });
+        boite.classList.remove("af-boite-zone"); aide.hidden = !boite.classList.contains("af-boite-plein");
+      }
+      function entrer() {
+        fermerZone();
+        Array.prototype.forEach.call(zone.querySelectorAll(".af-info-wrap"), function (w) { var b = w.querySelector("[aria-controls]"); w.dataset.nom = b ? (b.getAttribute("aria-label") || b.title || "") : ""; });
+        wrapAmpoule.classList.add("af-sans-plein");
+        boite.classList.add("af-boite-plein"); bFs.classList.add("is-fullscreen"); bFs.setAttribute("aria-pressed", "true"); aide.hidden = false;
+        var rac = document.documentElement; // la page entière passe en plein écran (la boîte n'est pas l'élément plein écran : le navigateur lui imposerait 100 % de largeur)
+        if (rac.requestFullscreen && !document.fullscreenElement) rac.requestFullscreen().then(function () { vraiPlein = true; }).catch(function () {});
+        requestAnimationFrame(alignerMixers);
+      }
+      function sortir() {
+        fermerZone();
+        boite.classList.remove("af-boite-plein"); wrapAmpoule.classList.remove("af-sans-plein"); bFs.classList.remove("is-fullscreen"); bFs.setAttribute("aria-pressed", "false"); aide.hidden = true;
+        if (vraiPlein && document.fullscreenElement) document.exitFullscreen();
+        vraiPlein = false; requestAnimationFrame(alignerMixers);
+      }
+      bFs.addEventListener("click", function () { if (boite.classList.contains("af-boite-plein")) sortir(); else entrer(); });
+      document.addEventListener("fullscreenchange", function () { if (vraiPlein && !document.fullscreenElement && boite.classList.contains("af-boite-plein")) sortir(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && boite.classList.contains("af-boite-plein")) sortir(); });
+      popsBoite().forEach(function (p) { // bouton « plein écran » de chaque zone
+        var b = document.createElement("button"); b.type = "button"; b.className = "af-fs-btn af-zone-fs"; b.setAttribute("aria-label", "Plein écran"); b.title = "Plein écran";
+        b.innerHTML = bFs.innerHTML;
+        b.addEventListener("click", function (e) { e.stopPropagation(); var on = p.classList.toggle("af-dock-plein"); b.classList.toggle("is-fullscreen", on); requestAnimationFrame(alignerMixers); });
+        p.insertBefore(b, p.firstChild);
+      });
+      zone.addEventListener("click", function (e) { // en plein écran : un clic sur une icône ouvre sa zone dans la moitié de l'écran (et ferme la précédente)
+        if (!boite.classList.contains("af-boite-plein")) return;
+        var b = e.target.closest("[aria-controls]"); if (!b || !zone.contains(b)) return;
+        e.stopPropagation(); e.preventDefault();
+        var pop = el(b.getAttribute("aria-controls")), dejaOuverte = pop.classList.contains("af-dock");
+        fermerZone();
+        if (dejaOuverte) return;
+        pop.hidden = false; pop.classList.add("af-dock"); b.setAttribute("aria-expanded", "true"); b.parentNode.classList.add("is-actif");
+        boite.classList.add("af-boite-zone"); aide.hidden = true;
+        pop.scrollTop = 0; requestAnimationFrame(alignerMixers);
+      }, true);
+    })();
 
     // Pays acheteur de départ : le Maroc (demande du 11/10/2026)
     selP.value = "ma"; selP.dispatchEvent(new Event("change"));
