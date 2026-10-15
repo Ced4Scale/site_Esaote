@@ -4566,6 +4566,7 @@ window.AF_I18N = {
 ["Aucun frais d'importation à part : tout est compris dans le loyer de l'IRM.", "No separate import costs: everything is included in the MRI rent.", "Nessuna spesa di importazione a parte: tutto è incluso nel canone della RM.", "Sem despesas de importação à parte: tudo está incluído na renda da RM.", "لا مصاريف استيراد منفصلة: كل شيء مشمول في إيجار جهاز الرنين.", "Hakuna gharama za uagizaji tofauti: kila kitu kimejumuishwa kwenye kodi ya MRI.", "Geen aparte invoerkoste nie: alles is by die MRI-huur ingesluit."],
 ["Un curseur que vous ne touchez pas suit celui de l'O-scan.", "A slider you do not touch follows the O-scan's.", "Un cursore che non toccate segue quello dell'O-scan.", "Um cursor em que não toca acompanha o do O-scan.", "المنزلق الذي لا تلمسه يتبع منزلق O-scan.", "Kitelezi ambacho hukigusi hufuata cha O-scan.", "'n Skuifknoppie wat u nie aanraak nie, volg die O-scan s'n."],
 ["Table de mixage", "Mixing table", "Tavolo di mixaggio", "Mesa de mistura", "طاولة الخلط", "Meza ya kuchanganya", "Mengtafel"],
-["Légende", "Legend", "Legenda", "Legenda", "مفتاح الرموز", "Maelezo ya alama", "Legende"]
+["Légende", "Legend", "Legenda", "Legenda", "مفتاح الرموز", "Maelezo ya alama", "Legende"],
+["Point mort", "Break-even", "Punto di pareggio", "Ponto de equilíbrio", "نقطة التعادل", "Kiwango cha kuvunja", "Gelykbreekpunt"]
 ]
 };

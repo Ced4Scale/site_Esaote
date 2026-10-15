@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016n"></script>
+  <script src="assets/afrique-i18n.js?v=20261016o"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -84,6 +84,7 @@
     .af-leg-choix { display: inline-flex; align-items: center; gap: .5rem; font-size: .8rem; font-weight: 700; }
     .af-leg-choix .af-ouinon button { padding: .2rem .7rem; font-size: .75rem; }
     .af-demis.af-sans-legende .af-legende { display: none; }
+    .af-pm[hidden] { display: none; }
     /* Boîte à outils en plein écran : toutes les icônes (sauf l'ampoule) avec leur nom ; un clic ouvre la zone sur la moitié de l'écran, un autre clic change de zone */
     .af-outils-boite.af-boite-plein { position: fixed; inset: 0; z-index: 10000; background: #fff; margin: 0; border: 0; border-radius: 0; padding: 1.2rem 1.5rem; overflow: auto; align-content: flex-start; box-sizing: border-box; }
     .af-outils-boite.af-boite-plein { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .5rem; }
@@ -601,6 +602,7 @@
       <div class="af-titre-ligne">
         <h2 class="af-titre">Recettes, dépenses et résultat</h2>
         <span class="af-leg-choix"><span>Légende</span><span class="af-ouinon" role="group" aria-label="Légende" id="afLegChoix"><button type="button" data-v="non" aria-pressed="false">Non</button><button type="button" data-v="oui" aria-pressed="true">Oui</button></span></span>
+        <span class="af-leg-choix"><span>Point mort</span><span class="af-ouinon" role="group" aria-label="Point mort" id="afPmChoix"><button type="button" data-v="non" aria-pressed="false">Non</button><button type="button" data-v="oui" aria-pressed="true">Oui</button></span></span>
       </div>
       <p class="af-sous-titre" id="afSousTitre"></p>
       <div class="af-demi-annees" id="afN1Bar" style="justify-content:flex-start"><button type="button" id="afN1Btn" aria-pressed="false" aria-label="N+1"><span>N+1</span><small>après financement</small></button></div>
@@ -2500,6 +2502,15 @@
             Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
             el("afDemis").classList.toggle("af-sans-legende", b.dataset.v === "non");
             alignerMixers();
+          });
+        });
+      })();
+      (function () { // bouton « Point mort » : Non = les deux lignes de point mort disparaissent
+        var g = el("afPmChoix");
+        Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) {
+          b.addEventListener("click", function () {
+            Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+            el("afPm").hidden = b.dataset.v === "non";
           });
         });
       })();
