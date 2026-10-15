@@ -1213,7 +1213,7 @@
         var r0 = document.createElement("span"); r0.className = "af-t-r"; var a0 = document.createElement("span"); a0.textContent = complet; var n0 = document.createElement("span"); n0.textContent = " " + nom; r0.appendChild(a0); r0.appendChild(n0);
         noeud.appendChild(c0); noeud.appendChild(r0); return;
       }
-      var court = TITRES_COURTS[complet] || (complet.split(/[\s']+/).filter(function (m) { return m.length > 2; })[0] || complet);
+      var court = TITRES_COURTS[complet] || (complet.length <= 12 ? complet : (complet.split(/[\s']+/).filter(function (m) { return m.length > 3; })[0] || complet));
       noeud.textContent = ""; noeud.tabIndex = 0;
       var c = document.createElement("span"); c.className = "af-t-c"; c.textContent = court;
       var r = document.createElement("span"); r.className = "af-t-r"; r.textContent = complet;
@@ -1601,6 +1601,7 @@
             col.noeuds = col.noeuds || {}; col.noeuds[m.key] = { gd: gd, rg: rg, bx: bx, fill: gd.querySelector(".af-mixer__bar-fill"), bar: gd.querySelector(".af-mixer__bar"), unite: gd.querySelector(".af-mixer__unit") };
             bloc.appendChild(gd);
           });
+          creerMiroirs(bloc, m);
         }
         zone.appendChild(bloc);
         COLS_CONC.forEach(function (col) {
@@ -1611,6 +1612,49 @@
           var pct = ((v - mn) / (mx - mn) * 100).toFixed(2); n.fill.style.setProperty("--pct", pct); n.bar.style.setProperty("--pct", pct);
           if (n.bx !== document.activeElement) n.bx.value = affiche(col, v);
           n.unite.textContent = uniteCol(col);
+        });
+        majMiroirs(m);
+      });
+    }
+    var MIROIRS = {}; // IRM concurrente → groupes « curseurs affichés » recopiés de la table de gauche (mêmes choix dans les deux tables)
+    var COLS_PROPRES = { garAns: true, garantie: true, dureeMois: true }; // réglages propres à chaque IRM (garantie, durée du crédit) ; tous les autres sont partagés avec l'O-scan
+    function creerMiroirs(bloc, m) {
+      var liste = MIROIRS[m.key] = [];
+      GROUPES.filter(function (g) { return g.extra; }).forEach(function (g) {
+        var gd = document.createElement("div"); gd.className = "af-mixer__group";
+        gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"></div>' + ((g.unitG || g.unitFn) ? '<div class="af-mixer__unit"></div>' : "");
+        poserTitre(gd.querySelector(".af-mixer__group-title"), g.titre || (g.titreFn ? g.titreFn() : ""));
+        var fd = gd.querySelector(".af-mixer__faders"), cs = [];
+        g.cols.forEach(function (col) {
+          var c = document.createElement("div"); c.className = "af-mixer__fader-col"; c.style.setProperty("--fader-color", col.color);
+          c.innerHTML = '<div class="af-mixer__bar"><div class="af-mixer__bar-fill"></div>' + (col.slot ? '<span class="af-mixer__slot"></span>' : "") + '<input type="range" /></div><input type="text" inputmode="decimal" class="af-mixer__value" /><div class="af-mixer__pm"><button type="button" class="af-moins">−</button><button type="button" class="af-plus">+</button></div><div class="af-mixer__unit"></div>';
+          if (col.slot) c.querySelector(".af-mixer__slot").textContent = col.slot;
+          var lab = (g.titre || (g.titreFn ? g.titreFn() : "")) + (col.slot ? " — " + col.slot : "") + " — " + m.nomCourt;
+          var rg = c.querySelector("input[type=range]"), bx = c.querySelector(".af-mixer__value");
+          rg.setAttribute("aria-label", lab); bx.setAttribute("aria-label", lab + ", valeur"); c.querySelector(".af-moins").setAttribute("aria-label", "Diminuer : " + lab); c.querySelector(".af-plus").setAttribute("aria-label", "Augmenter : " + lab);
+          function propre(v) { var P = PARAMS_CONC[m.key] || (PARAMS_CONC[m.key] = {}); if (col.k === "garAns") P.gar = Math.round(v * 12); else if (col.k === "garantie") P.gar = Math.round(v); else P.finAns = Math.round(v / 6) / 2; rendre(); }
+          function lire0() { var q = paramsConc(m); return col.k === "garAns" ? q.gar / 12 : col.k === "garantie" ? q.gar : q.finAns * 12; }
+          var pr = !!COLS_PROPRES[col.k];
+          rg.addEventListener("input", function () { if (pr) propre(parseFloat(rg.value)); else { col.range.value = rg.value; col.range.dispatchEvent(new Event("input")); } });
+          bx.addEventListener("change", function () { if (pr) { var n = lire(bx.value); if (n == null) { rendre(); return; } propre(n); } else { col.box.value = bx.value; col.box.dispatchEvent(new Event("change")); } });
+          c.querySelector(".af-moins").addEventListener("click", function () { if (pr) propre(lire0() - col.step); else col.node.querySelector(".af-moins").click(); });
+          c.querySelector(".af-plus").addEventListener("click", function () { if (pr) propre(lire0() + col.step); else col.node.querySelector(".af-plus").click(); });
+          fd.appendChild(c); cs.push({ col: col, node: c, rg: rg, bx: bx, fill: c.querySelector(".af-mixer__bar-fill"), bar: c.querySelector(".af-mixer__bar"), unite: c.querySelector(".af-mixer__unit"), propre: pr, lire0: lire0 });
+        });
+        bloc.appendChild(gd); liste.push({ g: g, gd: gd, cs: cs });
+      });
+    }
+    function majMiroirs(m) {
+      (MIROIRS[m.key] || []).forEach(function (o) {
+        var gl = el(o.g.id); o.gd.hidden = !gl || gl.hidden;
+        var ug = gl && gl.querySelector(":scope > .af-mixer__unit"), uo = o.gd.querySelector(":scope > .af-mixer__unit"); if (ug && uo) uo.textContent = ug.textContent;
+        o.cs.forEach(function (x) {
+          var l = x.col; x.node.hidden = !l.node || l.node.hidden;
+          x.rg.min = l.range.min; x.rg.max = l.range.max; x.rg.step = l.range.step;
+          var v = x.propre ? x.lire0() : parseFloat(l.range.value); x.rg.value = v;
+          var pct = ((v - parseFloat(x.rg.min)) / ((parseFloat(x.rg.max) - parseFloat(x.rg.min)) || 1) * 100).toFixed(2); x.fill.style.setProperty("--pct", pct); x.bar.style.setProperty("--pct", pct);
+          if (x.bx !== document.activeElement) x.bx.value = x.propre ? (l.kind === "int" ? fmt(v) : nf1.format(v)) : l.box.value;
+          x.unite.textContent = l.uniteNode ? l.uniteNode.textContent : "";
         });
       });
     }
