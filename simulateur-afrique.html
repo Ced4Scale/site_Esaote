@@ -323,6 +323,7 @@
     .af-mixers--cote .af-mixer { margin-top: 1.2rem; min-width: 0; }
     .af-mixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; }
     .af-mixer--ligne > .af-mixer__group { flex: 0 0 4.6rem; min-width: 0; zoom: var(--zl, 1); }
+    .af-mixer__saut { flex: 0 0 100%; height: 0; width: 100%; }
     .af-mixer--ligne .af-mixer__faders { gap: .4rem; }
     /* un groupe à deux bâtons visibles (crédit : durée + taux) occupe la place de deux : l'écart entre deux bâtons reste le même, avec ou sans durée de crédit */
     .af-mixer--ligne .af-mixer__faders { width: 100%; }
@@ -1582,7 +1583,7 @@
           bloc.innerHTML = '<div class="af-mixer__header"><span class="af-mixer__title"></span><span class="af-aide"></span></div>';
           bloc.querySelector(".af-mixer__title").textContent = "Table de mixage";
           var nom = document.createElement("span"); nom.className = "af-mixer__title"; nom.textContent = "— " + m.nomCourt; bloc.querySelector(".af-mixer__header").insertBefore(nom, bloc.querySelector(".af-aide"));
-          bloc.querySelector(".af-aide").textContent = "Un curseur que vous ne touchez pas suit celui de l'O-scan.";
+          var aideConc = bloc.querySelector(".af-aide"); if (aideConc) aideConc.parentNode.removeChild(aideConc);
           COLS_CONC.forEach(function (col) {
             var gd = document.createElement("div"); gd.className = "af-mixer__group";
             gd.innerHTML = '<span class="af-mixer__group-title"></span><div class="af-mixer__faders"><div class="af-mixer__fader-col"><div class="af-mixer__bar"><div class="af-mixer__bar-fill"></div><input type="range" /></div><input type="text" inputmode="decimal" class="af-mixer__value" /><div class="af-mixer__pm"><button type="button" class="af-moins">−</button><button type="button" class="af-plus">+</button></div><div class="af-mixer__unit"></div></div></div>';
@@ -1621,11 +1622,12 @@
       tables.forEach(function (m) {
         if (!m) return;
         m.classList.toggle("af-mixer--ligne", actif); m.style.setProperty("--zl", "1");
+        var nbL = repartirLignes(m);
         m.querySelectorAll(".af-mixer__header, .af-mixer__group-title").forEach(function (t) { t.style.minHeight = ""; });
         if (!actif || !m.offsetParent || window.innerWidth <= 700) return;
         actives.push(m);
         var z = 1;
-        function enLigne() { var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }); return !gs.length || (gs.every(function (g) { return Math.abs(g.offsetTop - gs[0].offsetTop) < 4; }) && m.scrollWidth <= m.clientWidth + 2 && Array.prototype.every.call(m.querySelectorAll(".af-mixer__value"), function (i) { return !i.offsetParent || i.scrollWidth <= i.clientWidth + 1; })); }
+        function enLigne() { var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; }); return !gs.length || (gs.reduce(function (t, g) { return t.some(function (v) { return Math.abs(v - g.offsetTop) < 4; }) ? t : t.concat(g.offsetTop); }, []).length <= nbL && m.scrollWidth <= m.clientWidth + 2 && Array.prototype.every.call(m.querySelectorAll(".af-mixer__value"), function (i) { return !i.offsetParent || i.scrollWidth <= i.clientWidth + 1; })); }
         while (!enLigne() && z > 0.25) { z = Math.round((z - 0.05) * 100) / 100; m.style.setProperty("--zl", String(z)); }
         zmin = Math.min(zmin, z);
       });
@@ -1633,6 +1635,19 @@
       egaliserTables();
     }
 
+    function repartirLignes(m) { // 9 bâtons ou moins : une ligne ; au-delà, des lignes de 9 bâtons au plus, de même longueur (10 → 5 + 5, 18 → 9 + 9, 19 → 7 + 6 + 6)
+      Array.prototype.forEach.call(m.querySelectorAll(":scope > .af-mixer__saut"), function (s) { s.parentNode.removeChild(s); });
+      if (window.innerWidth <= 700 || !m.offsetParent) return 1;
+      var gs = Array.prototype.filter.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { return !g.hidden && g.offsetParent; });
+      var nb = gs.map(function (g) { return g.querySelectorAll(".af-mixer__fader-col:not([hidden])").length || 1; }), tot = nb.reduce(function (a, b) { return a + b; }, 0);
+      if (tot <= 9) return 1;
+      var lignes = Math.ceil(tot / 9), parLigne = Math.ceil(tot / lignes), cum = 0, fait = 1;
+      gs.forEach(function (g, i) {
+        if (cum >= parLigne * fait && fait < lignes) { var s = document.createElement("div"); s.className = "af-mixer__saut"; m.insertBefore(s, g); fait++; }
+        cum += nb[i];
+      });
+      return fait;
+    }
     function egaliserTables() { // les deux tables côte à côte : mêmes hauteurs d'en-tête et de titres, donc les bâtons sont sur la même ligne
       var tabs = Array.prototype.filter.call(document.querySelectorAll("#afMixers .af-mixer--ligne"), function (m) { return m.offsetParent; });
       tabs.forEach(function (m) { var e = m.querySelector(".af-mixer__header"); if (e) e.style.minHeight = ""; });
@@ -1640,6 +1655,9 @@
       var ts = []; tabs.forEach(function (m) { Array.prototype.forEach.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { var t = g.querySelector(".af-mixer__group-title"); if (t && !g.hidden && g.offsetParent) ts.push(t); }); });
       ts.forEach(function (t) { t.style.minHeight = ""; });
       var ht = Math.max.apply(null, ts.map(function (t) { return t.offsetHeight; })); ts.forEach(function (t) { t.style.minHeight = ht + "px"; });
+      var plusieurs = tabs.some(function (m) { return m.querySelector(":scope > .af-mixer__saut"); }), gp = [];
+      tabs.forEach(function (m) { Array.prototype.forEach.call(m.querySelectorAll(":scope > .af-mixer__group"), function (g) { if (!g.hidden && g.offsetParent) { g.style.minHeight = ""; gp.push(g); } }); });
+      if (plusieurs) { var hg = Math.max.apply(null, gp.map(function (g) { return g.offsetHeight; })); gp.forEach(function (g) { g.style.minHeight = hg + "px"; }); } // lignes multiples : mêmes hauteurs, donc les lignes de bâtons des deux tables restent alignées
       var entetes = tabs.map(function (m) { return m.querySelector(".af-mixer__header"); }), hm = Math.max.apply(null, entetes.map(function (e) { return e ? e.offsetHeight : 0; }));
       entetes.forEach(function (e) { if (e) e.style.minHeight = hm + "px"; });
     }
@@ -2290,7 +2308,7 @@
       cb.addEventListener("change", function () {
         visibles[g.id] = cb.checked;
         try { localStorage.setItem(CLE_GROUPES, JSON.stringify(visibles)); } catch (e) {}
-        synchroniser();
+        synchroniser(); rendre(); // rendre() refait aussi la répartition des bâtons en lignes
       });
       oc.appendChild(l);
     });
