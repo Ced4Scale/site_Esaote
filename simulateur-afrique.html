@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016g"></script>
+  <script src="assets/afrique-i18n.js?v=20261016h"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -85,16 +85,20 @@
     .af-outils-boite.af-boite-plein { display: flex; flex-direction: column; flex-wrap: nowrap; align-items: stretch; gap: .5rem; }
     .af-boite-plein > * { flex: 0 0 auto; }
     .af-boite-plein > .af-fs-btn { align-self: flex-start; }
-    .af-boite-plein .af-outils-icones { flex: 0 0 auto; }
     .af-outils-boite.af-boite-plein.af-boite-zone { right: auto; width: 50vw; border-right: 1px solid var(--line-2, #d6d6d0); }
-    .af-boite-plein .af-outils-icones { flex: 1 1 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 1.2rem; margin-top: .8rem; }
-    .af-boite-plein .af-info-wrap { position: static; display: flex; flex-direction: column; align-items: center; gap: .45rem; text-align: center; padding: .7rem .4rem; border: 1px solid transparent; border-radius: .7rem; }
-    .af-boite-plein .af-info-wrap::after { content: attr(data-nom); font-size: .78rem; font-weight: 700; line-height: 1.25; color: var(--ink); }
-    .af-boite-plein .af-info-wrap.is-actif { border-color: var(--red); background: #fff6f6; }
+    .af-boite-plein .af-outils-icones { flex: 1 1 auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); align-items: start; gap: 1rem; margin-top: .8rem; }
+    .af-boite-plein .af-info-wrap { display: contents; }
     .af-boite-plein .af-info-wrap.af-sans-plein { display: none; }
-    .af-boite-plein .af-info-btn { zoom: 1.8; }
+    .af-boite-plein .af-info-btn { display: none; }
+    .af-pop.af-carte-pop { position: relative !important; top: auto; left: auto !important; width: auto !important; max-width: none !important; max-height: none !important; margin: 0; translate: none !important; box-sizing: border-box; padding-top: 2.4rem; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,.1); }
+    .af-pop.af-carte-pop:hover { border-color: var(--red); }
+    .af-pop.af-carte-pop .af-poignee { display: none; }
+    .af-pop.af-carte-pop .af-zone-fs { display: inline-flex; position: absolute; top: .5rem; right: .6rem; }
+    .af-pop .af-zone-fermer { display: none; }
+    .af-pop.af-dock .af-zone-fermer { display: inline-flex; position: absolute; top: .6rem; left: .8rem; }
     .af-boite-plein .af-info-btn::after { display: none !important; }
     .af-zone-fs { display: none; }
+    .af-pop.af-carte-pop.af-dock { cursor: default; box-shadow: 0 4px 14px rgba(0,0,0,.12); }
     .af-pop.af-dock { position: fixed !important; top: 0; right: 0; bottom: 0; left: auto !important; width: 50vw !important; max-width: none !important; height: 100vh; max-height: none !important; margin: 0; translate: none !important; border-radius: 0; overflow-y: auto; z-index: 10001; box-sizing: border-box; padding-top: 2.8rem; }
     .af-pop.af-dock.af-dock-plein { width: 100vw !important; }
     .af-pop.af-dock .af-poignee { display: none; }
@@ -112,7 +116,8 @@
     .af-irm { display: flex; flex-direction: column; align-items: center; gap: .45rem; padding: .8rem .7rem 1rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .9rem; background: #fff; font: inherit; color: var(--ink); cursor: pointer; transition: border-color .15s, box-shadow .15s, transform .15s; }
     .af-irm:not([disabled]):hover { border-color: var(--red); box-shadow: 0 6px 18px rgba(0,0,0,.12); transform: translateY(-2px); }
     .af-irm-photo { display: flex; align-items: center; justify-content: center; width: 100%; aspect-ratio: 4 / 3; background: #f4f4f1; border-radius: .6rem; overflow: hidden; }
-    .af-irm-photo img { width: 100%; height: 100%; object-fit: contain; display: block; }
+    .af-irm-photo img { width: 100%; height: 100%; object-fit: contain; display: block; transition: opacity .2s; }
+    .af-irm-photo img.is-fading { opacity: .18; }
     .af-irm strong { font-size: 1.15rem; }
     .af-irm-tag { font-size: .8rem; line-height: 1.35; color: var(--ink-soft, #555); }
     .af-irm-etat { font-style: normal; font-size: .72rem; font-weight: 800; padding: .15rem .6rem; border-radius: 999px; background: #e3f6ec; color: #17794f; margin-top: auto; }
@@ -441,31 +446,31 @@
       <p>Choisissez l'IRM que vous souhaitez simuler.</p>
       <div class="af-irm-grille">
         <button type="button" class="af-irm" data-irm="oscan">
-          <span class="af-irm-photo"><img src="assets/products/o-scan.webp" alt="" loading="lazy" /></span>
+          <span class="af-irm-photo"><img src="assets/products/o-scan.webp" data-carousel-images="assets/products/o-scan.webp|assets/products/o-scan-hero.webp|assets/products/o-scan-alt.webp" alt="" loading="lazy" /></span>
           <strong>O-scan</strong>
           <span class="af-irm-tag">IRM ouverte dédiée aux extrémités : genou, main, pied, coude</span>
           <em class="af-irm-etat">Disponible</em>
         </button>
         <button type="button" class="af-irm is-bientot" data-irm="sscan" disabled aria-disabled="true">
-          <span class="af-irm-photo"><img src="assets/products/s-scan.webp" alt="" loading="lazy" /></span>
+          <span class="af-irm-photo"><img src="assets/products/s-scan.webp" data-carousel-images="assets/products/s-scan.webp|assets/products/s-scan-hero.webp|assets/products/s-scan-alt.webp" alt="" loading="lazy" /></span>
           <strong>S-scan</strong>
           <span class="af-irm-tag">IRM ouverte pour le rachis et les articulations</span>
           <em class="af-irm-etat">Bientôt disponible</em>
         </button>
         <button type="button" class="af-irm is-bientot" data-irm="gscan" disabled aria-disabled="true">
-          <span class="af-irm-photo"><img src="assets/products/g-scan.webp" alt="" loading="lazy" /></span>
+          <span class="af-irm-photo"><img src="assets/products/g-scan.webp" data-carousel-images="assets/products/g-scan.webp|assets/products/g-scan-alt.webp|assets/products/g-scan-hero.webp" alt="" loading="lazy" /></span>
           <strong>G-scan</strong>
           <span class="af-irm-tag">IRM en charge : debout ou allongée</span>
           <em class="af-irm-etat">Bientôt disponible</em>
         </button>
         <button type="button" class="af-irm is-bientot" data-irm="magnifico" disabled aria-disabled="true">
-          <span class="af-irm-photo"><img src="assets/products/magnifico.webp" alt="" loading="lazy" /></span>
+          <span class="af-irm-photo"><img src="assets/products/magnifico.webp" data-carousel-images="assets/products/magnifico.webp|assets/products/magnifico-ui.webp|assets/products/magnifico-hero.webp" alt="" loading="lazy" /></span>
           <strong>Magnifico</strong>
           <span class="af-irm-tag">IRM ouverte corps entier</span>
           <em class="af-irm-etat">Bientôt disponible</em>
         </button>
         <button type="button" class="af-irm is-bientot" data-irm="igenius" disabled aria-disabled="true">
-          <span class="af-irm-photo"><img src="assets/products/i-genius.webp" alt="" loading="lazy" /></span>
+          <span class="af-irm-photo"><img src="assets/products/i-genius.webp" data-carousel-images="assets/products/i-genius.webp|assets/products/i-genius-hero.webp|assets/products/i-genius-alt.webp" alt="" loading="lazy" /></span>
           <strong>i-genius</strong>
           <span class="af-irm-tag">IRM de bloc opératoire pour la neurochirurgie</span>
           <em class="af-irm-etat">Bientôt disponible</em>
@@ -542,7 +547,7 @@
           <svg class="af-fs-agrandir" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           <svg class="af-fs-reduire" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         </button>
-        <p class="af-aide" id="afBoiteAide" hidden>Cliquez sur une icône pour compléter cette zone ; cliquez sur une autre icône pour changer de zone.</p>
+        <p class="af-aide" id="afBoiteAide" hidden>Cliquez sur un cadre pour l'afficher sur la moitié de l'écran ; cliquez sur un autre cadre pour changer.</p>
         <div class="af-outils-icones">
         <!-- Agenda : horaires d'ouverture (mêmes réglages que le simulateur unifié) -->
 
@@ -2141,26 +2146,26 @@
     });
     brancher("afLangBtn", "afLangPop");
 
-    (function () { // Boîte à outils en plein écran : grille de toutes les icônes ; zone choisie = moitié d'écran à droite (plein écran possible pour chaque zone)
+    (function () { // Boîte à outils en plein écran : TOUS les cadres s'ouvrent en grille ; un clic sur un cadre le place sur la moitié de l'écran (un autre clic = on change) ; plein écran possible pour chaque cadre
       var boite = el("afBoiteOutils"), zone = boite.querySelector(".af-outils-icones"), bFs = el("afBoiteFs"), aide = el("afBoiteAide"), vraiPlein = false;
       var wrapAmpoule = el("afInfoBtn").parentNode;
       function popsBoite() { return Array.prototype.slice.call(boite.querySelectorAll(".af-pop")); }
-      function fermerZone() {
-        popsBoite().forEach(function (p) { p.hidden = true; p.classList.remove("af-dock", "af-dock-plein"); });
-        Array.prototype.forEach.call(zone.querySelectorAll("[aria-controls]"), function (b) { b.setAttribute("aria-expanded", "false"); b.parentNode.classList.remove("is-actif"); });
-        boite.classList.remove("af-boite-zone"); aide.hidden = !boite.classList.contains("af-boite-plein");
-      }
+      function popsPlein() { return popsBoite().filter(function (p) { return p.parentNode !== wrapAmpoule; }); }
+      function boutonDe(p) { return p.parentNode.querySelector("[aria-controls]"); }
+      function relacher() { popsBoite().forEach(function (p) { p.classList.remove("af-dock", "af-dock-plein"); var z = p.querySelector(".af-zone-fs"); if (z) z.classList.remove("is-fullscreen"); }); boite.classList.remove("af-boite-zone"); }
       function entrer() {
-        fermerZone();
-        Array.prototype.forEach.call(zone.querySelectorAll(".af-info-wrap"), function (w) { var b = w.querySelector("[aria-controls]"); w.dataset.nom = b ? (b.getAttribute("aria-label") || b.title || "") : ""; });
         wrapAmpoule.classList.add("af-sans-plein");
+        popsBoite().forEach(function (p) { p.hidden = true; });
+        relacher();
+        popsPlein().forEach(function (p) { p.hidden = false; p.classList.add("af-carte-pop"); boutonDe(p).setAttribute("aria-expanded", "true"); p.scrollTop = 0; });
         boite.classList.add("af-boite-plein"); bFs.classList.add("is-fullscreen"); bFs.setAttribute("aria-pressed", "true"); aide.hidden = false;
         var rac = document.documentElement; // la page entière passe en plein écran (la boîte n'est pas l'élément plein écran : le navigateur lui imposerait 100 % de largeur)
         if (rac.requestFullscreen && !document.fullscreenElement) rac.requestFullscreen().then(function () { vraiPlein = true; }).catch(function () {});
         requestAnimationFrame(alignerMixers);
       }
       function sortir() {
-        fermerZone();
+        relacher();
+        popsBoite().forEach(function (p) { p.hidden = true; p.classList.remove("af-carte-pop"); var b = boutonDe(p); if (b) b.setAttribute("aria-expanded", "false"); });
         boite.classList.remove("af-boite-plein"); wrapAmpoule.classList.remove("af-sans-plein"); bFs.classList.remove("is-fullscreen"); bFs.setAttribute("aria-pressed", "false"); aide.hidden = true;
         if (vraiPlein && document.fullscreenElement) document.exitFullscreen();
         vraiPlein = false; requestAnimationFrame(alignerMixers);
@@ -2168,22 +2173,21 @@
       bFs.addEventListener("click", function () { if (boite.classList.contains("af-boite-plein")) sortir(); else entrer(); });
       document.addEventListener("fullscreenchange", function () { if (vraiPlein && !document.fullscreenElement && boite.classList.contains("af-boite-plein")) sortir(); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape" && boite.classList.contains("af-boite-plein")) sortir(); });
-      popsBoite().forEach(function (p) { // bouton « plein écran » de chaque zone
+      popsBoite().forEach(function (p) { // boutons « plein écran » et « retour à la grille » de chaque cadre
         var b = document.createElement("button"); b.type = "button"; b.className = "af-fs-btn af-zone-fs"; b.setAttribute("aria-label", "Plein écran"); b.title = "Plein écran";
         b.innerHTML = bFs.innerHTML;
         b.addEventListener("click", function (e) { e.stopPropagation(); var on = p.classList.toggle("af-dock-plein"); b.classList.toggle("is-fullscreen", on); requestAnimationFrame(alignerMixers); });
-        p.insertBefore(b, p.firstChild);
+        var x = document.createElement("button"); x.type = "button"; x.className = "af-fs-btn af-zone-fermer"; x.setAttribute("aria-label", "Retour à tous les cadres"); x.title = "Retour à tous les cadres"; x.textContent = "✕";
+        x.addEventListener("click", function (e) { e.stopPropagation(); relacher(); requestAnimationFrame(alignerMixers); });
+        p.insertBefore(x, p.firstChild); p.insertBefore(b, p.firstChild);
       });
-      zone.addEventListener("click", function (e) { // en plein écran : un clic sur une icône ouvre sa zone dans la moitié de l'écran (et ferme la précédente)
+      zone.addEventListener("click", function (e) { // en plein écran : le premier clic sur un cadre le place sur la moitié de l'écran (sans rien modifier) ; il remplace le cadre précédent
         if (!boite.classList.contains("af-boite-plein")) return;
-        var b = e.target.closest("[aria-controls]"); if (!b || !zone.contains(b)) return;
+        var pop = e.target.closest(".af-pop"); if (!pop || !zone.contains(pop) || pop.classList.contains("af-dock")) return;
         e.stopPropagation(); e.preventDefault();
-        var pop = el(b.getAttribute("aria-controls")), dejaOuverte = pop.classList.contains("af-dock");
-        fermerZone();
-        if (dejaOuverte) return;
-        pop.hidden = false; pop.classList.add("af-dock"); b.setAttribute("aria-expanded", "true"); b.parentNode.classList.add("is-actif");
-        boite.classList.add("af-boite-zone"); aide.hidden = true;
-        pop.scrollTop = 0; requestAnimationFrame(alignerMixers);
+        popsBoite().forEach(function (q) { q.classList.remove("af-dock", "af-dock-plein"); var z = q.querySelector(".af-zone-fs"); if (z) z.classList.remove("is-fullscreen"); });
+        pop.classList.add("af-dock"); boite.classList.add("af-boite-zone"); aide.hidden = true; pop.scrollTop = 0;
+        requestAnimationFrame(alignerMixers);
       }, true);
     })();
 
@@ -2195,6 +2199,16 @@
       function versSimu() { fermerPops(); barreSimu.insertBefore(wl, fs); barreSimu.insertBefore(wd, fs); acc.hidden = true; simu.hidden = false; window.scrollTo(0, 0); requestAnimationFrame(function () { alignerMixers(); synchroniser(); rendre(); }); }
       Array.prototype.forEach.call(acc.querySelectorAll(".af-irm"), function (b) { b.addEventListener("click", function () { if (b.dataset.irm === "oscan") versSimu(); }); });
       el("afRetourIrm").addEventListener("click", versAccueil);
+      // les photos changent toutes les 1,5 seconde, comme sur le site vitrine
+      Array.prototype.forEach.call(acc.querySelectorAll("img[data-carousel-images]"), function (img) {
+        var liste = img.getAttribute("data-carousel-images").split("|"), cur = Math.max(0, liste.indexOf(img.getAttribute("src")));
+        liste.forEach(function (u) { var pre = new Image(); pre.src = u; });
+        setInterval(function () {
+          if (acc.hidden) return;
+          cur = (cur + 1) % liste.length; img.classList.add("is-fading");
+          setTimeout(function () { img.setAttribute("src", liste[cur]); img.classList.remove("is-fading"); }, 200);
+        }, 1500);
+      });
       versAccueil();
     })();
 

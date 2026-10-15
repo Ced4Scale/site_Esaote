@@ -4503,6 +4503,8 @@ window.AF_I18N = {
 ["S-scan", "S-scan", "S-scan", "S-scan", "S-scan", "S-scan", "S-scan"],
 ["G-scan", "G-scan", "G-scan", "G-scan", "G-scan", "G-scan", "G-scan"],
 ["Magnifico", "Magnifico", "Magnifico", "Magnifico", "Magnifico", "Magnifico", "Magnifico"],
-["i-genius", "i-genius", "i-genius", "i-genius", "i-genius", "i-genius", "i-genius"]
+["i-genius", "i-genius", "i-genius", "i-genius", "i-genius", "i-genius", "i-genius"],
+["Cliquez sur un cadre pour l'afficher sur la moitié de l'écran ; cliquez sur un autre cadre pour changer.", "Click a panel to show it on half of the screen; click another panel to switch.", "Fate clic su un riquadro per mostrarlo su metà schermo; fate clic su un altro riquadro per cambiare.", "Clique num quadro para o mostrar em metade do ecrã; clique noutro quadro para mudar.", "انقر على إطار لعرضه على نصف الشاشة؛ انقر على إطار آخر للتبديل.", "Bofya kisanduku ili kukionyesha kwenye nusu ya skrini; bofya kisanduku kingine kubadilisha.", "Klik op 'n paneel om dit op die helfte van die skerm te wys; klik op 'n ander paneel om te wissel."],
+["Retour à tous les cadres", "Back to all panels", "Torna a tutti i riquadri", "Voltar a todos os quadros", "العودة إلى كل الإطارات", "Rudi kwenye visanduku vyote", "Terug na alle panele"]
 ]
 };
