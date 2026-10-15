@@ -234,6 +234,9 @@
     .af-demis--dual { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 1rem 1.4rem; }
     .af-demis--focus .af-demi.is-n1 { display: block; cursor: zoom-out; }
     .af-demi.is-focus.is-dual { display: block; }
+    .af-demi.is-dual { padding: 0; } /* anneau agrandi, comparaison : les deux anneaux (O-scan et IRM concurrente) ont exactement la même mise en page */
+    .af-demi.is-dual h3 { font-size: 1.15rem; }
+    .af-demi.is-dual.is-focus .af-legende { margin: .4rem auto 0; max-width: 26rem; font-size: .88rem; }
     .af-demi.is-dual .af-legende { margin: .4rem auto 0; max-width: 26rem; font-size: .88rem; }
     .af-demi-an { font-size: .78rem; font-weight: 700; color: var(--muted); margin: .1rem 0 .3rem; }
     .af-demi.is-focus h3 { grid-area: titre; font-size: 1.15rem; }
@@ -319,8 +322,13 @@
     .af-mixers.af-mixers--cote > #afMixerConc { display: contents; }
     .af-mixers--cote .af-mixer { margin-top: 1.2rem; min-width: 0; }
     .af-mixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; }
-    .af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
+    .af-mixer--ligne > .af-mixer__group { flex: 0 0 4.6rem; min-width: 0; zoom: var(--zl, 1); }
     .af-mixer--ligne .af-mixer__faders { gap: .4rem; }
+    /* un groupe à deux bâtons visibles (crédit : durée + taux) occupe la place de deux : l'écart entre deux bâtons reste le même, avec ou sans durée de crédit */
+    .af-mixer--ligne .af-mixer__faders { width: 100%; }
+    .af-mixer--ligne .af-mixer__fader-col { flex: 1 1 0; min-width: 0; }
+    .af-mixer--ligne > .af-mixer__group:has(.af-mixer__fader-col:not([hidden]) ~ .af-mixer__fader-col:not([hidden])) { flex-basis: 9.6rem; }
+    #afMixer.af-mixer--ligne > .af-mixer__group:has(.af-mixer__fader-col:not([hidden]) ~ .af-mixer__fader-col:not([hidden])) { flex-basis: 9.6rem; }
     .af-t-c { display: none; }
     .af-mixer--ligne .af-t-c { display: inline; }
     .af-mixer--ligne .af-t-r { display: none; }
@@ -335,7 +343,7 @@
     .af-mixer--ligne .af-mixer__value { width: 100%; max-width: 4.6rem; min-width: 0; box-sizing: border-box; }
     .af-mixer--ligne .af-mixer__unit { max-width: 100%; font-size: .62rem; }
     .af-mixers--cote .af-mixer__header .af-aide { font-size: .68rem; margin: 0; flex: 1 1 100%; }
-    #afMixer.af-mixer--ligne > .af-mixer__group { flex: 1 1 0; min-width: 4.4rem; zoom: var(--zl, 1); }
+    #afMixer.af-mixer--ligne > .af-mixer__group { flex: 0 0 4.6rem; min-width: 0; zoom: var(--zl, 1); }
     /* en comparaison, la table de gauche reprend exactement la taille de celle de droite (mêmes bâtons, même texte, mêmes écarts) : les bâtons sont sur la même ligne */
     #afMixer.af-mixer--ligne { gap: .4rem; padding-left: .6rem; padding-right: .6rem; justify-content: flex-start; }
     #afMixer.af-mixer--ligne > .af-mixer__group { gap: .6rem; }
@@ -1751,6 +1759,7 @@
           var fo = boxes[demiFocus]; fo.classList.add("is-dual"); legende(fo, "Esaote O-scan");
           comps.forEach(function (c) {
             var bx = c.boxes[demiFocus]; bx.classList.add("is-n1", "is-dual"); legende(bx, c.m.nomCourt); bx.tabIndex = 0; bx.setAttribute("role", "button");
+            var barG = fo.querySelector(".af-demi-annees"); if (barG) { var ghost = barG.cloneNode(true); ghost.style.visibility = "hidden"; ghost.setAttribute("aria-hidden", "true"); ghost.inert = true; bx.insertBefore(ghost, bx.querySelector(".af-demi-an").nextSibling); } // même hauteur que la barre N+1 de gauche : les anneaux restent alignés
             function def() { demiFocus = -1; rendre(); }
             bx.addEventListener("click", def); bx.addEventListener("keydown", function (e) { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); def(); } });
             zone.appendChild(bx);
@@ -2544,8 +2553,9 @@
         plan = false;
         Array.prototype.forEach.call(simu.querySelectorAll(".af-mixer__bar"), function (bar) {
           var g = bar.closest(".af-mixer__group"), t = g && g.querySelector(".af-mixer__group-title"); if (!t) return;
-          var c = t.querySelector(".af-t-c"), txt = ((c || t).textContent || "").trim(), lib = bar.querySelector(":scope > .af-mixer__bar-lib");
+          var c = t.querySelector(".af-t-c"), txt = ((c || t).textContent || "").trim(), col = bar.closest(".af-mixer__fader-col"), sl = col && col.querySelector(".af-mixer__slot"), lib = bar.querySelector(":scope > .af-mixer__bar-lib");
           if (!lib) { lib = document.createElement("span"); lib.className = "af-mixer__bar-lib"; lib.setAttribute("aria-hidden", "true"); bar.appendChild(lib); }
+          if (sl && g.querySelectorAll(".af-mixer__fader-col:not([hidden])").length > 1) txt = sl.textContent.trim(); // groupe à plusieurs bâtons : le nom du bâton (Durée, Taux)
           if (lib.textContent !== txt) lib.textContent = txt;
         });
       }
