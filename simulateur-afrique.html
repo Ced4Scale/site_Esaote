@@ -1418,6 +1418,15 @@
       if (S.cmpTunnel) (typeof ENERGIE_MACHINES !== "undefined" ? ENERGIE_MACHINES : []).forEach(function (m) { if (m.key === S.cmpTunnel) l.push(m); });
       return l;
     }
+    // Mémoire de session : un rafraîchissement (F5) ramène sur la même page avec les mêmes réglages
+    var CLE_ETAT = "ced4scale-afrique-etat", allerSimu = null, allerAccueil = null, restauration = true; // true pendant le démarrage : on ne sauvegarde pas avant d'avoir relu l'état précédent
+    function memoriser() {
+      if (restauration) return;
+      try {
+        var simu = el("afSimu"), pm = el("afPmChoix"), lg = el("afLegChoix"), un = function (g, v) { var b = g && g.querySelector('[data-v="' + v + '"]'); return !!(b && b.getAttribute("aria-pressed") === "true"); };
+        sessionStorage.setItem(CLE_ETAT, JSON.stringify({ vue: simu && !simu.hidden ? "simu" : "accueil", S: S, pc: PARAMS_CONC, n1: demiN1, leg: un(lg, "oui"), pm: un(pm, "oui") }));
+      } catch (e) {}
+    }
     var PARAMS_CONC = {}; // réglages propres à chaque IRM concurrente (null = valeur du simulateur du site)
     function paramsConc(m) {
       var P = PARAMS_CONC[m.key] || (PARAMS_CONC[m.key] = { loyer: null, nMerm: null, fAcq: null, tChg: null, pph: null, hS: null, prix: null, kwh: null });
@@ -1684,6 +1693,7 @@
       majOs();
       majJumeaux();
       majTablesConc(comps);
+      memoriser();
       ajusterLignes(comps.length > 0, comps.length + 1);
     }
 
@@ -2493,8 +2503,9 @@
       var acc = el("afAccueil"), simu = el("afSimu"), barreAcc = el("afAccueilBarre"), barreSimu = document.querySelector(".af-barre-btn"), fs = el("afFsBtn");
       var wl = el("afLangBtn").parentNode, wd = el("afDevBtn").parentNode;
       function fermerPops() { [el("afLangPop"), el("afDevPop")].forEach(function (p) { p.hidden = true; }); el("afLangBtn").setAttribute("aria-expanded", "false"); el("afDevBtn").setAttribute("aria-expanded", "false"); }
-      function versAccueil() { fermerPops(); barreAcc.insertBefore(wl, el("afAccueilSaut")); barreAcc.insertBefore(wd, el("afAccueilSaut")); simu.hidden = true; acc.hidden = false; window.scrollTo(0, 0); }
-      function versSimu() { fermerPops(); barreSimu.insertBefore(wl, fs); barreSimu.insertBefore(wd, fs); acc.hidden = true; simu.hidden = false; window.scrollTo(0, 0); requestAnimationFrame(function () { alignerMixers(); synchroniser(); rendre(); }); }
+      function versAccueil() { fermerPops(); barreAcc.insertBefore(wl, el("afAccueilSaut")); barreAcc.insertBefore(wd, el("afAccueilSaut")); simu.hidden = true; acc.hidden = false; window.scrollTo(0, 0); memoriser(); }
+      function versSimu() { fermerPops(); barreSimu.insertBefore(wl, fs); barreSimu.insertBefore(wd, fs); acc.hidden = true; simu.hidden = false; window.scrollTo(0, 0); requestAnimationFrame(function () { alignerMixers(); synchroniser(); rendre(); memoriser(); }); }
+      allerSimu = versSimu; allerAccueil = versAccueil;
       Array.prototype.forEach.call(acc.querySelectorAll(".af-irm"), function (b) { b.addEventListener("click", function () { if (b.dataset.irm === "oscan") versSimu(); }); });
       el("afRetourIrm").addEventListener("click", versAccueil);
       // les photos changent toutes les 1,5 seconde, comme sur le site vitrine
@@ -2523,7 +2534,7 @@
         Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) {
           b.addEventListener("click", function () {
             Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
-            el("afDemis").classList.toggle("af-sans-legende", b.dataset.v === "non");
+            el("afDemis").classList.toggle("af-sans-legende", b.dataset.v === "non"); memoriser();
             alignerMixers();
           });
         });
@@ -2533,7 +2544,7 @@
         Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) {
           b.addEventListener("click", function () {
             Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
-            el("afPm").hidden = b.dataset.v === "non";
+            el("afPm").hidden = b.dataset.v === "non"; memoriser();
           });
         });
       })();
@@ -2546,10 +2557,11 @@
               var oui = b.dataset.v === "oui";
               Array.prototype.forEach.call(g.querySelectorAll("button"), function (x) { x.setAttribute("aria-pressed", String(x === b)); });
               if (g.dataset.cmp === "actif") { S.cmpActif = oui; corps.hidden = !oui; } else S.cmpSiemens = oui;
+              memoriser();
             });
           });
         });
-        el("afCmpTunnel").addEventListener("change", function () { S.cmpTunnel = this.value; });
+        el("afCmpTunnel").addEventListener("change", function () { S.cmpTunnel = this.value; memoriser(); });
       })();
       versAccueil();
     })();
@@ -2557,6 +2569,27 @@
     // Pays acheteur de départ : le Maroc (demande du 11/10/2026)
     selP.value = "ma"; selP.dispatchEvent(new Event("change"));
     majTauxListe(); majDevise(); synchroniser(); rendre();
+    (function restaurer() { // retour après un rafraîchissement : même page, mêmes réglages
+      var raw = null, e;
+      try { raw = sessionStorage.getItem(CLE_ETAT); e = raw ? JSON.parse(raw) : null; } catch (x) { e = null; }
+      if (!e || !e.S) { restauration = false; return; }
+      restauration = true;
+      try {
+        Object.assign(S, e.S);
+        if (S.pays && Array.prototype.some.call(selP.options, function (o) { return o.value === S.pays; })) selP.value = S.pays;
+        Object.keys(e.pc || {}).forEach(function (k) { PARAMS_CONC[k] = e.pc[k]; });
+        demiN1 = !!e.n1;
+        function appuyer(g, v) { Array.prototype.forEach.call(g.querySelectorAll("button"), function (b) { b.setAttribute("aria-pressed", String(b.dataset.v === v)); }); }
+        appuyer(el("afCompare").querySelector('[data-cmp="actif"]'), S.cmpActif ? "oui" : "non"); el("afCompareCorps").hidden = !S.cmpActif;
+        appuyer(el("afCompare").querySelector('[data-cmp="siemens"]'), S.cmpSiemens ? "oui" : "non"); el("afCmpTunnel").value = S.cmpTunnel || "";
+        appuyer(el("afLegChoix"), e.leg === false ? "non" : "oui"); el("afDemis").classList.toggle("af-sans-legende", e.leg === false);
+        appuyer(el("afPmChoix"), e.pm === false ? "non" : "oui"); el("afPm").hidden = e.pm === false;
+        majTauxListe(); majDevise(); synchroniser(); rendre(); majMenuAnnee();
+      } catch (x) {}
+      restauration = false;
+      if (e.vue === "simu" && allerSimu) allerSimu();
+      else memoriser();
+    })();
     majBoutonLangue(); appliquerLangue();
     obsLangue = new MutationObserver(planifierLangue);
     obsLangue.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true, attributeFilter: ["title", "aria-label"] });
