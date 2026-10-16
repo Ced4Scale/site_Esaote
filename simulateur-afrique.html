@@ -163,6 +163,7 @@
     .af-cmp-carte figcaption { font-weight: 800; }
     .af-cmp-carte select { width: 100%; max-width: 280px; font: inherit; font-size: .85rem; padding: .4rem .5rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .5rem; background: #fff; }
     @media (max-width: 640px) { .af-compare-corps { grid-template-columns: 1fr; } }
+    .af-jumeau [data-sans] { display: none !important; }
     .af-jumeau { border-color: #cfd8e6; background: #f4f8ff; }
     .af-jumeau .af-cal-ligne input { text-align: right; }
     .af-retour { margin: 0 0 .6rem; padding: .3rem .8rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: 999px; background: #fff; font: inherit; font-size: .8rem; font-weight: 700; color: var(--ink); cursor: pointer; }
@@ -1523,43 +1524,151 @@
     // ------------------------------------------------------------------ cadres « jumeaux » : quand on compare, chaque cadre de la boîte à outils s'ouvre aussi pour l'IRM concurrente, à côté de celui de l'O-scan
     var TITRES_JUM = { afCalPop: "Horaires d'ouverture", afLoyerPop: "Loyer des locaux", afRadPop: "Coût du radiologue", afOsPop: "Examens MSK par zone", afFinPop: "Financement, garantie et maintenance", afNegPop: "Répartition des examens", afImpPop: "Importation depuis l'Italie", afOptPop: "Options Esaote : choix et prix" };
     function creerJumeau(pop, m) {
-      var j = document.createElement("div"); j.className = "af-pop af-jumeau"; j.dataset.pour = pop.id; j.dataset.cle = m.key; j.hidden = true;
+      var j = document.createElement("div"); j.className = "af-pop af-jumeau" + (pop.classList.contains("af-pop--large") ? " af-pop--large" : ""); j.dataset.pour = pop.id; j.dataset.cle = m.key; j.hidden = true;
+      if (pop.id !== "afOptPop") ["input", "change", "click"].forEach(function (t) { j.addEventListener(t, function (e) { transmettre(e, j, m); }); });
       return j;
     }
     function ligneJum(lib, valeur, unite) { var d = document.createElement("div"); d.className = "af-cal-ligne"; var l = document.createElement("span"); l.style.flex = "1 1 auto"; l.textContent = lib; d.appendChild(l); var v = document.createElement("strong"); v.textContent = valeur; d.appendChild(v); if (unite) { var u = document.createElement("span"); u.textContent = unite; d.appendChild(u); } return d; }
     function champJum(lib, valeurTexte, unite, onChange) { var d = document.createElement("div"); d.className = "af-cal-ligne"; var l = document.createElement("label"); l.textContent = lib; d.appendChild(l); var i = document.createElement("input"); i.type = "text"; i.inputMode = "decimal"; i.value = valeurTexte; i.style.width = "6.5rem"; i.setAttribute("aria-label", lib); i.addEventListener("change", function () { var n = lire(i.value); if (n != null && n >= 0) onChange(n); else rendre(); }); d.appendChild(i); var u = document.createElement("span"); u.textContent = unite; d.appendChild(u); return d; }
-    function remplirJumeau(j, pop, m) {
+    function remplirOpt(j, pop, m) {
       var c = comparateurs().filter(function (x) { return x.key === m.key; })[0]; if (!c) return;
       var q = paramsConc(m), r = calculerConcurrent(m), P = q.brut, corps = [];
       var h = document.createElement("div"); h.className = "af-pop-titre"; h.textContent = TITRES_JUM[pop.id] || "";
       var sub = document.createElement("div"); sub.className = "af-pop-sous-titre"; sub.textContent = m.nomCourt; sub.style.marginTop = "0";
       corps.push(h, sub);
-      if (pop.id === "afOptPop") {
         corps.push(champJum("Prix d'achat de l'IRM", fmt(q.achat * cur.r), cur.s, function (n) { P.achat = n / cur.r; rendre(); }));
         corps.push(champJum("Maintenance annuelle", fmt(q.maint * cur.r), cur.s, function (n) { P.maint = n / cur.r; rendre(); }));
         corps.push(champJum("Garantie", fmt(q.gar), "mois", function (n) { P.gar = Math.round(n); rendre(); }));
         corps.push(champJum("Manipulateurs en poste", nf1.format(q.nMerm), "ETP", function (n) { P.nMerm = n; rendre(); }));
         corps.push(ligneJum("Coût d'acquisition (frais d'importation compris)", fmtMoney(r.achatTotal)));
         if (q.finAns > 0) corps.push(ligneJum("Mensualité du crédit", fmtMoney(r.mensualite)));
-      } else if (pop.id === "afNegPop") {
-        corps.push(champJum("Durée d'acquisition (en % de celle de l'O-scan)", fmt(Math.round(q.fAcq * 100)), "%", function (n) { P.fAcq = n / 100; rendre(); }));
-        corps.push(champJum("Changement de patient", nf1.format(q.tChg), "min", function (n) { P.tChg = n; rendre(); }));
-        var tm = avecConcurrent(m, tempsMoyen);
-        corps.push(ligneJum("Temps moyen par examen", nf1.format(tm), "min"));
-        corps.push(ligneJum("Patients par heure possibles", nf1.format(tm > 0 ? 60 / tm : 0)));
-      } else if (pop.id === "afFinPop") {
-        var pf = document.createElement("p"); pf.className = "af-aide"; pf.textContent = "Durée et taux du crédit de cette IRM : réglables dans sa table de mixage (par défaut, ceux de l'O-scan)."; corps.push(pf);
-        if (q.finAns > 0) { corps.push(ligneJum("Mensualité du crédit", fmtMoney(r.mensualite))); corps.push(ligneJum("Coût du financement (intérêts)", fmtMoney(r.interets))); }
-        corps.push(ligneJum("Maintenance annuelle", fmtMoney(q.maint)));
-      } else {
-        var pm = document.createElement("p"); pm.className = "af-aide"; pm.textContent = "Mêmes réglages que l'O-scan (même activité)."; corps.push(pm);
-        if (pop.id === "afRadPop") corps.push(ligneJum("Coût annuel du radiologue", fmtMoney(r.radio)));
-        else if (pop.id === "afLoyerPop") corps.push(ligneJum("Loyer annuel", fmtMoney(r.loyer)));
-        else if (pop.id === "afCalPop") corps.push(ligneJum("Examens par an", fmt(r.examens)));
-        else if (pop.id === "afImpPop") corps.push(ligneJum("Droits, taxes et transport de cette IRM", fmtMoney(r.achatTotal - q.achat)));
-      }
+      var sn = SNAP[m.key];
+      if (sn) [["Coût total de possession et de fonctionnement", sn.tco], ["Résultat", sn.res]].forEach(function (x) {
+        var d = document.createElement("details"); d.className = "af-tco-det"; var sm = document.createElement("summary"); sm.className = "af-pop-sous-titre"; sm.textContent = x[0]; d.appendChild(sm);
+        var w = document.createElement("div"); w.className = "af-tco-wrap"; w.style.overflowX = "auto"; var t = document.createElement("table"); t.className = "af-table af-table--tco"; t.innerHTML = x[1]; w.appendChild(t); d.appendChild(w); corps.push(d);
+      });
       j.textContent = "";
       corps.forEach(function (n) { j.appendChild(n); });
+    }
+
+    // ------------------------------------------------------------------ cadres jumeaux = copies conformes : le cadre de l'O-scan est copié tel quel (mêmes réglages, mêmes boutons) avec les chiffres de l'IRM concurrente ; ce qu'on touche dans la copie agit sur l'original (réglages partagés) ou sur l'IRM concurrente seule (prix, maintenance, garantie, crédit, durées)
+    var ORIG = new WeakMap(), SNAP = {}, enConc = false;
+    var ATTR_SANS = { id: 1, "for": 1, name: 1, "aria-controls": 1, "aria-labelledby": 1, "data-sans": 1, "data-drag": 1, open: 1 };
+    var SANS_JUM = ["afTauxAuto", "afTauxBanqueMaj", "afTauxPays", "afTauxBanqueStatut"];
+    var PROPRE = { achat: 1, maint: 1, garantie: 1, garAns: 1, dureeMois: 1, taux: 1, nMerm: 1, tChg: 1, tAcqDiag: 1, tAcqClau: 1, tAcqOrth: 1 };
+    function sk(n) { return n.nodeType === 3 ? "#" : n.tagName + "(" + Array.prototype.map.call(n.childNodes, sk).join("") + ")"; }
+    function enfantsPop(r) { return Array.prototype.filter.call(r.children, function (c) { return !c.classList.contains("af-poignee") && !c.classList.contains("af-pop-plein") && !c.classList.contains("af-jum-nom"); }); }
+    function squelette(pop) { return enfantsPop(pop).map(sk).join(""); }
+    function colDe(o) { var f = null; GROUPES.forEach(function (g) { g.cols.forEach(function (c) { if (!f && c.node && c.node.contains(o)) f = c; }); }); return f; }
+    function batirJumeau(j, pop, m, sq) {
+      var ouv = Array.prototype.map.call(j.querySelectorAll("details"), function (d) { return d.open; }), act = document.activeElement, idx = -1, pos = null;
+      var avant = []; enfantsPop(j).forEach(function (c) { avant.push(c); Array.prototype.forEach.call(c.querySelectorAll("*"), function (x) { avant.push(x); }); });
+      if (act && j.contains(act)) { idx = avant.indexOf(act); try { pos = [act.selectionStart, act.selectionEnd]; } catch (e) {} }
+      j.textContent = "";
+      enfantsPop(pop).forEach(function (ch) { j.appendChild(ch.cloneNode(true)); });
+      var tous = []; enfantsPop(j).forEach(function (c) { tous.push(c); Array.prototype.forEach.call(c.querySelectorAll("*"), function (x) { tous.push(x); }); });
+      tous.forEach(function (x) {
+        if (x.id && SANS_JUM.indexOf(x.id) >= 0) { var cible = x.closest(".af-check") || x.parentNode; if (cible && cible !== j) cible.setAttribute("data-sans", "1"); }
+        x.removeAttribute("id"); x.removeAttribute("for"); x.removeAttribute("aria-controls");
+        if (x.tagName === "INPUT" && x.type === "radio" && x.name) x.name = x.name + "_" + m.key + "_" + pop.id;
+      });
+      var ti = j.querySelector(".af-pop-titre"), sub = document.createElement("div"); sub.className = "af-pop-sous-titre af-jum-nom"; sub.textContent = m.nomCourt; sub.style.marginTop = "0";
+      if (ti) ti.parentNode.insertBefore(sub, ti.nextSibling); else j.insertBefore(sub, j.firstChild);
+      Array.prototype.forEach.call(j.querySelectorAll("details"), function (d, i) { d.open = !!ouv[i]; });
+      brancherRep(j);
+      j.__sq = sq;
+      if (idx >= 0) { var ap = []; enfantsPop(j).forEach(function (c) { ap.push(c); Array.prototype.forEach.call(c.querySelectorAll("*"), function (x) { ap.push(x); }); }); var nv = ap[idx]; if (nv && nv.focus) { nv.focus(); try { if (pos) nv.setSelectionRange(pos[0], pos[1]); } catch (e) {} } }
+    }
+    function brancherRep(j) { // le cercle de répartition des examens : les deux poignées se déplacent aussi dans la copie
+      Array.prototype.forEach.call(j.querySelectorAll("circle[role=slider]"), function (h, i) {
+        var svg = h.ownerSVGElement;
+        h.addEventListener("pointerdown", function (e) { h.setPointerCapture(e.pointerId); h.setAttribute("data-drag", "1"); e.preventDefault(); });
+        h.addEventListener("pointerup", function () { h.removeAttribute("data-drag"); });
+        h.addEventListener("pointermove", function (e) {
+          if (!h.getAttribute("data-drag")) return;
+          var r = svg.getBoundingClientRect(), a = Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) + Math.PI / 2;
+          var p = ((a / (2 * Math.PI)) % 1 + 1) % 1 * 100, c0 = repFrontieres()[i], d = ((p - c0 + 150) % 100 + 100) % 100 - 50;
+          repFixer(i, c0 + d);
+        });
+        h.addEventListener("keydown", function (e) { var pas = e.key === "ArrowRight" || e.key === "ArrowUp" ? 1 : e.key === "ArrowLeft" || e.key === "ArrowDown" ? -1 : 0; if (pas) { e.preventDefault(); repFixer(i, repFrontieres()[i] + pas); } });
+      });
+    }
+    function syncNoeud(o, c) {
+      if (o.nodeType === 3) { if (c.nodeValue !== o.nodeValue) c.nodeValue = o.nodeValue; return; }
+      if (o.nodeType !== 1) return;
+      ORIG.set(c, o);
+      Array.prototype.forEach.call(o.attributes, function (a) { if (!ATTR_SANS[a.name] && c.getAttribute(a.name) !== a.value) c.setAttribute(a.name, a.value); });
+      Array.prototype.slice.call(c.attributes).forEach(function (a) { if (!ATTR_SANS[a.name] && !o.hasAttribute(a.name)) c.removeAttribute(a.name); });
+      for (var i = 0; i < o.childNodes.length; i++) if (c.childNodes[i]) syncNoeud(o.childNodes[i], c.childNodes[i]);
+      var t = o.tagName;
+      if (t === "INPUT") {
+        if (o.type === "checkbox" || o.type === "radio") c.checked = o.checked; else if (c !== document.activeElement && c.value !== o.value) c.value = o.value;
+        c.disabled = o.disabled; c.readOnly = o.readOnly;
+      } else if (t === "SELECT") { if (c !== document.activeElement) c.value = o.value; }
+    }
+    function remplirClone(j, pop, m) {
+      var sq = squelette(pop);
+      if (j.__sq !== sq) batirJumeau(j, pop, m, sq);
+      var lo = enfantsPop(pop), lc = enfantsPop(j);
+      lo.forEach(function (o, i) { if (lc[i]) syncNoeud(o, lc[i]); });
+    }
+    function poserPropre(m, col, v) {
+      var P = paramsConc(m).brut, k = col.k; v = Math.max(0, v);
+      if (k === "garAns") P.gar = Math.round(v * 12); else if (k === "garantie") P.gar = Math.round(v);
+      else if (k === "dureeMois") P.finAns = Math.round(v / 6) / 2;
+      else if (k === "achat" || k === "maint" || k === "taux" || k === "nMerm" || k === "tChg") P[k] = v;
+      else { var ref = S[k]; if (ref > 0) P.fAcq = v / ref; }
+      rendre();
+    }
+    function transmettre(e, j, m) {
+      var t = e.target, o = ORIG.get(t); if (!o || !j.contains(t)) return;
+      var tag = t.tagName, ty = t.type, col = colDe(o), propre = !!(col && PROPRE[col.k]);
+      if (tag === "BUTTON") {
+        if (e.type !== "click") return;
+        if (propre && (t.classList.contains("af-moins") || t.classList.contains("af-plus"))) {
+          var rg = t.closest(".af-mixer__fader-col").querySelector("input[type=range]"), v = parseFloat(rg.value) + (t.classList.contains("af-plus") ? 1 : -1) * col.step;
+          poserPropre(m, col, Math.max(parseFloat(rg.min), Math.min(parseFloat(rg.max), v))); return;
+        }
+        o.click(); return;
+      }
+      if (tag === "INPUT" && (ty === "checkbox" || ty === "radio")) {
+        if (e.type !== "click") return;
+        if (o.id === "afFinActif") { paramsConc(m).brut.finAns = t.checked ? (S.finActif ? Math.round(S.dureeMois / 6) / 2 : 5) : 0; rendre(); return; }
+        if (o.checked !== t.checked) o.click(); else majJumeaux();
+        return;
+      }
+      if (tag === "SELECT") { if (e.type === "change") { o.value = t.value; o.dispatchEvent(new Event("change", { bubbles: true })); majJumeaux(); } return; }
+      if (tag !== "INPUT") return;
+      if (ty === "range") { if (e.type !== "input") return; if (propre) poserPropre(m, col, parseFloat(t.value)); else { o.value = t.value; o.dispatchEvent(new Event("input", { bubbles: true })); } return; }
+      if (ty === "search") { if (e.type === "input") { o.value = t.value; o.dispatchEvent(new Event("input", { bubbles: true })); majJumeaux(); } return; }
+      if (e.type !== "change") return;
+      if (propre) { var n = lire(t.value); if (n == null) { rendre(); return; } poserPropre(m, col, col.kind === "money" || col.kind === "kwh" ? n / cur.r : n); }
+      else { o.value = t.value; o.dispatchEvent(new Event("change", { bubbles: true })); }
+    }
+    function majContenuPops() { synchroniser(); var r = calculer(); majSorties(r); majTemps(); majImport(); majOs(); majTco(r); majRes(r); }
+    function remplirJumeaux(comps) { // les cadres ouverts : chiffres de l'IRM concurrente pendant un instant, copie, puis retour aux chiffres de l'O-scan
+      var boite = el("afBoiteOutils"), aFaire = [];
+      Array.prototype.forEach.call(boite.querySelectorAll(".af-pop:not(.af-jumeau)"), function (pop) {
+        if (!TITRES_JUM[pop.id] || pop.hidden) return;
+        comps.forEach(function (m) {
+          var j = pop.parentNode.querySelector('.af-jumeau[data-cle="' + m.key + '"][data-pour="' + pop.id + '"]');
+          if (!j) { j = creerJumeau(pop, m); pop.parentNode.appendChild(j); }
+          aFaire.push({ j: j, pop: pop, m: m });
+        });
+      });
+      if (!aFaire.length) return;
+      comps.forEach(function (m) {
+        avecConcurrent(m, function () {
+          enConc = true;
+          try {
+            majContenuPops();
+            SNAP[m.key] = { tco: el("afTco").innerHTML, res: el("afRes").innerHTML };
+            aFaire.forEach(function (x) { if (x.m.key === m.key && x.pop.id !== "afOptPop") remplirClone(x.j, x.pop, x.m); });
+          } finally { enConc = false; }
+        });
+      });
+      majContenuPops();
+      aFaire.forEach(function (x) { if (x.pop.id === "afOptPop" && !x.j.contains(document.activeElement)) remplirOpt(x.j, x.pop, x.m); });
     }
     function ajusterPlein() { // boîte à outils en plein écran : tous les cadres tiennent dans une seule page, sans défilement (l'échelle des cadres diminue jusqu'à ce que tout rentre)
       var boite = el("afBoiteOutils"); if (!boite || !boite.classList.contains("af-boite-plein")) return;
@@ -1716,6 +1825,8 @@
     function majJumeaux() {
       var boite = el("afBoiteOutils"); if (!boite) return;
       var comps = comparateurs(), plein = boite.classList.contains("af-boite-plein");
+      if (enConc) return;
+      if (comps.length) remplirJumeaux(comps);
       Array.prototype.forEach.call(boite.querySelectorAll(".af-jumeau"), function (j) { j.hidden = true; });
       Array.prototype.forEach.call(boite.querySelectorAll(".af-pop:not(.af-jumeau)"), function (pop) {
         if (!TITRES_JUM[pop.id]) return;
@@ -1727,7 +1838,6 @@
           ["width", "right", "left", "top"].forEach(function (pr) { j.style.removeProperty(pr); });
           j.classList.toggle("af-carte-pop", plein); j.classList.toggle("af-dock", dock); j.classList.toggle("af-dock-plein", pleinCadre);
           j.hidden = !ouverte; if (!ouverte) return;
-          if (!j.contains(document.activeElement)) remplirJumeau(j, pop, m);
           if (dock) { // moitié d'écran (ou écran entier) partagée entre l'O-scan et les IRM concurrentes
             var tot = pleinCadre ? 100 : 50, w = tot / (n + 1);
             pop.style.setProperty("width", w + "vw", "important"); pop.style.setProperty("right", (w * n) + "vw", "important");
@@ -1751,6 +1861,10 @@
         demi("Dépenses", CAT_DEP, r, r.depenses, { label: "Total", valeur: fmtMoney(r.depenses), sous: ["", r.examens > 0 ? fmtMoney2(r.depenses / r.examens) + " de charges par patient" : ""] }),
         demi("Résultat", CAT_RES, { personnel: r.personnel, radio: r.radio, loyer: r.loyer, elec: r.elec, achat: r.achat, interetsAn: r.interetsAn, maint: r.maint, resultat: Math.max(0, r.resultat) },
           positif ? r.recettes : r.depenses, { label: positif ? "Résultat" : "Déficit", valeur: fmtMoney(r.resultat), couleur: positif ? "#1baf7a" : "#c2334d", sous: ["", r.examens > 0 ? fmtMoney2(r.resultat / r.examens) + " de résultat par patient" : ""] })];
+    }
+    function majSorties(r) {
+      el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
+      el("afNegSortie").innerHTML = [["Diagnostique", S.repDiag], ["Claustrophobie", S.repClau], ["Consultation d'orthopédiste", S.repOrth]].map(function (l) { return l[0] + " : <strong>" + fmt(r.examens * l[1] / 100) + "</strong> examens par an (" + fmt(l[1]) + " %)"; }).join("<br>");
     }
     function rendre() {
       appliquerCadenas(); appliquerCadenasMarge(); majPrixSortie();
@@ -1841,10 +1955,9 @@
       zone.classList.toggle("af-demis--focus", demiFocus >= 0);
       var an = S.annee === "moy" ? "Moyenne sur " + fmt(S.moyAns) + " ans" : "Année " + S.annee;
       libelleAchat("O-scan et options");
-      el("afFinSortie").innerHTML = (S.finActif ? "Loyer mensuel du crédit : <strong>" + fmtMoney(r.mensualite) + "</strong> (" + fmtMoney(r.mensualite * 12) + " par an)<br>Coût total du crédit : <strong>" + fmtMoney(r.interets) + "</strong> d'intérêts sur " + fmt(S.dureeMois) + " mois." : "Crédit non activé : le prix est étalé sur " + fmt(S.amort) + " ans.") + "<br>Maintenance : " + (S.garantie > 0 ? "gratuite pendant " + fmt(S.garantie) + " mois, puis " : "") + fmtMoney(S.maint) + " par an.";
+      majSorties(r);
       var anN = S.annee === "moy" ? 0 : parseInt(S.annee, 10), rembourse = S.finActif && anN > 0 && moisPayes(anN) === 0; // crédit terminé avant l'année affichée : plus de mensualités dans les dépenses
       el("afSousTitre").textContent = an + " · " + fmt(r.examens) + " examens par an · " + (rembourse ? "crédit déjà remboursé · " : "") + cur.n + " (" + cur.c + ")";
-      el("afNegSortie").innerHTML = [["Diagnostique", S.repDiag], ["Claustrophobie", S.repClau], ["Consultation d'orthopédiste", S.repOrth]].map(function (l) { return l[0] + " : <strong>" + fmt(r.examens * l[1] / 100) + "</strong> examens par an (" + fmt(l[1]) + " %)"; }).join("<br>");
       majRepart();
       majTemps();
       majImport();
@@ -2107,13 +2220,13 @@
       for (i = 0; i < 40; i++) { S.achat = (lo + hi) / 2; if (pctResultat() > cible) lo = S.achat; else hi = S.achat; }
       S.achat = Math.round((lo + hi) / 2 / 100) * 100;
     }
-    function majPrixSortie() { // panneau « prix selon le résultat souhaité » : le bâton montre toujours le résultat réel
+    function majPrixSortie() { if (enConc) return; // panneau « prix selon le résultat souhaité » : le bâton montre toujours le résultat réel
       var p = pctResultat(); S.margeCible = Math.max(-30, Math.min(80, Math.round(p)));
       var z = document.getElementById("afPrixSortie"); if (!z) return;
       z.innerHTML = "Prix de vente de l'O-scan (hors taxes) : <strong>" + fmtMoney(S.achat) + "</strong><br>Résultat obtenu : <strong>" + nf1.format(p).replace(/,0$/, "") + " %</strong> des recettes" + (S.msgPrix === "min" ? "<br>Objectif hors limites : le prix est bloqué au minimum du bâton « Prix de l'O-scan »." : S.msgPrix === "max" ? "<br>Objectif hors limites : le prix est bloqué au maximum du bâton « Prix de l'O-scan »." : "");
       var cd = document.querySelector("#afGPrixCible .af-cadenas"); if (cd) cd.setAttribute("aria-pressed", String(S.cadenasMarge));
     }
-    function appliquerCadenasMarge() { if (S.cadenasMarge) resoudrePrix(S.margeVerrou); }
+    function appliquerCadenasMarge() { if (S.cadenasMarge && !enConc) resoudrePrix(S.margeVerrou); }
     function synchroniser() {
       S.garAns = S.garantie / 12;
       S.patAn = Math.round(S.pph * volumeParPph());
