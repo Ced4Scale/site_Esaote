@@ -66,7 +66,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css?v=20260911b-quicksend" />
   <script src="assets/machines-energie-data.js?v=20260922-ct-generique"></script>
-  <script src="assets/afrique-i18n.js?v=20261016x"></script>
+  <script src="assets/afrique-i18n.js?v=20261016z"></script>
   <style>
     .af-bloc { position: relative; background: #fff; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow-sm); }
     .af-bloc:fullscreen { overflow: auto; display: flex; flex-direction: column; align-items: stretch; justify-content: flex-start; padding: 2rem; }
@@ -177,11 +177,19 @@
     /* Boîte à outils verticale dans la marge (fixe quand on fait défiler la page) ; déplaçable à droite ou à gauche. Écran trop petit : elle reste en ligne sous les demi-anneaux. */
     .af-outils-boite:not(.af-boite-plein) .af-mixer__title { cursor: grab; touch-action: none; user-select: none; }
     .af-outils-boite.af-boite-glisse { transition: none; cursor: grabbing; opacity: .92; z-index: 90 !important; }
+    .af-outils-boite .af-outils-icones .af-info-btn { width: 100%; height: auto; min-height: 44px; border-radius: 10px; flex-direction: column; gap: 1px; padding: 3px 0; font-size: 1.15rem; }
+    .af-outils-boite .af-outils-icones .af-info-btn small { font-size: .56rem; font-weight: 700; color: #555; line-height: 1; pointer-events: none; }
+    .af-outils-boite .af-outils-icones .af-info-wrap { display: block; width: 100%; }
+    .af-outils-boite .af-outils-icones .af-info-btn img { height: 14px; }
+    @media (max-width: 899px), (max-height: 559px) { .af-outils-boite:not(.af-boite-plein) .af-outils-icones .af-info-btn { width: 54px; } .af-outils-boite:not(.af-boite-plein) .af-outils-icones .af-info-wrap { display: inline-block; width: auto; } }
     .af-boite-cote, .af-boite-plein .af-boite-cote, .af-drapeau-marge { display: none; }
     @media (min-width: 900px) and (min-height: 560px) {
-      .af-outils-boite:not(.af-boite-plein) { position: fixed; top: 5.5rem; left: .5rem; right: auto; z-index: 40; width: 4.2rem; margin: 0; padding: .5rem .3rem; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; box-shadow: var(--shadow-sm); }
+      .af-outils-boite:not(.af-boite-plein) { position: fixed; top: 5.5rem; left: .5rem; right: auto; z-index: 40; width: 3.9rem; margin: 0; padding: .45rem .3rem; gap: 6px; box-sizing: border-box; flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; border-radius: 12px; border: 1px solid #e0e0e0; box-shadow: 0 8px 24px rgba(0,0,0,.14); }
       .af-outils-boite:not(.af-boite-plein)[data-cote="d"] { left: auto; right: .5rem; }
       .af-outils-boite:not(.af-boite-plein) .af-mixer__title { font-size: .62rem; text-align: center; line-height: 1.15; }
+      .af-outils-boite:not(.af-boite-plein) .af-mixer__title { color: #666; font-weight: 800; padding: 2px 0 4px; border-bottom: 1px dashed #e0e0e0; }
+      .af-outils-boite:not(.af-boite-plein) .af-outils-icones { gap: 6px; align-items: stretch; }
+      .af-outils-boite:not(.af-boite-plein) .af-fs-btn { width: 100%; border-radius: 10px; min-height: 44px; }
       .af-outils-boite:not(.af-boite-plein) .af-boite-cote { display: inline-flex; }
       .af-outils-boite:not(.af-boite-plein) .af-outils-icones { flex-direction: column; flex-wrap: nowrap; }
       .af-outils-boite:not(.af-boite-plein) .af-pop:not(.af-dock) { position: fixed; top: 1rem; left: 5.2rem; right: auto; margin: 0; max-height: calc(100vh - 2rem); overflow-y: auto; z-index: 45; }
@@ -693,7 +701,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afCalBtn" aria-expanded="false" aria-controls="afCalPop" aria-label="Horaires d'ouverture : modifier les jours et les heures" data-tip="Horaires : jours et heures d'ouverture du centre, coupures, plafond d'heures par jour et semaines d'ouverture par an.">
               <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3.5 10h17" stroke="currentColor" stroke-width="2"/><path d="M8 3v4M16 3v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            </button>
+            <small>Horaires</small></button>
             <div class="af-pop" id="afCalPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Horaires d'ouverture</div>
@@ -703,7 +711,7 @@
 
           <!-- Boîte à outils -->
           <span class="af-info-wrap">
-            <button type="button" class="af-info-btn" id="afOutilsBtn" aria-expanded="false" aria-controls="afOutilsPop" aria-label="Boîte à outils" data-tip="Boîte à outils : choisir les curseurs affichés dans la table de mixage et l'année des résultats (année 1, 2, 3 ou moyenne).">🧰</button>
+            <button type="button" class="af-info-btn" id="afOutilsBtn" aria-expanded="false" aria-controls="afOutilsPop" aria-label="Boîte à outils" data-tip="Boîte à outils : choisir les curseurs affichés dans la table de mixage et l'année des résultats (année 1, 2, 3 ou moyenne).">🧰<small>Curseurs</small></button>
             <div class="af-pop" id="afOutilsPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Curseurs affichés</div>
@@ -717,7 +725,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afLoyerBtn" aria-expanded="false" aria-controls="afLoyerPop" aria-label="Loyer : prix de location au mètre carré par an" data-tip="Loyer des locaux : prix de location au m² par an et surface occupée.">
               <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true"><path d="M4 20.5V9.5L12 4l8 5.5v11" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9.5 20.5v-6h5v6M3 20.5h18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            </button>
+            <small>Loyer</small></button>
             <div class="af-pop" id="afLoyerPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Loyer des locaux</div>
@@ -733,7 +741,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afRadBtn" aria-expanded="false" aria-controls="afRadPop" aria-label="Coût du radiologue" data-tip="Radiologue : coût de lecture des examens, par examen, par an ou en % du prix de l'examen.">
               <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><circle cx="12" cy="7.5" r="3.6" fill="currentColor"/><path d="M4.5 20.5c0-4.2 3.3-7 7.5-7s7.5 2.8 7.5 7z" fill="currentColor"/><path d="M10.2 14.2v2.4a1.9 1.9 0 0 0 3.8 0v-2.4" fill="none" stroke="#fff" stroke-width="1.3" stroke-linecap="round"/></svg>
-            </button>
+            <small>Radiologue</small></button>
             <div class="af-pop" id="afRadPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Coût du radiologue</div>
@@ -753,7 +761,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afFinBtn" aria-expanded="false" aria-controls="afFinPop" aria-label="Financement, garantie et maintenance" data-tip="Financement : crédit (taux, durée), garantie et maintenance annuelle de l'O-scan.">
               <svg viewBox="0 0 24 24" width="19" height="19" aria-hidden="true"><path d="M12 3 3 8h18z" fill="currentColor"/><path d="M5.5 10v7M10 10v7M14 10v7M18.5 10v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M3.5 20.5h17" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-            </button>
+            <small>Crédit</small></button>
             <div class="af-pop af-pop--large" id="afFinPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Financement, garantie et maintenance</div>
@@ -775,7 +783,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn" id="afNegBtn" aria-expanded="false" aria-controls="afNegPop" aria-label="Répartition des examens : diagnostique, claustrophobie, consultation d'orthopédiste" data-tip="Répartition et durée des examens : part du diagnostique, de la claustrophobie et de la consultation, durées d'examen et gain des options.">
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><rect x="6.2" y="7" width="11.6" height="10" rx="1" fill="currentColor" opacity=".18"/><path d="M12 7.6v8.8M9.2 9.4h5.6M9.6 12h4.8M10 14.6h4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-            </button>
+            <small>Examens</small></button>
             <div class="af-pop af-pop--large" id="afNegPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Répartition des examens</div>
@@ -801,7 +809,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn af-imp-btn" id="afImpBtn" aria-expanded="false" aria-controls="afImpPop" aria-label="Importation : pays, droits de douane, taxes et TVA" data-tip="Importation : pays acheteur, droits de douane, taxes et TVA ajoutés au prix de l'IRM, qui part toujours d'Italie.">
               <span class="af-imp-flag" id="afImpFlag"></span>
-            </button>
+            <small>Import</small></button>
             <div class="af-pop af-pop--large" id="afImpPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Importation depuis l'Italie</div>
@@ -820,7 +828,7 @@
           <span class="af-info-wrap">
             <button type="button" class="af-info-btn af-esaote-btn" id="afOptBtn" aria-expanded="false" aria-controls="afOptPop" aria-label="Options Esaote : choix et prix" data-tip="Options Esaote : e-Spades, Agil Exam, post-traitement, travaux et cage de Faraday, avec le coût total de possession et de fonctionnement.">
               <img src="assets/logo-esaote.svg" alt="" height="11" />
-            </button>
+            <small>Options</small></button>
             <div class="af-pop" id="afOptPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <button type="button" class="af-pop-plein" id="afOptFs" aria-label="Plein écran" title="Plein écran">
@@ -861,7 +869,7 @@
 
           <!-- Ampoule : hypothèses -->
           <span class="af-info-wrap">
-            <button type="button" class="af-info-btn" id="afInfoBtn" aria-expanded="false" aria-controls="afInfoPop" aria-label="Hypothèses de ce simulateur" data-tip="Hypothèses : ce qui est compté dans les calculs, et ce qui ne l'est pas.">💡</button>
+            <button type="button" class="af-info-btn" id="afInfoBtn" aria-expanded="false" aria-controls="afInfoPop" aria-label="Hypothèses de ce simulateur" data-tip="Hypothèses : ce qui est compté dans les calculs, et ce qui ne l'est pas.">💡<small>Hypothèses</small></button>
             <div class="af-pop" id="afInfoPop" hidden>
               <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
               <div class="af-pop-titre">Ce qui est compté</div>
