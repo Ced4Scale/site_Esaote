@@ -163,6 +163,8 @@
     .af-cmp-carte figcaption { font-weight: 800; }
     .af-cmp-carte select { width: 100%; max-width: 280px; font: inherit; font-size: .85rem; padding: .4rem .5rem; border: 1px solid var(--line-2, #d6d6d0); border-radius: .5rem; background: #fff; }
     @media (max-width: 640px) { .af-compare-corps { grid-template-columns: 1fr; } }
+    .af-pop.af-jumeau[data-pour="afNegPop"] { width: min(calc(100vw - 4.5rem), 430px); }
+    .af-pop.af-jumeau[data-pour="afNegPop"]:has(.af-tps-det[open]) { width: min(calc(100vw - 4.5rem), 580px); }
     .af-jumeau [data-sans] { display: none !important; }
     .af-jumeau { border-color: #cfd8e6; background: #f4f8ff; }
     .af-jumeau .af-cal-ligne input { text-align: right; }
@@ -387,7 +389,6 @@
     .af-mixer__fader-col.is-fige input, .af-mixer__fader-col.is-fige button { cursor: not-allowed; }
     #afNegPop { width: min(calc(100vw - 4.5rem), 430px); } /* étroit tant que « Temps moyen par type d'examen » est replié (3 bâtons), large une fois ouvert (5 bâtons) */
     #afNegPop:has(.af-tps-det[open]) { width: min(calc(100vw - 4.5rem), 580px); }
-    #afOsPop { width: min(calc(100vw - 4.5rem), 580px); }
     #afImpPop { width: min(calc(100vw - 4.5rem), 580px); }
     .af-dev-btn { width: auto; min-width: 1.7rem; padding: 0 .4rem; }
     .af-dev-sym { font-size: .78rem; font-weight: 800; letter-spacing: .01em; }
@@ -746,19 +747,7 @@
             </div>
           </span>
 
-          <!-- Os : répartition des examens par zone (l'O-scan ne fait pas l'épaule) -->
-          <span class="af-info-wrap">
-            <button type="button" class="af-info-btn" id="afOsBtn" aria-expanded="false" aria-controls="afOsPop" aria-label="Répartition des examens MSK par zone" data-tip="Examens par zone : part de chaque zone du corps (genou, main, pied, coude…) dans l'activité.">
-              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M7.2 4.2a2.6 2.6 0 0 0-3.5 3.4 2.6 2.6 0 0 0 3.2 3.5l5.9 5.9a2.6 2.6 0 0 0 3.5 3.2 2.6 2.6 0 0 0 3.4-3.5 2.6 2.6 0 0 0-3.4-3.3l-5.9-5.8A2.6 2.6 0 0 0 7.2 4.2Z" fill="currentColor"/></svg>
-            </button>
-            <div class="af-pop" id="afOsPop" hidden>
-              <div class="af-poignee" title="Glisser pour déplacer (double-clic : position d'origine)">⠿ Déplacer</div>
-              <div class="af-pop-titre">Examens MSK par zone</div>
-              <p class="af-aide" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre ». L'O-scan ne fait ni l'épaule ni la hanche (réservées à une IRM tunnel) : ces deux zones sont bloquées à 0 %. Valeurs de départ = estimation Ced4Scale, à ajuster.</p>
-              <div class="af-mixer af-mixer--mini" id="afOsMix"></div>
-              <div id="afOsTotal" style="margin-top:.4rem;font-size:.8rem;font-weight:800;border-top:1px dashed #d8d2b8;padding-top:.4rem"></div>
-                          </div>
-          </span>
+          
 
           <!-- Financement : crédit (taux, durée), garantie et maintenance — mini table de mixage -->
           <span class="af-info-wrap">
@@ -797,6 +786,12 @@
               <div class="af-mixer af-mixer--mini" id="afTempsMix"></div>
               <p class="af-aide" style="margin:.3rem 0 0">Le changement de patient est inclus dans la durée d'examen ; e-Spades ne réduit que le reste (l'acquisition).</p>
               <div id="afNegTemps"></div>
+              </details>
+              <details class="af-tco-det af-tps-det">
+              <summary class="af-pop-sous-titre">Examens MSK par zone</summary>
+              <p class="af-aide" style="margin:.1rem 0 .4rem">Part de chaque zone dans vos examens « membre ». L'O-scan ne fait ni l'épaule ni la hanche (réservées à une IRM tunnel) : ces deux zones sont bloquées à 0 %. Valeurs de départ = estimation Ced4Scale, à ajuster.</p>
+              <div class="af-mixer af-mixer--mini" id="afOsMix"></div>
+              <div id="afOsTotal" style="margin-top:.4rem;font-size:.8rem;font-weight:800;border-top:1px dashed #d8d2b8;padding-top:.4rem"></div>
               </details>
               <div id="afNegSortie" style="font-size:.82rem;line-height:1.5;margin-top:.5rem"></div>
             </div>
@@ -1522,9 +1517,10 @@
     function calculerConcurrent(m) { return avecConcurrent(m, calculer); }
 
     // ------------------------------------------------------------------ cadres « jumeaux » : quand on compare, chaque cadre de la boîte à outils s'ouvre aussi pour l'IRM concurrente, à côté de celui de l'O-scan
-    var TITRES_JUM = { afCalPop: "Horaires d'ouverture", afLoyerPop: "Loyer des locaux", afRadPop: "Coût du radiologue", afOsPop: "Examens MSK par zone", afFinPop: "Financement, garantie et maintenance", afNegPop: "Répartition des examens", afImpPop: "Importation depuis l'Italie", afOptPop: "Options Esaote : choix et prix" };
+    var TITRES_JUM = { afCalPop: "Horaires d'ouverture", afLoyerPop: "Loyer des locaux", afRadPop: "Coût du radiologue", afFinPop: "Financement, garantie et maintenance", afNegPop: "Répartition des examens", afImpPop: "Importation depuis l'Italie", afOptPop: "Options Esaote : choix et prix" };
     function creerJumeau(pop, m) {
       var j = document.createElement("div"); j.className = "af-pop af-jumeau" + (pop.classList.contains("af-pop--large") ? " af-pop--large" : ""); j.dataset.pour = pop.id; j.dataset.cle = m.key; j.hidden = true;
+      if (pop.id !== "afOptPop") j.addEventListener("toggle", function (e) { var o = ORIG.get(e.target); if (o && o.tagName === "DETAILS" && o.open !== e.target.open) o.open = e.target.open; }, true);
       if (pop.id !== "afOptPop") ["input", "change", "click"].forEach(function (t) { j.addEventListener(t, function (e) { transmettre(e, j, m); }); });
       return j;
     }
@@ -1553,7 +1549,7 @@
 
     // ------------------------------------------------------------------ cadres jumeaux = copies conformes : le cadre de l'O-scan est copié tel quel (mêmes réglages, mêmes boutons) avec les chiffres de l'IRM concurrente ; ce qu'on touche dans la copie agit sur l'original (réglages partagés) ou sur l'IRM concurrente seule (prix, maintenance, garantie, crédit, durées)
     var ORIG = new WeakMap(), SNAP = {}, enConc = false;
-    var ATTR_SANS = { id: 1, "for": 1, name: 1, "aria-controls": 1, "aria-labelledby": 1, "data-sans": 1, "data-drag": 1, open: 1 };
+    var ATTR_SANS = { id: 1, "for": 1, name: 1, "aria-controls": 1, "aria-labelledby": 1, "data-sans": 1, "data-drag": 1 };
     var SANS_JUM = ["afTauxAuto", "afTauxBanqueMaj", "afTauxPays", "afTauxBanqueStatut"];
     var PROPRE = { achat: 1, maint: 1, garantie: 1, garAns: 1, dureeMois: 1, taux: 1, nMerm: 1, tChg: 1, tAcqDiag: 1, tAcqClau: 1, tAcqOrth: 1 };
     function sk(n) { return n.nodeType === 3 ? "#" : n.tagName + "(" + Array.prototype.map.call(n.childNodes, sk).join("") + ")"; }
@@ -1574,7 +1570,6 @@
       });
       var ti = j.querySelector(".af-pop-titre"), sub = document.createElement("div"); sub.className = "af-pop-sous-titre af-jum-nom"; sub.textContent = m.nomCourt; sub.style.marginTop = "0";
       if (ti) ti.parentNode.insertBefore(sub, ti.nextSibling); else j.insertBefore(sub, j.firstChild);
-      Array.prototype.forEach.call(j.querySelectorAll("details"), function (d, i) { d.open = !!ouv[i]; });
       brancherRep(j);
       j.__sq = sq;
       if (idx >= 0) { var ap = []; enfantsPop(j).forEach(function (c) { ap.push(c); Array.prototype.forEach.call(c.querySelectorAll("*"), function (x) { ap.push(x); }); }); var nv = ap[idx]; if (nv && nv.focus) { nv.focus(); try { if (pos) nv.setSelectionRange(pos[0], pos[1]); } catch (e) {} } }
@@ -2402,7 +2397,7 @@
     // ------------------------------------------------------------------ loyer
     el("afLoyerM2").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.loyerM2 = n / cur.r; synchroniser(); rendre(); });
     el("afSurface").addEventListener("change", function () { var n = lire(this.value); if (n != null && n >= 0) S.surface = Math.min(5000, Math.round(n)); synchroniser(); rendre(); });
-    ["Loyer", "Os"].forEach(function (k) { brancher("af" + k + "Btn", "af" + k + "Pop"); });
+    brancher("afLoyerBtn", "afLoyerPop");
 
     // ------------------------------------------------------------------ os : examens par zone
     function majOs() {
@@ -2860,6 +2855,7 @@
         var boite = el("afBoiteOutils"), mo = new MutationObserver(function () { majJumeaux(); });
         Array.prototype.forEach.call(boite.querySelectorAll(".af-pop"), function (p) { mo.observe(p, { attributes: true, attributeFilter: ["hidden", "class"] }); });
         mo.observe(boite, { attributes: true, attributeFilter: ["class"] });
+        boite.addEventListener("toggle", function (e) { if (!e.target.closest(".af-jumeau")) majJumeaux(); }, true);
         window.addEventListener("resize", function () { majJumeaux(); rendre(); });
       })();
       (function () { // bouton « Légende » : Non = les légendes sous les demi-anneaux disparaissent
